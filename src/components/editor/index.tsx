@@ -1,7 +1,7 @@
 // app/layout.tsx or pages/index.tsx depending on routing
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import type { Stage as KonvaStage } from 'konva/lib/Stage';
 import dynamic from 'next/dynamic';
@@ -23,8 +23,6 @@ export default function EditorCanvas() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [tool, setTool] = useState<'select' | 'rectangle' | 'circle' | 'triangle'>('select');
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-  const [isShapeMenuOpen, setIsShapeMenuOpen] = useState(false);
-  const shapeMenuRef = useRef<HTMLDivElement>(null);
 
   // Handle window dimensions
   useEffect(() => {
@@ -44,20 +42,6 @@ export default function EditorCanvas() {
 
     // Cleanup
     return () => window.removeEventListener('resize', updateDimensions);
-  }, []);
-
-  // Handle click outside to close the shape menu
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (shapeMenuRef.current && !shapeMenuRef.current.contains(event.target as Node)) {
-        setIsShapeMenuOpen(false);
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
   }, []);
 
   const handleStageClick = (e: KonvaEventObject<MouseEvent>) => {
@@ -129,47 +113,27 @@ export default function EditorCanvas() {
         <main className="flex-1 relative bg-white">
           {/* Floating Toolbar */}
           <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-white shadow rounded flex gap-2 p-2 z-10">
-            <div className="relative" ref={shapeMenuRef}>
-              <button 
-                className="btn flex items-center gap-1"
-                onClick={() => setIsShapeMenuOpen(!isShapeMenuOpen)}
-              >
-                <span>Shapes</span>
-                <span className="text-xs">▼</span>
-              </button>
-              <div className={`absolute top-full left-0 mt-1 bg-white shadow-lg rounded-md py-1 w-48 ${isShapeMenuOpen ? 'block' : 'hidden'}`}>
-                <button 
-                  className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2"
-                  onClick={() => {
-                    setTool('rectangle');
-                    setIsShapeMenuOpen(false);
-                  }}
-                >
-                  <span>🔲</span>
-                  <span>Rectangle</span>
-                </button>
-                <button 
-                  className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2"
-                  onClick={() => {
-                    setTool('circle');
-                    setIsShapeMenuOpen(false);
-                  }}
-                >
-                  <span>⭕</span>
-                  <span>Circle</span>
-                </button>
-                <button 
-                  className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2"
-                  onClick={() => {
-                    setTool('triangle');
-                    setIsShapeMenuOpen(false);
-                  }}
-                >
-                  <span>△</span>
-                  <span>Triangle</span>
-                </button>
-              </div>
-            </div>
+            <button 
+              className={`btn flex items-center gap-1 ${tool === 'rectangle' ? 'bg-gray-100' : ''}`}
+              onClick={() => setTool('rectangle')}
+            >
+              <span>🔲</span>
+              <span>Rectangle</span>
+            </button>
+            <button 
+              className={`btn flex items-center gap-1 ${tool === 'circle' ? 'bg-gray-100' : ''}`}
+              onClick={() => setTool('circle')}
+            >
+              <span>⭕</span>
+              <span>Circle</span>
+            </button>
+            <button 
+              className={`btn flex items-center gap-1 ${tool === 'triangle' ? 'bg-gray-100' : ''}`}
+              onClick={() => setTool('triangle')}
+            >
+              <span>△</span>
+              <span>Triangle</span>
+            </button>
           </div>
 
           {/* Konva Canvas */}
