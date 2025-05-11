@@ -6,6 +6,7 @@ import type { KonvaEventObject } from 'konva/lib/Node';
 import type { Stage as KonvaStage } from 'konva/lib/Stage';
 import dynamic from 'next/dynamic';
 import { AnimatedCanvasElement } from './Canvas';
+import { TimeManager, type TimeManagerState } from '@/lib/TimeManager';
 
 const Canvas = dynamic(() => import('./Canvas'), { ssr: false });
 
@@ -15,6 +16,7 @@ export default function EditorCanvas() {
   const [tool, setTool] = useState<'select' | 'rectangle' | 'circle' | 'triangle'>('select');
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [maskPos, setMaskPos] = useState<{ x: number, y: number } | null>(null);
+  const [timeState, setTimeState] = useState<TimeManagerState>({ isPlaying: false, elapsedTime: 0 });
 
   const MASK_OFFSET_X = 25;
   const MASK_OFFSET_Y = 25;
@@ -104,6 +106,35 @@ export default function EditorCanvas() {
         el.id === selectedId ? { ...el, [prop]: value } : el
       )
     );
+  };
+
+  // Subscribe to TimeManager updates
+  useEffect(() => {
+    const timeManager = TimeManager.getInstance();
+    const unsubscribe = timeManager.subscribe(setTimeState);
+    return () => unsubscribe();
+  }, []);
+
+  const handlePlayPause = () => {
+    const timeManager = TimeManager.getInstance();
+    const { isPlaying } = timeManager.getState();
+    if (isPlaying) {
+      timeManager.pause();
+    } else {
+      timeManager.play();
+    }
+  };
+
+  const handleStop = () => {
+    TimeManager.getInstance().stop();
+  };
+
+  // Format time as MM:SS.ms
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    const milliseconds = Math.floor((seconds % 1) * 100);
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(2, '0')}`;
   };
 
   // Don't render the Canvas until we have dimensions
@@ -398,8 +429,31 @@ export default function EditorCanvas() {
 
       {/* Timeline */}
       <footer className="h-48 bg-gray-100 border-t border-gray-200 p-2 overflow-y-auto">
-        <h3 className="font-semibold mb-2">Timeline</h3>
-        <p>Timeline component goes here</p>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-semibold">Timeline</h3>
+          <div className="flex items-center gap-4">
+            <div className="text-base font-mono bg-white text-gray-600 px-3 py-1.5 rounded-md shadow-sm w-[120px] text-center">
+              {formatTime(timeState.elapsedTime)}
+            </div>
+            <div className="flex gap-2">
+              <button
+                className={`btn flex items-center gap-1 ${timeState.isPlaying ? 'bg-gray-100' : ''} w-[100px] justify-center`}
+                onClick={handlePlayPause}
+              >
+                <span>{timeState.isPlaying ? '⏸' : '▶'}</span>
+              </button>
+              <button
+                className="btn flex items-center gap-1 w-[100px] justify-center"
+                onClick={handleStop}
+              >
+                <span>⏹</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded border p-2">
+          <p>Timeline tracks will go here</p>
+        </div>
       </footer>
     </div>
   );
