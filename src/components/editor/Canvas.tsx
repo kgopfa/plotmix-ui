@@ -16,6 +16,17 @@ interface CanvasElement {
   width: number;
   height: number;
   fill: string;
+  stroke?: string;
+  strokeWidth?: number;
+  radius?: number;
+  cornerRadius?: number;
+  opacity?: number;
+  shadowColor?: string;
+  shadowBlur?: number;
+  shadowOffsetX?: number;
+  shadowOffsetY?: number;
+  shadowOpacity?: number;
+  shadowEnabled?: boolean;
 }
 
 interface CanvasProps {
@@ -42,6 +53,10 @@ export default function Canvas({
     if (selectedId && transformerRef.current && shapeRefs.current[selectedId]) {
       transformerRef.current.nodes([shapeRefs.current[selectedId]]);
       transformerRef.current.getLayer()?.batchDraw();
+    } else if (transformerRef.current) {
+      // Detach transformer if nothing is selected
+      transformerRef.current.nodes([]);
+      transformerRef.current.getLayer()?.batchDraw();
     }
   }, [selectedId]);
 
@@ -56,11 +71,23 @@ export default function Canvas({
       y: el.y,
       fill: el.fill,
       draggable: true,
+      stroke: el.stroke,
+      strokeWidth: el.strokeWidth,
+      opacity: el.opacity,
       onClick: () => onElementSelect(el.id),
       onDragEnd: (e: KonvaEventObject<DragEvent>) => {
         onElementDragEnd(el.id, e.target.x(), e.target.y());
       },
     };
+
+    const shadowProps = el.shadowEnabled
+      ? {
+          shadowColor: el.shadowColor,
+          shadowBlur: el.shadowBlur,
+          shadowOffset: { x: el.shadowOffsetX ?? 0, y: el.shadowOffsetY ?? 0 },
+          shadowOpacity: el.shadowOpacity,
+        }
+      : {};
 
     switch (el.type) {
       case 'rectangle':
@@ -70,6 +97,8 @@ export default function Canvas({
             {...commonProps}
             width={el.width}
             height={el.height}
+            cornerRadius={el.cornerRadius ?? 0}
+            {...shadowProps}
           />
         );
       case 'circle':
@@ -77,7 +106,8 @@ export default function Canvas({
           <Circle
             key={el.id}
             {...commonProps}
-            radius={el.width / 2}
+            radius={el.radius ?? el.width / 2}
+            {...shadowProps}
           />
         );
       case 'triangle':
@@ -86,7 +116,8 @@ export default function Canvas({
             key={el.id}
             {...commonProps}
             sides={3}
-            radius={el.width / 2}
+            radius={el.radius ?? el.width / 2}
+            {...shadowProps}
           />
         );
       default:
