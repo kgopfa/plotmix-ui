@@ -29,8 +29,20 @@ export interface CanvasElement {
   shadowEnabled?: boolean;
 }
 
+export interface ElementAnimation {
+  id: string;
+  startTime: number; // seconds
+  duration: number; // seconds
+  properties: Partial<Pick<CanvasElement, 'x' | 'y' | 'width' | 'height' | 'fill' | 'opacity' | 'radius' | 'cornerRadius' | 'shadowBlur' | 'shadowOffsetX' | 'shadowOffsetY' | 'shadowOpacity'>>;
+  easing?: string; // GSAP-compatible easing (e.g., 'power2.inOut')
+}
+
+export interface AnimatedCanvasElement extends CanvasElement {
+  animations: ElementAnimation[];
+}
+
 interface CanvasProps {
-  elements: CanvasElement[];
+  elements: AnimatedCanvasElement[];
   selectedId: string | null;
   dimensions: { width: number; height: number };
   onStageClick: (e: KonvaEventObject<MouseEvent>) => void;

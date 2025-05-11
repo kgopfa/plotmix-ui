@@ -5,32 +5,12 @@ import { useState, useEffect } from 'react';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import type { Stage as KonvaStage } from 'konva/lib/Stage';
 import dynamic from 'next/dynamic';
+import { AnimatedCanvasElement } from './Canvas';
 
 const Canvas = dynamic(() => import('./Canvas'), { ssr: false });
 
-interface CanvasElement {
-  id: string;
-  type: 'rectangle' | 'circle' | 'triangle';
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  fill: string;
-  radius?: number;
-  stroke?: string;
-  strokeWidth?: number;
-  cornerRadius?: number;
-  opacity?: number;
-  shadowEnabled?: boolean;
-  shadowColor?: string;
-  shadowBlur?: number;
-  shadowOffsetX?: number;
-  shadowOffsetY?: number;
-  shadowOpacity?: number;
-}
-
 export default function EditorCanvas() {
-  const [elements, setElements] = useState<CanvasElement[]>([]);
+  const [elements, setElements] = useState<AnimatedCanvasElement[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [tool, setTool] = useState<'select' | 'rectangle' | 'circle' | 'triangle'>('select');
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
@@ -79,7 +59,7 @@ export default function EditorCanvas() {
 
       if (pointer) {
         const newId = `${tool}-${elements.length + 1}`;
-        const newElement: CanvasElement = {
+        const newElement: AnimatedCanvasElement = {
           id: newId,
           type: tool,
           x: pointer.x - 50,
@@ -98,6 +78,7 @@ export default function EditorCanvas() {
           shadowOffsetX: 10,
           shadowOffsetY: 10,
           shadowOpacity: 0.5,
+          animations: [],
         };
         setElements(prevElements => [...prevElements, newElement]);
         setTool('select');
