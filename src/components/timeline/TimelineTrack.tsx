@@ -23,7 +23,7 @@ export function TimelineTrack({ element, scale, currentTime, isSelected, onAnima
         className={`w-32 px-2 text-sm font-medium truncate ${isSelected ? 'text-blue-700' : 'text-gray-700'}`}
         onClick={handleTrackClick}
       >
-        {element.type}
+        {element.name}
       </div>
 
       {/* Track Content */}

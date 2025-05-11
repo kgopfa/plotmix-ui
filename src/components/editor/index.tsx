@@ -78,8 +78,13 @@ export default function EditorCanvas() {
 
       if (pointer) {
         const newId = `${tool}-${elements.length + 1}`;
+        // Count existing shapes of the same type
+        const existingCount = elements.filter(el => el.type === tool).length;
         const newElement: AnimatedCanvasElement = {
           id: newId,
+          name: existingCount === 0 
+            ? tool.charAt(0).toUpperCase() + tool.slice(1)
+            : `${tool.charAt(0).toUpperCase() + tool.slice(1)} (${existingCount})`,
           type: tool,
           x: pointer.x - 50,
           y: pointer.y - 50,
@@ -263,7 +268,7 @@ export default function EditorCanvas() {
                       }`}
                       onClick={() => selectionManager.select(element)}
                     >
-                      {element.type.charAt(0).toUpperCase() + element.type.slice(1)} {element.id.split('-')[1]}
+                      {element.name}
                     </li>
                   ))}
                   {elements.length === 0 && (
@@ -330,6 +335,15 @@ export default function EditorCanvas() {
           <h3 className="font-semibold mb-2">Inspector</h3>
           {selectedElement ? (
             <form className="flex flex-col gap-2">
+              <label>
+                Name:
+                <input
+                  type="text"
+                  value={selectedElement.name}
+                  onChange={e => handleInspectorChange('name', e.target.value)}
+                  className="w-full px-2 py-1 border rounded"
+                />
+              </label>
               <label>
                 X:
                 <input

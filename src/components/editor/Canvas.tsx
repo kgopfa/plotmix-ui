@@ -37,8 +37,33 @@ export interface ElementAnimation {
   easing?: string; // GSAP-compatible easing (e.g., 'power2.inOut')
 }
 
-export interface AnimatedCanvasElement extends CanvasElement {
-  animations: ElementAnimation[];
+export interface AnimatedCanvasElement {
+  id: string;
+  name: string;
+  type: 'rectangle' | 'circle' | 'triangle';
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  fill: string;
+  radius?: number;
+  stroke?: string;
+  strokeWidth?: number;
+  cornerRadius?: number;
+  opacity?: number;
+  shadowEnabled?: boolean;
+  shadowColor?: string;
+  shadowBlur?: number;
+  shadowOffsetX?: number;
+  shadowOffsetY?: number;
+  shadowOpacity?: number;
+  animations: Array<{
+    id: string;
+    startTime: number;
+    duration: number;
+    type: string;
+    properties: Partial<Pick<CanvasElement, 'x' | 'y' | 'width' | 'height' | 'fill' | 'opacity' | 'radius' | 'cornerRadius' | 'shadowBlur' | 'shadowOffsetX' | 'shadowOffsetY' | 'shadowOpacity'>>;
+  }>;
 }
 
 interface CanvasProps {
