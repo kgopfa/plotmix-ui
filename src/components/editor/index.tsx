@@ -101,7 +101,7 @@ export default function EditorCanvas() {
       {/* Main Body */}
       <div className="flex flex-1 overflow-hidden">
         {/* Scene Explorer */}
-        <aside className="w-64 bg-gray-50 border-r p-2 overflow-y-auto">
+        <aside className="w-72 min-w-48 max-w-xs bg-gray-50 border-r border-gray-200 p-2 overflow-y-auto text-gray-800">
           <h3 className="font-semibold mb-2">Scenes</h3>
           <ul>
             <li className="mb-1">Scene 1</li>
@@ -110,7 +110,7 @@ export default function EditorCanvas() {
         </aside>
 
         {/* Canvas + Element Toolbar */}
-        <main className="flex-1 relative bg-white">
+        <main className="flex-1 relative bg-white overflow-hidden">
           {/* Floating Toolbar */}
           <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-white shadow rounded flex gap-2 p-2 z-10">
             <button 
@@ -148,14 +148,14 @@ export default function EditorCanvas() {
         </main>
 
         {/* Inspector */}
-        <aside className="w-64 bg-gray-50 border-l p-2 overflow-y-auto">
+        <aside className="w-72 min-w-48 max-w-xs bg-gray-50 border-l border-gray-200 p-2 overflow-y-auto text-gray-800">
           <h3 className="font-semibold mb-2">Inspector</h3>
           <p>Select an element to edit properties</p>
         </aside>
       </div>
 
       {/* Timeline */}
-      <footer className="h-40 bg-gray-100 border-t p-2 overflow-y-auto">
+      <footer className="h-48 bg-gray-100 border-t border-gray-200 p-2 overflow-y-auto">
         <h3 className="font-semibold mb-2">Timeline</h3>
         <p>Timeline component goes here</p>
       </footer>
