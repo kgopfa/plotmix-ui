@@ -8,7 +8,7 @@ import type { RegularPolygon as KonvaRegularPolygon } from 'konva/lib/shapes/Reg
 import type { Transformer as KonvaTransformer } from 'konva/lib/shapes/Transformer';
 import { useRef, useEffect } from 'react';
 
-interface CanvasElement {
+export interface CanvasElement {
   id: string;
   type: 'rectangle' | 'circle' | 'triangle';
   x: number;

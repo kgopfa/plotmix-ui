@@ -34,6 +34,10 @@ export default function EditorCanvas() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [tool, setTool] = useState<'select' | 'rectangle' | 'circle' | 'triangle'>('select');
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const [maskPos, setMaskPos] = useState<{ x: number, y: number } | null>(null);
+
+  const MASK_OFFSET_X = 25;
+  const MASK_OFFSET_Y = 25;
 
   // Handle window dimensions
   useEffect(() => {
@@ -55,13 +59,24 @@ export default function EditorCanvas() {
     return () => window.removeEventListener('resize', updateDimensions);
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
+        setElements(elements => elements.filter(el => el.id !== selectedId));
+        setSelectedId(null);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [selectedId]);
+
   const handleStageClick = (e: KonvaEventObject<MouseEvent>) => {
     const clickedEmpty = e.target === e.target.getStage();
-    
+
     if ((tool === 'rectangle' || tool === 'circle' || tool === 'triangle') && clickedEmpty) {
       const stage = e.target.getStage() as KonvaStage;
       const pointer = stage.getPointerPosition();
-      
+
       if (pointer) {
         const newId = `${tool}-${elements.length + 1}`;
         const newElement: CanvasElement = {
@@ -74,7 +89,7 @@ export default function EditorCanvas() {
           fill: '#ffa500', // hex orange
           radius: tool === 'circle' || tool === 'triangle' ? 70 : undefined,
           stroke: 'black',
-          strokeWidth: 4,
+          strokeWidth: 1,
           cornerRadius: tool === 'rectangle' ? 0 : undefined,
           opacity: 1,
           shadowEnabled: false,
@@ -87,6 +102,7 @@ export default function EditorCanvas() {
         setElements(prevElements => [...prevElements, newElement]);
         setTool('select');
         setSelectedId(newId);
+        setMaskPos(null); // Reset mask after placing shape
       }
     } else if (clickedEmpty) {
       setSelectedId(null);
@@ -113,6 +129,56 @@ export default function EditorCanvas() {
   if (dimensions.width === 0 || dimensions.height === 0) {
     return null;
   }
+
+  // Mask overlay for shape placement
+  const renderMask = () => {
+    if (tool === 'select' || !maskPos) return null;
+    const style = {
+      position: 'absolute' as const,
+      left: maskPos.x + MASK_OFFSET_X,
+      top: maskPos.y + MASK_OFFSET_Y,
+      width: 50,
+      height: 50,
+      pointerEvents: 'none' as const,
+      background: 'white',
+      opacity: 0.5,
+      zIndex: 20,
+      border: '2px dotted #888',
+      boxSizing: 'border-box' as const,
+    };
+    if (tool === 'rectangle') {
+      return <div style={{ ...style, borderRadius: 4 }} />;
+    }
+    if (tool === 'circle') {
+      return <div style={{ ...style, borderRadius: '50%' }} />;
+    }
+    if (tool === 'triangle') {
+      // SVG triangle offset from mouse
+      return (
+        <svg
+          style={{
+            position: 'absolute',
+            left: maskPos.x + MASK_OFFSET_X,
+            top: maskPos.y + MASK_OFFSET_Y,
+            width: 50,
+            height: 50,
+            pointerEvents: 'none',
+            opacity: 0.5,
+            zIndex: 20,
+          }}
+        >
+          <polygon
+            points="25,5 45,45 5,45"
+            fill="white"
+            stroke="#888"
+            strokeWidth={2}
+            strokeDasharray="4,3"
+          />
+        </svg>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="flex flex-col h-screen w-screen">
@@ -142,24 +208,36 @@ export default function EditorCanvas() {
         </aside>
 
         {/* Canvas + Element Toolbar */}
-        <main className="flex-1 relative bg-white overflow-hidden">
+        <main
+          className="flex-1 relative bg-white overflow-hidden"
+          onMouseMove={e => {
+            if (tool !== 'select') {
+              const rect = e.currentTarget.getBoundingClientRect();
+              setMaskPos({
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top,
+              });
+            }
+          }}
+          onMouseLeave={() => setMaskPos(null)}
+        >
           {/* Floating Toolbar */}
           <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-white shadow rounded flex gap-2 p-2 z-10">
-            <button 
+            <button
               className={`btn flex items-center gap-1 ${tool === 'rectangle' ? 'bg-gray-100' : ''}`}
               onClick={() => setTool('rectangle')}
             >
               <span>🔲</span>
               <span>Rectangle</span>
             </button>
-            <button 
+            <button
               className={`btn flex items-center gap-1 ${tool === 'circle' ? 'bg-gray-100' : ''}`}
               onClick={() => setTool('circle')}
             >
               <span>⭕</span>
               <span>Circle</span>
             </button>
-            <button 
+            <button
               className={`btn flex items-center gap-1 ${tool === 'triangle' ? 'bg-gray-100' : ''}`}
               onClick={() => setTool('triangle')}
             >
@@ -167,7 +245,7 @@ export default function EditorCanvas() {
               <span>Triangle</span>
             </button>
           </div>
-
+          {renderMask()}
           {/* Konva Canvas */}
           <Canvas
             elements={elements}
