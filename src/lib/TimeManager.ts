@@ -24,9 +24,7 @@ export class TimeManager {
 
   subscribe(listener: TimeUpdateListener): () => void {
     this.listeners.add(listener);
-    // Immediately notify the new listener of current state
     listener(this.getState());
-    // Return unsubscribe function
     return () => this.listeners.delete(listener);
   }
 

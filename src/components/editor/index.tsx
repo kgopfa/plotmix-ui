@@ -1,25 +1,42 @@
 // app/layout.tsx or pages/index.tsx depending on routing
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import type { Stage as KonvaStage } from 'konva/lib/Stage';
 import dynamic from 'next/dynamic';
 import { AnimatedCanvasElement } from './Canvas';
 import { TimeManager, type TimeManagerState } from '@/lib/TimeManager';
+import { TimelineManager } from '@/lib/TimelineManager';
+import { TimelineTrack as TimelineTrackComponent } from '@/components/timeline/TimelineTrack';
+import { TimelineState } from '@/lib/types';
+import { SelectionManager } from '@/lib/SelectionManager';
 
 const Canvas = dynamic(() => import('./Canvas'), { ssr: false });
 
 export default function EditorCanvas() {
   const [elements, setElements] = useState<AnimatedCanvasElement[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedElement, setSelectedElement] = useState<AnimatedCanvasElement | null>(null);
   const [tool, setTool] = useState<'select' | 'rectangle' | 'circle' | 'triangle'>('select');
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [maskPos, setMaskPos] = useState<{ x: number, y: number } | null>(null);
-  const [timeState, setTimeState] = useState<TimeManagerState>({ isPlaying: false, elapsedTime: 0 });
+  const [timeState, setTimeState] = useState<TimeManagerState>({ 
+    isPlaying: false, 
+    elapsedTime: 0
+  });
+  const [timelineState, setTimelineState] = useState<TimelineState>({
+    tracks: [],
+    duration: 10,
+    scale: 100
+  });
 
-  const MASK_OFFSET_X = 25;
-  const MASK_OFFSET_Y = 25;
+  const MASK_OFFSET_X = 0;
+  const MASK_OFFSET_Y = 0;
+
+  // Memoize the time manager instance
+  const timeManager = useMemo(() => TimeManager.getInstance(), []);
+  const timelineManager = useMemo(() => TimelineManager.getInstance(), []);
+  const selectionManager = useMemo(() => SelectionManager.getInstance(), []);
 
   // Handle window dimensions
   useEffect(() => {
@@ -43,14 +60,14 @@ export default function EditorCanvas() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
-        setElements(elements => elements.filter(el => el.id !== selectedId));
-        setSelectedId(null);
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedElement) {
+        setElements(elements => elements.filter(el => el.id !== selectedElement.id));
+        setSelectedElement(null);
       }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [selectedId]);
+  }, [selectedElement]);
 
   const handleStageClick = (e: KonvaEventObject<MouseEvent>) => {
     const clickedEmpty = e.target === e.target.getStage();
@@ -68,7 +85,7 @@ export default function EditorCanvas() {
           y: pointer.y - 50,
           width: 100,
           height: 100,
-          fill: '#ffa500', // hex orange
+          fill: '#ffa500',
           radius: tool === 'circle' || tool === 'triangle' ? 70 : undefined,
           stroke: 'black',
           strokeWidth: 1,
@@ -82,13 +99,15 @@ export default function EditorCanvas() {
           shadowOpacity: 0.5,
           animations: [],
         };
+        
+        // Add element to canvas
         setElements(prevElements => [...prevElements, newElement]);
+        selectionManager.select(newElement);
         setTool('select');
-        setSelectedId(newId);
-        setMaskPos(null); // Reset mask after placing shape
+        setMaskPos(null);
       }
     } else if (clickedEmpty) {
-      setSelectedId(null);
+      selectionManager.select(null);
     }
   };
 
@@ -98,49 +117,67 @@ export default function EditorCanvas() {
     ));
   };
 
-  const selectedElement = elements.find(el => el.id === selectedId);
-
   const handleInspectorChange = (prop: string, value: string | number | boolean) => {
     setElements(elements =>
       elements.map(el =>
-        el.id === selectedId ? { ...el, [prop]: value } : el
+        el.id === selectedElement?.id ? { ...el, [prop]: value } : el
       )
     );
   };
 
-  // Subscribe to TimeManager updates
+  // Subscribe to time updates
   useEffect(() => {
-    const timeManager = TimeManager.getInstance();
-    const unsubscribe = timeManager.subscribe(setTimeState);
-    return () => unsubscribe();
-  }, []);
+    return timeManager.subscribe(setTimeState);
+  }, [timeManager]);
 
-  const handlePlayPause = () => {
-    const timeManager = TimeManager.getInstance();
-    const { isPlaying } = timeManager.getState();
-    if (isPlaying) {
+  // Subscribe to timeline updates
+  useEffect(() => {
+    return timelineManager.subscribe(setTimelineState);
+  }, [timelineManager]);
+
+  // Update tracks whenever elements change
+  useEffect(() => {
+    timelineManager.setTracks(elements);
+  }, [elements, timelineManager]);
+
+  // Subscribe to selection updates
+  useEffect(() => {
+    return selectionManager.subscribe(setSelectedElement);
+  }, [selectionManager]);
+
+  // Memoize the handleSelectElement function
+  const handleSelectElement = useCallback((id: string) => {
+    const element = elements.find(e => e.id === id) || null;
+    selectionManager.select(element);
+  }, [elements, selectionManager]);
+
+  // Memoize the handlePlayPause function
+  const handlePlayPause = useCallback(() => {
+    if (timeState.isPlaying) {
       timeManager.pause();
     } else {
       timeManager.play();
     }
-  };
+  }, [timeState.isPlaying, timeManager]);
 
-  const handleStop = () => {
-    TimeManager.getInstance().stop();
-  };
+  // Memoize the handleStop function
+  const handleStop = useCallback(() => {
+    timeManager.stop();
+  }, [timeManager]);
 
-  // Format time as MM:SS.ms
-  const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = Math.floor(seconds % 60);
-    const milliseconds = Math.floor((seconds % 1) * 100);
-    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(2, '0')}`;
-  };
+  // Memoize the handleAnimationClick function
+  const handleAnimationClick = useCallback((animation: AnimatedCanvasElement['animations'][0]) => {
+    // TODO: Show animation properties in inspector
+    console.log('Animation clicked:', animation);
+  }, []);
 
-  // Don't render the Canvas until we have dimensions
-  if (dimensions.width === 0 || dimensions.height === 0) {
-    return null;
-  }
+  // Memoize the formatTime function
+  const formatTime = useCallback((time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    const milliseconds = Math.floor((time % 1) * 1000);
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
+  }, []);
 
   // Mask overlay for shape placement
   const renderMask = () => {
@@ -261,10 +298,10 @@ export default function EditorCanvas() {
           {/* Konva Canvas */}
           <Canvas
             elements={elements}
-            selectedId={selectedId}
+            selectedId={selectedElement?.id || null}
             dimensions={dimensions}
             onStageClick={handleStageClick}
-            onElementSelect={setSelectedId}
+            onElementSelect={handleSelectElement}
             onElementDragEnd={handleElementDragEnd}
           />
         </main>
@@ -428,31 +465,37 @@ export default function EditorCanvas() {
       </div>
 
       {/* Timeline */}
-      <footer className="h-48 bg-gray-100 border-t border-gray-200 p-2 overflow-y-auto">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="font-semibold">Timeline</h3>
+      <footer className="h-60 border-t border-gray-200 bg-white">
+        <div className="h-8 border-b border-gray-200 flex items-center px-4">
           <div className="flex items-center gap-4">
-            <div className="text-base font-mono bg-white text-gray-600 px-3 py-1.5 rounded-md shadow-sm w-[120px] text-center">
+            <button
+              onClick={handlePlayPause}
+              className="w-20 h-6 flex items-center justify-center bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+            >
+              {timeState.isPlaying ? 'Pause' : 'Play'}
+            </button>
+            <button
+              onClick={handleStop}
+              className="w-20 h-6 flex items-center justify-center bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+            >
+              Stop
+            </button>
+            <div className="text-sm font-mono text-gray-700 w-32">
               {formatTime(timeState.elapsedTime)}
-            </div>
-            <div className="flex gap-2">
-              <button
-                className={`btn flex items-center gap-1 ${timeState.isPlaying ? 'bg-gray-100' : ''} w-[100px] justify-center`}
-                onClick={handlePlayPause}
-              >
-                <span>{timeState.isPlaying ? '⏸' : '▶'}</span>
-              </button>
-              <button
-                className="btn flex items-center gap-1 w-[100px] justify-center"
-                onClick={handleStop}
-              >
-                <span>⏹</span>
-              </button>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded border p-2">
-          <p>Timeline tracks will go here</p>
+        <div className="h-48 overflow-y-auto">
+          {elements.map(element => (
+            <TimelineTrackComponent
+              key={element.id}
+              element={element}
+              scale={timelineState.scale}
+              currentTime={timeState.elapsedTime}
+              isSelected={selectionManager.isSelected(element)}
+              onAnimationClick={handleAnimationClick}
+            />
+          ))}
         </div>
       </footer>
     </div>
