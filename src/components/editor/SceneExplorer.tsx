@@ -1,4 +1,4 @@
-import { AnimatedCanvasElement } from './Canvas';
+import { AnimatedCanvasElement } from '@/types/canvas';
 import { SelectionManager } from '@/lib/SelectionManager';
 
 interface SceneExplorerProps {

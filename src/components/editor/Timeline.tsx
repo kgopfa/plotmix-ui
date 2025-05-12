@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { TimelineTrack } from '@/components/timeline/TimelineTrack';
-import { AnimatedCanvasElement } from './Canvas';
+import { AnimatedCanvasElement } from '@/types/canvas';
 import { TimelineState } from '@/lib/types';
 import { TimeManagerState } from '@/lib/TimeManager';
 

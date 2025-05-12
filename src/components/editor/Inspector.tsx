@@ -1,4 +1,4 @@
-import { AnimatedCanvasElement } from './Canvas';
+import { AnimatedCanvasElement } from '@/types/canvas';
 
 interface InspectorProps {
   selectedElement: AnimatedCanvasElement | null;
