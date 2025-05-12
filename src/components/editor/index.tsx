@@ -246,15 +246,15 @@ export default function EditorCanvas() {
       prev.map((el) =>
         el.id === elementId
           ? {
-              ...el,
-              animations: el.animations.map((a) =>
-                a.id === animationId ? { ...a, ...update } : a
-              ),
-            }
+            ...el,
+            animations: el.animations.map((a) =>
+              a.id === animationId ? { ...a, ...update } : a
+            ),
+          }
           : el
       )
     );
-  };  
+  };
 
   return (
     <div className="flex flex-col h-screen w-screen">
@@ -365,6 +365,32 @@ export default function EditorCanvas() {
                   className="w-full px-2 py-1 border rounded"
                 />
               </label>
+              <button
+                type="button" // prevent form submit
+                onClick={(e) => {
+                  e.preventDefault(); // also prevent default just in case
+
+                  const newAnimation = {
+                    id: `${Date.now()}`,
+                    startTime: 0,
+                    duration: 2,
+                    properties: {},
+                    type: 'custom',
+                  };
+
+                  setElements((prev) =>
+                    prev.map((el) =>
+                      el.id === selectedElement.id
+                        ? { ...el, animations: [...el.animations, newAnimation] }
+                        : el
+                    )
+                  );
+                }}
+                className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                + Add Animation
+              </button>
+
               <label>
                 X:
                 <input
