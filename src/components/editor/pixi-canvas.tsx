@@ -59,6 +59,38 @@ export function PixiCanvas({
     graphics.fill(); // Apply the fill
   };
 
+  const drawSelectionOutline = (graphics: Graphics, shape: AnimatedCanvasElement) => {
+    graphics.clear();
+
+    graphics.stroke({
+      width: 3,
+      color: 'cyan',
+    });
+
+    switch (shape.type) {
+      case 'rectangle':
+        graphics.roundRect(0, 0, shape.width, shape.height, shape.cornerRadius || 0);
+        break;
+      case 'circle':
+        const radius = shape.radius || shape.width / 2;
+        graphics.ellipse(radius, radius, radius, radius);
+        break;
+      case 'triangle':
+        const r = shape.radius || shape.width / 2;
+        const points = [
+          { x: 0, y: r * 2 },
+          { x: r, y: 0 },
+          { x: r * 2, y: r * 2 },
+        ];
+        graphics.poly(points);
+        break;
+      default:
+        break;
+    }
+
+    graphics.stroke(); // Apply the stroke
+  };
+
   return (
     <Application
       width={dimensions.width}
@@ -91,7 +123,10 @@ export function PixiCanvas({
             onElementDragEnd(el.id, x, y);
           }}
         >
-          <pixiGraphics draw={(graphics) => drawShape(graphics, el)} />
+          <pixiGraphics draw={(g) => drawShape(g, el)} />
+          {el.id === selectedId && (
+            <pixiGraphics draw={(g) => drawSelectionOutline(g, el)} />
+          )}
         </pixiContainer>
       ))}
     </Application>
