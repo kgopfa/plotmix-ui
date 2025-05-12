@@ -1,5 +1,10 @@
 import { AnimatedCanvasElement } from '@/components/editor/Canvas';
 import { SelectionManager } from '@/lib/SelectionManager';
+import { AnimationBlock } from './AnimationBlock';
+
+const MAX_DURATION_SECONDS = 120;
+const PIXELS_PER_SECOND = 100; // scale
+const TIMELINE_WIDTH = MAX_DURATION_SECONDS * PIXELS_PER_SECOND; // 12000px
 
 interface TimelineTrackProps {
   element: AnimatedCanvasElement;
@@ -15,11 +20,11 @@ export function TimelineTrack({ element, scale, currentTime, isSelected, onAnima
   };
 
   return (
-    <div 
-      className={`h-8 flex items-center border-b border-gray-200 last:border-0 ${isSelected ? 'bg-blue-200' : ''} cursor-pointer`}
+    <div
+      className={`h-8 flex items-center border-b border-gray-200 ${isSelected ? 'bg-blue-200' : ''} cursor-pointer`}
     >
       {/* Track Label */}
-      <div 
+      <div
         className={`w-32 px-2 text-sm font-medium truncate ${isSelected ? 'text-blue-700' : 'text-gray-700'}`}
         onClick={handleTrackClick}
       >
@@ -27,38 +32,40 @@ export function TimelineTrack({ element, scale, currentTime, isSelected, onAnima
       </div>
 
       {/* Track Content */}
-      <div 
+      <div
         className="flex-1 relative h-full"
+        style={{ width: `${TIMELINE_WIDTH}px` }}
         onClick={handleTrackClick}
       >
-        {/* Time Markers */}
-        <div className="absolute inset-0 flex">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-full border-l border-gray-200"
-              style={{ width: `${scale}px` }}
-            />
-          ))}
+        {/* Time Ruler */}
+        <div className="absolute inset-0">
+          {Array.from({ length: 121 }).map((_, i) => {
+            return (
+              <div key={i}>
+              {i % 5 === 0 && (
+                <div
+                  key={i}
+                  className="absolute h-full border-l border-gray-200"
+                  style={{ left: `${i * scale}px`, width: 0 }}
+                />
+              )}
+              </div>
+            );
+          })}
         </div>
+
 
         {/* Animations */}
         {element.animations.map(animation => (
-          <div
+          <AnimationBlock
             key={animation.id}
-            className={`absolute top-1 bottom-1 rounded cursor-pointer transition-colors ${
-              isSelected ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'
-            }`}
-            style={{
-              left: `${animation.startTime * scale}px`,
-              width: `${animation.duration * scale}px`
-            }}
-            onClick={(e) => {
-              e.stopPropagation(); // Prevent track selection when clicking animation
-              onAnimationClick?.(animation);
-            }}
+            animation={animation}
+            scale={scale}
+            isSelected={isSelected}
+            onClick={() => onAnimationClick?.(animation)}
           />
         ))}
+
 
         {/* Playhead */}
         <div

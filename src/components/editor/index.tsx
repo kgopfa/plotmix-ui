@@ -8,7 +8,7 @@ import dynamic from 'next/dynamic';
 import { AnimatedCanvasElement } from './Canvas';
 import { TimeManager, type TimeManagerState } from '@/lib/TimeManager';
 import { TimelineManager } from '@/lib/TimelineManager';
-import { TimelineTrack as TimelineTrackComponent } from '@/components/timeline/TimelineTrack';
+import { TimelineTrack } from '@/components/timeline/TimelineTrack';
 import { TimelineState } from '@/lib/types';
 import { SelectionManager } from '@/lib/SelectionManager';
 
@@ -20,8 +20,8 @@ export default function EditorCanvas() {
   const [tool, setTool] = useState<'select' | 'rectangle' | 'circle' | 'triangle'>('select');
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [maskPos, setMaskPos] = useState<{ x: number, y: number } | null>(null);
-  const [timeState, setTimeState] = useState<TimeManagerState>({ 
-    isPlaying: false, 
+  const [timeState, setTimeState] = useState<TimeManagerState>({
+    isPlaying: false,
     elapsedTime: 0
   });
   const [timelineState, setTimelineState] = useState<TimelineState>({
@@ -82,7 +82,7 @@ export default function EditorCanvas() {
         const existingCount = elements.filter(el => el.type === tool).length;
         const newElement: AnimatedCanvasElement = {
           id: newId,
-          name: existingCount === 0 
+          name: existingCount === 0
             ? tool.charAt(0).toUpperCase() + tool.slice(1)
             : `${tool.charAt(0).toUpperCase() + tool.slice(1)} (${existingCount})`,
           type: tool,
@@ -104,7 +104,7 @@ export default function EditorCanvas() {
           shadowOpacity: 0.5,
           animations: [],
         };
-        
+
         // Add element to canvas
         setElements(prevElements => [...prevElements, newElement]);
         selectionManager.select(newElement);
@@ -263,9 +263,8 @@ export default function EditorCanvas() {
                   {elements.map(element => (
                     <li
                       key={element.id}
-                      className={`px-2 py-1 rounded cursor-pointer hover:bg-gray-200 hover:text-blue-600 ${
-                        selectionManager.isSelected(element) ? 'bg-blue-100 text-blue-600' : ''
-                      }`}
+                      className={`px-2 py-1 rounded cursor-pointer hover:bg-gray-200 hover:text-blue-600 ${selectionManager.isSelected(element) ? 'bg-blue-100 text-blue-600' : ''
+                        }`}
                       onClick={() => selectionManager.select(element)}
                     >
                       {element.name}
@@ -499,6 +498,7 @@ export default function EditorCanvas() {
 
       {/* Timeline */}
       <footer className="h-60 border-t border-gray-200 bg-white">
+        {/* Controls */}
         <div className="h-8 border-b border-gray-200 flex items-center px-4">
           <div className="flex items-center gap-4">
             <button
@@ -518,9 +518,39 @@ export default function EditorCanvas() {
             </div>
           </div>
         </div>
-        <div className="h-48 overflow-y-auto">
-          {elements.map(element => (
-            <TimelineTrackComponent
+
+        {/* Ruler */}
+        {/* Ruler */}
+        <div className="h-6 relative border-b border-gray-200">
+          {/* Empty label spacer (same width as element name column) */}
+          <div className="absolute top-0 left-0 h-full w-32" />
+
+          {/* Ticks start after the name column */}
+          <div className="absolute left-32 top-0 h-full w-full">
+            {Array.from({ length: 121 }).map((_, i) => {
+              const isMajor = i % 5 === 0;
+              return (
+                <div
+                  key={i}
+                  className="absolute h-full border-l border-gray-200"
+                  style={{ left: `${i * timelineState.scale}px`, width: 0 }}
+                >
+                  {isMajor && (
+                    <div className="absolute top-0 text-[10px] text-gray-500 font-mono translate-x-[-50%]">
+                      {formatTime(i)}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+
+        {/* Tracks */}
+        <div className="h-[calc(100%-56px)] overflow-y-auto">
+          {elements.map((element) => (
+            <TimelineTrack
               key={element.id}
               element={element}
               scale={timelineState.scale}
@@ -531,6 +561,8 @@ export default function EditorCanvas() {
           ))}
         </div>
       </footer>
+
+
     </div>
   );
 }
