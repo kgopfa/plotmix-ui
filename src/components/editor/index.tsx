@@ -2,9 +2,6 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import type { KonvaEventObject } from 'konva/lib/Node';
-import type { Stage as KonvaStage } from 'konva/lib/Stage';
-import dynamic from 'next/dynamic';
 import { TimeManager, type TimeManagerState } from '@/lib/TimeManager';
 import { TimelineManager } from '@/lib/TimelineManager';
 import { TimelineState } from '@/lib/types';
@@ -14,8 +11,9 @@ import { Inspector } from './Inspector';
 import { Timeline } from './Timeline';
 import { Toolbar } from './Toolbar';
 import { AnimatedCanvasElement } from '@/types/canvas';
+import { PixiCanvas } from './pixi-canvas';
+import { FederatedPointerEvent, Container } from 'pixi.js';
 
-const Canvas = dynamic(() => import('./Canvas'), { ssr: false });
 
 export default function EditorCanvas() {
   const [elements, setElements] = useState<AnimatedCanvasElement[]>([]);
@@ -44,12 +42,16 @@ export default function EditorCanvas() {
   // Handle window dimensions
   useEffect(() => {
     const updateDimensions = () => {
-      const newDimensions = {
-        width: window.innerWidth - 64 * 2, // account for sidebars
-        height: window.innerHeight - 12 - 160, // top bar and timeline
-      };
-      setDimensions(newDimensions);
+      const sidebarWidth = 288; // w-72 in Tailwind
+      const topBarHeight = 48; // h-12
+      const timelineHeight = 160; // estimated height of timeline
+
+      setDimensions({
+        width: window.innerWidth - sidebarWidth * 2,
+        height: window.innerHeight - topBarHeight - timelineHeight,
+      });
     };
+
 
     // Initial dimensions
     updateDimensions();
@@ -72,52 +74,83 @@ export default function EditorCanvas() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [selectedElement]);
 
-  const handleStageClick = (e: KonvaEventObject<MouseEvent>) => {
-    const clickedEmpty = e.target === e.target.getStage();
+  const createNewElement = (
+    type: 'rectangle' | 'circle' | 'triangle',
+    x: number,
+    y: number,
+    elements: AnimatedCanvasElement[]
+  ): AnimatedCanvasElement => {
+    console.log('Creating element:', { type, x, y, elementsCount: elements.length });
+    
+    const newId = `${type}-${elements.length + 1}`;
+    const existingCount = elements.filter(el => el.type === type).length;
+    console.log('Element counts:', { newId, existingCount });
+  
+    return {
+      id: newId,
+      name:
+        existingCount === 0
+          ? type.charAt(0).toUpperCase() + type.slice(1)
+          : `${type.charAt(0).toUpperCase() + type.slice(1)} (${existingCount})`,
+      type,
+      x: x - 50,
+      y: y - 50,
+      width: 100,
+      height: 100,
+      fill: '#ffa500',
+      radius: type === 'circle' || type === 'triangle' ? 70 : undefined,
+      stroke: 'black',
+      strokeWidth: 1,
+      cornerRadius: type === 'rectangle' ? 0 : undefined,
+      opacity: 1,
+      shadowEnabled: false,
+      shadowColor: 'black',
+      shadowBlur: 0,
+      shadowOffsetX: 10,
+      shadowOffsetY: 10,
+      shadowOpacity: 0.5,
+      animations: [],
+    };
+  }
 
-    if ((tool === 'rectangle' || tool === 'circle' || tool === 'triangle') && clickedEmpty) {
-      const stage = e.target.getStage() as KonvaStage;
-      const pointer = stage.getPointerPosition();
+  const canvasClickHandler = (e: FederatedPointerEvent) => {
+    console.log('Canvas clicked:', { 
+      target: e.target, 
+      targetName: (e.target as Container)?.name,
+      tool, 
+      globalX: e.global.x, 
+      globalY: e.global.y,
+      currentElements: elements.length
+    });
+    
+    const isEmptyClick = !(e.target && (e.target as Container).name === 'shape');
+    console.log('Is empty click:', isEmptyClick, 'Target name:', (e.target as Container)?.name);
 
-      if (pointer) {
-        const newId = `${tool}-${elements.length + 1}`;
-        // Count existing shapes of the same type
-        const existingCount = elements.filter(el => el.type === tool).length;
-        const newElement: AnimatedCanvasElement = {
-          id: newId,
-          name: existingCount === 0
-            ? tool.charAt(0).toUpperCase() + tool.slice(1)
-            : `${tool.charAt(0).toUpperCase() + tool.slice(1)} (${existingCount})`,
-          type: tool,
-          x: pointer.x - 50,
-          y: pointer.y - 50,
-          width: 100,
-          height: 100,
-          fill: '#ffa500',
-          radius: tool === 'circle' || tool === 'triangle' ? 70 : undefined,
-          stroke: 'black',
-          strokeWidth: 1,
-          cornerRadius: tool === 'rectangle' ? 0 : undefined,
-          opacity: 1,
-          shadowEnabled: false,
-          shadowColor: 'black',
-          shadowBlur: 0,
-          shadowOffsetX: 10,
-          shadowOffsetY: 10,
-          shadowOpacity: 0.5,
-          animations: [],
-        };
-
-        // Add element to canvas
-        setElements(prevElements => [...prevElements, newElement]);
-        selectionManager.select(newElement);
-        setTool('select');
-        setMaskPos(null);
-      }
-    } else if (clickedEmpty) {
+    if (
+      isEmptyClick &&
+      (tool === 'rectangle' || tool === 'circle' || tool === 'triangle')
+    ) {
+      console.log('Creating new element:', { tool, x: e.global.x, y: e.global.y });
+      const newElement = createNewElement(tool, e.global.x, e.global.y, elements);
+      console.log('New element created:', newElement);
+      
+      setElements(prev => {
+        console.log('Previous elements:', prev);
+        const newElements = [...prev, newElement];
+        console.log('Updated elements:', newElements);
+        return newElements;
+      });
+      selectionManager.select(newElement);
+      setTool('select');
+      setMaskPos(null);
+    } else if (isEmptyClick) {
+      console.log('Empty click - deselecting');
       selectionManager.select(null);
+    } else {
+      console.log('Click on existing shape - no new element created');
     }
-  };
+  }
+  
 
   const handleElementDragEnd = (id: string, x: number, y: number) => {
     setElements(elements.map((el) =>
@@ -299,15 +332,17 @@ export default function EditorCanvas() {
 
           {renderMask()}
 
-          {/* Konva Canvas */}
-          <Canvas
-            elements={elements}
-            selectedId={selectedElement?.id || null}
-            dimensions={dimensions}
-            onStageClick={handleStageClick}
-            onElementSelect={handleSelectElement}
-            onElementDragEnd={handleElementDragEnd}
-          />
+          {dimensions.width > 0 && dimensions.height > 0 && (
+            <PixiCanvas
+              dimensions={dimensions}
+              elements={elements}
+              selectedId={selectedElement?.id || null}
+              onElementSelect={handleSelectElement}
+              onElementDragEnd={handleElementDragEnd}
+              onCanvasClick={canvasClickHandler}
+            />
+          )}
+
         </main>
 
         <Inspector
