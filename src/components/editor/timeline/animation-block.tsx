@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { ElementAnimation } from '@/components/editor/Canvas';
+import { ElementAnimation } from '@/types/canvas';
 
 interface AnimationBlockProps {
   animation: ElementAnimation;

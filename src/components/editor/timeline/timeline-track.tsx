@@ -1,6 +1,6 @@
-import { AnimatedCanvasElement } from '@/components/editor/Canvas';
+import { AnimatedCanvasElement } from '@/types/canvas';
 import { SelectionManager } from '@/lib/SelectionManager';
-import { AnimationBlock } from './AnimationBlock';
+import { AnimationBlock } from './animation-block';
 
 const MAX_DURATION_SECONDS = 120;
 const PIXELS_PER_SECOND = 100;

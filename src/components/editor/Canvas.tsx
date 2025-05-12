@@ -1,121 +1,160 @@
 'use client';
 
-import { Stage, Layer, Rect, Circle, RegularPolygon, Transformer } from 'react-konva';
-import type { KonvaEventObject } from 'konva/lib/Node';
-import type { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
-import type { Circle as KonvaCircle } from 'konva/lib/shapes/Circle';
-import type { RegularPolygon as KonvaRegularPolygon } from 'konva/lib/shapes/RegularPolygon';
-import type { Transformer as KonvaTransformer } from 'konva/lib/shapes/Transformer';
-import { useRef, useEffect } from 'react';
-import { AnimatedCanvasElement, CanvasElement } from '@/types/canvas';
+import { Application, extend } from '@pixi/react';
+import { Container, Graphics } from 'pixi.js';
+import type { FederatedPointerEvent } from 'pixi.js';
+import type { AnimatedCanvasElement } from '@/types/canvas';
+import { useState } from 'react';
 
+// Register PixiJS components with @pixi/react
+extend({ Container, Graphics });
 
 interface CanvasProps {
+  dimensions: { width: number; height: number };
   elements: AnimatedCanvasElement[];
   selectedId: string | null;
-  dimensions: { width: number; height: number };
-  onStageClick: (e: KonvaEventObject<MouseEvent>) => void;
-  onElementSelect: (id: string) => void;
+  onElementSelect: (id: string | null) => void;
   onElementDragEnd: (id: string, x: number, y: number) => void;
+  onCanvasClick: (e: FederatedPointerEvent) => void;
 }
 
-export default function Canvas({
+export function Canvas({
+  dimensions,
   elements,
   selectedId,
-  dimensions,
-  onStageClick,
   onElementSelect,
   onElementDragEnd,
+  onCanvasClick,
 }: CanvasProps) {
-  const transformerRef = useRef<KonvaTransformer>(null);
-  const shapeRefs = useRef<Record<string, KonvaRect | KonvaCircle | KonvaRegularPolygon>>({});
+  // Function to draw shapes based on element type
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
 
-  useEffect(() => {
-    if (selectedId && transformerRef.current && shapeRefs.current[selectedId]) {
-      transformerRef.current.nodes([shapeRefs.current[selectedId]]);
-      transformerRef.current.getLayer()?.batchDraw();
-    } else if (transformerRef.current) {
-      // Detach transformer if nothing is selected
-      transformerRef.current.nodes([]);
-      transformerRef.current.getLayer()?.batchDraw();
-    }
-  }, [selectedId]);
+  const handlePointerDown = (id: string, shapeX: number, shapeY: number) => (e: FederatedPointerEvent) => {
+    const pos = e.global;
+    setDraggingId(id);
+    onElementSelect(id);
+    setDragOffset({ x: pos.x - shapeX, y: pos.y - shapeY });
+  };
+  
+  const handlePointerUp = () => {
+    setDraggingId(null);
+    setDragOffset(null);
+  };
 
-  const renderShape = (el: CanvasElement) => {
-    const commonProps = {
-      ref: (node: KonvaRect | KonvaCircle | KonvaRegularPolygon | null) => {
-        if (node) {
-          shapeRefs.current[el.id] = node;
-        }
-      },
-      x: el.x,
-      y: el.y,
-      fill: el.fill,
-      draggable: true,
-      stroke: el.stroke,
-      strokeWidth: el.strokeWidth,
-      opacity: el.opacity,
-      onClick: () => onElementSelect(el.id),
-      onDragEnd: (e: KonvaEventObject<DragEvent>) => {
-        onElementDragEnd(el.id, e.target.x(), e.target.y());
-      },
-    };
+  const handleDragMove = (id: string) => (e: FederatedPointerEvent) => {
+    if (draggingId !== id || !dragOffset) return;
+    const pos = e.global;
+    onElementDragEnd(id, pos.x - dragOffset.x, pos.y - dragOffset.y);
+  };
+  
 
-    const shadowProps = el.shadowEnabled
-      ? {
-          shadowColor: el.shadowColor,
-          shadowBlur: el.shadowBlur,
-          shadowOffset: { x: el.shadowOffsetX ?? 0, y: el.shadowOffsetY ?? 0 },
-          shadowOpacity: el.shadowOpacity,
-        }
-      : {};
+  const drawShape = (graphics: Graphics, shape: AnimatedCanvasElement) => {
+    graphics.clear();
 
-    switch (el.type) {
+    // Set fill style
+    graphics.fill({ color: shape.fill, alpha: shape.opacity });
+
+    switch (shape.type) {
       case 'rectangle':
-        return (
-          <Rect
-            key={el.id}
-            {...commonProps}
-            width={el.width}
-            height={el.height}
-            cornerRadius={el.cornerRadius ?? 0}
-            {...shadowProps}
-          />
-        );
+        // Use roundRect for rectangles with optional corner radius
+        graphics.roundRect(0, 0, shape.width, shape.height, shape.cornerRadius || 0);
+        break;
       case 'circle':
-        return (
-          <Circle
-            key={el.id}
-            {...commonProps}
-            radius={el.radius ?? el.width / 2}
-            {...shadowProps}
-          />
-        );
+        // Use ellipse for circles
+        const radius = shape.radius || shape.width / 2;
+        graphics.ellipse(radius, radius, radius, radius);
+        break;
       case 'triangle':
-        return (
-          <RegularPolygon
-            key={el.id}
-            {...commonProps}
-            sides={3}
-            radius={el.radius ?? el.width / 2}
-            {...shadowProps}
-          />
-        );
+        // Define points for an equilateral triangle
+        const r = shape.radius || shape.width / 2;
+        const points = [
+          { x: 0, y: r * 2 },
+          { x: r, y: 0 },
+          { x: r * 2, y: r * 2 },
+        ];
+        graphics.poly(points);
+        break;
       default:
-        return null;
+        break;
     }
+
+    graphics.fill(); // Apply the fill
+  };
+
+  const drawSelectionOutline = (graphics: Graphics, shape: AnimatedCanvasElement) => {
+    graphics.clear();
+
+    graphics.stroke({
+      width: 3,
+      color: 'cyan',
+    });
+
+    switch (shape.type) {
+      case 'rectangle':
+        graphics.roundRect(0, 0, shape.width, shape.height, shape.cornerRadius || 0);
+        break;
+      case 'circle':
+        const radius = shape.radius || shape.width / 2;
+        graphics.ellipse(radius, radius, radius, radius);
+        break;
+      case 'triangle':
+        const r = shape.radius || shape.width / 2;
+        const points = [
+          { x: 0, y: r * 2 },
+          { x: r, y: 0 },
+          { x: r * 2, y: r * 2 },
+        ];
+        graphics.poly(points);
+        break;
+      default:
+        break;
+    }
+
+    graphics.stroke(); // Apply the stroke
   };
 
   return (
-    <Stage
+    <Application
       width={dimensions.width}
       height={dimensions.height}
-      onMouseDown={onStageClick}
+      backgroundColor={0xFFFFFF}
     >
-      <Layer>
-        {elements.map(renderShape)}
-        <Transformer ref={transformerRef} />
-      </Layer>
-    </Stage>
+      {/* Full-size transparent interactive layer to capture background clicks */}
+      <pixiGraphics
+        draw={(g) => {
+          g.clear();
+          g.rect(0, 0, dimensions.width, dimensions.height);
+          g.fill({ color: 0xFFFFFF, alpha: 0 });
+        }}
+        interactive={true}
+        eventMode="static"
+        onPointerDown={(e: FederatedPointerEvent) => {
+          onElementSelect(null);
+          onCanvasClick(e);
+        }}
+        onPointerMove={handleDragMove(draggingId ?? '')}
+      />
+
+      {elements.map((el) => (
+        <pixiContainer
+          key={el.id}
+          x={el.x}
+          y={el.y}
+          interactive={true}
+          eventMode="dynamic"
+          cursor="move"
+          onPointerDown={handlePointerDown(el.id, el.x, el.y)}
+          onPointerUp={handlePointerUp}
+          onPointerUpOutside={handlePointerUp}
+          onPointerMove={handleDragMove(el.id)}
+        >
+          <pixiGraphics draw={(g) => drawShape(g, el)} />
+          {el.id === selectedId && (
+            <pixiGraphics draw={(g) => drawSelectionOutline(g, el)} />
+          )}
+        </pixiContainer>
+      ))}
+    </Application>
   );
-} 
+}

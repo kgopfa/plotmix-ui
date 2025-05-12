@@ -6,12 +6,12 @@ import { TimeManager, type TimeManagerState } from '@/lib/TimeManager';
 import { TimelineManager } from '@/lib/TimelineManager';
 import { TimelineState } from '@/lib/types';
 import { SelectionManager } from '@/lib/SelectionManager';
-import { SceneExplorer } from './SceneExplorer';
-import { Inspector } from './Inspector';
-import { Timeline } from './Timeline';
-import { Toolbar } from './Toolbar';
+import { SceneExplorer } from './scene-explorer';
+import { Inspector } from './inspector';
+import { Timeline } from './timeline';
+import { Toolbar } from './toolbar';
 import { AnimatedCanvasElement } from '@/types/canvas';
-import { PixiCanvas } from './pixi-canvas';
+import { Canvas } from './canvas';
 import { FederatedPointerEvent, Container } from 'pixi.js';
 
 
@@ -333,7 +333,7 @@ export default function EditorCanvas() {
           {renderMask()}
 
           {dimensions.width > 0 && dimensions.height > 0 && (
-            <PixiCanvas
+            <Canvas
               dimensions={dimensions}
               elements={elements}
               selectedId={selectedElement?.id || null}
