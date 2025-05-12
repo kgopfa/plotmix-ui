@@ -1,22 +1,29 @@
-import React, { useRef, useState } from 'react';
-import { ElementAnimation } from '../editor/Canvas';
+import React, { useRef } from 'react';
+import { ElementAnimation } from '@/components/editor/Canvas';
 
-interface DraggableAnimationBlockProps {
+interface AnimationBlockProps {
   animation: ElementAnimation;
   scale: number;
   isSelected: boolean;
   onClick?: () => void;
+  onChange?: (update: { startTime: number; duration: number }) => void;
 }
 
-export const AnimationBlock: React.FC<DraggableAnimationBlockProps> = ({ animation, scale, isSelected, onClick }) => {
-  const [left, setLeft] = useState(animation.startTime * scale);
-  const [width, setWidth] = useState(animation.duration * scale);
-
+export const AnimationBlock: React.FC<AnimationBlockProps> = ({
+  animation,
+  scale,
+  isSelected,
+  onClick,
+  onChange,
+}) => {
   const isDragging = useRef(false);
   const isResizing = useRef(false);
   const dragStartX = useRef(0);
   const initialLeft = useRef(0);
   const initialWidth = useRef(0);
+
+  const left = animation.startTime * scale;
+  const width = animation.duration * scale;
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -41,13 +48,25 @@ export const AnimationBlock: React.FC<DraggableAnimationBlockProps> = ({ animati
   const handleDrag = (e: MouseEvent) => {
     if (!isDragging.current) return;
     const delta = e.clientX - dragStartX.current;
-    setLeft(Math.max(0, initialLeft.current + delta));
+    const newLeft = Math.max(0, initialLeft.current + delta);
+    const newStartTime = newLeft / scale;
+
+    onChange?.({
+      startTime: Math.min(newStartTime, 120 - animation.duration),
+      duration: animation.duration,
+    });
   };
 
   const handleResize = (e: MouseEvent) => {
     if (!isResizing.current) return;
     const delta = e.clientX - dragStartX.current;
-    setWidth(Math.max(20, initialWidth.current + delta));
+    const newWidth = Math.max(20, initialWidth.current + delta); // min 20px
+    const newDuration = newWidth / scale;
+
+    onChange?.({
+      startTime: animation.startTime,
+      duration: Math.min(newDuration, 120 - animation.startTime),
+    });
   };
 
   const handleMouseUp = () => {
@@ -67,6 +86,7 @@ export const AnimationBlock: React.FC<DraggableAnimationBlockProps> = ({ animati
       onMouseDown={handleMouseDown}
       onClick={onClick}
     >
+      {/* Resize Handle */}
       <div
         className="absolute right-0 top-0 bottom-0 w-2 bg-blue-700 cursor-ew-resize"
         onMouseDown={handleResizeMouseDown}

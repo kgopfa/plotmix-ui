@@ -3,8 +3,8 @@ import { SelectionManager } from '@/lib/SelectionManager';
 import { AnimationBlock } from './AnimationBlock';
 
 const MAX_DURATION_SECONDS = 120;
-const PIXELS_PER_SECOND = 100; // scale
-const TIMELINE_WIDTH = MAX_DURATION_SECONDS * PIXELS_PER_SECOND; // 12000px
+const PIXELS_PER_SECOND = 100;
+const TIMELINE_WIDTH = MAX_DURATION_SECONDS * PIXELS_PER_SECOND;
 
 interface TimelineTrackProps {
   element: AnimatedCanvasElement;
@@ -12,9 +12,21 @@ interface TimelineTrackProps {
   currentTime: number;
   isSelected: boolean;
   onAnimationClick?: (animation: AnimatedCanvasElement['animations'][0]) => void;
+  onAnimationChange: (
+    elementId: string,
+    animationId: string,
+    update: { startTime: number; duration: number }
+  ) => void;
 }
 
-export function TimelineTrack({ element, scale, currentTime, isSelected, onAnimationClick }: TimelineTrackProps) {
+export function TimelineTrack({
+  element,
+  scale,
+  currentTime,
+  isSelected,
+  onAnimationClick,
+  onAnimationChange,
+}: TimelineTrackProps) {
   const handleTrackClick = () => {
     SelectionManager.getInstance().select(element);
   };
@@ -37,35 +49,32 @@ export function TimelineTrack({ element, scale, currentTime, isSelected, onAnima
         style={{ width: `${TIMELINE_WIDTH}px` }}
         onClick={handleTrackClick}
       >
-        {/* Time Ruler */}
+        {/* Optional internal ticks (could be removed since ruler handles it) */}
         <div className="absolute inset-0">
           {Array.from({ length: 121 }).map((_, i) => {
             return (
-              <div key={i}>
-              {i % 5 === 0 && (
+              i % 5 === 0 && (
                 <div
                   key={i}
                   className="absolute h-full border-l border-gray-200"
                   style={{ left: `${i * scale}px`, width: 0 }}
                 />
-              )}
-              </div>
+              )
             );
           })}
         </div>
 
-
         {/* Animations */}
-        {element.animations.map(animation => (
+        {element.animations.map((animation) => (
           <AnimationBlock
             key={animation.id}
             animation={animation}
             scale={scale}
             isSelected={isSelected}
             onClick={() => onAnimationClick?.(animation)}
+            onChange={(update) => onAnimationChange(element.id, animation.id, update)}
           />
         ))}
-
 
         {/* Playhead */}
         <div
@@ -75,4 +84,4 @@ export function TimelineTrack({ element, scale, currentTime, isSelected, onAnima
       </div>
     </div>
   );
-} 
+}

@@ -170,12 +170,6 @@ export default function EditorCanvas() {
     timeManager.stop();
   }, [timeManager]);
 
-  // Memoize the handleAnimationClick function
-  const handleAnimationClick = useCallback((animation: AnimatedCanvasElement['animations'][0]) => {
-    // TODO: Show animation properties in inspector
-    console.log('Animation clicked:', animation);
-  }, []);
-
   // Memoize the formatTime function
   const formatTime = useCallback((time: number) => {
     const minutes = Math.floor(time / 60);
@@ -243,6 +237,24 @@ export default function EditorCanvas() {
     }
   };
 
+  const handleAnimationChange = (
+    elementId: string,
+    animationId: string,
+    update: { startTime: number; duration: number }
+  ) => {
+    setElements((prev) =>
+      prev.map((el) =>
+        el.id === elementId
+          ? {
+              ...el,
+              animations: el.animations.map((a) =>
+                a.id === animationId ? { ...a, ...update } : a
+              ),
+            }
+          : el
+      )
+    );
+  };  
 
   return (
     <div className="flex flex-col h-screen w-screen">
@@ -567,7 +579,7 @@ export default function EditorCanvas() {
                 scale={timelineState.scale}
                 currentTime={timeState.elapsedTime}
                 isSelected={selectionManager.isSelected(element)}
-                onAnimationClick={handleAnimationClick}
+                onAnimationChange={handleAnimationChange}
               />
             ))}
           </div>
