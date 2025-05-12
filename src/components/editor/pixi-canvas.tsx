@@ -28,10 +28,10 @@ export function PixiCanvas({
   // Function to draw shapes based on element type
   const drawShape = (graphics: Graphics, shape: AnimatedCanvasElement) => {
     graphics.clear();
-  
+
     // Set fill style
     graphics.fill({ color: shape.fill, alpha: shape.opacity });
-  
+
     switch (shape.type) {
       case 'rectangle':
         // Use roundRect for rectangles with optional corner radius
@@ -55,7 +55,7 @@ export function PixiCanvas({
       default:
         break;
     }
-  
+
     graphics.fill(); // Apply the fill
   };
 
@@ -63,7 +63,7 @@ export function PixiCanvas({
     <Application
       width={dimensions.width}
       height={dimensions.height}
-      backgroundColor={'blue'}
+      backgroundColor={0xFFFFFF}
     >
       {/* Full-size transparent interactive layer to capture background clicks */}
       <pixiGraphics
@@ -73,6 +73,7 @@ export function PixiCanvas({
           g.fill({ color: 0xFFFFFF, alpha: 0 });
         }}
         interactive={true}
+        eventMode="static"
         onPointerDown={onCanvasClick}
       />
 
@@ -81,7 +82,8 @@ export function PixiCanvas({
           key={el.id}
           x={el.x}
           y={el.y}
-          interactive
+          interactive={true}
+          eventMode="static"
           cursor="pointer"
           onPointerDown={() => onElementSelect(el.id)}
           onPointerUp={(e: FederatedPointerEvent) => {
