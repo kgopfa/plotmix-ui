@@ -1,7 +1,7 @@
 // app/layout.tsx or pages/index.tsx depending on routing
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import type { Stage as KonvaStage } from 'konva/lib/Stage';
 import dynamic from 'next/dynamic';
@@ -233,6 +233,16 @@ export default function EditorCanvas() {
     }
     return null;
   };
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [scrollLeft, setScrollLeft] = useState(0);
+
+  const handleScroll = () => {
+    if (scrollContainerRef.current) {
+      setScrollLeft(scrollContainerRef.current.scrollLeft);
+    }
+  };
+
 
   return (
     <div className="flex flex-col h-screen w-screen">
@@ -519,50 +529,50 @@ export default function EditorCanvas() {
           </div>
         </div>
 
-        {/* Ruler */}
-        {/* Ruler */}
-        <div className="h-6 relative border-b border-gray-200">
-          {/* Empty label spacer (same width as element name column) */}
-          <div className="absolute top-0 left-0 h-full w-32" />
-
-          {/* Ticks start after the name column */}
-          <div className="absolute left-32 top-0 h-full w-full">
-            {Array.from({ length: 121 }).map((_, i) => {
-              const isMajor = i % 5 === 0;
-              return (
-                <div
-                  key={i}
-                  className="absolute h-full border-l border-gray-200"
-                  style={{ left: `${i * timelineState.scale}px`, width: 0 }}
-                >
-                  {isMajor && (
-                    <div className="absolute top-0 text-[10px] text-gray-500 font-mono translate-x-[-50%]">
-                      {formatTime(i)}
+        {/* Scrollable timeline container (ruler + tracks) */}
+        <div className="h-[calc(100%-56px)] overflow-y-auto">
+          <div
+            className="relative w-max"
+            style={{ width: `${timelineState.scale * 120 + 128}px` }} // 128 = w-32 name column
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+          >
+            {/* Ruler (scrolls with timeline) */}
+            <div className="h-6 relative border-b border-gray-200">
+              <div className="absolute top-0 left-32 h-full w-full" style={{ transform: `translateX(-${scrollLeft}px)` }}>
+                {Array.from({ length: 121 }).map((_, i) => {
+                  const isMajor = i % 5 === 0;
+                  return (
+                    <div
+                      key={i}
+                      className="absolute h-full border-l border-gray-200"
+                      style={{ left: `${i * timelineState.scale}px`, width: 0 }}
+                    >
+                      {isMajor && (
+                        <div className="absolute top-0 text-[10px] text-gray-500 font-mono translate-x-[-50%]">
+                          {formatTime(i)}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Tracks */}
+            {elements.map((element) => (
+              <TimelineTrack
+                key={element.id}
+                element={element}
+                scale={timelineState.scale}
+                currentTime={timeState.elapsedTime}
+                isSelected={selectionManager.isSelected(element)}
+                onAnimationClick={handleAnimationClick}
+              />
+            ))}
           </div>
         </div>
-
-
-        {/* Tracks */}
-        <div className="h-[calc(100%-56px)] overflow-y-auto">
-          {elements.map((element) => (
-            <TimelineTrack
-              key={element.id}
-              element={element}
-              scale={timelineState.scale}
-              currentTime={timeState.elapsedTime}
-              isSelected={selectionManager.isSelected(element)}
-              onAnimationClick={handleAnimationClick}
-            />
-          ))}
-        </div>
       </footer>
-
-
     </div>
   );
 }
