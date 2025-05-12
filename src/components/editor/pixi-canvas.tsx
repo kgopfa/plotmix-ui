@@ -4,6 +4,7 @@ import { Application, extend } from '@pixi/react';
 import { Container, Graphics } from 'pixi.js';
 import type { FederatedPointerEvent } from 'pixi.js';
 import type { AnimatedCanvasElement } from '@/types/canvas';
+import { useState } from 'react';
 
 // Register PixiJS components with @pixi/react
 extend({ Container, Graphics });
@@ -26,6 +27,31 @@ export function PixiCanvas({
   onCanvasClick,
 }: PixiCanvasProps) {
   // Function to draw shapes based on element type
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
+
+
+  const handlePointerDown = (id: string, shapeX: number, shapeY: number) => (e: FederatedPointerEvent) => {
+    const pos = e.global;
+    setDraggingId(id);
+    onElementSelect(id);
+    setDragOffset({ x: pos.x - shapeX, y: pos.y - shapeY });
+  };
+  
+  
+  const handlePointerUp = () => {
+    setDraggingId(null);
+    setDragOffset(null);
+  };
+  
+  
+  const handlePointerMove = (id: string) => (e: FederatedPointerEvent) => {
+    if (draggingId !== id || !dragOffset) return;
+    const pos = e.global;
+    onElementDragEnd(id, pos.x - dragOffset.x, pos.y - dragOffset.y);
+  };
+   
+
   const drawShape = (graphics: Graphics, shape: AnimatedCanvasElement) => {
     graphics.clear();
 
@@ -115,13 +141,12 @@ export function PixiCanvas({
           x={el.x}
           y={el.y}
           interactive={true}
-          eventMode="static"
-          cursor="pointer"
-          onPointerDown={() => onElementSelect(el.id)}
-          onPointerUp={(e: FederatedPointerEvent) => {
-            const { x, y } = e.currentTarget as Container;
-            onElementDragEnd(el.id, x, y);
-          }}
+          eventMode="dynamic"
+          cursor="move"
+          onPointerDown={handlePointerDown(el.id, el.x, el.y)}
+          onPointerUp={handlePointerUp}
+          onPointerUpOutside={handlePointerUp}
+          onPointerMove={handlePointerMove(el.id)}
         >
           <pixiGraphics draw={(g) => drawShape(g, el)} />
           {el.id === selectedId && (
