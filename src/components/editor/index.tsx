@@ -1,16 +1,19 @@
 // app/layout.tsx or pages/index.tsx depending on routing
 'use client';
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import type { Stage as KonvaStage } from 'konva/lib/Stage';
 import dynamic from 'next/dynamic';
 import { AnimatedCanvasElement } from './Canvas';
 import { TimeManager, type TimeManagerState } from '@/lib/TimeManager';
 import { TimelineManager } from '@/lib/TimelineManager';
-import { TimelineTrack } from '@/components/timeline/TimelineTrack';
 import { TimelineState } from '@/lib/types';
 import { SelectionManager } from '@/lib/SelectionManager';
+import { SceneExplorer } from './SceneExplorer';
+import { Inspector } from './Inspector';
+import { Timeline } from './Timeline';
+import { Toolbar } from './Toolbar';
 
 const Canvas = dynamic(() => import('./Canvas'), { ssr: false });
 
@@ -170,13 +173,43 @@ export default function EditorCanvas() {
     timeManager.stop();
   }, [timeManager]);
 
-  // Memoize the formatTime function
-  const formatTime = useCallback((time: number) => {
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    const milliseconds = Math.floor((time % 1) * 1000);
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
-  }, []);
+  // Remove unused scroll-related code
+  const handleAnimationChange = (
+    elementId: string,
+    animationId: string,
+    update: { startTime: number; duration: number }
+  ) => {
+    setElements((prev) =>
+      prev.map((el) =>
+        el.id === elementId
+          ? {
+            ...el,
+            animations: el.animations.map((a) =>
+              a.id === animationId ? { ...a, ...update } : a
+            ),
+          }
+          : el
+      )
+    );
+  };
+
+  const handleAddAnimation = (elementId: string) => {
+    const newAnimation = {
+      id: `${Date.now()}`,
+      startTime: 0,
+      duration: 2,
+      properties: {},
+      type: 'custom',
+    };
+
+    setElements((prev) =>
+      prev.map((el) =>
+        el.id === elementId
+          ? { ...el, animations: [...el.animations, newAnimation] }
+          : el
+      )
+    );
+  };
 
   // Mask overlay for shape placement
   const renderMask = () => {
@@ -228,34 +261,6 @@ export default function EditorCanvas() {
     return null;
   };
 
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [scrollLeft, setScrollLeft] = useState(0);
-
-  const handleScroll = () => {
-    if (scrollContainerRef.current) {
-      setScrollLeft(scrollContainerRef.current.scrollLeft);
-    }
-  };
-
-  const handleAnimationChange = (
-    elementId: string,
-    animationId: string,
-    update: { startTime: number; duration: number }
-  ) => {
-    setElements((prev) =>
-      prev.map((el) =>
-        el.id === elementId
-          ? {
-            ...el,
-            animations: el.animations.map((a) =>
-              a.id === animationId ? { ...a, ...update } : a
-            ),
-          }
-          : el
-      )
-    );
-  };
-
   return (
     <div className="flex flex-col h-screen w-screen">
       {/* Options Bar */}
@@ -274,32 +279,7 @@ export default function EditorCanvas() {
 
       {/* Main Body */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Scene Explorer */}
-        <aside className="w-72 min-w-48 max-w-xs bg-gray-50 border-r border-gray-200 p-2 overflow-y-auto text-gray-800">
-          <h3 className="font-semibold mb-2">Scenes</h3>
-          <ul>
-            <li>
-              <details open>
-                <summary className="cursor-pointer hover:bg-gray-200 px-2 py-1 rounded">Scene 1</summary>
-                <ul className="ml-4 mt-1 space-y-1">
-                  {elements.map(element => (
-                    <li
-                      key={element.id}
-                      className={`px-2 py-1 rounded cursor-pointer hover:bg-gray-200 hover:text-blue-600 ${selectionManager.isSelected(element) ? 'bg-blue-100 text-blue-600' : ''
-                        }`}
-                      onClick={() => selectionManager.select(element)}
-                    >
-                      {element.name}
-                    </li>
-                  ))}
-                  {elements.length === 0 && (
-                    <li className="text-sm text-gray-500 italic">No shapes added yet</li>
-                  )}
-                </ul>
-              </details>
-            </li>
-          </ul>
-        </aside>
+        <SceneExplorer elements={elements} selectionManager={selectionManager} />
 
         {/* Canvas + Element Toolbar */}
         <main
@@ -315,30 +295,7 @@ export default function EditorCanvas() {
           }}
           onMouseLeave={() => setMaskPos(null)}
         >
-          {/* Floating Toolbar */}
-          <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-white shadow rounded flex gap-2 p-2 z-10">
-            <button
-              className={`btn flex items-center gap-1 ${tool === 'rectangle' ? 'bg-gray-100' : ''}`}
-              onClick={() => setTool('rectangle')}
-            >
-              <span>🔲</span>
-              <span>Rectangle</span>
-            </button>
-            <button
-              className={`btn flex items-center gap-1 ${tool === 'circle' ? 'bg-gray-100' : ''}`}
-              onClick={() => setTool('circle')}
-            >
-              <span>⭕</span>
-              <span>Circle</span>
-            </button>
-            <button
-              className={`btn flex items-center gap-1 ${tool === 'triangle' ? 'bg-gray-100' : ''}`}
-              onClick={() => setTool('triangle')}
-            >
-              <span>△</span>
-              <span>Triangle</span>
-            </button>
-          </div>
+          <Toolbar currentTool={tool} onToolChange={setTool} />
           {renderMask()}
           {/* Konva Canvas */}
           <Canvas
@@ -351,266 +308,22 @@ export default function EditorCanvas() {
           />
         </main>
 
-        {/* Inspector */}
-        <aside className="w-72 min-w-48 max-w-xs bg-gray-50 border-l border-gray-200 p-2 overflow-y-auto text-gray-800">
-          <h3 className="font-semibold mb-2">Inspector</h3>
-          {selectedElement ? (
-            <form className="flex flex-col gap-2">
-              <label>
-                Name:
-                <input
-                  type="text"
-                  value={selectedElement.name}
-                  onChange={e => handleInspectorChange('name', e.target.value)}
-                  className="w-full px-2 py-1 border rounded"
-                />
-              </label>
-              <button
-                type="button" // prevent form submit
-                onClick={(e) => {
-                  e.preventDefault(); // also prevent default just in case
-
-                  const newAnimation = {
-                    id: `${Date.now()}`,
-                    startTime: 0,
-                    duration: 2,
-                    properties: {},
-                    type: 'custom',
-                  };
-
-                  setElements((prev) =>
-                    prev.map((el) =>
-                      el.id === selectedElement.id
-                        ? { ...el, animations: [...el.animations, newAnimation] }
-                        : el
-                    )
-                  );
-                }}
-                className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-              >
-                + Add Animation
-              </button>
-
-              <label>
-                X:
-                <input
-                  type="number"
-                  value={selectedElement.x}
-                  onChange={e => handleInspectorChange('x', Number(e.target.value))}
-                />
-              </label>
-              <label>
-                Y:
-                <input
-                  type="number"
-                  value={selectedElement.y}
-                  onChange={e => handleInspectorChange('y', Number(e.target.value))}
-                />
-              </label>
-              <label>
-                Width:
-                <input
-                  type="number"
-                  value={selectedElement.width}
-                  onChange={e => handleInspectorChange('width', Number(e.target.value))}
-                />
-              </label>
-              <label>
-                Height:
-                <input
-                  type="number"
-                  value={selectedElement.height}
-                  onChange={e => handleInspectorChange('height', Number(e.target.value))}
-                />
-              </label>
-              {selectedElement.type === 'rectangle' && (
-                <label>
-                  Border Radius:
-                  <input
-                    type="number"
-                    value={selectedElement.cornerRadius ?? 0}
-                    onChange={e => handleInspectorChange('cornerRadius', Number(e.target.value))}
-                  />
-                </label>
-              )}
-              {(selectedElement.type === 'circle' || selectedElement.type === 'triangle') && (
-                <label>
-                  Radius:
-                  <input
-                    type="number"
-                    value={selectedElement.radius ?? 0}
-                    onChange={e => handleInspectorChange('radius', Number(e.target.value))}
-                  />
-                </label>
-              )}
-              <label>
-                Border:
-                <input
-                  type="color"
-                  value={selectedElement.stroke ?? '#000000'}
-                  onChange={e => handleInspectorChange('stroke', e.target.value)}
-                />
-              </label>
-              <label>
-                Border Width:
-                <input
-                  type="number"
-                  value={selectedElement.strokeWidth ?? 1}
-                  onChange={e => handleInspectorChange('strokeWidth', Number(e.target.value))}
-                />
-              </label>
-              <label>
-                Fill:
-                <input
-                  type="color"
-                  value={selectedElement.fill}
-                  onChange={e => handleInspectorChange('fill', e.target.value)}
-                />
-              </label>
-              <label>
-                Opacity:
-                <input
-                  type="number"
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  value={selectedElement.opacity ?? 1}
-                  onChange={e => handleInspectorChange('opacity', Number(e.target.value))}
-                />
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={selectedElement.shadowEnabled ?? false}
-                  onChange={e => handleInspectorChange('shadowEnabled', e.target.checked)}
-                />
-                Shadow enabled
-              </label>
-              <fieldset
-                disabled={!selectedElement.shadowEnabled}
-                className={
-                  'flex flex-col gap-2 ' +
-                  (!selectedElement.shadowEnabled ? 'opacity-50 pointer-events-none' : '')
-                }
-              >
-                <label>
-                  Shadow Color:
-                  <input
-                    type="color"
-                    value={selectedElement.shadowColor ?? '#000000'}
-                    onChange={e => handleInspectorChange('shadowColor', e.target.value)}
-                  />
-                </label>
-                <label>
-                  Shadow Blur:
-                  <input
-                    type="number"
-                    value={selectedElement.shadowBlur ?? 0}
-                    onChange={e => handleInspectorChange('shadowBlur', Number(e.target.value))}
-                  />
-                </label>
-                <label>
-                  Shadow Offset X:
-                  <input
-                    type="number"
-                    value={selectedElement.shadowOffsetX ?? 10}
-                    onChange={e => handleInspectorChange('shadowOffsetX', Number(e.target.value))}
-                  />
-                </label>
-                <label>
-                  Shadow Offset Y:
-                  <input
-                    type="number"
-                    value={selectedElement.shadowOffsetY ?? 10}
-                    onChange={e => handleInspectorChange('shadowOffsetY', Number(e.target.value))}
-                  />
-                </label>
-                <label>
-                  Shadow Opacity:
-                  <input
-                    type="number"
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    value={selectedElement.shadowOpacity ?? 0.5}
-                    onChange={e => handleInspectorChange('shadowOpacity', Number(e.target.value))}
-                  />
-                </label>
-              </fieldset>
-            </form>
-          ) : (
-            <p>Select an element to edit properties</p>
-          )}
-        </aside>
+        <Inspector
+          selectedElement={selectedElement}
+          onInspectorChange={handleInspectorChange}
+          onAddAnimation={handleAddAnimation}
+        />
       </div>
 
-      {/* Timeline */}
-      <footer className="h-60 border-t border-gray-200 bg-white">
-        {/* Controls */}
-        <div className="h-8 border-b border-gray-200 flex items-center px-4">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={handlePlayPause}
-              className="w-20 h-6 flex items-center justify-center bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-            >
-              {timeState.isPlaying ? 'Pause' : 'Play'}
-            </button>
-            <button
-              onClick={handleStop}
-              className="w-20 h-6 flex items-center justify-center bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
-            >
-              Stop
-            </button>
-            <div className="text-sm font-mono text-gray-700 w-32">
-              {formatTime(timeState.elapsedTime)}
-            </div>
-          </div>
-        </div>
-
-        {/* Scrollable timeline container (ruler + tracks) */}
-        <div className="h-[calc(100%-56px)] overflow-y-auto">
-          <div
-            className="relative w-max"
-            style={{ width: `${timelineState.scale * 120 + 128}px` }} // 128 = w-32 name column
-            ref={scrollContainerRef}
-            onScroll={handleScroll}
-          >
-            {/* Ruler (scrolls with timeline) */}
-            <div className="h-6 relative border-b border-gray-200">
-              <div className="absolute top-0 left-32 h-full w-full" style={{ transform: `translateX(-${scrollLeft}px)` }}>
-                {Array.from({ length: 121 }).map((_, i) => {
-                  const isMajor = i % 5 === 0;
-                  return (
-                    <div
-                      key={i}
-                      className="absolute h-full border-l border-gray-200"
-                      style={{ left: `${i * timelineState.scale}px`, width: 0 }}
-                    >
-                      {isMajor && (
-                        <div className="absolute top-0 text-[10px] text-gray-500 font-mono translate-x-[-50%]">
-                          {formatTime(i)}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Tracks */}
-            {elements.map((element) => (
-              <TimelineTrack
-                key={element.id}
-                element={element}
-                scale={timelineState.scale}
-                currentTime={timeState.elapsedTime}
-                isSelected={selectionManager.isSelected(element)}
-                onAnimationChange={handleAnimationChange}
-              />
-            ))}
-          </div>
-        </div>
-      </footer>
+      <Timeline
+        elements={elements}
+        timelineState={timelineState}
+        timeState={timeState}
+        onPlayPause={handlePlayPause}
+        onStop={handleStop}
+        onAnimationChange={handleAnimationChange}
+        selectionManager={selectionManager}
+      />
     </div>
   );
 }
