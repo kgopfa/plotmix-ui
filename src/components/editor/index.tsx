@@ -5,7 +5,6 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import type { Stage as KonvaStage } from 'konva/lib/Stage';
 import dynamic from 'next/dynamic';
-import { AnimatedCanvasElement } from './Canvas';
 import { TimeManager, type TimeManagerState } from '@/lib/TimeManager';
 import { TimelineManager } from '@/lib/TimelineManager';
 import { TimelineState } from '@/lib/types';
@@ -14,6 +13,7 @@ import { SceneExplorer } from './SceneExplorer';
 import { Inspector } from './Inspector';
 import { Timeline } from './Timeline';
 import { Toolbar } from './Toolbar';
+import { AnimatedCanvasElement } from '@/types/canvas';
 
 const Canvas = dynamic(() => import('./Canvas'), { ssr: false });
 
@@ -298,7 +298,7 @@ export default function EditorCanvas() {
           <Toolbar currentTool={tool} onToolChange={setTool} />
 
           {renderMask()}
-          
+
           {/* Konva Canvas */}
           <Canvas
             elements={elements}
