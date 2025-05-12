@@ -296,7 +296,9 @@ export default function EditorCanvas() {
           onMouseLeave={() => setMaskPos(null)}
         >
           <Toolbar currentTool={tool} onToolChange={setTool} />
+
           {renderMask()}
+          
           {/* Konva Canvas */}
           <Canvas
             elements={elements}
