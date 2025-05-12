@@ -33,11 +33,11 @@ export function TimelineTrack({
 
   return (
     <div
-      className={`h-8 flex items-center border-b border-gray-200 ${isSelected ? 'bg-blue-200' : ''} cursor-pointer`}
+      className={`h-8 flex items-center border-b border-gray-200 text-gray-700 cursor-pointer`}
     >
       {/* Track Label */}
       <div
-        className={`w-32 px-2 text-sm font-medium truncate ${isSelected ? 'text-blue-700' : 'text-gray-700'}`}
+        className={`w-32 px-2 text-sm font-medium truncate`}
         onClick={handleTrackClick}
       >
         {element.name}
