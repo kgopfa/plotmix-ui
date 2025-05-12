@@ -13,7 +13,7 @@ interface PixiCanvasProps {
   dimensions: { width: number; height: number };
   elements: AnimatedCanvasElement[];
   selectedId: string | null;
-  onElementSelect: (id: string) => void;
+  onElementSelect: (id: string | null) => void;
   onElementDragEnd: (id: string, x: number, y: number) => void;
   onCanvasClick: (e: FederatedPointerEvent) => void;
 }
@@ -30,7 +30,6 @@ export function PixiCanvas({
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
 
-
   const handlePointerDown = (id: string, shapeX: number, shapeY: number) => (e: FederatedPointerEvent) => {
     const pos = e.global;
     setDraggingId(id);
@@ -38,19 +37,10 @@ export function PixiCanvas({
     setDragOffset({ x: pos.x - shapeX, y: pos.y - shapeY });
   };
   
-  
   const handlePointerUp = () => {
     setDraggingId(null);
     setDragOffset(null);
   };
-  
-  
-  const handlePointerMove = (id: string) => (e: FederatedPointerEvent) => {
-    if (draggingId !== id || !dragOffset) return;
-    const pos = e.global;
-    onElementDragEnd(id, pos.x - dragOffset.x, pos.y - dragOffset.y);
-  };
-   
 
   const drawShape = (graphics: Graphics, shape: AnimatedCanvasElement) => {
     graphics.clear();
@@ -132,7 +122,15 @@ export function PixiCanvas({
         }}
         interactive={true}
         eventMode="static"
-        onPointerDown={onCanvasClick}
+        onPointerDown={(e: FederatedPointerEvent) => {
+          onElementSelect(null);
+          onCanvasClick(e);
+        }}
+        onPointerMove={(e: FederatedPointerEvent) => {
+          if (!draggingId || !dragOffset) return;
+          const pos = e.global;
+          onElementDragEnd(draggingId, pos.x - dragOffset.x, pos.y - dragOffset.y);
+        }}
       />
 
       {elements.map((el) => (
@@ -146,7 +144,11 @@ export function PixiCanvas({
           onPointerDown={handlePointerDown(el.id, el.x, el.y)}
           onPointerUp={handlePointerUp}
           onPointerUpOutside={handlePointerUp}
-          onPointerMove={handlePointerMove(el.id)}
+          onPointerMove={(e: FederatedPointerEvent) => {
+            if (draggingId !== el.id || !dragOffset) return;
+            const pos = e.global;
+            onElementDragEnd(el.id, pos.x - dragOffset.x, pos.y - dragOffset.y);
+          }}
         >
           <pixiGraphics draw={(g) => drawShape(g, el)} />
           {el.id === selectedId && (

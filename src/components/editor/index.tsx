@@ -337,7 +337,7 @@ export default function EditorCanvas() {
               dimensions={dimensions}
               elements={elements}
               selectedId={selectedElement?.id || null}
-              onElementSelect={handleSelectElement}
+              onElementSelect={handleSelectElement as (id: string | null) => void}
               onElementDragEnd={handleElementDragEnd}
               onCanvasClick={canvasClickHandler}
             />
