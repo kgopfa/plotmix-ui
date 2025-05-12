@@ -42,6 +42,13 @@ export function PixiCanvas({
     setDragOffset(null);
   };
 
+  const handleDragMove = (id: string) => (e: FederatedPointerEvent) => {
+    if (draggingId !== id || !dragOffset) return;
+    const pos = e.global;
+    onElementDragEnd(id, pos.x - dragOffset.x, pos.y - dragOffset.y);
+  };
+  
+
   const drawShape = (graphics: Graphics, shape: AnimatedCanvasElement) => {
     graphics.clear();
 
@@ -126,11 +133,7 @@ export function PixiCanvas({
           onElementSelect(null);
           onCanvasClick(e);
         }}
-        onPointerMove={(e: FederatedPointerEvent) => {
-          if (!draggingId || !dragOffset) return;
-          const pos = e.global;
-          onElementDragEnd(draggingId, pos.x - dragOffset.x, pos.y - dragOffset.y);
-        }}
+        onPointerMove={handleDragMove(draggingId ?? '')}
       />
 
       {elements.map((el) => (
@@ -144,11 +147,7 @@ export function PixiCanvas({
           onPointerDown={handlePointerDown(el.id, el.x, el.y)}
           onPointerUp={handlePointerUp}
           onPointerUpOutside={handlePointerUp}
-          onPointerMove={(e: FederatedPointerEvent) => {
-            if (draggingId !== el.id || !dragOffset) return;
-            const pos = e.global;
-            onElementDragEnd(el.id, pos.x - dragOffset.x, pos.y - dragOffset.y);
-          }}
+          onPointerMove={handleDragMove(el.id)}
         >
           <pixiGraphics draw={(g) => drawShape(g, el)} />
           {el.id === selectedId && (
