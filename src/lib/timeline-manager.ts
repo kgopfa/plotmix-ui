@@ -1,4 +1,4 @@
-import { AnimatedCanvasElement } from '@/components/editor/Canvas';
+import { AnimatedCanvasElement } from '@/types/canvas';
 import { TimelineState } from './types';
 
 type TimelineUpdateListener = (state: TimelineState) => void;

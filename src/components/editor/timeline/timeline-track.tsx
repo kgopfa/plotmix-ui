@@ -1,5 +1,5 @@
 import { AnimatedCanvasElement } from '@/types/canvas';
-import { SelectionManager } from '@/lib/SelectionManager';
+import { SelectionManager } from '@/lib/selection-manager';
 import { AnimationBlock } from './animation-block';
 
 const MAX_DURATION_SECONDS = 120;

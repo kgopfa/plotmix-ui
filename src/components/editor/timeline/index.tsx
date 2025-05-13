@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { TimelineTrack } from '@/components/editor/timeline/timeline-track';
 import { AnimatedCanvasElement } from '@/types/canvas';
 import { TimelineState } from '@/lib/types';
-import { TimeManagerState } from '@/lib/TimeManager';
+import { TimeManagerState } from '@/lib/time-manager';
 
 interface TimelineProps {
   elements: AnimatedCanvasElement[];

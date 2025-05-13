@@ -1,5 +1,5 @@
 import { AnimatedCanvasElement } from '@/types/canvas';
-import { SelectionManager } from '@/lib/SelectionManager';
+import { SelectionManager } from '@/lib/selection-manager';
 
 interface SceneExplorerProps {
   elements: AnimatedCanvasElement[];

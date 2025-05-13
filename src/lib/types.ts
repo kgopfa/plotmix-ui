@@ -1,4 +1,4 @@
-import { AnimatedCanvasElement } from '@/components/editor/Canvas';
+import { AnimatedCanvasElement } from '@/types/canvas';
 
 export type AnimationProperty = number | string | boolean;
 

@@ -2,10 +2,10 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { TimeManager, type TimeManagerState } from '@/lib/TimeManager';
-import { TimelineManager } from '@/lib/TimelineManager';
+import { TimeManager, type TimeManagerState } from '@/lib/time-manager';
+import { TimelineManager } from '@/lib/timeline-manager';
 import { TimelineState } from '@/lib/types';
-import { SelectionManager } from '@/lib/SelectionManager';
+import { SelectionManager } from '@/lib/selection-manager';
 import { SceneExplorer } from './scene-explorer';
 import { Inspector } from './inspector';
 import { Timeline } from './timeline';
