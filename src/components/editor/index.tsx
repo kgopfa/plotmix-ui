@@ -16,6 +16,7 @@ import { AnimatedCanvasElement } from '@/types/canvas';
 import { Canvas } from './canvas';
 import { FederatedPointerEvent, Container } from 'pixi.js';
 import type { CanvasRef } from './canvas';
+import { createNewElement } from '@/lib/element-factory';
 
 
 export default function EditorCanvas() {
@@ -97,42 +98,6 @@ export default function EditorCanvas() {
     });
   }, [timeManager, gsapManager]);
 
-  const createNewElement = (
-    type: 'rectangle' | 'circle' | 'triangle',
-    x: number,
-    y: number,
-    elements: AnimatedCanvasElement[]
-  ): AnimatedCanvasElement => {
-    const newId = `${type}-${elements.length + 1}`;
-    const existingCount = elements.filter(el => el.type === type).length;
-
-    return {
-      id: newId,
-      name:
-        existingCount === 0
-          ? type.charAt(0).toUpperCase() + type.slice(1)
-          : `${type.charAt(0).toUpperCase() + type.slice(1)} (${existingCount})`,
-      type,
-      x: x - 50,
-      y: y - 50,
-      width: 100,
-      height: 100,
-      fill: '#ffa500',
-      radius: type === 'circle' || type === 'triangle' ? 70 : undefined,
-      stroke: 'black',
-      strokeWidth: 1,
-      cornerRadius: type === 'rectangle' ? 0 : undefined,
-      opacity: 1,
-      shadowEnabled: false,
-      shadowColor: 'black',
-      shadowBlur: 0,
-      shadowOffsetX: 10,
-      shadowOffsetY: 10,
-      shadowOpacity: 0.5,
-      animations: [],
-    };
-  }
-
   const canvasClickHandler = (e: FederatedPointerEvent) => {
     const isEmptyClick = !(e.target && (e.target as Container).name === 'shape');
 
@@ -141,7 +106,7 @@ export default function EditorCanvas() {
       (tool === 'rectangle' || tool === 'circle' || tool === 'triangle')
     ) {
       const newElement = createNewElement(tool, e.global.x, e.global.y, elements);
-
+      
       setElements(prev => {
         const newElements = [...prev, newElement];
         return newElements;
