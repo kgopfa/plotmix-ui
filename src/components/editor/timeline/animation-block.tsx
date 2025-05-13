@@ -49,10 +49,12 @@ export const AnimationBlock: React.FC<AnimationBlockProps> = ({
     if (!isDragging.current) return;
     const delta = e.clientX - dragStartX.current;
     const newLeft = Math.max(0, initialLeft.current + delta);
-    const newStartTime = newLeft / scale;
+
+    // Snap to nearest second
+    const snappedStartTime = Math.round(newLeft / scale);
 
     onChange?.({
-      startTime: Math.min(newStartTime, 120 - animation.duration),
+      startTime: Math.min(snappedStartTime, 120 - animation.duration),
       duration: animation.duration,
     });
   };
@@ -60,14 +62,17 @@ export const AnimationBlock: React.FC<AnimationBlockProps> = ({
   const handleResize = (e: MouseEvent) => {
     if (!isResizing.current) return;
     const delta = e.clientX - dragStartX.current;
-    const newWidth = Math.max(20, initialWidth.current + delta); // min 20px
-    const newDuration = newWidth / scale;
+    const newWidth = Math.max(20, initialWidth.current + delta);
+
+    // Snap to nearest second (min 1s)
+    const snappedDuration = Math.max(1, Math.round(newWidth / scale));
 
     onChange?.({
       startTime: animation.startTime,
-      duration: Math.min(newDuration, 120 - animation.startTime),
+      duration: Math.min(snappedDuration, 120 - animation.startTime),
     });
   };
+
 
   const handleMouseUp = () => {
     isDragging.current = false;
@@ -79,9 +84,8 @@ export const AnimationBlock: React.FC<AnimationBlockProps> = ({
 
   return (
     <div
-      className={`absolute top-1 bottom-1 rounded cursor-move transition-colors ${
-        isSelected ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'
-      }`}
+      className={`absolute top-1 bottom-1 rounded cursor-move transition-colors ${isSelected ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'
+        }`}
       style={{ left: `${left}px`, width: `${width}px` }}
       onMouseDown={handleMouseDown}
       onClick={onClick}
