@@ -12,7 +12,7 @@ import { Inspector } from './inspector';
 import { Timeline } from './timeline';
 import { Toolbar } from './toolbar';
 import { MaskOverlay } from './mask-overlay';
-import { AnimatedCanvasElement } from '@/types/canvas';
+import { AnimatedCanvasElement, ElementAnimation, GsapEase } from '@/types/canvas';
 import { Canvas } from './canvas';
 import { FederatedPointerEvent, Container } from 'pixi.js';
 import type { CanvasRef } from './canvas';
@@ -107,13 +107,15 @@ export default function EditorCanvas() {
     gsapManager.buildTimeline(elements);
   };
 
-  const handleInspectorChange = (prop: string, value: string | number | boolean) => {
-    setElements(elements =>
-      elements.map(el =>
+  const handleInspectorChange = (prop: string, value: string | number | boolean | ElementAnimation[]) => {
+    setElements(elements => {
+      const updatedElements = elements.map(el =>
         el.id === selectedElement?.id ? { ...el, [prop]: value } : el
-      )
-    );
-    gsapManager.buildTimeline(elements);
+      );
+      // Rebuild timeline with updated elements
+      gsapManager.buildTimeline(updatedElements);
+      return updatedElements;
+    });
   };
 
   // Subscribe to time updates
@@ -178,25 +180,40 @@ export default function EditorCanvas() {
   };
 
   const handleAddAnimation = (elementId: string) => {
+    const element = elements.find(el => el.id === elementId);
+    if (!element) return;
+
+    // Count existing animations for this element
+    const existingCount = element.animations.length;
     const newAnimation = {
-      id: `${Date.now()}`,
+      id: `anim-${existingCount + 1}`,
       startTime: 0,
       duration: 2,
       properties: {
-        rotation: 360,
+        x: element.x,
+        y: element.y,
+        width: element.width,
+        height: element.height,
+        fill: element.fill,
+        opacity: element.opacity ?? 1,
+        radius: element.radius,
+        cornerRadius: element.cornerRadius,
+        shadowBlur: element.shadowBlur,
+        shadowOffsetX: element.shadowOffsetX,
+        shadowOffsetY: element.shadowOffsetY,
+        shadowOpacity: element.shadowOpacity,
+        rotation: 0
       },
-      type: 'custom',
+      easing: 'power1.inOut' as GsapEase
     };
 
-    setElements((prev) =>
-      prev.map((el) =>
+    setElements(prev =>
+      prev.map(el =>
         el.id === elementId
           ? { ...el, animations: [...el.animations, newAnimation] }
           : el
       )
     );
-
-    gsapManager.buildTimeline(elements);
   };
 
   return (

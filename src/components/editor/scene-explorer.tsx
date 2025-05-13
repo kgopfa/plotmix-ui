@@ -8,7 +8,7 @@ interface SceneExplorerProps {
 
 export function SceneExplorer({ elements, selectionManager }: SceneExplorerProps) {
   return (
-    <aside className="w-72 min-w-48 max-w-xs bg-gray-50 border-r border-gray-200 p-2 overflow-y-auto text-gray-800">
+    <aside className="w-80 min-w-48 max-w-xs bg-gray-50 border-r border-gray-200 p-2 overflow-y-auto text-gray-800">
       <h3 className="font-semibold mb-2">Scenes</h3>
       <ul>
         <li>
