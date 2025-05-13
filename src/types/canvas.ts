@@ -35,12 +35,27 @@ export type AnimatableProperties = {
   rotation?: number;
 };
 
+export type AnimationType = 'rotate' | 'scale' | 'move' | 'color' | 'fade';
 
 export interface ElementAnimation {
   id: string;
+  type: AnimationType;
   startTime: number; // seconds
   duration: number; // seconds
-  properties: AnimatableProperties;
+  properties: {
+    // Rotate animation
+    rotation?: number;
+    // Scale animation
+    scaleX?: number;
+    scaleY?: number;
+    // Move animation
+    x?: number;
+    y?: number;
+    // Color animation
+    fill?: string;
+    // Fade animation
+    opacity?: number;
+  };
   easing?: GsapEase;
 }
 

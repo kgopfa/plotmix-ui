@@ -1,16 +1,77 @@
-import { useState } from 'react';
-import { AnimatedCanvasElement, EASING_OPTIONS, GsapEase, ElementAnimation } from '@/types/canvas';
+import { useState, useEffect } from 'react';
+import { AnimatedCanvasElement, EASING_OPTIONS, GsapEase, ElementAnimation, AnimationType } from '@/types/canvas';
 
 interface InspectorProps {
   selectedElement: AnimatedCanvasElement | null;
   onInspectorChange: (prop: string, value: string | number | boolean | ElementAnimation[]) => void;
-  onAddAnimation: (elementId: string) => void;
 }
 
 type Tab = 'properties' | 'animations';
 
-export function Inspector({ selectedElement, onInspectorChange, onAddAnimation }: InspectorProps) {
+export function Inspector({ selectedElement, onInspectorChange }: InspectorProps) {
   const [activeTab, setActiveTab] = useState<Tab>('properties');
+  const [localAnimations, setLocalAnimations] = useState<ElementAnimation[]>(
+    selectedElement?.animations ?? []
+  );
+
+  // Sync local animations when selected element changes
+  useEffect(() => {
+    if (selectedElement) {
+      setLocalAnimations(selectedElement.animations);
+    } else {
+      setLocalAnimations([]);
+    }
+  }, [selectedElement]);
+
+  const handleAnimationChange = (
+    animationId: string,
+    field: string,
+    value: string | number
+  ) => {
+    const updatedAnimations = localAnimations.map(anim => {
+      if (anim.id !== animationId) return anim;
+
+      if (field === 'easing') {
+        return { ...anim, easing: value as GsapEase };
+      } else if (field === 'type') {
+        return { ...anim, type: value as AnimationType };
+      } else if (field === 'startTime' || field === 'duration') {
+        return { ...anim, [field]: Number(value) };
+      } else if (field.startsWith('properties.')) {
+        const propName = field.split('.')[1];
+        return {
+          ...anim,
+          properties: {
+            ...anim.properties,
+            [propName]: propName === 'fill' ? value : Number(value)
+          }
+        };
+      }
+      return anim;
+    });
+
+    setLocalAnimations(updatedAnimations);
+    onInspectorChange('animations', updatedAnimations);
+  };
+
+  const handleAddAnimation = () => {
+    if (!selectedElement) return;
+    
+    const newAnimation = {
+      id: `anim-${localAnimations.length + 1}`,
+      type: 'rotate' as AnimationType,
+      startTime: 0,
+      duration: 2,
+      properties: {
+        rotation: 0
+      },
+      easing: 'power1.inOut' as GsapEase
+    };
+
+    const updatedAnimations = [...localAnimations, newAnimation];
+    setLocalAnimations(updatedAnimations);
+    onInspectorChange('animations', updatedAnimations);
+  };
 
   if (!selectedElement) {
     return (
@@ -19,34 +80,6 @@ export function Inspector({ selectedElement, onInspectorChange, onAddAnimation }
       </aside>
     );
   }
-
-  const handleAnimationChange = (
-    animationId: string,
-    field: string,
-    value: string | number
-  ) => {
-    const updatedAnimations = selectedElement.animations.map(anim => {
-      if (anim.id === animationId) {
-        if (field === 'easing') {
-          return { ...anim, easing: value as GsapEase };
-        } else if (field === 'startTime' || field === 'duration') {
-          return { ...anim, [field]: Number(value) };
-        } else if (field.startsWith('properties.')) {
-          const propName = field.split('.')[1];
-          return {
-            ...anim,
-            properties: {
-              ...anim.properties,
-              [propName]: value
-            }
-          };
-        }
-      }
-      return anim;
-    });
-
-    onInspectorChange('animations', updatedAnimations);
-  };
 
   const renderPropertiesTab = () => (
     <form className="flex flex-col gap-2">
@@ -212,16 +245,16 @@ export function Inspector({ selectedElement, onInspectorChange, onAddAnimation }
     <div className="flex flex-col gap-2">
       <button
         type="button"
-        onClick={() => onAddAnimation(selectedElement.id)}
+        onClick={handleAddAnimation}
         className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
       >
         + Add Animation
       </button>
       <div className="flex flex-col gap-2">
-        {selectedElement.animations.map((animation) => (
+        {localAnimations.map((animation) => (
           <div key={animation.id} className="border rounded p-2">
-            <div className="flex justify-between items-center mb-2">
-              <span className="font-medium">{animation.id}</span>
+            <div className="flex justify-between items-center mb-2 border-b pb-2">
+              <span className="font-medium text-blue-600">{animation.id}</span>
             </div>
             <div className="flex flex-col gap-2">
               <div className="grid grid-cols-2 gap-2">
@@ -245,6 +278,20 @@ export function Inspector({ selectedElement, onInspectorChange, onAddAnimation }
                 </label>
               </div>
               <label>
+                Type:
+                <select
+                  value={animation.type}
+                  onChange={e => handleAnimationChange(animation.id, 'type', e.target.value)}
+                  className="w-full"
+                >
+                  <option value="rotate">Rotation</option>
+                  <option value="scale">Scale</option>
+                  <option value="move">Movement</option>
+                  <option value="color">Color</option>
+                  <option value="fade">Fade</option>
+                </select>
+              </label>
+              <label>
                 Easing:
                 <select
                   value={animation.easing ?? 'none'}
@@ -261,17 +308,91 @@ export function Inspector({ selectedElement, onInspectorChange, onAddAnimation }
               <div className="mt-2">
                 <h4 className="font-medium mb-2">Properties</h4>
                 <div className="grid grid-cols-2 gap-2">
-                  {Object.entries(animation.properties).map(([key, value]) => (
-                    <label key={key}>
-                      {key}:
+                  {animation.type === 'rotate' && (
+                    <label>
+                      Rotation (degrees):
                       <input
-                        type={typeof value === 'string' ? 'text' : 'number'}
-                        value={value}
-                        onChange={e => handleAnimationChange(animation.id, `properties.${key}`, e.target.value)}
+                        type="number"
+                        value={animation.properties.rotation ?? 0}
+                        onChange={e => handleAnimationChange(animation.id, 'properties.rotation', e.target.value)}
+                        className="w-full"
+                        step="1"
+                      />
+                    </label>
+                  )}
+                  {animation.type === 'scale' && (
+                    <>
+                      <label>
+                        Scale X:
+                        <input
+                          type="number"
+                          value={animation.properties.scaleX ?? 1}
+                          onChange={e => handleAnimationChange(animation.id, 'properties.scaleX', e.target.value)}
+                          className="w-full"
+                          step="0.1"
+                        />
+                      </label>
+                      <label>
+                        Scale Y:
+                        <input
+                          type="number"
+                          value={animation.properties.scaleY ?? 1}
+                          onChange={e => handleAnimationChange(animation.id, 'properties.scaleY', e.target.value)}
+                          className="w-full"
+                          step="0.1"
+                        />
+                      </label>
+                    </>
+                  )}
+                  {animation.type === 'move' && (
+                    <>
+                      <label>
+                        X:
+                        <input
+                          type="number"
+                          value={animation.properties.x ?? selectedElement.x}
+                          onChange={e => handleAnimationChange(animation.id, 'properties.x', e.target.value)}
+                          className="w-full"
+                          step="1"
+                        />
+                      </label>
+                      <label>
+                        Y:
+                        <input
+                          type="number"
+                          value={animation.properties.y ?? selectedElement.y}
+                          onChange={e => handleAnimationChange(animation.id, 'properties.y', e.target.value)}
+                          className="w-full"
+                          step="1"
+                        />
+                      </label>
+                    </>
+                  )}
+                  {animation.type === 'color' && (
+                    <label>
+                      Color:
+                      <input
+                        type="color"
+                        value={animation.properties.fill ?? selectedElement.fill}
+                        onChange={e => handleAnimationChange(animation.id, 'properties.fill', e.target.value)}
                         className="w-full"
                       />
                     </label>
-                  ))}
+                  )}
+                  {animation.type === 'fade' && (
+                    <label>
+                      Opacity:
+                      <input
+                        type="number"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={animation.properties.opacity ?? selectedElement.opacity ?? 1}
+                        onChange={e => handleAnimationChange(animation.id, 'properties.opacity', e.target.value)}
+                        className="w-full"
+                      />
+                    </label>
+                  )}
                 </div>
               </div>
             </div>

@@ -12,7 +12,7 @@ import { Inspector } from './inspector';
 import { Timeline } from './timeline';
 import { Toolbar } from './toolbar';
 import { MaskOverlay } from './mask-overlay';
-import { AnimatedCanvasElement, ElementAnimation, GsapEase } from '@/types/canvas';
+import { AnimatedCanvasElement, ElementAnimation } from '@/types/canvas';
 import { Canvas } from './canvas';
 import { FederatedPointerEvent, Container } from 'pixi.js';
 import type { CanvasRef } from './canvas';
@@ -107,15 +107,50 @@ export default function EditorCanvas() {
     gsapManager.buildTimeline(elements);
   };
 
+  const handleAnimationChange = (
+    elementId: string,
+    animationId: string,
+    update: Partial<ElementAnimation>
+  ) => {
+    setElements(prev =>
+      prev.map(el => {
+        if (el.id !== elementId) return el;
+        return {
+          ...el,
+          animations: el.animations.map(anim => {
+            if (anim.id !== animationId) return anim;
+            return {
+              ...anim,
+              ...update,
+              properties: update.properties ? {
+                ...anim.properties,
+                ...update.properties
+              } : anim.properties
+            };
+          })
+        };
+      })
+    );
+    gsapManager.buildTimeline(elements);
+  };
+
   const handleInspectorChange = (prop: string, value: string | number | boolean | ElementAnimation[]) => {
-    setElements(elements => {
-      const updatedElements = elements.map(el =>
-        el.id === selectedElement?.id ? { ...el, [prop]: value } : el
-      );
-      // Rebuild timeline with updated elements
-      gsapManager.buildTimeline(updatedElements);
-      return updatedElements;
-    });
+    if (prop === 'animations') {
+      setElements(elements => {
+        const updatedElements = elements.map(el =>
+          el.id === selectedElement?.id ? { ...el, animations: value as ElementAnimation[] } : el
+        );
+        gsapManager.buildTimeline(updatedElements);
+        return updatedElements;
+      });
+    } else {
+      setElements(elements => {
+        const updatedElements = elements.map(el =>
+          el.id === selectedElement?.id ? { ...el, [prop]: value } : el
+        );
+        return updatedElements;
+      });
+    }
   };
 
   // Subscribe to time updates
@@ -157,64 +192,6 @@ export default function EditorCanvas() {
   const handleStop = useCallback(() => {
     timeManager.stop();
   }, [timeManager]);
-
-  // Remove unused scroll-related code
-  const handleAnimationChange = (
-    elementId: string,
-    animationId: string,
-    update: { startTime: number; duration: number }
-  ) => {
-    setElements((prev) =>
-      prev.map((el) =>
-        el.id === elementId
-          ? {
-            ...el,
-            animations: el.animations.map((a) =>
-              a.id === animationId ? { ...a, ...update } : a
-            ),
-          }
-          : el
-      )
-    );
-    gsapManager.buildTimeline(elements);
-  };
-
-  const handleAddAnimation = (elementId: string) => {
-    const element = elements.find(el => el.id === elementId);
-    if (!element) return;
-
-    // Count existing animations for this element
-    const existingCount = element.animations.length;
-    const newAnimation = {
-      id: `anim-${existingCount + 1}`,
-      startTime: 0,
-      duration: 2,
-      properties: {
-        x: element.x,
-        y: element.y,
-        width: element.width,
-        height: element.height,
-        fill: element.fill,
-        opacity: element.opacity ?? 1,
-        radius: element.radius,
-        cornerRadius: element.cornerRadius,
-        shadowBlur: element.shadowBlur,
-        shadowOffsetX: element.shadowOffsetX,
-        shadowOffsetY: element.shadowOffsetY,
-        shadowOpacity: element.shadowOpacity,
-        rotation: 0
-      },
-      easing: 'power1.inOut' as GsapEase
-    };
-
-    setElements(prev =>
-      prev.map(el =>
-        el.id === elementId
-          ? { ...el, animations: [...el.animations, newAnimation] }
-          : el
-      )
-    );
-  };
 
   return (
     <div className="flex flex-col h-screen w-screen">
@@ -275,7 +252,6 @@ export default function EditorCanvas() {
         <Inspector
           selectedElement={selectedElement}
           onInspectorChange={handleInspectorChange}
-          onAddAnimation={handleAddAnimation}
         />
       </div>
 
