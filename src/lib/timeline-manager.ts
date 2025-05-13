@@ -1,5 +1,5 @@
 import { AnimatedCanvasElement } from '@/types/canvas';
-import { TimelineState } from './types';
+import { TimelineState } from '../types/timeline';
 
 type TimelineUpdateListener = (state: TimelineState) => void;
 

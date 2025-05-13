@@ -24,7 +24,7 @@ export interface ElementAnimation {
   startTime: number; // seconds
   duration: number; // seconds
   properties: Partial<Pick<CanvasElement, 'x' | 'y' | 'width' | 'height' | 'fill' | 'opacity' | 'radius' | 'cornerRadius' | 'shadowBlur' | 'shadowOffsetX' | 'shadowOffsetY' | 'shadowOpacity'>>;
-  easing?: string; // GSAP-compatible easing (e.g., 'power2.inOut')
+  easing?: GsapEase;
 }
 
 export interface AnimatedCanvasElement {
@@ -47,11 +47,45 @@ export interface AnimatedCanvasElement {
   shadowOffsetX?: number;
   shadowOffsetY?: number;
   shadowOpacity?: number;
-  animations: Array<{
-    id: string;
-    startTime: number;
-    duration: number;
-    type: string;
-    properties: Partial<Pick<CanvasElement, 'x' | 'y' | 'width' | 'height' | 'fill' | 'opacity' | 'radius' | 'cornerRadius' | 'shadowBlur' | 'shadowOffsetX' | 'shadowOffsetY' | 'shadowOpacity'>>;
-  }>;
+  animations: ElementAnimation[];
 }
+
+type GsapEase =
+  | 'none'
+  | 'power1.in'
+  | 'power1.out'
+  | 'power1.inOut'
+  | 'power2.in'
+  | 'power2.out'
+  | 'power2.inOut'
+  | 'power3.in'
+  | 'power3.out'
+  | 'power3.inOut'
+  | 'power4.in'
+  | 'power4.out'
+  | 'power4.inOut'
+  | 'back.in'
+  | 'back.out'
+  | 'back.inOut'
+  | 'bounce.in'
+  | 'bounce.out'
+  | 'bounce.inOut'
+  | 'circ.in'
+  | 'circ.out'
+  | 'circ.inOut'
+  | 'elastic.in'
+  | 'elastic.out'
+  | 'elastic.inOut'
+  | 'expo.in'
+  | 'expo.out'
+  | 'expo.inOut'
+  | 'sine.in'
+  | 'sine.out'
+  | 'sine.inOut'
+  | 'steps'
+  | 'rough'
+  | 'slow'
+  | 'expoScale'
+  | 'CustomEase'
+  | 'CustomBounce'
+  | 'CustomWiggle';

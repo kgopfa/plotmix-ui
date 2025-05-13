@@ -4,7 +4,7 @@ import { Application, extend } from '@pixi/react';
 import { Container, Graphics } from 'pixi.js';
 import type { FederatedPointerEvent } from 'pixi.js';
 import type { AnimatedCanvasElement } from '@/types/canvas';
-import { useState } from 'react';
+import { useImperativeHandle, forwardRef, useState, useRef } from 'react';
 
 // Register PixiJS components with @pixi/react
 extend({ Container, Graphics });
@@ -18,15 +18,27 @@ interface CanvasProps {
   onCanvasClick: (e: FederatedPointerEvent) => void;
 }
 
-export function Canvas({
-  dimensions,
-  elements,
-  selectedId,
-  onElementSelect,
-  onElementDragEnd,
-  onCanvasClick,
-}: CanvasProps) {
-  // Function to draw shapes based on element type
+export interface CanvasRef {
+  getShapeRefs: () => Record<string, Container>;
+}
+
+export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
+  {
+    dimensions,
+    elements,
+    selectedId,
+    onElementSelect,
+    onElementDragEnd,
+    onCanvasClick,
+  },
+  ref
+) {
+  const shapeRefs = useRef<Record<string, Container>>({});
+
+  useImperativeHandle(ref, () => ({
+    getShapeRefs: () => shapeRefs.current,
+  }));
+
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
 
@@ -36,7 +48,7 @@ export function Canvas({
     onElementSelect(id);
     setDragOffset({ x: pos.x - shapeX, y: pos.y - shapeY });
   };
-  
+
   const handlePointerUp = () => {
     setDraggingId(null);
     setDragOffset(null);
@@ -47,7 +59,7 @@ export function Canvas({
     const pos = e.global;
     onElementDragEnd(id, pos.x - dragOffset.x, pos.y - dragOffset.y);
   };
-  
+
 
   const drawShape = (graphics: Graphics, shape: AnimatedCanvasElement) => {
     graphics.clear();
@@ -148,6 +160,9 @@ export function Canvas({
           onPointerUp={handlePointerUp}
           onPointerUpOutside={handlePointerUp}
           onPointerMove={handleDragMove(el.id)}
+          ref={(node) => {
+            if (node) shapeRefs.current[el.id] = node;
+          }}
         >
           <pixiGraphics draw={(g) => drawShape(g, el)} />
           {el.id === selectedId && (
@@ -157,4 +172,4 @@ export function Canvas({
       ))}
     </Application>
   );
-}
+});

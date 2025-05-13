@@ -1,11 +1,12 @@
 // app/layout.tsx or pages/index.tsx depending on routing
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { TimeManager, type TimeManagerState } from '@/lib/time-manager';
 import { TimelineManager } from '@/lib/timeline-manager';
-import { TimelineState } from '@/lib/types';
+import { TimelineState } from '@/types/timeline';
 import { SelectionManager } from '@/lib/selection-manager';
+import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
 import { SceneExplorer } from './scene-explorer';
 import { Inspector } from './inspector';
 import { Timeline } from './timeline';
@@ -13,6 +14,7 @@ import { Toolbar } from './toolbar';
 import { AnimatedCanvasElement } from '@/types/canvas';
 import { Canvas } from './canvas';
 import { FederatedPointerEvent, Container } from 'pixi.js';
+import type { CanvasRef } from './canvas';
 
 
 export default function EditorCanvas() {
@@ -33,6 +35,9 @@ export default function EditorCanvas() {
 
   const MASK_OFFSET_X = 0;
   const MASK_OFFSET_Y = 0;
+
+  const canvasRef = useRef<CanvasRef | null>(null);
+  const gsapManager = useMemo(() => new GSAPTimelineManager(), []);
 
   // Memoize the time manager instance
   const timeManager = useMemo(() => TimeManager.getInstance(), []);
@@ -74,18 +79,32 @@ export default function EditorCanvas() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [selectedElement]);
 
+  useEffect(() => {
+    gsapManager.setCanvasRef(canvasRef);
+  }, [gsapManager]);
+
+  useEffect(() => {
+    if (dimensions.width > 0 && elements.length > 0) {
+      gsapManager.buildTimeline(elements);
+    }
+  }, [elements, dimensions, gsapManager]);
+
+  useEffect(() => {
+    return timeManager.subscribe(({ isPlaying, elapsedTime }) => {
+      gsapManager.updateTime(elapsedTime);
+      gsapManager.handlePlayback(isPlaying, () => gsapManager.updateTime(timeManager.getState().elapsedTime));
+    });
+  }, [timeManager, gsapManager]);
+
   const createNewElement = (
     type: 'rectangle' | 'circle' | 'triangle',
     x: number,
     y: number,
     elements: AnimatedCanvasElement[]
   ): AnimatedCanvasElement => {
-    console.log('Creating element:', { type, x, y, elementsCount: elements.length });
-    
     const newId = `${type}-${elements.length + 1}`;
     const existingCount = elements.filter(el => el.type === type).length;
-    console.log('Element counts:', { newId, existingCount });
-  
+
     return {
       id: newId,
       name:
@@ -121,7 +140,7 @@ export default function EditorCanvas() {
       (tool === 'rectangle' || tool === 'circle' || tool === 'triangle')
     ) {
       const newElement = createNewElement(tool, e.global.x, e.global.y, elements);
-      
+
       setElements(prev => {
         const newElements = [...prev, newElement];
         return newElements;
@@ -133,12 +152,13 @@ export default function EditorCanvas() {
       selectionManager.select(null);
     }
   }
-  
+
 
   const handleElementDragEnd = (id: string, x: number, y: number) => {
     setElements(elements.map((el) =>
       el.id === id ? { ...el, x, y } : el
     ));
+    gsapManager.buildTimeline(elements);
   };
 
   const handleInspectorChange = (prop: string, value: string | number | boolean) => {
@@ -147,6 +167,7 @@ export default function EditorCanvas() {
         el.id === selectedElement?.id ? { ...el, [prop]: value } : el
       )
     );
+    gsapManager.buildTimeline(elements);
   };
 
   // Subscribe to time updates
@@ -207,6 +228,7 @@ export default function EditorCanvas() {
           : el
       )
     );
+    gsapManager.buildTimeline(elements);
   };
 
   const handleAddAnimation = (elementId: string) => {
@@ -225,6 +247,8 @@ export default function EditorCanvas() {
           : el
       )
     );
+
+    gsapManager.buildTimeline(elements);
   };
 
   // Mask overlay for shape placement
@@ -317,6 +341,7 @@ export default function EditorCanvas() {
 
           {dimensions.width > 0 && dimensions.height > 0 && (
             <Canvas
+              ref={canvasRef}
               dimensions={dimensions}
               elements={elements}
               selectedId={selectedElement?.id || null}
