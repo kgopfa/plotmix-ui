@@ -182,7 +182,9 @@ export default function EditorCanvas() {
       id: `${Date.now()}`,
       startTime: 0,
       duration: 2,
-      properties: {},
+      properties: {
+        rotation: 360,
+      },
       type: 'custom',
     };
 

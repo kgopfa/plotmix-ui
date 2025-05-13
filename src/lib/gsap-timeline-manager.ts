@@ -17,24 +17,29 @@ export class GSAPTimelineManager {
   buildTimeline(elements: AnimatedCanvasElement[]) {
     const shapeRefs = this.canvasRef?.current?.getShapeRefs();
     if (!shapeRefs) return;
-
+  
     this.timeline.clear();
-
+  
     elements.forEach((el) => {
       const target = shapeRefs[el.id];
       if (!target) return;
-
+  
       el.animations.forEach((anim) => {
-        this.timeline.to(target, {
-          ...anim.properties,
-          duration: anim.duration,
-          ease: 'power1.out',
-        }, anim.startTime);
+        this.timeline.to(
+          target,
+          {
+            ...anim.properties,
+            duration: anim.duration,
+            ease: anim.easing ?? 'power1.out',
+          },
+          anim.startTime
+        );
       });
     });
-
+  
     this.timeline.pause(0);
   }
+  
 
   updateTime(elapsedTime: number) {
     this.timeline.time(elapsedTime, false);

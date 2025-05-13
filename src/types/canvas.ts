@@ -19,11 +19,28 @@ export interface CanvasElement {
   shadowEnabled?: boolean;
 }
 
+export type AnimatableProperties = {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  fill?: string;
+  opacity?: number;
+  radius?: number;
+  cornerRadius?: number;
+  shadowBlur?: number;
+  shadowOffsetX?: number;
+  shadowOffsetY?: number;
+  shadowOpacity?: number;
+  rotation?: number;
+};
+
+
 export interface ElementAnimation {
   id: string;
   startTime: number; // seconds
   duration: number; // seconds
-  properties: Partial<Pick<CanvasElement, 'x' | 'y' | 'width' | 'height' | 'fill' | 'opacity' | 'radius' | 'cornerRadius' | 'shadowBlur' | 'shadowOffsetX' | 'shadowOffsetY' | 'shadowOpacity'>>;
+  properties: AnimatableProperties;
   easing?: GsapEase;
 }
 
