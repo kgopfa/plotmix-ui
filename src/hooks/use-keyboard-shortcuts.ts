@@ -9,6 +9,11 @@ interface UseKeyboardShortcutsProps {
 export function useKeyboardShortcuts({ selectedElement, onDeleteElement }: UseKeyboardShortcutsProps) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if we're in an input field
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedElement) {
         onDeleteElement(selectedElement.id);
       }
