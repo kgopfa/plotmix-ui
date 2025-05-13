@@ -17,13 +17,14 @@ import { Canvas } from './canvas';
 import { FederatedPointerEvent, Container } from 'pixi.js';
 import type { CanvasRef } from './canvas';
 import { createNewElement } from '@/lib/element-factory';
+import { useCanvasDimensions } from '@/hooks/use-canvas-dimensions';
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 
 
 export default function EditorCanvas() {
   const [elements, setElements] = useState<AnimatedCanvasElement[]>([]);
   const [selectedElement, setSelectedElement] = useState<AnimatedCanvasElement | null>(null);
   const [tool, setTool] = useState<'select' | 'rectangle' | 'circle' | 'triangle'>('select');
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [maskPos, setMaskPos] = useState<{ x: number, y: number } | null>(null);
   const [timeState, setTimeState] = useState<TimeManagerState>({
     isPlaying: false,
@@ -46,40 +47,19 @@ export default function EditorCanvas() {
   const timelineManager = useMemo(() => TimelineManager.getInstance(), []);
   const selectionManager = useMemo(() => SelectionManager.getInstance(), []);
 
-  // Handle window dimensions
-  useEffect(() => {
-    const updateDimensions = () => {
-      const sidebarWidth = 288; // w-72 in Tailwind
-      const topBarHeight = 48; // h-12
-      const timelineHeight = 160; // estimated height of timeline
+  // Use the canvas dimensions hook
+  const dimensions = useCanvasDimensions();
 
-      setDimensions({
-        width: window.innerWidth - sidebarWidth * 2,
-        height: window.innerHeight - topBarHeight - timelineHeight,
-      });
-    };
-
-
-    // Initial dimensions
-    updateDimensions();
-
-    // Update dimensions on window resize
-    window.addEventListener('resize', updateDimensions);
-
-    // Cleanup
-    return () => window.removeEventListener('resize', updateDimensions);
+  // Handle keyboard shortcuts
+  const handleDeleteElement = useCallback((elementId: string) => {
+    setElements(elements => elements.filter(el => el.id !== elementId));
+    setSelectedElement(null);
   }, []);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedElement) {
-        setElements(elements => elements.filter(el => el.id !== selectedElement.id));
-        setSelectedElement(null);
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [selectedElement]);
+  useKeyboardShortcuts({
+    selectedElement,
+    onDeleteElement: handleDeleteElement
+  });
 
   useEffect(() => {
     gsapManager.setCanvasRef(canvasRef);
