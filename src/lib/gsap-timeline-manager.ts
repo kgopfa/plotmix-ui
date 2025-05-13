@@ -30,8 +30,8 @@ export class GSAPTimelineManager {
         // Handle relative movement
         if (anim.type === 'move') {
           properties = {
-            x: el.x + (properties.x ?? 0),
-            y: el.y + (properties.y ?? 0)
+            x: el.x + (Number(properties.x) ?? 0),
+            y: el.y + (Number(properties.y) ?? 0)
           };
         }
   
