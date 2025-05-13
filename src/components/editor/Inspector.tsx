@@ -34,7 +34,12 @@ export function Inspector({ selectedElement, onInspectorChange }: InspectorProps
       if (field === 'easing') {
         return { ...anim, easing: value as GsapEase };
       } else if (field === 'type') {
-        return { ...anim, type: value as AnimationType };
+        const newType = value as AnimationType;
+        return { 
+          ...anim, 
+          type: newType,
+          id: `${newType}-${animationId.split('-')[1]}`
+        };
       } else if (field === 'startTime' || field === 'duration') {
         return { ...anim, [field]: Number(value) };
       } else if (field.startsWith('properties.')) {
@@ -57,9 +62,10 @@ export function Inspector({ selectedElement, onInspectorChange }: InspectorProps
   const handleAddAnimation = () => {
     if (!selectedElement) return;
     
+    const type = 'rotate' as AnimationType;
     const newAnimation = {
-      id: `anim-${localAnimations.length + 1}`,
-      type: 'rotate' as AnimationType,
+      id: `${type}-${localAnimations.length + 1}`,
+      type,
       startTime: 0,
       duration: 2,
       properties: {
@@ -254,7 +260,7 @@ export function Inspector({ selectedElement, onInspectorChange }: InspectorProps
         {localAnimations.map((animation) => (
           <div key={animation.id} className="border rounded p-2">
             <div className="flex justify-between items-center mb-2 border-b pb-2">
-              <span className="font-medium text-blue-600">{animation.id}</span>
+              <span className="font-medium text-blue-600">{animation.type}</span>
             </div>
             <div className="flex flex-col gap-2">
               <div className="grid grid-cols-2 gap-2">
