@@ -114,40 +114,23 @@ export default function EditorCanvas() {
   }
 
   const canvasClickHandler = (e: FederatedPointerEvent) => {
-    console.log('Canvas clicked:', { 
-      target: e.target, 
-      targetName: (e.target as Container)?.name,
-      tool, 
-      globalX: e.global.x, 
-      globalY: e.global.y,
-      currentElements: elements.length
-    });
-    
     const isEmptyClick = !(e.target && (e.target as Container).name === 'shape');
-    console.log('Is empty click:', isEmptyClick, 'Target name:', (e.target as Container)?.name);
 
     if (
       isEmptyClick &&
       (tool === 'rectangle' || tool === 'circle' || tool === 'triangle')
     ) {
-      console.log('Creating new element:', { tool, x: e.global.x, y: e.global.y });
       const newElement = createNewElement(tool, e.global.x, e.global.y, elements);
-      console.log('New element created:', newElement);
       
       setElements(prev => {
-        console.log('Previous elements:', prev);
         const newElements = [...prev, newElement];
-        console.log('Updated elements:', newElements);
         return newElements;
       });
       selectionManager.select(newElement);
       setTool('select');
       setMaskPos(null);
     } else if (isEmptyClick) {
-      console.log('Empty click - deselecting');
       selectionManager.select(null);
-    } else {
-      console.log('Click on existing shape - no new element created');
     }
   }
   
