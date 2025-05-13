@@ -25,10 +25,20 @@ export class GSAPTimelineManager {
       if (!target) return;
   
       el.animations.forEach((anim) => {
+        let properties = { ...anim.properties };
+        
+        // Handle relative movement
+        if (anim.type === 'move') {
+          properties = {
+            x: el.x + (properties.x ?? 0),
+            y: el.y + (properties.y ?? 0)
+          };
+        }
+  
         this.timeline.to(
           target,
           {
-            ...anim.properties,
+            ...properties,
             duration: anim.duration,
             ease: anim.easing ?? 'power1.out',
           },

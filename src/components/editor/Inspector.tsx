@@ -35,10 +35,18 @@ export function Inspector({ selectedElement, onInspectorChange }: InspectorProps
         return { ...anim, easing: value as GsapEase };
       } else if (field === 'type') {
         const newType = value as AnimationType;
+        const defaultProperties = {
+          rotate: { rotation: 0 },
+          scale: { scaleX: 1, scaleY: 1 },
+          move: { x: 0, y: 0 },
+          color: { fill: selectedElement!.fill },
+          fade: { opacity: selectedElement!.opacity ?? 1 }
+        };
         return { 
           ...anim, 
           type: newType,
-          id: `${newType}-${animationId.split('-')[1]}`
+          id: `${newType}-${animationId.split('-')[1]}`,
+          properties: defaultProperties[newType]
         };
       } else if (field === 'startTime' || field === 'duration') {
         return { ...anim, [field]: Number(value) };
@@ -63,14 +71,20 @@ export function Inspector({ selectedElement, onInspectorChange }: InspectorProps
     if (!selectedElement) return;
     
     const type = 'rotate' as AnimationType;
+    const defaultProperties = {
+      rotate: { rotation: 0 },
+      scale: { scaleX: 1, scaleY: 1 },
+      move: { x: 0, y: 0 },
+      color: { fill: selectedElement.fill },
+      fade: { opacity: selectedElement.opacity ?? 1 }
+    };
+
     const newAnimation = {
       id: `${type}-${localAnimations.length + 1}`,
       type,
       startTime: 0,
       duration: 2,
-      properties: {
-        rotation: 0
-      },
+      properties: defaultProperties[type],
       easing: 'power1.inOut' as GsapEase
     };
 
@@ -353,20 +367,20 @@ export function Inspector({ selectedElement, onInspectorChange }: InspectorProps
                   {animation.type === 'move' && (
                     <>
                       <label>
-                        X:
+                        Move X:
                         <input
                           type="number"
-                          value={animation.properties.x ?? selectedElement.x}
+                          value={animation.properties.x ?? 0}
                           onChange={e => handleAnimationChange(animation.id, 'properties.x', e.target.value)}
                           className="w-full"
                           step="1"
                         />
                       </label>
                       <label>
-                        Y:
+                        Move Y:
                         <input
                           type="number"
-                          value={animation.properties.y ?? selectedElement.y}
+                          value={animation.properties.y ?? 0}
                           onChange={e => handleAnimationChange(animation.id, 'properties.y', e.target.value)}
                           className="w-full"
                           step="1"
