@@ -11,6 +11,7 @@ import { SceneExplorer } from './scene-explorer';
 import { Inspector } from './inspector';
 import { Timeline } from './timeline';
 import { Toolbar } from './toolbar';
+import { MaskOverlay } from './mask-overlay';
 import { AnimatedCanvasElement } from '@/types/canvas';
 import { Canvas } from './canvas';
 import { FederatedPointerEvent, Container } from 'pixi.js';
@@ -251,56 +252,6 @@ export default function EditorCanvas() {
     gsapManager.buildTimeline(elements);
   };
 
-  // Mask overlay for shape placement
-  const renderMask = () => {
-    if (tool === 'select' || !maskPos) return null;
-    const style = {
-      position: 'absolute' as const,
-      left: maskPos.x + MASK_OFFSET_X,
-      top: maskPos.y + MASK_OFFSET_Y,
-      width: 50,
-      height: 50,
-      pointerEvents: 'none' as const,
-      background: 'white',
-      opacity: 0.5,
-      zIndex: 20,
-      border: '2px dotted #888',
-      boxSizing: 'border-box' as const,
-    };
-    if (tool === 'rectangle') {
-      return <div style={{ ...style, borderRadius: 4 }} />;
-    }
-    if (tool === 'circle') {
-      return <div style={{ ...style, borderRadius: '50%' }} />;
-    }
-    if (tool === 'triangle') {
-      // SVG triangle offset from mouse
-      return (
-        <svg
-          style={{
-            position: 'absolute',
-            left: maskPos.x + MASK_OFFSET_X,
-            top: maskPos.y + MASK_OFFSET_Y,
-            width: 50,
-            height: 50,
-            pointerEvents: 'none',
-            opacity: 0.5,
-            zIndex: 20,
-          }}
-        >
-          <polygon
-            points="25,5 45,45 5,45"
-            fill="white"
-            stroke="#888"
-            strokeWidth={2}
-            strokeDasharray="4,3"
-          />
-        </svg>
-      );
-    }
-    return null;
-  };
-
   return (
     <div className="flex flex-col h-screen w-screen">
       {/* Options Bar */}
@@ -337,7 +288,12 @@ export default function EditorCanvas() {
         >
           <Toolbar currentTool={tool} onToolChange={setTool} />
 
-          {renderMask()}
+          <MaskOverlay
+            tool={tool}
+            maskPos={maskPos}
+            maskOffsetX={MASK_OFFSET_X}
+            maskOffsetY={MASK_OFFSET_Y}
+          />
 
           {dimensions.width > 0 && dimensions.height > 0 && (
             <Canvas
@@ -350,7 +306,6 @@ export default function EditorCanvas() {
               onCanvasClick={canvasClickHandler}
             />
           )}
-
         </main>
 
         <Inspector
