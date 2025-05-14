@@ -1,5 +1,5 @@
 import gsap from 'gsap';
-import type { AnimatedCanvasElement } from '@/types/canvas';
+import type { AnimatableProperties, AnimatedCanvasElement, ElementAnimation } from '@/types/canvas';
 import type { CanvasRef } from '@/components/canvas';
 
 export class GSAPTimelineManager {
@@ -14,6 +14,42 @@ export class GSAPTimelineManager {
     this.canvasRef = ref;
   }
 
+  private generateAnimationProperties(animation: ElementAnimation, element: AnimatedCanvasElement): Partial<AnimatableProperties> {
+    const animeProps = { ...animation.properties };
+    
+    switch (animation.type) {
+      case 'move':
+        return {
+          x: element.x + (Number(animeProps.x) ?? 0),
+          y: element.y + (Number(animeProps.y) ?? 0)
+        };
+      
+      case 'scale':
+        return {
+          scaleX: Number(animeProps.scaleX) ?? 1,
+          scaleY: Number(animeProps.scaleY) ?? 1
+        };
+      
+      case 'rotate':
+        return {
+          rotation: (Number(animeProps.rotation) ?? 0)
+        };
+      
+      case 'fade':
+        return {
+          alpha: Number(animeProps.alpha) ?? 1
+        };
+      
+      case 'color':
+        return {
+          tint: animeProps.tint ?? element.fill
+        };
+      
+      default:
+        return {};
+    }
+  }
+
   buildTimeline(elements: AnimatedCanvasElement[]) {
     const shapeRefs = this.canvasRef?.current?.getShapeRefs();
     if (!shapeRefs) return;
@@ -25,20 +61,12 @@ export class GSAPTimelineManager {
       if (!target) return;
   
       el.animations.forEach((anim) => {
-        let properties = { ...anim.properties };
-        
-        // Handle relative movement
-        if (anim.type === 'move') {
-          properties = {
-            x: el.x + (Number(properties.x) ?? 0),
-            y: el.y + (Number(properties.y) ?? 0)
-          };
-        }
+        const animationProps = this.generateAnimationProperties(anim, el);
   
         this.timeline.to(
           target,
           {
-            ...properties,
+            ...animationProps,
             duration: anim.duration,
             ease: anim.easing ?? 'power1.out',
           },
@@ -49,7 +77,6 @@ export class GSAPTimelineManager {
   
     this.timeline.pause(0);
   }
-  
 
   updateTime(elapsedTime: number) {
     this.timeline.time(elapsedTime, false);

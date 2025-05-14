@@ -24,8 +24,10 @@ export type AnimatableProperties = {
   y?: number;
   width?: number;
   height?: number;
-  fill?: string;
-  opacity?: number;
+  tint?: string;
+  scaleX?: number;
+  scaleY?: number;
+  alpha?: number;
   radius?: number;
   cornerRadius?: number;
   shadowBlur?: number;
@@ -42,64 +44,9 @@ export interface ElementAnimation {
   type: AnimationType;
   startTime: number; // seconds
   duration: number; // seconds
-  properties: AnimatableCSSProperties;
+  properties: AnimatableProperties;
   easing?: GsapEase;
 }
-
-export interface AnimatableCSSProperties {
-  // Transform-related properties
-  x?: number | string;
-  y?: number | string;
-  z?: number | string;
-  xPercent?: number;
-  yPercent?: number;
-  zPercent?: number;
-  rotation?: number;
-  rotationX?: number;
-  rotationY?: number;
-  rotationZ?: number;
-  skewX?: number;
-  skewY?: number;
-  scale?: number;
-  scaleX?: number;
-  scaleY?: number;
-  scaleZ?: number;
-  transformPerspective?: number;
-  transformOrigin?: string;
-
-  // Opacity and color
-  opacity?: number;
-  backgroundColor?: string;
-  borderColor?: string;
-  color?: string;
-
-  // Box model
-  width?: number | string;
-  height?: number | string;
-  top?: number | string;
-  left?: number | string;
-  right?: number | string;
-  bottom?: number | string;
-  margin?: string;
-  padding?: string;
-  borderRadius?: string;
-  boxShadow?: string;
-
-  // Filters
-  filter?: string;
-
-  // SVG-specific
-  fill?: string;
-  stroke?: string;
-  strokeWidth?: number | string;
-
-  // Text
-  fontSize?: number | string;
-  letterSpacing?: number | string;
-  lineHeight?: number | string;
-  textShadow?: string;
-}
-
 
 export interface AnimatedCanvasElement {
   id: string;
