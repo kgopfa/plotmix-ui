@@ -1,6 +1,11 @@
 import gsap from 'gsap';
 import type { AnimatableProperties, AnimatedCanvasElement, ElementAnimation } from '@/types/canvas';
-import type { CanvasRef } from '@/components/canvas';
+import type { CanvasRef } from '@/components/editor/canvas';
+import { PixiPlugin } from "gsap/PixiPlugin";
+import * as PIXI from 'pixi.js';
+
+gsap.registerPlugin(PixiPlugin);
+PixiPlugin.registerPIXI(PIXI);
 
 export class GSAPTimelineManager {
   private timeline: gsap.core.Timeline;
@@ -37,7 +42,7 @@ export class GSAPTimelineManager {
       
       case 'fade':
         return {
-          alpha: Number(animeProps.alpha) ?? 1
+          alpha: animeProps.alpha ?? 1
         };
       
       case 'color':
@@ -66,7 +71,7 @@ export class GSAPTimelineManager {
         this.timeline.to(
           target,
           {
-            ...animationProps,
+            pixi: animationProps,
             duration: anim.duration,
             ease: anim.easing ?? 'power1.out',
           },
