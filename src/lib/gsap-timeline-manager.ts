@@ -1,6 +1,6 @@
 import gsap from 'gsap';
 import type { AnimatedCanvasElement } from '@/types/canvas';
-import type { CanvasRef } from '@/components/editor/canvas';
+import type { CanvasRef } from '@/components/canvas';
 
 export class GSAPTimelineManager {
   private timeline: gsap.core.Timeline;
