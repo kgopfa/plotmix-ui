@@ -69,18 +69,34 @@ export class GSAPTimelineManager {
         const animationProps = this.generateAnimationProperties(anim, el);
 
         if (anim.type === 'color') {
+          const oldChild = target.children[0] as PIXI.Graphics;
+          if (!(oldChild instanceof PIXI.Graphics)) return;
+
+          // Create new child with target color (initially transparent)
+          const newChild = new PIXI.Graphics()
+            .rect(0, 0, el.width, el.height)
+            .fill(anim.properties.fillColor);
+          newChild.alpha = 0;
+          target.addChild(newChild);
+
+          // Fade out old child
           this.timeline.to(
-            target,
+            oldChild,
             {
-              pixi: { fillColor: el.fill },
+              pixi: { alpha: 0 },
               duration: anim.duration,
               ease: anim.easing ?? 'power1.out',
-              onUpdate: () => {
-                target.removeChild(target.children[0]);
-                const newChild = new PIXI.Graphics();
-                newChild.rect(0, 0, el.width, el.height).fill(anim.properties.fillColor);
-                target.addChild(newChild);
-              }
+            },
+            anim.startTime
+          );
+
+          // Fade in new child
+          this.timeline.to(
+            newChild,
+            {
+              pixi: { alpha: 1 },
+              duration: anim.duration,
+              ease: anim.easing ?? 'power1.out',
             },
             anim.startTime
           );
