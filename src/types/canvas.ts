@@ -24,7 +24,7 @@ export type AnimatableProperties = {
   y?: number;
   width?: number;
   height?: number;
-  tint?: string;
+  fillColor?: string;
   scaleX?: number;
   scaleY?: number;
   alpha?: number;

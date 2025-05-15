@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AnimatedCanvasElement, EASING_OPTIONS, GsapEase, ElementAnimation, AnimationType } from '@/types/canvas';
+import { AnimatedCanvasElement, EASING_OPTIONS, GsapEase, ElementAnimation, AnimationType, AnimatableProperties } from '@/types/canvas';
 
 interface InspectorProps {
   selectedElement: AnimatedCanvasElement | null;
@@ -23,6 +23,17 @@ export function Inspector({ selectedElement, onInspectorChange }: InspectorProps
     }
   }, [selectedElement]);
 
+  const getAnimationProperty = (path: string, value: string | number): Partial<AnimatableProperties> => {
+    const parts = path.split('.');
+    const propertyKey = parts[1] as keyof AnimatableProperties;
+    
+    // Handle numeric properties vs string properties
+    const isNumericProperty = propertyKey !== 'fillColor';
+    const convertedValue = isNumericProperty ? Number(value) : value;
+    
+    return { [propertyKey]: convertedValue };
+  };
+
   const handleAnimationChange = (
     animationId: string,
     field: string,
@@ -39,8 +50,8 @@ export function Inspector({ selectedElement, onInspectorChange }: InspectorProps
           rotate: { rotation: 0 },
           scale: { scaleX: 1, scaleY: 1 },
           move: { x: 0, y: 0 },
-          color: { fill: selectedElement!.fill },
-          fade: { opacity: selectedElement!.opacity ?? 1 }
+          color: { fillColor: selectedElement!.fill },
+          fade: { alpha: selectedElement!.opacity ?? 1 }
         };
         return { 
           ...anim, 
@@ -51,12 +62,12 @@ export function Inspector({ selectedElement, onInspectorChange }: InspectorProps
       } else if (field === 'startTime' || field === 'duration') {
         return { ...anim, [field]: Number(value) };
       } else if (field.startsWith('properties.')) {
-        const propName = field.split('.')[1];
+        const animationProperty = getAnimationProperty(field, value);
         return {
           ...anim,
           properties: {
             ...anim.properties,
-            [propName]: propName === 'fill' ? value : Number(value)
+            ...animationProperty
           }
         };
       }
@@ -75,8 +86,8 @@ export function Inspector({ selectedElement, onInspectorChange }: InspectorProps
       rotate: { rotation: 0 },
       scale: { scaleX: 1, scaleY: 1 },
       move: { x: 0, y: 0 },
-      color: { fill: selectedElement.fill },
-      fade: { opacity: selectedElement.opacity ?? 1 }
+      color: { fillColor: selectedElement.fill },
+      fade: { alpha: selectedElement.opacity ?? 1 }
     };
 
     const newAnimation = {
@@ -393,8 +404,8 @@ export function Inspector({ selectedElement, onInspectorChange }: InspectorProps
                       Color:
                       <input
                         type="color"
-                        value={animation.properties.fill ?? selectedElement.fill}
-                        onChange={e => handleAnimationChange(animation.id, 'properties.fill', e.target.value)}
+                        value={animation.properties.fillColor ?? selectedElement.fill}
+                        onChange={e => handleAnimationChange(animation.id, 'properties.fillColor', e.target.value)}
                         className="w-full"
                       />
                     </label>
@@ -407,8 +418,8 @@ export function Inspector({ selectedElement, onInspectorChange }: InspectorProps
                         min="0"
                         max="1"
                         step="0.1"
-                        value={animation.properties.opacity ?? selectedElement.opacity ?? 1}
-                        onChange={e => handleAnimationChange(animation.id, 'properties.opacity', e.target.value)}
+                        value={animation.properties.alpha ?? selectedElement.opacity ?? 1}
+                        onChange={e => handleAnimationChange(animation.id, 'properties.alpha', e.target.value)}
                         className="w-full"
                       />
                     </label>

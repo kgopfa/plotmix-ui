@@ -47,7 +47,7 @@ export class GSAPTimelineManager {
       
       case 'color':
         return {
-          tint: animeProps.tint ?? element.fill
+          fillColor: animeProps.fillColor ?? element.fill
         };
       
       default:
