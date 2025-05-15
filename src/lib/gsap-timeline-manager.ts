@@ -21,35 +21,35 @@ export class GSAPTimelineManager {
 
   private generateAnimationProperties(animation: ElementAnimation, element: AnimatedCanvasElement): Partial<AnimatableProperties> {
     const animeProps = { ...animation.properties };
-    
+
     switch (animation.type) {
       case 'move':
         return {
           x: element.x + (Number(animeProps.x) ?? 0),
           y: element.y + (Number(animeProps.y) ?? 0)
         };
-      
+
       case 'scale':
         return {
           scaleX: Number(animeProps.scaleX) ?? 1,
           scaleY: Number(animeProps.scaleY) ?? 1
         };
-      
+
       case 'rotate':
         return {
           rotation: (Number(animeProps.rotation) ?? 0)
         };
-      
+
       case 'fade':
         return {
           alpha: animeProps.alpha ?? 1
         };
-      
+
       case 'color':
         return {
           fillColor: animeProps.fillColor ?? element.fill
         };
-      
+
       default:
         return {};
     }
@@ -58,28 +58,48 @@ export class GSAPTimelineManager {
   buildTimeline(elements: AnimatedCanvasElement[]) {
     const shapeRefs = this.canvasRef?.current?.getShapeRefs();
     if (!shapeRefs) return;
-  
+
     this.timeline.clear();
-  
+
     elements.forEach((el) => {
       const target = shapeRefs[el.id];
       if (!target) return;
-  
+
       el.animations.forEach((anim) => {
         const animationProps = this.generateAnimationProperties(anim, el);
-  
-        this.timeline.to(
-          target,
-          {
-            pixi: animationProps,
-            duration: anim.duration,
-            ease: anim.easing ?? 'power1.out',
-          },
-          anim.startTime
-        );
+
+        if (anim.type === 'color') {
+          this.timeline.to(
+            target,
+            {
+              pixi: { fillColor: el.fill },
+              duration: anim.duration,
+              ease: anim.easing ?? 'power1.out',
+              onUpdate: () => {
+                target.removeChild(target.children[0]);
+
+                const newChild = new PIXI.Graphics();
+                newChild.rect(0, 0, el.width, el.height).fill(anim.properties.fillColor);
+                
+                target.addChild(newChild);
+              }
+            },
+            anim.startTime
+          );
+        } else {
+          this.timeline.to(
+            target,
+            {
+              pixi: animationProps,
+              duration: anim.duration,
+              ease: anim.easing ?? 'power1.out',
+            },
+            anim.startTime
+          );
+        }
       });
     });
-  
+
     this.timeline.pause(0);
   }
 
