@@ -77,10 +77,8 @@ export class GSAPTimelineManager {
               ease: anim.easing ?? 'power1.out',
               onUpdate: () => {
                 target.removeChild(target.children[0]);
-
                 const newChild = new PIXI.Graphics();
                 newChild.rect(0, 0, el.width, el.height).fill(anim.properties.fillColor);
-                
                 target.addChild(newChild);
               }
             },
