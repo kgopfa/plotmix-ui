@@ -5,8 +5,8 @@ import { Container, Graphics } from 'pixi.js';
 import type { FederatedPointerEvent } from 'pixi.js';
 import type { AnimatedCanvasElement } from '@/types/canvas';
 import { useImperativeHandle, forwardRef, useState, useRef } from 'react';
+import { drawShape, drawSelectionOutline } from '@/utils/drawing-utils';
 
-// Register PixiJS components with @pixi/react
 extend({ Container, Graphics });
 
 interface CanvasProps {
@@ -58,72 +58,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     if (draggingId !== id || !dragOffset) return;
     const pos = e.global;
     onElementDragEnd(id, pos.x - dragOffset.x, pos.y - dragOffset.y);
-  };
-
-
-  const drawShape = (graphics: Graphics, shape: AnimatedCanvasElement) => {
-    graphics.clear();
-
-    // Set fill style
-    graphics.fill({ color: shape.fill, alpha: shape.opacity });
-
-    switch (shape.type) {
-      case 'rectangle':
-        // Use roundRect for rectangles with optional corner radius
-        graphics.roundRect(0, 0, shape.width, shape.height, shape.cornerRadius || 0);
-        break;
-      case 'circle':
-        // Use ellipse for circles
-        const radius = shape.radius || shape.width / 2;
-        graphics.ellipse(radius, radius, radius, radius);
-        break;
-      case 'triangle':
-        // Define points for an equilateral triangle
-        const r = shape.radius || shape.width / 2;
-        const points = [
-          { x: 0, y: r * 2 },
-          { x: r, y: 0 },
-          { x: r * 2, y: r * 2 },
-        ];
-        graphics.poly(points);
-        break;
-      default:
-        break;
-    }
-
-    graphics.fill(); // Apply the fill
-  };
-
-  const drawSelectionOutline = (graphics: Graphics, shape: AnimatedCanvasElement) => {
-    graphics.clear();
-
-    graphics.stroke({
-      width: 3,
-      color: 'cyan',
-    });
-
-    switch (shape.type) {
-      case 'rectangle':
-        graphics.roundRect(0, 0, shape.width, shape.height, shape.cornerRadius || 0);
-        break;
-      case 'circle':
-        const radius = shape.radius || shape.width / 2;
-        graphics.ellipse(radius, radius, radius, radius);
-        break;
-      case 'triangle':
-        const r = shape.radius || shape.width / 2;
-        const points = [
-          { x: 0, y: r * 2 },
-          { x: r, y: 0 },
-          { x: r * 2, y: r * 2 },
-        ];
-        graphics.poly(points);
-        break;
-      default:
-        break;
-    }
-
-    graphics.stroke(); // Apply the stroke
   };
 
   return (

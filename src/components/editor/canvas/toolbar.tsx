@@ -1,6 +1,6 @@
 interface ToolbarProps {
-  currentTool: 'select' | 'rectangle' | 'circle' | 'triangle';
-  onToolChange: (tool: 'select' | 'rectangle' | 'circle' | 'triangle') => void;
+  currentTool: 'select' | 'rectangle' | 'circle' | 'triangle' | 'line';
+  onToolChange: (tool: 'select' | 'rectangle' | 'circle' | 'triangle' | 'line') => void;
 }
 
 export function Toolbar({ currentTool, onToolChange }: ToolbarProps) {
@@ -26,6 +26,13 @@ export function Toolbar({ currentTool, onToolChange }: ToolbarProps) {
       >
         <span>△</span>
         <span>Triangle</span>
+      </button>
+      <button
+        className={`btn flex items-center gap-1 ${currentTool === 'line' ? 'bg-gray-100' : ''}`}
+        onClick={() => onToolChange('line')}
+      >
+        <span>🔗</span>
+        <span>Line</span>
       </button>
     </div>
   );

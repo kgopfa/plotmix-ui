@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface MaskOverlayProps {
-  tool: 'select' | 'rectangle' | 'circle' | 'triangle';
+  tool: 'select' | 'rectangle' | 'circle' | 'triangle' | 'line';
   maskPos: { x: number; y: number } | null;
   maskOffsetX?: number;
   maskOffsetY?: number;
@@ -49,6 +49,33 @@ export function MaskOverlay({ tool, maskPos, maskOffsetX = 0, maskOffsetY = 0 }:
         <polygon
           points="25,5 45,45 5,45"
           fill="white"
+          stroke="#888"
+          strokeWidth={2}
+          strokeDasharray="4,3"
+        />
+      </svg>
+    );
+  }
+
+  if (tool === 'line') {
+    return (
+      <svg
+        style={{
+          position: 'absolute',
+          left: maskPos.x + maskOffsetX,
+          top: maskPos.y + maskOffsetY,
+          width: 50,
+          height: 50,
+          pointerEvents: 'none',
+          opacity: 0.5,
+          zIndex: 20,
+        }}
+      >
+        <line
+          x1="5"
+          y1="5"
+          x2="45"
+          y2="45"
           stroke="#888"
           strokeWidth={2}
           strokeDasharray="4,3"

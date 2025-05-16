@@ -51,7 +51,7 @@ export interface ElementAnimation {
 export interface AnimatedCanvasElement {
   id: string;
   name: string;
-  type: 'rectangle' | 'circle' | 'triangle';
+  type: 'rectangle' | 'circle' | 'triangle' | 'line';
   x: number;
   y: number;
   width: number;
@@ -68,6 +68,11 @@ export interface AnimatedCanvasElement {
   shadowOffsetX?: number;
   shadowOffsetY?: number;
   shadowOpacity?: number;
+  lineOptions?: {
+    points: {start: {x: number, y: number}, end: {x: number, y: number}};
+    arrow: boolean;
+    dotted: boolean;
+  };
   animations: ElementAnimation[];
 }
 
