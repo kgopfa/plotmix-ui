@@ -259,6 +259,23 @@ export default function EditorCanvas() {
     timeManager.stop();
   }, [timeManager]);
 
+  const handleLineEndpointDrag = (id: string, endpoint: 'start' | 'end', x: number, y: number) => {
+    setElements(elements.map((el) => {
+      if (el.id !== id || el.type !== 'line' || !el.lineOptions?.points) return el;
+      
+      return {
+        ...el,
+        lineOptions: {
+          ...el.lineOptions,
+          points: {
+            ...el.lineOptions.points,
+            [endpoint]: { x, y }
+          }
+        }
+      };
+    }));
+  };
+
   return (
     <div className="flex flex-col h-screen w-screen">
       {/* Options Bar */}
@@ -312,6 +329,7 @@ export default function EditorCanvas() {
               onElementSelect={handleSelectElement as (id: string | null) => void}
               onElementDragEnd={handleElementDragEnd}
               onCanvasClick={canvasClickHandler}
+              onLineEndpointDrag={handleLineEndpointDrag}
             />
           )}
         </main>

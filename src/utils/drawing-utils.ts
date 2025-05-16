@@ -196,11 +196,34 @@ export const drawSelectionOutline = (graphics: Graphics, shape: AnimatedCanvasEl
       ];
       graphics.poly(points);
       break;
-    default:
+    case 'line':
+      if (shape.lineOptions?.points) {
+        const { start, end } = shape.lineOptions.points;
+        const startX = start.x - shape.x;
+        const startY = start.y - shape.y;
+        const endX = end.x - shape.x;
+        const endY = end.y - shape.y;
+        
+        // Draw line outline
+        graphics
+          .moveTo(startX, startY)
+          .lineTo(endX, endY);
+
+        // Draw endpoint markers
+        const HANDLE_SIZE = 10;
+        
+        // Start point marker (green)
+        graphics.circle(startX, startY, HANDLE_SIZE / 2);
+        graphics.fill({ color: 0x00ff00, alpha: 0.5 });
+        graphics.stroke({ color: 'cyan', width: 3 });
+        
+        // End point marker (red)
+        graphics.circle(endX, endY, HANDLE_SIZE / 2);
+        graphics.fill({ color: 0xff0000, alpha: 0.5 });
+        graphics.stroke({ color: 'cyan', width: 3 });
+      }
       break;
   }
-
-  graphics.stroke(); // Apply the stroke
 };
 
 export function calculateLineLength(points: { start: { x: number, y: number }, end: { x: number, y: number } }): number {

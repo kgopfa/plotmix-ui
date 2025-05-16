@@ -16,6 +16,7 @@ interface CanvasProps {
   onElementSelect: (id: string | null) => void;
   onElementDragEnd: (id: string, x: number, y: number) => void;
   onCanvasClick: (e: FederatedPointerEvent) => void;
+  onLineEndpointDrag?: (id: string, endpoint: 'start' | 'end', x: number, y: number) => void;
 }
 
 export interface CanvasRef {
@@ -30,10 +31,12 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     onElementSelect,
     onElementDragEnd,
     onCanvasClick,
+    onLineEndpointDrag,
   },
   ref
 ) {
   const shapeRefs = useRef<Record<string, Container>>({});
+  const HANDLE_SIZE = 10;
 
   useImperativeHandle(ref, () => ({
     getShapeRefs: () => shapeRefs.current,
@@ -41,9 +44,37 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
+  const [draggingEndpoint, setDraggingEndpoint] = useState<'start' | 'end' | null>(null);
 
   const handlePointerDown = (id: string, shapeX: number, shapeY: number) => (e: FederatedPointerEvent) => {
     const pos = e.global;
+    const element = elements.find(el => el.id === id);
+    
+    if (element?.type === 'line' && element.lineOptions?.points && onLineEndpointDrag) {
+      const { start, end } = element.lineOptions.points;
+      const clickX = pos.x;
+      const clickY = pos.y;
+      
+      // Check if clicking near start point
+      const startDist = Math.hypot(clickX - start.x, clickY - start.y);
+      if (startDist <= HANDLE_SIZE) {
+        setDraggingEndpoint('start');
+        setDraggingId(id);
+        onElementSelect(id);
+        return;
+      }
+      
+      // Check if clicking near end point
+      const endDist = Math.hypot(clickX - end.x, clickY - end.y);
+      if (endDist <= HANDLE_SIZE) {
+        setDraggingEndpoint('end');
+        setDraggingId(id);
+        onElementSelect(id);
+        return;
+      }
+    }
+    
+    // Regular shape drag
     setDraggingId(id);
     onElementSelect(id);
     setDragOffset({ x: pos.x - shapeX, y: pos.y - shapeY });
@@ -52,12 +83,21 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   const handlePointerUp = () => {
     setDraggingId(null);
     setDragOffset(null);
+    setDraggingEndpoint(null);
   };
 
   const handleDragMove = (id: string) => (e: FederatedPointerEvent) => {
-    if (draggingId !== id || !dragOffset) return;
+    if (draggingId !== id) return;
+    
     const pos = e.global;
-    onElementDragEnd(id, pos.x - dragOffset.x, pos.y - dragOffset.y);
+    
+    if (draggingEndpoint && onLineEndpointDrag) {
+      // Handle endpoint dragging
+      onLineEndpointDrag(id, draggingEndpoint, pos.x, pos.y);
+    } else if (dragOffset) {
+      // Handle regular shape dragging
+      onElementDragEnd(id, pos.x - dragOffset.x, pos.y - dragOffset.y);
+    }
   };
 
   return (
