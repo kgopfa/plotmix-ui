@@ -57,9 +57,15 @@ export default function EditorCanvas() {
     setSelectedElement(null);
   }, []);
 
+  const handleToolChange = useCallback((newTool: ToolType) => {
+    setTool(newTool);
+    setMaskPos(null);
+  }, []);
+
   useKeyboardShortcuts({
     selectedElement,
-    onDeleteElement: handleDeleteElement
+    onDeleteElement: handleDeleteElement,
+    onToolChange: handleToolChange
   });
 
   useEffect(() => {
@@ -228,7 +234,7 @@ export default function EditorCanvas() {
           }}
           onMouseLeave={() => setMaskPos(null)}
         >
-          <Toolbar currentTool={tool} onToolChange={setTool} />
+          <Toolbar currentTool={tool} onToolChange={handleToolChange} />
 
           <MaskOverlay
             tool={tool}
