@@ -20,7 +20,7 @@ export class GSAPTimelineManager {
     this.canvasRef = ref;
   }
 
-  buildTimeline(elements: AnimatedCanvasElement[]) {
+  buildAnimationTimeline(elements: AnimatedCanvasElement[]) {
     const shapeRefs = this.canvasRef?.current?.getShapeRefs();
     if (!shapeRefs) return;
 
@@ -29,6 +29,8 @@ export class GSAPTimelineManager {
     elements.forEach((element) => {
       const target = shapeRefs[element.id];
       if (!target) return;
+
+      console.log("target children", target.children);
 
       element.animations.forEach((animation) => {
         const config = generateAnimationConfig(element, animation, target);
@@ -50,6 +52,9 @@ export class GSAPTimelineManager {
               pixi: { alpha: 1 },
               duration: config.duration,
               ease: config.ease,
+              onInterrupt: () => {
+                target.removeChild(config.newChild);
+              }
             },
             config.startTime
           );
