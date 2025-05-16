@@ -118,6 +118,12 @@ export function Inspector({ selectedElement, onInspectorChange }: InspectorProps
     onInspectorChange('animations', updatedAnimations);
   };
 
+  const handleDeleteAnimation = (animationId: string) => {
+    const updatedAnimations = localAnimations.filter(anim => anim.id !== animationId);
+    setLocalAnimations(updatedAnimations);
+    onInspectorChange('animations', updatedAnimations);
+  };
+
   if (!selectedElement) {
     return (
       <aside className="w-80 min-w-48 max-w-xs bg-gray-50 border-l border-gray-200 p-2 overflow-y-auto text-gray-800">
@@ -365,6 +371,13 @@ export function Inspector({ selectedElement, onInspectorChange }: InspectorProps
           <div key={animation.id} className="border rounded p-2">
             <div className="flex justify-between items-center mb-2 border-b pb-2">
               <span className="font-medium text-blue-600">{animation.type}</span>
+              <button
+                onClick={() => handleDeleteAnimation(animation.id)}
+                className="text-red-500 hover:text-red-700"
+                title="Delete animation"
+              >
+                ×
+              </button>
             </div>
             <div className="flex flex-col gap-2">
               <div className="grid grid-cols-2 gap-2">
