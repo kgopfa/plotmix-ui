@@ -1,7 +1,8 @@
 import React from 'react';
+import { ToolType } from '@/types/editor';
 
 interface MaskOverlayProps {
-  tool: 'select' | 'rectangle' | 'circle' | 'triangle' | 'line';
+  tool: ToolType;
   maskPos: { x: number; y: number } | null;
   maskOffsetX?: number;
   maskOffsetY?: number;
