@@ -19,12 +19,13 @@ import type { CanvasRef } from './canvas';
 import { createNewElement } from '@/lib/element-factory';
 import { useCanvasDimensions } from '@/hooks/use-canvas-dimensions';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
+import { ToolType } from '@/types/editor';
 
 
 export default function EditorCanvas() {
   const [elements, setElements] = useState<AnimatedCanvasElement[]>([]);
   const [selectedElement, setSelectedElement] = useState<AnimatedCanvasElement | null>(null);
-  const [tool, setTool] = useState<'select' | 'rectangle' | 'circle' | 'triangle'>('select');
+  const [tool, setTool] = useState<ToolType>('select');
   const [maskPos, setMaskPos] = useState<{ x: number, y: number } | null>(null);
   const [timeState, setTimeState] = useState<TimeManagerState>({
     isPlaying: false,
@@ -67,7 +68,7 @@ export default function EditorCanvas() {
 
   useEffect(() => {
     if (dimensions.width > 0 && elements.length > 0) {
-      gsapManager.buildTimeline(elements);
+      gsapManager.buildAnimationTimeline(elements);
     }
   }, [elements, dimensions, gsapManager]);
 
@@ -104,7 +105,7 @@ export default function EditorCanvas() {
     setElements(elements.map((el) =>
       el.id === id ? { ...el, x, y } : el
     ));
-    gsapManager.buildTimeline(elements);
+    gsapManager.buildAnimationTimeline(elements);
   };
 
   const handleAnimationChange = (
@@ -131,7 +132,7 @@ export default function EditorCanvas() {
         };
       })
     );
-    gsapManager.buildTimeline(elements);
+    gsapManager.buildAnimationTimeline(elements);
   };
 
   const handleInspectorChange = (prop: string, value: string | number | boolean | ElementAnimation[]) => {
@@ -140,7 +141,7 @@ export default function EditorCanvas() {
         const updatedElements = elements.map(el =>
           el.id === selectedElement?.id ? { ...el, animations: value as ElementAnimation[] } : el
         );
-        gsapManager.buildTimeline(updatedElements);
+        gsapManager.buildAnimationTimeline(updatedElements);
         return updatedElements;
       });
     } else {

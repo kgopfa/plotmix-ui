@@ -1,6 +1,8 @@
+import { ToolType } from '@/types/editor';
+
 interface ToolbarProps {
-  currentTool: 'select' | 'rectangle' | 'circle' | 'triangle' | 'line';
-  onToolChange: (tool: 'select' | 'rectangle' | 'circle' | 'triangle' | 'line') => void;
+  currentTool: ToolType;
+  onToolChange: (tool: ToolType) => void;
 }
 
 export function Toolbar({ currentTool, onToolChange }: ToolbarProps) {

@@ -1,0 +1,1 @@
+export type ToolType = 'select' | 'rectangle' | 'circle' | 'triangle' | 'line'; 
