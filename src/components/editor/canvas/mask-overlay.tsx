@@ -74,9 +74,9 @@ export function MaskOverlay({ tool, maskPos, maskOffsetX = 0, maskOffsetY = 0 }:
       >
         <line
           x1="5"
-          y1="5"
+          y1="25"
           x2="45"
-          y2="45"
+          y2="25"
           stroke="#888"
           strokeWidth={2}
           strokeDasharray="4,3"
