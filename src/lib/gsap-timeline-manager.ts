@@ -1,8 +1,9 @@
-import gsap from 'gsap';
-import type { AnimatableProperties, AnimatedCanvasElement, ElementAnimation } from '@/types/canvas';
+import { gsap } from 'gsap';
+import type { AnimatedCanvasElement } from '@/types/canvas';
 import type { CanvasRef } from '@/components/editor/canvas';
 import { PixiPlugin } from "gsap/PixiPlugin";
 import * as PIXI from 'pixi.js';
+import { generateAnimationConfig, isColorAnimationConfig } from '@/utils/animation-generator';
 
 gsap.registerPlugin(PixiPlugin);
 PixiPlugin.registerPIXI(PIXI);
@@ -19,96 +20,48 @@ export class GSAPTimelineManager {
     this.canvasRef = ref;
   }
 
-  private generateAnimationProperties(animation: ElementAnimation, element: AnimatedCanvasElement): Partial<AnimatableProperties> {
-    const animeProps = { ...animation.properties };
-
-    switch (animation.type) {
-      case 'move':
-        return {
-          x: element.x + (Number(animeProps.x) ?? 0),
-          y: element.y + (Number(animeProps.y) ?? 0)
-        };
-
-      case 'scale':
-        return {
-          scaleX: Number(animeProps.scaleX) ?? 1,
-          scaleY: Number(animeProps.scaleY) ?? 1
-        };
-
-      case 'rotate':
-        return {
-          rotation: (Number(animeProps.rotation) ?? 0)
-        };
-
-      case 'fade':
-        return {
-          alpha: animeProps.alpha ?? 1
-        };
-
-      case 'color':
-        return {
-          fillColor: animeProps.fillColor ?? element.fill
-        };
-
-      default:
-        return {};
-    }
-  }
-
   buildTimeline(elements: AnimatedCanvasElement[]) {
     const shapeRefs = this.canvasRef?.current?.getShapeRefs();
     if (!shapeRefs) return;
 
     this.timeline.clear();
 
-    elements.forEach((el) => {
-      const target = shapeRefs[el.id];
+    elements.forEach((element) => {
+      const target = shapeRefs[element.id];
       if (!target) return;
 
-      el.animations.forEach((anim) => {
-        const animationProps = this.generateAnimationProperties(anim, el);
+      element.animations.forEach((animation) => {
+        const config = generateAnimationConfig(element, animation, target);
 
-        if (anim.type === 'color') {
-          const oldChild = target.children[0] as PIXI.Graphics;
-          if (!(oldChild instanceof PIXI.Graphics)) return;
-
-          // Create new child with target color (initially transparent)
-          const newChild = new PIXI.Graphics()
-            .rect(0, 0, el.width, el.height)
-            .fill(anim.properties.fillColor);
-          newChild.alpha = 0;
-          target.addChild(newChild);
-
-          // Fade out old child
+        if (isColorAnimationConfig(config)) {
           this.timeline.to(
-            oldChild,
+            config.oldChild,
             {
               pixi: { alpha: 0 },
-              duration: anim.duration,
-              ease: anim.easing ?? 'power1.out',
+              duration: config.duration,
+              ease: config.ease,
             },
-            anim.startTime
+            config.startTime
           );
 
-          // Fade in new child
           this.timeline.to(
-            newChild,
+            config.newChild,
             {
               pixi: { alpha: 1 },
-              duration: anim.duration,
-              ease: anim.easing ?? 'power1.out',
+              duration: config.duration,
+              ease: config.ease,
             },
-            anim.startTime
+            config.startTime
           );
         } else {
           this.timeline.to(
-            target,
+            config.target,
             {
-              pixi: animationProps,
-              duration: anim.duration,
-              ease: anim.easing ?? 'power1.out',
+              pixi: config.properties,
+              duration: config.duration,
+              ease: config.ease,
             },
-            anim.startTime
+            config.startTime
           );
         }
       });
@@ -118,7 +71,7 @@ export class GSAPTimelineManager {
   }
 
   updateTime(elapsedTime: number) {
-    this.timeline.time(elapsedTime, false);
+    this.timeline.time(elapsedTime);
   }
 
   handlePlayback(isPlaying: boolean, updateTick: () => void) {

@@ -1,3 +1,5 @@
+import { Container } from "pixi.js";
+
 export interface CanvasElement {
   id: string;
   type: 'rectangle' | 'circle' | 'triangle';
@@ -46,6 +48,14 @@ export interface ElementAnimation {
   duration: number; // seconds
   properties: AnimatableProperties;
   easing?: GsapEase;
+}
+
+export interface BaseAnimationConfig {
+  target: Container;
+  properties: AnimatableProperties;
+  duration: number;
+  startTime: number;
+  ease: string;
 }
 
 export interface AnimatedCanvasElement {

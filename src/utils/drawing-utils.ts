@@ -104,24 +104,18 @@ export const drawLine = (
   }
 };
 
-export const drawShape = (graphics: Graphics, shape: AnimatedCanvasElement) => {
-  graphics.clear();
-
-  // Set fill style
-  graphics.fill({ color: shape.fill, alpha: shape.opacity });
-
+function drawShapePath(graphics: Graphics, shape: AnimatedCanvasElement) {
   switch (shape.type) {
     case 'rectangle':
-      // Use roundRect for rectangles with optional corner radius
-      graphics.roundRect(0, 0, shape.width, shape.height, shape.cornerRadius || 0);
+      graphics.rect(0, 0, shape.width, shape.height);
       break;
+      
     case 'circle':
-      // Use ellipse for circles
       const radius = shape.radius || shape.width / 2;
       graphics.ellipse(radius, radius, radius, radius);
       break;
+      
     case 'triangle':
-      // Define points for an equilateral triangle
       const r = shape.radius || shape.width / 2;
       const points = [
         { x: 0, y: r * 2 },
@@ -130,15 +124,47 @@ export const drawShape = (graphics: Graphics, shape: AnimatedCanvasElement) => {
       ];
       graphics.poly(points);
       break;
+      
     case 'line':
-      drawLine(graphics, shape);
-      break;
-    default:
+      if (shape.lineOptions?.points) {
+        const { start, end } = shape.lineOptions.points;
+        graphics
+          .moveTo(start.x - shape.x, start.y - shape.y)
+          .lineTo(end.x - shape.x, end.y - shape.y);
+      }
       break;
   }
+}
 
-  graphics.fill(); // Apply the fill
-};
+export function createShapeGraphics(shape: AnimatedCanvasElement, color?: string | number): Graphics {
+  const graphics = new Graphics();
+  const fillColor = color ?? shape.fill;
+  
+  if (shape.type === 'line') {
+    drawShapePath(graphics, shape);
+    graphics.stroke({ 
+      color: fillColor, 
+      width: shape.strokeWidth || 2, 
+      alpha: shape.opacity ?? 1 
+    });
+  } else {
+    drawShapePath(graphics, shape);
+    graphics.fill({ color: fillColor, alpha: shape.opacity ?? 1 });
+  }
+  
+  return graphics;
+}
+
+export function drawShape(graphics: Graphics, shape: AnimatedCanvasElement) {
+  graphics.clear();
+  
+  if (shape.type === 'line') {
+    drawLine(graphics, shape);
+  } else {
+    drawShapePath(graphics, shape);
+    graphics.fill({ color: shape.fill, alpha: shape.opacity });
+  }
+}
 
 export const drawSelectionOutline = (graphics: Graphics, shape: AnimatedCanvasElement) => {
   graphics.clear();
