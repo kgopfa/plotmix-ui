@@ -65,6 +65,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       width={dimensions.width}
       height={dimensions.height}
       backgroundColor={0xFFFFFF}
+      antialias={true}
     >
       {/* Full-size transparent interactive layer to capture background clicks */}
       <pixiGraphics
