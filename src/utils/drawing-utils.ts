@@ -201,4 +201,42 @@ export const drawSelectionOutline = (graphics: Graphics, shape: AnimatedCanvasEl
   }
 
   graphics.stroke(); // Apply the stroke
-}; 
+};
+
+export function calculateLineLength(points: { start: { x: number, y: number }, end: { x: number, y: number } }): number {
+  const dx = points.end.x - points.start.x;
+  const dy = points.end.y - points.start.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+export function calculateLineAngle(points: { start: { x: number, y: number }, end: { x: number, y: number } }): number {
+  return Math.atan2(points.end.y - points.start.y, points.end.x - points.start.x);
+}
+
+export function updateLineEndPoint(
+  startPoint: { x: number, y: number },
+  length: number,
+  angle: number
+): { x: number, y: number } {
+  return {
+    x: startPoint.x + length * Math.cos(angle),
+    y: startPoint.y + length * Math.sin(angle)
+  };
+}
+
+export function calculateNorthAngle(points: { start: { x: number, y: number }, end: { x: number, y: number } }): number {
+  // Convert from Math.atan2 angle (counter-clockwise from right) to clockwise from top
+  const mathAngle = calculateLineAngle(points);
+  const northAngle = (450 - (mathAngle * 180 / Math.PI)) % 360;
+  return northAngle;
+}
+
+export function updateLineFromLengthAndNorthAngle(
+  startPoint: { x: number, y: number },
+  length: number,
+  northAngleDegrees: number
+): { x: number, y: number } {
+  // Convert from north angle (clockwise from top) to math angle (counter-clockwise from right)
+  const mathAngle = ((450 - northAngleDegrees) % 360) * Math.PI / 180;
+  return updateLineEndPoint(startPoint, length, mathAngle);
+} 

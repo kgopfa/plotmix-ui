@@ -187,22 +187,35 @@ export default function EditorCanvas() {
     gsapManager.buildAnimationTimeline(elements);
   };
 
-  const handleInspectorChange = (prop: string, value: string | number | boolean | ElementAnimation[]) => {
-    if (prop === 'animations') {
-      setElements(elements => {
-        const updatedElements = elements.map(el =>
-          el.id === selectedElement?.id ? { ...el, animations: value as ElementAnimation[] } : el
-        );
-        gsapManager.buildAnimationTimeline(updatedElements);
-        return updatedElements;
-      });
-    } else {
-      setElements(elements => {
-        const updatedElements = elements.map(el =>
-          el.id === selectedElement?.id ? { ...el, [prop]: value } : el
-        );
-        return updatedElements;
-      });
+  const handleInspectorChange = (
+    prop: string,
+    value: string | number | boolean | ElementAnimation[] | NonNullable<AnimatedCanvasElement['lineOptions']>
+  ) => {
+    if (selectedElement) {
+      if (prop === 'animations') {
+        setElements(elements => {
+          const updatedElements = elements.map(el =>
+            el.id === selectedElement.id ? { ...el, animations: value as ElementAnimation[] } : el
+          );
+          gsapManager.buildAnimationTimeline(updatedElements);
+          return updatedElements;
+        });
+      } else if (prop === 'lineOptions') {
+        setElements(elements => {
+          const updatedElements = elements.map(el =>
+            el.id === selectedElement.id ? { ...el, lineOptions: value as NonNullable<AnimatedCanvasElement['lineOptions']> } : el
+          );
+          gsapManager.buildAnimationTimeline(updatedElements);
+          return updatedElements;
+        });
+      } else {
+        setElements(elements => {
+          const updatedElements = elements.map(el =>
+            el.id === selectedElement.id ? { ...el, [prop]: value } : el
+          );
+          return updatedElements;
+        });
+      }
     }
   };
 

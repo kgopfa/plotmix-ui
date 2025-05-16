@@ -1,9 +1,23 @@
 import { useState, useEffect } from 'react';
-import { AnimatedCanvasElement, EASING_OPTIONS, GsapEase, ElementAnimation, AnimationType, AnimatableProperties } from '@/types/canvas';
+import { 
+  AnimatedCanvasElement, 
+  EASING_OPTIONS, 
+  GsapEase, 
+  ElementAnimation, 
+  AnimationType, 
+  AnimatableProperties 
+} from '@/types/canvas';
+import { 
+  calculateLineLength, 
+  calculateNorthAngle
+} from '@/utils/drawing-utils';
 
 interface InspectorProps {
   selectedElement: AnimatedCanvasElement | null;
-  onInspectorChange: (prop: string, value: string | number | boolean | ElementAnimation[]) => void;
+  onInspectorChange: (
+    prop: string,
+    value: string | number | boolean | ElementAnimation[] | NonNullable<AnimatedCanvasElement['lineOptions']>
+  ) => void;
 }
 
 type Tab = 'properties' | 'animations';
@@ -139,22 +153,87 @@ export function Inspector({ selectedElement, onInspectorChange }: InspectorProps
           onChange={e => onInspectorChange('y', Number(e.target.value))}
         />
       </label>
-      <label>
-        Width:
-        <input
-          type="number"
-          value={selectedElement.width}
-          onChange={e => onInspectorChange('width', Number(e.target.value))}
-        />
-      </label>
-      <label>
-        Height:
-        <input
-          type="number"
-          value={selectedElement.height}
-          onChange={e => onInspectorChange('height', Number(e.target.value))}
-        />
-      </label>
+      {selectedElement.type === 'line' ? (
+        <>
+          <label>
+            Length:
+            <input
+              type="number"
+              value={Math.round(calculateLineLength(selectedElement.lineOptions!.points))}
+              onChange={e => {
+                const newLength = Number(e.target.value);
+                if (newLength <= 0) return;
+                
+                const angle = calculateNorthAngle(selectedElement.lineOptions!.points) * Math.PI / 180;
+                const start = selectedElement.lineOptions!.points.start;
+                const end = {
+                  x: start.x + newLength * Math.sin(angle),
+                  y: start.y + newLength * Math.cos(angle)
+                };
+                
+                // Update both the line's dimensions and points
+                const updatedLineOptions = {
+                  ...selectedElement.lineOptions!,
+                  points: { start, end }
+                };
+                
+                onInspectorChange('width', Math.abs(end.x - start.x));
+                onInspectorChange('height', Math.abs(end.y - start.y));
+                onInspectorChange('lineOptions', updatedLineOptions);
+              }}
+              min={1}
+            />
+          </label>
+          <label>
+            Angle (°):
+            <input
+              type="number"
+              value={Math.round(calculateNorthAngle(selectedElement.lineOptions!.points))}
+              onChange={e => {
+                const newAngle = Number(e.target.value) * Math.PI / 180;
+                const length = calculateLineLength(selectedElement.lineOptions!.points);
+                const start = selectedElement.lineOptions!.points.start;
+                const end = {
+                  x: start.x + length * Math.sin(newAngle),
+                  y: start.y + length * Math.cos(newAngle)
+                };
+                
+                // Update both the line's dimensions and points
+                const updatedLineOptions = {
+                  ...selectedElement.lineOptions!,
+                  points: { start, end }
+                };
+                
+                onInspectorChange('width', Math.abs(end.x - start.x));
+                onInspectorChange('height', Math.abs(end.y - start.y));
+                onInspectorChange('lineOptions', updatedLineOptions);
+              }}
+              min={0}
+              max={360}
+              step={1}
+            />
+          </label>
+        </>
+      ) : (
+        <>
+          <label>
+            Width:
+            <input
+              type="number"
+              value={selectedElement.width}
+              onChange={e => onInspectorChange('width', Number(e.target.value))}
+            />
+          </label>
+          <label>
+            Height:
+            <input
+              type="number"
+              value={selectedElement.height}
+              onChange={e => onInspectorChange('height', Number(e.target.value))}
+            />
+          </label>
+        </>
+      )}
       {selectedElement.type === 'rectangle' && (
         <label>
           Border Radius:
