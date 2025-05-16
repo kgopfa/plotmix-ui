@@ -4,7 +4,12 @@ import type { AnimatedCanvasElement } from '@/types/canvas';
 
 export const parseColor = (color: string | number | undefined): number => {
   if (!color) return 0x000000;
-  return typeof color === 'string' ? parseInt(color.replace('#', '0x')) : color;
+  if (typeof color === 'number') return color;
+  // Handle hex colors with or without #
+  if (color.startsWith('#')) {
+    return parseInt(color.slice(1), 16);
+  }
+  return parseInt(color, 16);
 };
 
 export const drawArrowhead = (
@@ -41,10 +46,9 @@ export const drawSmoothLine = (
 ) => {
   graphics
     .clear()
-    .stroke({ color, width, alpha })
     .moveTo(start.x, start.y)
     .lineTo(end.x, end.y)
-    .stroke();
+    .stroke({ color, width, alpha });
 };
 
 export const drawDottedLine = (
@@ -76,7 +80,8 @@ export const drawLine = (
 ) => {
   if (shape.type !== 'line' || !shape.lineOptions?.points) return;
 
-  const color = parseColor(shape.stroke);
+  // Use fill color as stroke color if stroke is not specified
+  const color = parseColor(shape.stroke || shape.fill);
   const width = shape.strokeWidth || 2;
   const alpha = shape.opacity ?? 1;
   

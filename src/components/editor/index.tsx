@@ -27,6 +27,7 @@ export default function EditorCanvas() {
   const [selectedElement, setSelectedElement] = useState<AnimatedCanvasElement | null>(null);
   const [tool, setTool] = useState<ToolType>('select');
   const [maskPos, setMaskPos] = useState<{ x: number, y: number } | null>(null);
+  const [lineStartPoint, setLineStartPoint] = useState<{ x: number, y: number } | null>(null);
   const [timeState, setTimeState] = useState<TimeManagerState>({
     isPlaying: false,
     elapsedTime: 0
@@ -88,29 +89,74 @@ export default function EditorCanvas() {
   const canvasClickHandler = (e: FederatedPointerEvent) => {
     const isEmptyClick = !(e.target && (e.target as Container).name === 'shape');
 
-    if (
-      isEmptyClick &&
-      (tool === 'rectangle' || tool === 'circle' || tool === 'triangle')
-    ) {
-      const newElement = createNewElement(tool, e.global.x, e.global.y, elements);
-      
-      setElements(prev => {
-        const newElements = [...prev, newElement];
-        return newElements;
-      });
-      selectionManager.select(newElement);
-      setTool('select');
-      setMaskPos(null);
-    } else if (isEmptyClick) {
-      selectionManager.select(null);
+    if (isEmptyClick) {
+      if (tool === 'line') {
+        if (!lineStartPoint) {
+          // First click - set start point
+          setLineStartPoint({ x: e.global.x, y: e.global.y });
+        } else {
+          // Second click - create line and reset
+          const newElement = createNewElement('line', lineStartPoint.x, lineStartPoint.y, elements);
+          // Update line end point
+          newElement.lineOptions = {
+            points: {
+              start: { x: lineStartPoint.x, y: lineStartPoint.y },
+              end: { x: e.global.x, y: e.global.y }
+            },
+            arrow: false,
+            dotted: false
+          };
+          
+          setElements(prev => [...prev, newElement]);
+          selectionManager.select(newElement);
+          setTool('select');
+          setLineStartPoint(null);
+          setMaskPos(null);
+        }
+      } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle') {
+        const newElement = createNewElement(tool, e.global.x, e.global.y, elements);
+        setElements(prev => [...prev, newElement]);
+        selectionManager.select(newElement);
+        setTool('select');
+        setMaskPos(null);
+      } else {
+        selectionManager.select(null);
+      }
     }
-  }
+  };
 
 
   const handleElementDragEnd = (id: string, x: number, y: number) => {
-    setElements(elements.map((el) =>
-      el.id === id ? { ...el, x, y } : el
-    ));
+    setElements(elements.map((el) => {
+      if (el.id !== id) return el;
+      
+      // For lines, we need to update both position and points
+      if (el.type === 'line' && el.lineOptions?.points) {
+        const dx = x - el.x;
+        const dy = y - el.y;
+        return {
+          ...el,
+          x,
+          y,
+          lineOptions: {
+            ...el.lineOptions,
+            points: {
+              start: {
+                x: el.lineOptions.points.start.x + dx,
+                y: el.lineOptions.points.start.y + dy
+              },
+              end: {
+                x: el.lineOptions.points.end.x + dx,
+                y: el.lineOptions.points.end.y + dy
+              }
+            }
+          }
+        };
+      }
+      
+      // For other shapes, just update position
+      return { ...el, x, y };
+    }));
     gsapManager.buildAnimationTimeline(elements);
   };
 
@@ -241,6 +287,7 @@ export default function EditorCanvas() {
             maskPos={maskPos}
             maskOffsetX={MASK_OFFSET_X}
             maskOffsetY={MASK_OFFSET_Y}
+            lineStartPoint={lineStartPoint}
           />
 
           {dimensions.width > 0 && dimensions.height > 0 && (

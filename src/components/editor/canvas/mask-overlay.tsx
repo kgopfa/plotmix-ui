@@ -6,9 +6,16 @@ interface MaskOverlayProps {
   maskPos: { x: number; y: number } | null;
   maskOffsetX?: number;
   maskOffsetY?: number;
+  lineStartPoint?: { x: number; y: number } | null;
 }
 
-export function MaskOverlay({ tool, maskPos, maskOffsetX = 0, maskOffsetY = 0 }: MaskOverlayProps) {
+export function MaskOverlay({ 
+  tool, 
+  maskPos, 
+  maskOffsetX = 0, 
+  maskOffsetY = 0, 
+  lineStartPoint 
+}: MaskOverlayProps) {
   if (tool === 'select' || !maskPos) return null;
 
   const style = {
@@ -59,24 +66,45 @@ export function MaskOverlay({ tool, maskPos, maskOffsetX = 0, maskOffsetY = 0 }:
   }
 
   if (tool === 'line') {
+    if (!lineStartPoint) {
+      // Show the cursor for the first point
+      return (
+        <svg
+          style={{
+            position: 'absolute',
+            left: maskPos.x + maskOffsetX - 5,
+            top: maskPos.y + maskOffsetY - 5,
+            width: 10,
+            height: 10,
+            pointerEvents: 'none',
+            opacity: 0.5,
+            zIndex: 20,
+          }}
+        >
+          <circle cx="5" cy="5" r="4" fill="white" stroke="#888" strokeWidth={1} />
+        </svg>
+      );
+    }
+
+    // Show the preview line from start point to current mouse position
     return (
       <svg
         style={{
           position: 'absolute',
-          left: maskPos.x + maskOffsetX,
-          top: maskPos.y + maskOffsetY,
-          width: 50,
-          height: 50,
+          left: 0,
+          top: 0,
+          width: '100%',
+          height: '100%',
           pointerEvents: 'none',
           opacity: 0.5,
           zIndex: 20,
         }}
       >
         <line
-          x1="5"
-          y1="25"
-          x2="45"
-          y2="25"
+          x1={lineStartPoint.x}
+          y1={lineStartPoint.y}
+          x2={maskPos.x + maskOffsetX}
+          y2={maskPos.y + maskOffsetY}
           stroke="#888"
           strokeWidth={2}
           strokeDasharray="4,3"
