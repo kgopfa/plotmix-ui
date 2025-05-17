@@ -19,6 +19,7 @@ interface CanvasProps {
   onCanvasClick: (e: FederatedPointerEvent) => void;
   onLineEndpointDrag?: (id: string, endpoint: 'start' | 'end', x: number, y: number) => void;
   tool: string;
+  onAddElement?: (element: AnimatedCanvasElement) => void;
 }
 
 export interface CanvasRef {
@@ -35,6 +36,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     onCanvasClick,
     onLineEndpointDrag,
     tool,
+    onAddElement,
   },
   ref
 ) {
@@ -97,7 +99,9 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       onElementSelect(newElement.id);
       setCurrentPath([]);
       // Add the new element to the elements array
-      onElementDragEnd(newElement.id, newElement.x, newElement.y);
+      if (onAddElement) {
+        onAddElement(newElement);
+      }
     }
   };
 

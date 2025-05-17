@@ -276,6 +276,11 @@ export default function EditorCanvas() {
     }));
   };
 
+  const handleAddElement = useCallback((element: AnimatedCanvasElement) => {
+    setElements(prev => [...prev, element]);
+    selectionManager.select(element);
+  }, [selectionManager]);
+
   return (
     <div className="flex flex-col h-screen w-screen">
       {/* Options Bar */}
@@ -331,6 +336,7 @@ export default function EditorCanvas() {
               onCanvasClick={canvasClickHandler}
               onLineEndpointDrag={handleLineEndpointDrag}
               tool={tool}
+              onAddElement={handleAddElement}
             />
           )}
         </main>

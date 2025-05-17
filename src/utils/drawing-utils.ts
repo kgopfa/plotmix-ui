@@ -154,7 +154,7 @@ export function createShapeGraphics(shape: AnimatedCanvasElement, color?: string
   const graphics = new Graphics();
   const fillColor = color ?? shape.fill;
   
-  if (shape.type === 'line') {
+  if (shape.type === 'line' || shape.type === 'path') {
     drawShapePath(graphics, shape);
     graphics.stroke({ 
       color: fillColor, 
@@ -174,6 +174,13 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasElement) {
   
   if (shape.type === 'line') {
     drawLine(graphics, shape);
+  } else if (shape.type === 'path') {
+    drawShapePath(graphics, shape);
+    graphics.stroke({ 
+      color: parseColor(shape.stroke || shape.fill), 
+      width: shape.strokeWidth || 2, 
+      alpha: shape.opacity ?? 1 
+    });
   } else {
     drawShapePath(graphics, shape);
     graphics.fill({ color: shape.fill, alpha: shape.opacity });
@@ -230,6 +237,14 @@ export const drawSelectionOutline = (graphics: Graphics, shape: AnimatedCanvasEl
         graphics.circle(endX, endY, HANDLE_SIZE / 2);
         graphics.fill({ color: 0xff0000, alpha: 0.5 });
         graphics.stroke({ color: 'cyan', width: 3 });
+      }
+      break;
+    case 'path':
+      if (shape.pathPoints && shape.pathPoints.length > 1) {
+        graphics.moveTo(shape.pathPoints[0].x, shape.pathPoints[0].y);
+        for (let i = 1; i < shape.pathPoints.length; i++) {
+          graphics.lineTo(shape.pathPoints[i].x, shape.pathPoints[i].y);
+        }
       }
       break;
   }
