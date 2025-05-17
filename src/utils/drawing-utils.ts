@@ -138,6 +138,15 @@ function drawShapePath(graphics: Graphics, shape: AnimatedCanvasElement) {
           .lineTo(end.x - shape.x, end.y - shape.y);
       }
       break;
+
+    case 'path':
+      if (shape.pathPoints && shape.pathPoints.length > 1) {
+        graphics.moveTo(shape.pathPoints[0].x, shape.pathPoints[0].y);
+        for (let i = 1; i < shape.pathPoints.length; i++) {
+          graphics.lineTo(shape.pathPoints[i].x, shape.pathPoints[i].y);
+        }
+      }
+      break;
   }
 }
 

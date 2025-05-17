@@ -1,11 +1,12 @@
 import type { AnimatedCanvasElement, ElementAnimation } from '@/types/canvas';
 
-type ShapeType = 'rectangle' | 'circle' | 'triangle' | 'line';
+type ShapeType = 'rectangle' | 'circle' | 'triangle' | 'line' | 'path';
 
 interface BaseElementProps {
   x: number;
   y: number;
   elements: AnimatedCanvasElement[];
+  pathPoints?: Array<{x: number, y: number}>;
 }
 
 interface CommonElementAttributes {
@@ -102,13 +103,44 @@ function createLine(props: BaseElementProps): AnimatedCanvasElement {
   };
 }
 
+function createPath(props: BaseElementProps): AnimatedCanvasElement {
+  if (!props.pathPoints || props.pathPoints.length < 2) {
+    throw new Error('Path must have at least 2 points');
+  }
+
+  // Calculate bounding box
+  const xs = props.pathPoints.map(p => p.x);
+  const ys = props.pathPoints.map(p => p.y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const width = maxX - minX;
+  const height = maxY - minY;
+
+  return {
+    ...generateCommonAttributes('path', props),
+    type: 'path',
+    width,
+    height,
+    x: minX,
+    y: minY,
+    pathPoints: props.pathPoints.map(p => ({
+      x: p.x - minX,
+      y: p.y - minY
+    })),
+    lineOptions: undefined,
+  };
+}
+
 export function createNewElement(
   type: ShapeType,
   x: number,
   y: number,
-  elements: AnimatedCanvasElement[]
+  elements: AnimatedCanvasElement[],
+  pathPoints?: Array<{x: number, y: number}>
 ): AnimatedCanvasElement {
-  const props: BaseElementProps = { x, y, elements };
+  const props: BaseElementProps = { x, y, elements, pathPoints };
   
   switch (type) {
     case 'rectangle':
@@ -119,5 +151,7 @@ export function createNewElement(
       return createTriangle(props);
     case 'line':
       return createLine(props);
+    case 'path':
+      return createPath(props);
   }
 }

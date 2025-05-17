@@ -330,6 +330,7 @@ export default function EditorCanvas() {
               onElementDragEnd={handleElementDragEnd}
               onCanvasClick={canvasClickHandler}
               onLineEndpointDrag={handleLineEndpointDrag}
+              tool={tool}
             />
           )}
         </main>

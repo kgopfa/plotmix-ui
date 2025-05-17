@@ -6,6 +6,7 @@ import type { FederatedPointerEvent } from 'pixi.js';
 import type { AnimatedCanvasElement } from '@/types/canvas';
 import { useImperativeHandle, forwardRef, useState, useRef } from 'react';
 import { drawShape, drawSelectionOutline } from '@/utils/drawing-utils';
+import { createNewElement } from '@/lib/element-factory';
 
 extend({ Container, Graphics });
 
@@ -17,6 +18,7 @@ interface CanvasProps {
   onElementDragEnd: (id: string, x: number, y: number) => void;
   onCanvasClick: (e: FederatedPointerEvent) => void;
   onLineEndpointDrag?: (id: string, endpoint: 'start' | 'end', x: number, y: number) => void;
+  tool: string;
 }
 
 export interface CanvasRef {
@@ -32,11 +34,15 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     onElementDragEnd,
     onCanvasClick,
     onLineEndpointDrag,
+    tool,
   },
   ref
 ) {
   const shapeRefs = useRef<Record<string, Container>>({});
   const HANDLE_SIZE = 10;
+  const drawingRef = useRef<Graphics | null>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [currentPath, setCurrentPath] = useState<Array<{ x: number; y: number }>>([]);
 
   useImperativeHandle(ref, () => ({
     getShapeRefs: () => shapeRefs.current,
@@ -84,6 +90,15 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     setDraggingId(null);
     setDragOffset(null);
     setDraggingEndpoint(null);
+    if (isDrawing && currentPath.length > 1) {
+      setIsDrawing(false);
+      // Create a new path element
+      const newElement = createNewElement('path', 0, 0, elements, currentPath);
+      onElementSelect(newElement.id);
+      setCurrentPath([]);
+      // Add the new element to the elements array
+      onElementDragEnd(newElement.id, newElement.x, newElement.y);
+    }
   };
 
   const handleDragMove = (id: string) => (e: FederatedPointerEvent) => {
@@ -100,6 +115,39 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     }
   };
 
+  const handleCanvasPointerDown = (e: FederatedPointerEvent) => {
+    if (tool === 'draw') {
+      setIsDrawing(true);
+      const newPoint = { x: e.global.x, y: e.global.y };
+      setCurrentPath([newPoint]);
+      
+      if (drawingRef.current) {
+        const graphics = drawingRef.current;
+        graphics.clear();
+        graphics.moveTo(newPoint.x, newPoint.y);
+        graphics.stroke({ width: 2, color: 0x000000, alpha: 1 });
+      }
+    }
+  };
+
+  const handleCanvasPointerMove = (e: FederatedPointerEvent) => {
+    if (isDrawing && tool === 'draw') {
+      const newPoint = { x: e.global.x, y: e.global.y };
+      setCurrentPath(prev => [...prev, newPoint]);
+      
+      if (drawingRef.current) {
+        const graphics = drawingRef.current;
+        graphics.clear();
+        graphics.moveTo(currentPath[0].x, currentPath[0].y);
+        currentPath.forEach(point => {
+          graphics.lineTo(point.x, point.y);
+        });
+        graphics.lineTo(newPoint.x, newPoint.y);
+        graphics.stroke({ width: 2, color: 0x000000, alpha: 1 });
+      }
+    }
+  };
+
   return (
     <Application
       width={dimensions.width}
@@ -113,16 +161,24 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       <pixiGraphics
         draw={(g) => {
           g.clear();
-          g.rect(0, 0, dimensions.width, dimensions.height);
-          g.fill({ color: 0xFFFFFF, alpha: 0 });
+          g.beginFill(0xFFFFFF, 0);
+          g.drawRect(0, 0, dimensions.width, dimensions.height);
+          g.endFill();
         }}
         interactive={true}
         eventMode="static"
+        cursor={tool === 'draw' ? 'crosshair' : 'default'}
         onPointerDown={(e: FederatedPointerEvent) => {
-          onElementSelect(null);
-          onCanvasClick(e);
+          if (tool === 'draw') {
+            handleCanvasPointerDown(e);
+          } else {
+            onElementSelect(null);
+            onCanvasClick(e);
+          }
         }}
-        onPointerMove={handleDragMove(draggingId ?? '')}
+        onPointerMove={handleCanvasPointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerUpOutside={handlePointerUp}
       />
 
       {elements.map((el) => (
@@ -147,6 +203,23 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           )}
         </pixiContainer>
       ))}
+
+      {/* Drawing preview layer */}
+      {tool === 'draw' && (
+        <pixiGraphics
+          ref={drawingRef}
+          draw={(g) => {
+            g.clear();
+            if (currentPath.length > 1) {
+              g.moveTo(currentPath[0].x, currentPath[0].y);
+              currentPath.slice(1).forEach(point => {
+                g.lineTo(point.x, point.y);
+              });
+              g.stroke({ width: 2, color: 0x000000, alpha: 1 });
+            }
+          }}
+        />
+      )}
     </Application>
   );
 });

@@ -36,6 +36,13 @@ export function Toolbar({ currentTool, onToolChange }: ToolbarProps) {
         <span>🔗</span>
         <span>Line</span>
       </button>
+      <button
+        className={`btn flex items-center gap-1 ${currentTool === 'draw' ? 'bg-gray-100' : ''}`}
+        onClick={() => onToolChange('draw')}
+      >
+        <span>✏️</span>
+        <span>Draw</span>
+      </button>
     </div>
   );
 } 
