@@ -66,7 +66,7 @@ export interface BaseAnimationConfig {
 export interface AnimatedCanvasElement {
   id: string;
   name: string;
-  type: 'rectangle' | 'circle' | 'triangle' | 'line' | 'path';
+  type: 'rectangle' | 'circle' | 'triangle' | 'line' | 'path' | 'svg';
   x: number;
   y: number;
   width: number;
@@ -91,6 +91,7 @@ export interface AnimatedCanvasElement {
     dotted: boolean;
   };
   pathPoints?: Array<{x: number, y: number}>;
+  svgData?: string;
   animations: ElementAnimation[];
   isPath?: boolean;
 }

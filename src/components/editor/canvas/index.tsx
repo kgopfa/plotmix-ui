@@ -1,7 +1,7 @@
 'use client';
 
 import { Application, extend } from '@pixi/react';
-import { Container, Graphics } from 'pixi.js';
+import { Container, Graphics, Texture, Sprite } from 'pixi.js';
 import type { FederatedPointerEvent } from 'pixi.js';
 import type { AnimatedCanvasElement } from '@/types/canvas';
 import { useImperativeHandle, forwardRef, useState, useRef } from 'react';
@@ -47,6 +47,10 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   const drawingRef = useRef<Graphics | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentPath, setCurrentPath] = useState<Array<{ x: number; y: number }>>([]);
+  
+  // Create a map to track which SVGs have already been rendered
+  // Value is an object with element ID and dimensions for tracking changes
+  const svgRenderedMap = useRef(new WeakMap<Container, {id: string, width: number, height: number}>());
 
   useImperativeHandle(ref, () => ({
     getShapeRefs: () => shapeRefs.current,
@@ -197,29 +201,143 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         onPointerUpOutside={handlePointerUp}
       />
 
-      {elements.map((el) => (
-        <pixiContainer
-          key={el.id}
-          x={el.x}
-          y={el.y}
-          pivot={{ x: 0, y: 0 }}
-          interactive={true}
-          eventMode="dynamic"
-          cursor="move"
-          onPointerDown={handlePointerDown(el.id, el.x, el.y)}
-          onPointerUp={handlePointerUp}
-          onPointerUpOutside={handlePointerUp}
-          onPointerMove={handleDragMove(el.id)}
-          ref={(node) => {
-            if (node) shapeRefs.current[el.id] = node;
-          }}
-        >
-          <pixiGraphics draw={(g) => drawShape(g, el)} />
-          {el.id === selectedId && (
-            <pixiGraphics draw={(g) => drawSelectionOutline(g, el)} />
-          )}
-        </pixiContainer>
-      ))}
+      {elements.map((el) => {
+        // Special handling for SVG elements
+        if (el.type === 'svg' && el.svgData) {
+          return (
+            <pixiContainer
+              key={el.id}
+              x={el.x}
+              y={el.y}
+              pivot={{ x: 0, y: 0 }}
+              interactive={true}
+              eventMode="dynamic"
+              cursor="move"
+              onPointerDown={handlePointerDown(el.id, el.x, el.y)}
+              onPointerUp={handlePointerUp}
+              onPointerUpOutside={handlePointerUp}
+              onPointerMove={handleDragMove(el.id)}
+              ref={(node) => {
+                if (node) {
+                  // Store the container reference
+                  shapeRefs.current[el.id] = node;
+                  
+                  // Check if we need to render or re-render the SVG
+                  const needsRender = !svgRenderedMap.current.has(node);
+                  const renderedInfo = svgRenderedMap.current.get(node);
+                  const needsUpdate = renderedInfo && 
+                    (renderedInfo.id !== el.id || 
+                     renderedInfo.width !== el.width || 
+                     renderedInfo.height !== el.height);
+                  
+                  // Clear existing if dimensions changed
+                  if (needsUpdate) {
+                    // Remove all children to redraw
+                    while (node.children.length > 0) {
+                      node.removeChild(node.children[0]);
+                    }
+                  }
+                  
+                  // Render SVG if it hasn't been rendered yet or needs update
+                  if (needsRender || needsUpdate) {
+                    try {
+                      // Create a placeholder graphics while SVG is loading
+                      const placeholder = new Graphics();
+                      placeholder.rect(-el.width/2, -el.height/2, el.width, el.height);
+                      placeholder.fill({ color: 0xEEEEEE, alpha: 0.5 });
+                      placeholder.stroke({ color: 0xCCCCCC, width: 1, alpha: 0.8 });
+                      node.addChild(placeholder);
+                      
+                      // Create the SVG image element
+                      const img = document.createElement('img');
+                      img.onload = () => {
+                        if (!node.parent) return; // Container was removed
+                        
+                        try {
+                          // Create a PIXI texture from the image
+                          const texture = Texture.from(img);
+                          
+                          // Create a sprite from the texture
+                          const sprite = new Sprite(texture);
+                          
+                          // Center the sprite
+                          sprite.anchor.set(0.5, 0.5);
+                          sprite.width = el.width;
+                          sprite.height = el.height;
+                          
+                          // Remove the placeholder
+                          node.removeChild(placeholder);
+                          
+                          // Add to container
+                          node.addChild(sprite);
+                          
+                          // Mark as rendered in our map
+                          svgRenderedMap.current.set(node, {id: el.id, width: el.width, height: el.height});
+                          
+                          // Add selection outline if needed
+                          if (el.id === selectedId) {
+                            const outline = new Graphics();
+                            drawSelectionOutline(outline, el);
+                            node.addChild(outline);
+                          }
+                        } catch (error) {
+                          console.error('Error creating texture from SVG image:', error);
+                        }
+                      };
+                      
+                      img.onerror = () => {
+                        console.error('Failed to load SVG as image');
+                        // Update placeholder to show error
+                        placeholder.clear();
+                        placeholder.rect(-el.width/2, -el.height/2, el.width, el.height);
+                        placeholder.fill({ color: 0xFFDDDD, alpha: 0.5 });
+                        placeholder.stroke({ color: 0xFF0000, width: 1, alpha: 0.8 });
+                        // Draw X to indicate error
+                        placeholder.moveTo(-el.width/2, -el.height/2).lineTo(el.width/2, el.height/2);
+                        placeholder.moveTo(el.width/2, -el.height/2).lineTo(-el.width/2, el.height/2);
+                        placeholder.stroke({ color: 0xFF0000, width: 1, alpha: 0.8 });
+                      };
+                      
+                      // Convert SVG to base64 data URL - ensure svgData is string
+                      if (el.svgData) {
+                        const base64 = window.btoa(unescape(encodeURIComponent(el.svgData)));
+                        img.src = `data:image/svg+xml;base64,${base64}`;
+                      }
+                    } catch (error) {
+                      console.error("Error in SVG rendering setup:", error);
+                    }
+                  }
+                }
+              }}
+            />
+          );
+        }
+        
+        // Standard rendering for non-SVG elements
+        return (
+          <pixiContainer
+            key={el.id}
+            x={el.x}
+            y={el.y}
+            pivot={{ x: 0, y: 0 }}
+            interactive={true}
+            eventMode="dynamic"
+            cursor="move"
+            onPointerDown={handlePointerDown(el.id, el.x, el.y)}
+            onPointerUp={handlePointerUp}
+            onPointerUpOutside={handlePointerUp}
+            onPointerMove={handleDragMove(el.id)}
+            ref={(node) => {
+              if (node) shapeRefs.current[el.id] = node;
+            }}
+          >
+            <pixiGraphics draw={(g) => drawShape(g, el)} />
+            {el.id === selectedId && (
+              <pixiGraphics draw={(g) => drawSelectionOutline(g, el)} />
+            )}
+          </pixiContainer>
+        );
+      })}
 
       {/* Drawing preview layer */}
       {tool === 'draw' && (

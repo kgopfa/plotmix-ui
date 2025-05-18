@@ -1,6 +1,6 @@
 import type { AnimatedCanvasElement, ElementAnimation } from '@/types/canvas';
 
-type ShapeType = 'rectangle' | 'circle' | 'triangle' | 'line' | 'path';
+type ShapeType = 'rectangle' | 'circle' | 'triangle' | 'line' | 'path' | 'svg';
 
 interface BaseElementProps {
   x: number;
@@ -8,6 +8,9 @@ interface BaseElementProps {
   elements: AnimatedCanvasElement[];
   pathPoints?: Array<{x: number, y: number}>;
   isPath?: boolean;
+  svgData?: string;
+  width?: number;
+  height?: number;
 }
 
 interface CommonElementAttributes {
@@ -159,15 +162,41 @@ function createPath(props: BaseElementProps): AnimatedCanvasElement {
   };
 }
 
+function createSvg(props: BaseElementProps): AnimatedCanvasElement {
+  if (!props.svgData) {
+    throw new Error('SVG data is required');
+  }
+
+  const width = props.width || 100;
+  const height = props.height || 100;
+
+  return {
+    ...generateCommonAttributes('svg', props),
+    type: 'svg',
+    width,
+    height,
+    x: props.x,
+    y: props.y,
+    svgData: props.svgData,
+    lineOptions: undefined,
+    pivotX: width / 2,
+    pivotY: height / 2,
+    isPath: props.isPath || false,
+  };
+}
+
 export function createNewElement(
   type: ShapeType,
   x: number,
   y: number,
   elements: AnimatedCanvasElement[],
   pathPoints?: Array<{x: number, y: number}>,
-  isPath?: boolean
+  isPath?: boolean,
+  svgData?: string,
+  width?: number,
+  height?: number
 ): AnimatedCanvasElement {
-  const props: BaseElementProps = { x, y, elements, pathPoints, isPath };
+  const props: BaseElementProps = { x, y, elements, pathPoints, isPath, svgData, width, height };
   
   switch (type) {
     case 'rectangle':
@@ -180,5 +209,7 @@ export function createNewElement(
       return createLine(props);
     case 'path':
       return createPath(props);
+    case 'svg':
+      return createSvg(props);
   }
 }

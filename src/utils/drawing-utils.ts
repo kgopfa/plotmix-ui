@@ -5,7 +5,6 @@ import type { AnimatedCanvasElement } from '@/types/canvas';
 export const parseColor = (color: string | number | undefined): number => {
   if (!color) return 0x000000;
   if (typeof color === 'number') return color;
-  // Handle hex colors with or without #
   if (color.startsWith('#')) {
     return parseInt(color.slice(1), 16);
   }
@@ -80,12 +79,10 @@ export const drawLine = (
 ) => {
   if (shape.type !== 'line' || !shape.lineOptions?.points) return;
 
-  // Use fill color as stroke color if stroke is not specified
   const color = parseColor(shape.stroke || shape.fill);
   const width = shape.strokeWidth || 2;
   const alpha = shape.opacity ?? 1;
   
-  // Calculate relative positions
   const start = {
     x: shape.lineOptions.points.start.x - shape.x,
     y: shape.lineOptions.points.start.y - shape.y
@@ -96,14 +93,12 @@ export const drawLine = (
     y: shape.lineOptions.points.end.y - shape.y
   };
 
-  // Choose line drawing method
   if (shape.lineOptions.dotted) {
     drawDottedLine(graphics, start, end, color, width, alpha);
   } else {
     drawSmoothLine(graphics, start, end, color, width, alpha);
   }
 
-  // Add arrowhead if requested
   if (shape.lineOptions.arrow) {
     drawArrowhead(graphics, end, start, color);
   }
@@ -159,6 +154,15 @@ function drawShapePath(graphics: Graphics, shape: AnimatedCanvasElement) {
         }
       }
       break;
+      
+    case 'svg':
+      graphics.rect(
+        -shape.width / 2,
+        -shape.height / 2,
+        shape.width,
+        shape.height
+      );
+      break;
   }
 }
 
@@ -166,13 +170,23 @@ export function createShapeGraphics(shape: AnimatedCanvasElement, color?: string
   const graphics = new Graphics();
   const fillColor = color ?? shape.fill;
   
-  // Check if this is a path element and apply special styling
+  if (shape.type === 'svg' && shape.svgData) {
+    graphics.rect(
+      -shape.width / 2,
+      -shape.height / 2,
+      shape.width,
+      shape.height
+    );
+    graphics.fill({ color: 0xFFFFFF, alpha: 0 });
+    
+    return graphics;
+  }
+  
   if (shape.isPath) {
-    const grayColor = 0x888888; // Light gray color
+    const grayColor = 0x888888;
     
     if (shape.type === 'line' || shape.type === 'path') {
       drawShapePath(graphics, shape);
-      // For path elements, use dotted lines
       const dashLine = new DashLine(graphics, {
         dash: [5, 3],
         width: 2,
@@ -192,11 +206,9 @@ export function createShapeGraphics(shape: AnimatedCanvasElement, color?: string
         }
       }
     } else {
-      // For other shapes (rectangle, circle, triangle)
       drawShapePath(graphics, shape);
       graphics.fill({ color: fillColor, alpha: 0.15 });
       
-      // Add dotted stroke
       const dashLine = new DashLine(graphics, {
         dash: [5, 3],
         width: 2,
@@ -204,7 +216,6 @@ export function createShapeGraphics(shape: AnimatedCanvasElement, color?: string
         alpha: 0.7
       });
       
-      // Re-draw the shape outline as dotted
       switch (shape.type) {
         case 'rectangle':
           dashLine.drawRect(
@@ -236,7 +247,6 @@ export function createShapeGraphics(shape: AnimatedCanvasElement, color?: string
       }
     }
   } else {
-    // Regular styling for non-path elements
     if (shape.type === 'line' || shape.type === 'path') {
       drawShapePath(graphics, shape);
       graphics.stroke({ 
@@ -256,7 +266,15 @@ export function createShapeGraphics(shape: AnimatedCanvasElement, color?: string
 export function drawShape(graphics: Graphics, shape: AnimatedCanvasElement) {
   graphics.clear();
   
-  // Check if this is a path element and apply special styling
+  // Skip SVG elements - they're handled directly in the Canvas component
+  if (shape.type === 'svg') {
+    // Just draw a bounding box
+    graphics.rect(-shape.width/2, -shape.height/2, shape.width, shape.height);
+    graphics.fill({ color: 0xFFFFFF, alpha: 0.01 });
+    graphics.stroke({ color: parseColor(shape.stroke || '#cccccc'), width: shape.strokeWidth || 1, alpha: 0.3 });
+    return;
+  }
+  
   if (shape.isPath) {
     // For path elements, use a gray dotted line style
     const grayColor = 0x888888; // Light gray color
@@ -379,6 +397,7 @@ export const drawSelectionOutline = (graphics: Graphics, shape: AnimatedCanvasEl
 
   switch (shape.type) {
     case 'rectangle':
+    case 'svg':
       graphics.roundRect(
         -shape.width / 2,
         -shape.height / 2,
@@ -396,9 +415,9 @@ export const drawSelectionOutline = (graphics: Graphics, shape: AnimatedCanvasEl
       const sideLength = (2 * height) / Math.sqrt(3);
       const halfWidth = sideLength / 2;
       const points = [
-        { x: 0, y: -height/2 },                    // top point
-        { x: -halfWidth, y: height/2 },            // bottom left
-        { x: halfWidth, y: height/2 }              // bottom right
+        { x: 0, y: -height/2 },
+        { x: -halfWidth, y: height/2 },
+        { x: halfWidth, y: height/2 }
       ];
       graphics.poly(points);
       break;
@@ -410,20 +429,17 @@ export const drawSelectionOutline = (graphics: Graphics, shape: AnimatedCanvasEl
         const endX = end.x - shape.x;
         const endY = end.y - shape.y;
         
-        // Draw line outline
         graphics
           .moveTo(startX, startY)
           .lineTo(endX, endY);
 
-        // Draw endpoint markers
         const HANDLE_SIZE = 10;
         
-        // Start point marker (green)
         graphics.circle(startX, startY, HANDLE_SIZE / 2);
         graphics.fill({ color: 0x00ff00, alpha: 0.5 });
         graphics.stroke({ color: 'cyan', width: 3 });
         
-        // End point marker (red)
+        // End po int marker (red)
         graphics.circle(endX, endY, HANDLE_SIZE / 2);
         graphics.fill({ color: 0xff0000, alpha: 0.5 });
         graphics.stroke({ color: 'cyan', width: 3 });
@@ -462,7 +478,6 @@ export function updateLineEndPoint(
 }
 
 export function calculateNorthAngle(points: { start: { x: number, y: number }, end: { x: number, y: number } }): number {
-  // Convert from Math.atan2 angle (counter-clockwise from right) to clockwise from top
   const mathAngle = calculateLineAngle(points);
   const northAngle = (450 - (mathAngle * 180 / Math.PI)) % 360;
   return northAngle;
@@ -473,7 +488,6 @@ export function updateLineFromLengthAndNorthAngle(
   length: number,
   northAngleDegrees: number
 ): { x: number, y: number } {
-  // Convert from north angle (clockwise from top) to math angle (counter-clockwise from right)
   const mathAngle = ((450 - northAngleDegrees) % 360) * Math.PI / 180;
   return updateLineEndPoint(startPoint, length, mathAngle);
 } 

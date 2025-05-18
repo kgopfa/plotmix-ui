@@ -1,1 +1,1 @@
-export type ToolType = 'select' | 'rectangle' | 'circle' | 'triangle' | 'line' | 'draw'; 
+export type ToolType = 'select' | 'rectangle' | 'circle' | 'triangle' | 'line' | 'draw' | 'svg'; 

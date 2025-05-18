@@ -310,6 +310,74 @@ export default function EditorCanvas() {
     selectionManager.select(element);
   }, [selectionManager]);
 
+  const handleSvgImport = useCallback(async (file: File) => {
+    try {
+      // Read the file contents
+      const svgData = await file.text();
+      
+      console.log("Importing SVG:", file.name);
+      
+      // Create a placeholder first while we wait for the image to load
+      const placeholderElement = createNewElement(
+        'rectangle',
+        dimensions.width / 2 - 50,  // Center horizontally - half of default width (100px)
+        dimensions.height / 2 - 50, // Center vertically - half of default height (100px)
+        elements,
+        undefined,
+        false
+      );
+      placeholderElement.fill = '#e0e0e0';
+      placeholderElement.name = "SVG Loading...";
+      
+      setElements(prev => [...prev, placeholderElement]);
+      selectionManager.select(placeholderElement);
+      
+      // Load the SVG to get its aspects/dimensions
+      const imgUrl = URL.createObjectURL(new Blob([svgData], { type: 'image/svg+xml' }));
+      const img = new Image();
+      
+      // Wait for image to load
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error("Failed to load SVG"));
+        img.src = imgUrl;
+      });
+      
+      // Use default dimensions of 100x100 (same as rectangle)
+      const svgWidth = 100;
+      const svgHeight = 100;
+      
+      // Create SVG element with standard size
+      const svgElement = createNewElement(
+        'svg',
+        dimensions.width / 2 - svgWidth / 2,    // Center horizontally
+        dimensions.height / 2 - svgHeight / 2,  // Center vertically
+        elements,
+        undefined,
+        false,
+        svgData,
+        svgWidth,   // Fixed size of 100px width
+        svgHeight   // Fixed size of 100px height
+      );
+      
+      // Replace the placeholder with the SVG
+      setElements(prev => {
+        const filtered = prev.filter(el => el.id !== placeholderElement.id);
+        return [...filtered, svgElement];
+      });
+      
+      selectionManager.select(svgElement);
+      setTool('select');
+      
+      // Clean up
+      URL.revokeObjectURL(imgUrl);
+      
+    } catch (error) {
+      console.error("Error importing SVG:", error);
+      alert("Failed to import SVG. Please try another file.");
+    }
+  }, [dimensions.width, dimensions.height, elements, selectionManager]);
+
   return (
     <div className="flex flex-col h-screen w-screen">
       {/* Options Bar */}
@@ -369,6 +437,7 @@ export default function EditorCanvas() {
               setIsPathMode(false);
               setAnimationTarget(null);
             }}
+            onSvgImport={handleSvgImport}
           />
 
           <MaskOverlay
