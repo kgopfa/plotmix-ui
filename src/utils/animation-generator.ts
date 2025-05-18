@@ -40,7 +40,9 @@ function generateAnimationProperties(
 
     case 'rotate':
       return {
-        rotation: (Number(animeProps.rotation) ?? 0)
+        rotation: (Number(animeProps.rotation) ?? 0),
+        pivotX: element.pivotX ?? element.width / 2,
+        pivotY: element.pivotY ?? element.height / 2
       };
 
     case 'fade':

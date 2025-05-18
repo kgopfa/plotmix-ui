@@ -37,6 +37,8 @@ export type AnimatableProperties = {
   shadowOffsetY?: number;
   shadowOpacity?: number;
   rotation?: number;
+  pivotX?: number;
+  pivotY?: number;
 };
 
 export type AnimationType = 'rotate' | 'scale' | 'move' | 'color' | 'fade';
@@ -78,6 +80,8 @@ export interface AnimatedCanvasElement {
   shadowOffsetX?: number;
   shadowOffsetY?: number;
   shadowOpacity?: number;
+  pivotX?: number;
+  pivotY?: number;
   lineOptions?: {
     points: {start: {x: number, y: number}, end: {x: number, y: number}};
     arrow: boolean;
