@@ -184,6 +184,7 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasElement) {
   } else {
     drawShapePath(graphics, shape);
     graphics.fill({ color: shape.fill, alpha: shape.opacity });
+    graphics.stroke({ color: shape.stroke, width: shape.strokeWidth, alpha: shape.opacity });
   }
 }
 
