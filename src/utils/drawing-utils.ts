@@ -128,13 +128,12 @@ function drawShapePath(graphics: Graphics, shape: AnimatedCanvasElement) {
       break;
       
     case 'triangle':
-      // Draw triangle centered around origin
       const r = shape.radius || shape.width / 2;
-      const points = [
-        { x: -r, y: r },
-        { x: 0, y: -r },
-        { x: r, y: r },
-      ];
+      const angle = (2 * Math.PI) / 3; // 120 degrees in radians
+      const points = Array.from({ length: 3 }, (_, i) => ({
+        x: r * Math.cos(angle * i - Math.PI / 2),
+        y: r * Math.sin(angle * i - Math.PI / 2)
+      }));
       graphics.poly(points);
       break;
       
@@ -220,11 +219,11 @@ export const drawSelectionOutline = (graphics: Graphics, shape: AnimatedCanvasEl
       break;
     case 'triangle':
       const r = shape.radius || shape.width / 2;
-      const points = [
-        { x: -r, y: r },
-        { x: 0, y: -r },
-        { x: r, y: r },
-      ];
+      const angle = (2 * Math.PI) / 3;
+      const points = Array.from({ length: 3 }, (_, i) => ({
+        x: r * Math.cos(angle * i - Math.PI / 2),
+        y: r * Math.sin(angle * i - Math.PI / 2)
+      }));
       graphics.poly(points);
       break;
     case 'line':

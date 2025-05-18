@@ -55,7 +55,7 @@ export function MaskOverlay({
         }}
       >
         <polygon
-          points="25,5 45,45 5,45"
+          points="25,5 45,40 5,40"
           fill="white"
           stroke="#888"
           strokeWidth={2}
