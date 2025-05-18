@@ -166,16 +166,88 @@ export function createShapeGraphics(shape: AnimatedCanvasElement, color?: string
   const graphics = new Graphics();
   const fillColor = color ?? shape.fill;
   
-  if (shape.type === 'line' || shape.type === 'path') {
-    drawShapePath(graphics, shape);
-    graphics.stroke({ 
-      color: fillColor, 
-      width: shape.strokeWidth || 2, 
-      alpha: shape.opacity ?? 1 
-    });
+  // Check if this is a path element and apply special styling
+  if (shape.isPath) {
+    const grayColor = 0x888888; // Light gray color
+    
+    if (shape.type === 'line' || shape.type === 'path') {
+      drawShapePath(graphics, shape);
+      // For path elements, use dotted lines
+      const dashLine = new DashLine(graphics, {
+        dash: [5, 3],
+        width: 2,
+        color: grayColor,
+        alpha: 0.7
+      });
+      
+      if (shape.type === 'line' && shape.lineOptions?.points) {
+        const { start, end } = shape.lineOptions.points;
+        dashLine
+          .moveTo(start.x - shape.x, start.y - shape.y)
+          .lineTo(end.x - shape.x, end.y - shape.y);
+      } else if (shape.type === 'path' && shape.pathPoints && shape.pathPoints.length > 1) {
+        dashLine.moveTo(shape.pathPoints[0].x, shape.pathPoints[0].y);
+        for (let i = 1; i < shape.pathPoints.length; i++) {
+          dashLine.lineTo(shape.pathPoints[i].x, shape.pathPoints[i].y);
+        }
+      }
+    } else {
+      // For other shapes (rectangle, circle, triangle)
+      drawShapePath(graphics, shape);
+      graphics.fill({ color: fillColor, alpha: 0.15 });
+      
+      // Add dotted stroke
+      const dashLine = new DashLine(graphics, {
+        dash: [5, 3],
+        width: 2,
+        color: grayColor,
+        alpha: 0.7
+      });
+      
+      // Re-draw the shape outline as dotted
+      switch (shape.type) {
+        case 'rectangle':
+          dashLine.drawRect(
+            -shape.width / 2,
+            -shape.height / 2,
+            shape.width,
+            shape.height
+          );
+          break;
+          
+        case 'circle':
+          dashLine.drawCircle(
+            0,
+            0,
+            shape.height / 2
+          );
+          break;
+          
+        case 'triangle':
+          const height = shape.height;
+          const sideLength = (2 * height) / Math.sqrt(3);
+          const halfWidth = sideLength / 2;
+          
+          dashLine.moveTo(0, -height/2)
+            .lineTo(halfWidth, height/2)
+            .lineTo(-halfWidth, height/2)
+            .closePath();
+          break;
+      }
+    }
   } else {
-    drawShapePath(graphics, shape);
-    graphics.fill({ color: fillColor, alpha: shape.opacity ?? 1 });
+    // Regular styling for non-path elements
+    if (shape.type === 'line' || shape.type === 'path') {
+      drawShapePath(graphics, shape);
+      graphics.stroke({ 
+        color: fillColor, 
+        width: shape.strokeWidth || 2, 
+        alpha: shape.opacity ?? 1 
+      });
+    } else {
+      drawShapePath(graphics, shape);
+      graphics.fill({ color: fillColor, alpha: shape.opacity ?? 1 });
+    }
   }
   
   return graphics;
@@ -184,19 +256,116 @@ export function createShapeGraphics(shape: AnimatedCanvasElement, color?: string
 export function drawShape(graphics: Graphics, shape: AnimatedCanvasElement) {
   graphics.clear();
   
-  if (shape.type === 'line') {
-    drawLine(graphics, shape);
-  } else if (shape.type === 'path') {
+  // Check if this is a path element and apply special styling
+  if (shape.isPath) {
+    // For path elements, use a gray dotted line style
+    const grayColor = 0x888888; // Light gray color
+    
+    // Draw the shape with special path styling
     drawShapePath(graphics, shape);
-    graphics.stroke({ 
-      color: parseColor(shape.stroke || shape.fill), 
-      width: shape.strokeWidth || 2, 
-      alpha: shape.opacity ?? 1 
-    });
+    
+    if (shape.type === 'line') {
+      // For line paths, use the dotted line directly
+      if (shape.lineOptions?.points) {
+        const { start, end } = shape.lineOptions.points;
+        const startPoint = {
+          x: start.x - shape.x,
+          y: start.y - shape.y
+        };
+        
+        const endPoint = {
+          x: end.x - shape.x,
+          y: end.y - shape.y
+        };
+        
+        // Draw as dotted line with gray color
+        drawDottedLine(
+          graphics, 
+          startPoint, 
+          endPoint, 
+          grayColor, 
+          2, 
+          0.7, // Slightly transparent
+          [5, 3] // Smaller dash pattern for path elements
+        );
+      }
+    } else if (shape.type === 'path') {
+      // For free-drawn paths, use dotted line dash pattern
+      if (shape.pathPoints && shape.pathPoints.length > 1) {
+        const dashLine = new DashLine(graphics, { 
+          dash: [5, 3], 
+          width: 2, 
+          color: grayColor, 
+          alpha: 0.7 
+        });
+        
+        dashLine.moveTo(shape.pathPoints[0].x, shape.pathPoints[0].y);
+        for (let i = 1; i < shape.pathPoints.length; i++) {
+          dashLine.lineTo(shape.pathPoints[i].x, shape.pathPoints[i].y);
+        }
+      }
+    } else {
+      // For other shapes (rectangle, circle, triangle), use dotted stroke and semi-transparent fill
+      graphics.fill({ 
+        color: shape.fill, 
+        alpha: 0.15 // Very transparent fill
+      });
+      
+      // Add dotted stroke with gray color
+      const dashLine = new DashLine(graphics, { 
+        dash: [5, 3], 
+        width: 2, 
+        color: grayColor, 
+        alpha: 0.7
+      });
+      
+      // Re-draw the shape outline as dotted
+      switch (shape.type) {
+        case 'rectangle':
+          dashLine.drawRect(
+            -shape.width / 2, 
+            -shape.height / 2,
+            shape.width,
+            shape.height
+          );
+          break;
+          
+        case 'circle':
+          dashLine.drawCircle(
+            0, 
+            0, 
+            shape.height / 2
+          );
+          break;
+          
+        case 'triangle':
+          const height = shape.height;
+          const sideLength = (2 * height) / Math.sqrt(3);
+          const halfWidth = sideLength / 2;
+          
+          dashLine.moveTo(0, -height/2)
+            .lineTo(halfWidth, height/2)
+            .lineTo(-halfWidth, height/2)
+            .closePath();
+          break;
+      }
+    }
   } else {
-    drawShapePath(graphics, shape);
-    graphics.fill({ color: shape.fill, alpha: shape.opacity });
-    graphics.stroke({ color: shape.stroke, width: shape.strokeWidth, alpha: shape.opacity });
+    // Regular drawing for non-path elements
+    if (shape.type === 'line') {
+      drawLine(graphics, shape);
+    } else if (shape.type === 'path') {
+      drawShapePath(graphics, shape);
+      graphics.stroke({ 
+        color: parseColor(shape.stroke || shape.fill), 
+        width: shape.strokeWidth || 2, 
+        alpha: shape.opacity ?? 1 
+      });
+    } else {
+      drawShapePath(graphics, shape);
+      graphics.fill({ color: shape.fill, alpha: shape.opacity });
+      graphics.stroke({ color: shape.stroke, width: shape.strokeWidth, alpha: shape.opacity });
+    }
   }
 }
 

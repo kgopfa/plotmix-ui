@@ -42,6 +42,7 @@ export default function EditorCanvas() {
     animationId: string;
     elementId: string;
   } | null>(null);
+  const [showPaths, setShowPaths] = useState(true);
 
   const MASK_OFFSET_X = 0;
   const MASK_OFFSET_Y = 0;
@@ -378,11 +379,30 @@ export default function EditorCanvas() {
             lineStartPoint={lineStartPoint}
           />
 
+          {/* Only show path visibility toggle if paths exist */}
+          {elements.some(el => el.isPath) && (
+            <div className="absolute bottom-4 right-4 z-10">
+              <button 
+                className={`px-3 py-1.5 rounded shadow flex items-center ${showPaths ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'}`}
+                onClick={() => setShowPaths(!showPaths)}
+                title={showPaths ? 'Hide Animation Paths' : 'Show Animation Paths'}
+              >
+                <svg className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3 17.25V21H6.75L17.81 9.94L14.06 6.19L3 17.25Z" 
+                    fill={showPaths ? "white" : "currentColor"}/>
+                  <path d="M20.71 7.04C21.1 6.65 21.1 6.02 20.71 5.63L18.37 3.29C17.98 2.9 17.35 2.9 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04Z" 
+                    fill={showPaths ? "white" : "currentColor"}/>
+                </svg>
+                {showPaths ? 'Paths Visible' : 'Paths Hidden'}
+              </button>
+            </div>
+          )}
+
           {dimensions.width > 0 && dimensions.height > 0 && (
             <Canvas
               ref={canvasRef}
               dimensions={dimensions}
-              elements={elements}
+              elements={showPaths ? elements : elements.filter(el => !el.isPath)}
               selectedId={selectedElement?.id || null}
               onElementSelect={handleSelectElement}
               onElementDragEnd={handleElementDragEnd}
@@ -402,7 +422,7 @@ export default function EditorCanvas() {
       </div>
 
       <Timeline
-        elements={elements}
+        elements={elements.filter(el => !el.isPath)}
         timelineState={timelineState}
         timeState={timeState}
         onPlayPause={handlePlayPause}

@@ -15,7 +15,7 @@ export function SceneExplorer({ elements, selectionManager }: SceneExplorerProps
           <details open>
             <summary className="cursor-pointer hover:bg-gray-200 px-2 py-1 rounded">Scene 1</summary>
             <ul className="ml-4 mt-1 space-y-1">
-              {elements.map(element => (
+              {elements.filter(element => !element.isPath).map(element => (
                 <li
                   key={element.id}
                   className={`px-2 py-1 rounded cursor-pointer hover:bg-gray-200 hover:text-blue-600 ${
@@ -26,7 +26,7 @@ export function SceneExplorer({ elements, selectionManager }: SceneExplorerProps
                   {element.name}
                 </li>
               ))}
-              {elements.length === 0 && (
+              {elements.filter(element => !element.isPath).length === 0 && (
                 <li className="text-sm text-gray-500 italic">No shapes added yet</li>
               )}
             </ul>
