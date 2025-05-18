@@ -66,8 +66,8 @@ function createRectangle(props: BaseElementProps): AnimatedCanvasElement {
     height,
     cornerRadius: 0,
     lineOptions: undefined,
-    x: props.x + width / 2,
-    y: props.y + height / 2,
+    x: props.x,
+    y: props.y,
   };
 }
 
@@ -82,8 +82,8 @@ function createCircle(props: BaseElementProps): AnimatedCanvasElement {
     height,
     radius,
     lineOptions: undefined,
-    x: props.x + radius,
-    y: props.y + radius,
+    x: props.x,
+    y: props.y,
   };
 }
 
@@ -98,8 +98,8 @@ function createTriangle(props: BaseElementProps): AnimatedCanvasElement {
     height,
     radius,
     lineOptions: undefined,
-    x: props.x + radius,
-    y: props.y + radius,
+    x: props.x,
+    y: props.y,
   };
 }
 
