@@ -57,35 +57,49 @@ function generateCommonAttributes(
 }
 
 function createRectangle(props: BaseElementProps): AnimatedCanvasElement {
+  const width = 100;
+  const height = 100;
   return {
     ...generateCommonAttributes('rectangle', props),
     type: 'rectangle',
-    width: 100,
-    height: 100,
+    width,
+    height,
     cornerRadius: 0,
     lineOptions: undefined,
+    x: props.x + width / 2,
+    y: props.y + height / 2,
   };
 }
 
 function createCircle(props: BaseElementProps): AnimatedCanvasElement {
+  const width = 100;
+  const height = 100;
+  const radius = 50;
   return {
     ...generateCommonAttributes('circle', props),
     type: 'circle',
-    width: 100,
-    height: 100,
-    radius: 70,
+    width,
+    height,
+    radius,
     lineOptions: undefined,
+    x: props.x + radius,
+    y: props.y + radius,
   };
 }
 
 function createTriangle(props: BaseElementProps): AnimatedCanvasElement {
+  const width = 100;
+  const height = 100;
+  const radius = 50;
   return {
     ...generateCommonAttributes('triangle', props),
     type: 'triangle',
-    width: 100,
-    height: 100,
-    radius: 70,
+    width,
+    height,
+    radius,
     lineOptions: undefined,
+    x: props.x + radius,
+    y: props.y + radius,
   };
 }
 

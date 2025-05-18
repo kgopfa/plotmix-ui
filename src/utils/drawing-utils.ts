@@ -112,20 +112,28 @@ export const drawLine = (
 function drawShapePath(graphics: Graphics, shape: AnimatedCanvasElement) {
   switch (shape.type) {
     case 'rectangle':
-      graphics.rect(0, 0, shape.width, shape.height);
+      // Draw rectangle centered around origin
+      graphics.rect(
+        -shape.width / 2,
+        -shape.height / 2,
+        shape.width,
+        shape.height
+      );
       break;
       
     case 'circle':
+      // Draw circle centered around origin
       const radius = shape.radius || shape.width / 2;
-      graphics.ellipse(radius, radius, radius, radius);
+      graphics.ellipse(0, 0, radius, radius);
       break;
       
     case 'triangle':
+      // Draw triangle centered around origin
       const r = shape.radius || shape.width / 2;
       const points = [
-        { x: 0, y: r * 2 },
-        { x: r, y: 0 },
-        { x: r * 2, y: r * 2 },
+        { x: -r, y: r },
+        { x: 0, y: -r },
+        { x: r, y: r },
       ];
       graphics.poly(points);
       break;
@@ -198,18 +206,24 @@ export const drawSelectionOutline = (graphics: Graphics, shape: AnimatedCanvasEl
 
   switch (shape.type) {
     case 'rectangle':
-      graphics.roundRect(0, 0, shape.width, shape.height, shape.cornerRadius || 0);
+      graphics.roundRect(
+        -shape.width / 2,
+        -shape.height / 2,
+        shape.width,
+        shape.height,
+        shape.cornerRadius || 0
+      );
       break;
     case 'circle':
       const radius = shape.radius || shape.width / 2;
-      graphics.ellipse(radius, radius, radius, radius);
+      graphics.ellipse(0, 0, radius, radius);
       break;
     case 'triangle':
       const r = shape.radius || shape.width / 2;
       const points = [
-        { x: 0, y: r * 2 },
-        { x: r, y: 0 },
-        { x: r * 2, y: r * 2 },
+        { x: -r, y: r },
+        { x: 0, y: -r },
+        { x: r, y: r },
       ];
       graphics.poly(points);
       break;
