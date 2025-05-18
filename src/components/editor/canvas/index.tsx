@@ -20,6 +20,7 @@ interface CanvasProps {
   onLineEndpointDrag?: (id: string, endpoint: 'start' | 'end', x: number, y: number) => void;
   tool: string;
   onAddElement?: (element: AnimatedCanvasElement) => void;
+  isPathMode?: boolean;
 }
 
 export interface CanvasRef {
@@ -37,6 +38,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     onLineEndpointDrag,
     tool,
     onAddElement,
+    isPathMode = false
   },
   ref
 ) {
@@ -92,16 +94,26 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     setDraggingId(null);
     setDragOffset(null);
     setDraggingEndpoint(null);
-    if (isDrawing && currentPath.length > 1) {
-      setIsDrawing(false);
-      // Create a new path element
-      const newElement = createNewElement('path', 0, 0, elements, currentPath);
-      onElementSelect(newElement.id);
-      setCurrentPath([]);
-      // Add the new element to the elements array
-      if (onAddElement) {
-        onAddElement(newElement);
+    
+    if (isDrawing) {
+      if (currentPath.length > 1) {
+        if (tool === 'draw') {
+          // Create a new path element
+          const newElement = createNewElement('path', 0, 0, elements, currentPath);
+          
+          // If in path mode, mark it as a path
+          if (isPathMode) {
+            newElement.isPath = true;
+          }
+          
+          onElementSelect(newElement.id);
+          if (onAddElement) {
+            onAddElement(newElement);
+          }
+        }
       }
+      setIsDrawing(false);
+      setCurrentPath([]);
     }
   };
 

@@ -7,6 +7,7 @@ interface BaseElementProps {
   y: number;
   elements: AnimatedCanvasElement[];
   pathPoints?: Array<{x: number, y: number}>;
+  isPath?: boolean;
 }
 
 interface CommonElementAttributes {
@@ -70,6 +71,7 @@ function createRectangle(props: BaseElementProps): AnimatedCanvasElement {
     y: props.y,
     pivotX: width / 2,
     pivotY: height / 2,
+    isPath: props.isPath || false,
   };
 }
 
@@ -88,6 +90,7 @@ function createCircle(props: BaseElementProps): AnimatedCanvasElement {
     y: props.y,
     pivotX: width / 2,
     pivotY: height / 2,
+    isPath: props.isPath || false,
   };
 }
 
@@ -106,6 +109,7 @@ function createTriangle(props: BaseElementProps): AnimatedCanvasElement {
     y: props.y,
     pivotX: width / 2,
     pivotY: height / 2,
+    isPath: props.isPath || false,
   };
 }
 
@@ -120,6 +124,7 @@ function createLine(props: BaseElementProps): AnimatedCanvasElement {
       arrow: false,
       dotted: false,
     },
+    isPath: props.isPath || false,
   };
 }
 
@@ -150,6 +155,7 @@ function createPath(props: BaseElementProps): AnimatedCanvasElement {
       y: p.y - minY
     })),
     lineOptions: undefined,
+    isPath: props.isPath || false,
   };
 }
 
@@ -158,9 +164,10 @@ export function createNewElement(
   x: number,
   y: number,
   elements: AnimatedCanvasElement[],
-  pathPoints?: Array<{x: number, y: number}>
+  pathPoints?: Array<{x: number, y: number}>,
+  isPath?: boolean
 ): AnimatedCanvasElement {
-  const props: BaseElementProps = { x, y, elements, pathPoints };
+  const props: BaseElementProps = { x, y, elements, pathPoints, isPath };
   
   switch (type) {
     case 'rectangle':

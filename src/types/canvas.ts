@@ -39,9 +39,12 @@ export type AnimatableProperties = {
   rotation?: number;
   pivotX?: number;
   pivotY?: number;
+  pathPoints?: Array<{x: number, y: number}>;
+  pathDirection?: 'clockwise' | 'counterclockwise';
+  yoyo?: boolean;
 };
 
-export type AnimationType = 'rotate' | 'scale' | 'move' | 'color' | 'fade';
+export type AnimationType = 'rotate' | 'scale' | 'move' | 'color' | 'fade' | 'path';
 
 export interface ElementAnimation {
   id: string;
@@ -89,6 +92,7 @@ export interface AnimatedCanvasElement {
   };
   pathPoints?: Array<{x: number, y: number}>;
   animations: ElementAnimation[];
+  isPath?: boolean;
 }
 
 export const EASING_OPTIONS: GsapEase[] = [

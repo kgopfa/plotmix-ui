@@ -37,6 +37,11 @@ export default function EditorCanvas() {
     duration: 10,
     scale: 100
   });
+  const [isPathMode, setIsPathMode] = useState(false);
+  const [, setAnimationTarget] = useState<{
+    animationId: string;
+    elementId: string;
+  } | null>(null);
 
   const MASK_OFFSET_X = 0;
   const MASK_OFFSET_Y = 0;
@@ -96,7 +101,7 @@ export default function EditorCanvas() {
           setLineStartPoint({ x: e.global.x, y: e.global.y });
         } else {
           // Second click - create line and reset
-          const newElement = createNewElement('line', lineStartPoint.x, lineStartPoint.y, elements);
+          const newElement = createNewElement('line', lineStartPoint.x, lineStartPoint.y, elements, undefined, isPathMode);
           // Update line end point
           newElement.lineOptions = {
             points: {
@@ -112,13 +117,25 @@ export default function EditorCanvas() {
           setTool('select');
           setLineStartPoint(null);
           setMaskPos(null);
+          
+          // If in path mode, exit after creating the path
+          if (isPathMode) {
+            setIsPathMode(false);
+            setAnimationTarget(null);
+          }
         }
       } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle') {
-        const newElement = createNewElement(tool, e.global.x, e.global.y, elements);
+        const newElement = createNewElement(tool, e.global.x, e.global.y, elements, undefined, isPathMode);
         setElements(prev => [...prev, newElement]);
         selectionManager.select(newElement);
         setTool('select');
         setMaskPos(null);
+        
+        // If in path mode, exit after creating the path
+        if (isPathMode) {
+          setIsPathMode(false);
+          setAnimationTarget(null);
+        }
       } else {
         selectionManager.select(null);
       }
@@ -189,8 +206,19 @@ export default function EditorCanvas() {
 
   const handleInspectorChange = (
     prop: string,
-    value: string | number | boolean | ElementAnimation[] | NonNullable<AnimatedCanvasElement['lineOptions']>
+    value: string | number | boolean | ElementAnimation[] | NonNullable<AnimatedCanvasElement['lineOptions']> | {
+      animationId: string;
+      elementId: string;
+    }
   ) => {
+    if (prop === 'enterPathMode') {
+      // Enter path mode to draw animation path
+      const pathTarget = value as { animationId: string; elementId: string };
+      setIsPathMode(true);
+      setAnimationTarget(pathTarget);
+      return;
+    }
+    
     if (selectedElement) {
       if (prop === 'animations') {
         setElements(elements => {
@@ -240,8 +268,8 @@ export default function EditorCanvas() {
   }, [selectionManager]);
 
   // Memoize the handleSelectElement function
-  const handleSelectElement = useCallback((id: string) => {
-    const element = elements.find(e => e.id === id) || null;
+  const handleSelectElement = useCallback((id: string | null) => {
+    const element = id ? elements.find(e => e.id === id) || null : null;
     selectionManager.select(element);
   }, [elements, selectionManager]);
 
@@ -315,7 +343,32 @@ export default function EditorCanvas() {
           }}
           onMouseLeave={() => setMaskPos(null)}
         >
-          <Toolbar currentTool={tool} onToolChange={handleToolChange} />
+          {isPathMode && (
+            <div className="absolute top-0 left-0 w-full py-2 px-4 bg-blue-100 text-blue-800 z-10 flex justify-between items-center">
+              <span>
+                <strong>Path Drawing Mode:</strong> Select a tool and draw a path that your element will follow.
+              </span>
+              <button 
+                className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                onClick={() => {
+                  setIsPathMode(false);
+                  setAnimationTarget(null);
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+          
+          <Toolbar
+            currentTool={tool}
+            onToolChange={handleToolChange}
+            isPathMode={isPathMode}
+            onExitPathMode={() => {
+              setIsPathMode(false);
+              setAnimationTarget(null);
+            }}
+          />
 
           <MaskOverlay
             tool={tool}
@@ -331,12 +384,13 @@ export default function EditorCanvas() {
               dimensions={dimensions}
               elements={elements}
               selectedId={selectedElement?.id || null}
-              onElementSelect={handleSelectElement as (id: string | null) => void}
+              onElementSelect={handleSelectElement}
               onElementDragEnd={handleElementDragEnd}
               onCanvasClick={canvasClickHandler}
               onLineEndpointDrag={handleLineEndpointDrag}
               tool={tool}
               onAddElement={handleAddElement}
+              isPathMode={isPathMode}
             />
           )}
         </main>

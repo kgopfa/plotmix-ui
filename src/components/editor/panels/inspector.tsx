@@ -16,7 +16,10 @@ interface InspectorProps {
   selectedElement: AnimatedCanvasElement | null;
   onInspectorChange: (
     prop: string,
-    value: string | number | boolean | ElementAnimation[] | NonNullable<AnimatedCanvasElement['lineOptions']>
+    value: string | number | boolean | ElementAnimation[] | NonNullable<AnimatedCanvasElement['lineOptions']> | {
+      animationId: string;
+      elementId: string;
+    }
   ) => void;
 }
 
@@ -48,10 +51,19 @@ export function Inspector({ selectedElement, onInspectorChange }: InspectorProps
     return { [propertyKey]: convertedValue };
   };
 
+  const handleEnterPathMode = (animationId: string) => {
+    if (!selectedElement) return;
+    
+    onInspectorChange('enterPathMode', {
+      animationId,
+      elementId: selectedElement.id
+    });
+  };
+
   const handleAnimationChange = (
     animationId: string,
     field: string,
-    value: string | number
+    value: string | number | boolean
   ) => {
     const updatedAnimations = localAnimations.map(anim => {
       if (anim.id !== animationId) return anim;
@@ -65,7 +77,12 @@ export function Inspector({ selectedElement, onInspectorChange }: InspectorProps
           scale: { scaleX: 1, scaleY: 1 },
           move: { x: 0, y: 0 },
           color: { fillColor: selectedElement!.fill },
-          fade: { alpha: selectedElement!.opacity ?? 1 }
+          fade: { alpha: selectedElement!.opacity ?? 1 },
+          path: { 
+            pathPoints: [],
+            pathDirection: 'clockwise' as 'clockwise' | 'counterclockwise',
+            yoyo: false 
+          }
         };
         return { 
           ...anim, 
@@ -76,20 +93,38 @@ export function Inspector({ selectedElement, onInspectorChange }: InspectorProps
       } else if (field === 'startTime' || field === 'duration') {
         return { ...anim, [field]: Number(value) };
       } else if (field.startsWith('properties.')) {
-        const animationProperty = getAnimationProperty(field, value);
-        return {
-          ...anim,
-          properties: {
-            ...anim.properties,
-            ...animationProperty
-          }
-        };
+        if (field === 'properties.yoyo') {
+          return {
+            ...anim,
+            properties: {
+              ...anim.properties,
+              yoyo: value as boolean
+            }
+          };
+        } else if (field === 'properties.pathDirection') {
+          return {
+            ...anim,
+            properties: {
+              ...anim.properties,
+              pathDirection: value as 'clockwise' | 'counterclockwise'
+            }
+          };
+        } else {
+          const animationProperty = getAnimationProperty(field, value as string | number);
+          return {
+            ...anim,
+            properties: {
+              ...anim.properties,
+              ...animationProperty
+            }
+          };
+        }
       }
       return anim;
     });
 
-    setLocalAnimations(updatedAnimations);
-    onInspectorChange('animations', updatedAnimations);
+    setLocalAnimations(updatedAnimations as ElementAnimation[]);
+    onInspectorChange('animations', updatedAnimations as ElementAnimation[]);
   };
 
   const handleAddAnimation = () => {
@@ -101,7 +136,12 @@ export function Inspector({ selectedElement, onInspectorChange }: InspectorProps
       scale: { scaleX: 1, scaleY: 1 },
       move: { x: 0, y: 0 },
       color: { fillColor: selectedElement.fill },
-      fade: { alpha: selectedElement.opacity ?? 1 }
+      fade: { alpha: selectedElement.opacity ?? 1 },
+      path: { 
+        pathPoints: [],
+        pathDirection: 'clockwise' as 'clockwise' | 'counterclockwise',
+        yoyo: false 
+      }
     };
 
     const newAnimation = {
@@ -447,6 +487,7 @@ export function Inspector({ selectedElement, onInspectorChange }: InspectorProps
                   <option value="move">Movement</option>
                   <option value="color">Color</option>
                   <option value="fade">Fade</option>
+                  <option value="path">Follow Path</option>
                 </select>
               </label>
               <label>
@@ -550,6 +591,52 @@ export function Inspector({ selectedElement, onInspectorChange }: InspectorProps
                         className="w-full"
                       />
                     </label>
+                  )}
+                  {animation.type === 'path' && (
+                    <div className="col-span-2 grid grid-cols-2 gap-2">
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium mb-1">
+                          Path Animation
+                        </label>
+                        <button
+                          onClick={() => handleEnterPathMode(animation.id)}
+                          className="w-full py-2 px-3 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center justify-center"
+                        >
+                          <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 17.25V21H6.75L17.81 9.94L14.06 6.19L3 17.25Z" fill="currentColor"/>
+                            <path d="M20.71 7.04C21.1 6.65 21.1 6.02 20.71 5.63L18.37 3.29C17.98 2.9 17.35 2.9 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04Z" fill="currentColor"/>
+                          </svg>
+                          Draw Path
+                        </button>
+                      </div>
+                      
+                      <div className="col-span-2">
+                        <label className="block">
+                          Direction:
+                          <select
+                            value={animation.properties.pathDirection || 'clockwise'}
+                            onChange={e => handleAnimationChange(animation.id, 'properties.pathDirection', e.target.value)}
+                            className="w-full mt-1"
+                          >
+                            <option value="clockwise">Clockwise</option>
+                            <option value="counterclockwise">Counterclockwise</option>
+                          </select>
+                        </label>
+                      </div>
+                      
+                      <div className="col-span-2 flex items-center">
+                        <input
+                          type="checkbox"
+                          id={`yoyo-${animation.id}`}
+                          checked={animation.properties.yoyo || false}
+                          onChange={e => handleAnimationChange(animation.id, 'properties.yoyo', e.target.checked)}
+                          className="mr-2"
+                        />
+                        <label htmlFor={`yoyo-${animation.id}`}>
+                          Yoyo (forward and backward)
+                        </label>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
