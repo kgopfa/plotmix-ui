@@ -41,6 +41,12 @@ export function MaskOverlay({
   }
 
   if (tool === 'triangle') {
+    // Calculate points for equilateral triangle with height = 50 (mask height)
+    const height = 50;
+    const sideLength = (2 * height) / Math.sqrt(3);
+    const halfWidth = sideLength / 2;
+    const points = `${25},${5} ${25 + halfWidth},${45} ${25 - halfWidth},${45}`;
+
     return (
       <svg
         style={{
@@ -55,7 +61,7 @@ export function MaskOverlay({
         }}
       >
         <polygon
-          points="25,5 45,40 5,40"
+          points={points}
           fill="white"
           stroke="#888"
           strokeWidth={2}

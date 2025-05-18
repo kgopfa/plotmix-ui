@@ -122,18 +122,23 @@ function drawShapePath(graphics: Graphics, shape: AnimatedCanvasElement) {
       break;
       
     case 'circle':
-      // Draw circle centered around origin
-      const radius = shape.radius || shape.width / 2;
+      // Draw circle with radius = rectangle height / 2
+      const radius = shape.height / 2;
       graphics.ellipse(0, 0, radius, radius);
       break;
       
     case 'triangle':
-      const r = shape.radius || shape.width / 2;
-      const angle = (2 * Math.PI) / 3; // 120 degrees in radians
-      const points = Array.from({ length: 3 }, (_, i) => ({
-        x: r * Math.cos(angle * i - Math.PI / 2),
-        y: r * Math.sin(angle * i - Math.PI / 2)
-      }));
+      // Draw equilateral triangle with height matching rectangle height
+      const height = shape.height;
+      // For an equilateral triangle, if h is height, then side length = 2h/√3
+      const sideLength = (2 * height) / Math.sqrt(3);
+      // Calculate the points for an equilateral triangle centered at origin
+      const halfWidth = sideLength / 2;
+      const points = [
+        { x: 0, y: -height/2 },                    // top point
+        { x: -halfWidth, y: height/2 },            // bottom left
+        { x: halfWidth, y: height/2 }              // bottom right
+      ];
       graphics.poly(points);
       break;
       
@@ -214,16 +219,18 @@ export const drawSelectionOutline = (graphics: Graphics, shape: AnimatedCanvasEl
       );
       break;
     case 'circle':
-      const radius = shape.radius || shape.width / 2;
+      const radius = shape.height / 2;
       graphics.ellipse(0, 0, radius, radius);
       break;
     case 'triangle':
-      const r = shape.radius || shape.width / 2;
-      const angle = (2 * Math.PI) / 3;
-      const points = Array.from({ length: 3 }, (_, i) => ({
-        x: r * Math.cos(angle * i - Math.PI / 2),
-        y: r * Math.sin(angle * i - Math.PI / 2)
-      }));
+      const height = shape.height;
+      const sideLength = (2 * height) / Math.sqrt(3);
+      const halfWidth = sideLength / 2;
+      const points = [
+        { x: 0, y: -height/2 },                    // top point
+        { x: -halfWidth, y: height/2 },            // bottom left
+        { x: halfWidth, y: height/2 }              // bottom right
+      ];
       graphics.poly(points);
       break;
     case 'line':
