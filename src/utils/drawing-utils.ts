@@ -389,70 +389,88 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasElement) {
 
 export const drawSelectionOutline = (graphics: Graphics, shape: AnimatedCanvasElement) => {
   graphics.clear();
-
+  
+  // Always draw a rectangular selection outline regardless of shape type
+  graphics.rect(
+    -shape.width / 2,
+    -shape.height / 2,
+    shape.width,
+    shape.height
+  );
+  
+  // Apply a more visible stroke for the selection outline
   graphics.stroke({
-    width: 3,
-    color: 'cyan',
+    width: 1,
+    color: 0x74b9ff,
+    alpha: 0.85,
   });
 
-  switch (shape.type) {
-    case 'rectangle':
-    case 'svg':
-      graphics.roundRect(
-        -shape.width / 2,
-        -shape.height / 2,
-        shape.width,
-        shape.height,
-        shape.cornerRadius || 0
-      );
-      break;
-    case 'circle':
-      const radius = shape.height / 2;
-      graphics.ellipse(0, 0, radius, radius);
-      break;
-    case 'triangle':
-      const height = shape.height;
-      const sideLength = (2 * height) / Math.sqrt(3);
-      const halfWidth = sideLength / 2;
-      const points = [
-        { x: 0, y: -height/2 },
-        { x: -halfWidth, y: height/2 },
-        { x: halfWidth, y: height/2 }
-      ];
-      graphics.poly(points);
-      break;
-    case 'line':
-      if (shape.lineOptions?.points) {
-        const { start, end } = shape.lineOptions.points;
-        const startX = start.x - shape.x;
-        const startY = start.y - shape.y;
-        const endX = end.x - shape.x;
-        const endY = end.y - shape.y;
-        
-        graphics
-          .moveTo(startX, startY)
-          .lineTo(endX, endY);
+  // Add corner handles (small white squares with the same border)
+  const HANDLE_SIZE = 8; // Size of the corner squares
+  const halfHandleSize = HANDLE_SIZE / 2;
+  
+  // Top-left corner
+  graphics.rect(
+    -shape.width / 2 - halfHandleSize,
+    -shape.height / 2 - halfHandleSize,
+    HANDLE_SIZE,
+    HANDLE_SIZE
+  );
+  graphics.fill({ color: 0xFFFFFF, alpha: 1 });
+  graphics.stroke({ width: 1, color: 0x74b9ff, alpha: 0.8 });
+  
+  // Top-right corner
+  graphics.rect(
+    shape.width / 2 - halfHandleSize,
+    -shape.height / 2 - halfHandleSize,
+    HANDLE_SIZE,
+    HANDLE_SIZE
+  );
+  graphics.fill({ color: 0xFFFFFF, alpha: 1 });
+  graphics.stroke({ width: 1, color: 0x74b9ff, alpha: 0.8 });
+  
+  // Bottom-left corner
+  graphics.rect(
+    -shape.width / 2 - halfHandleSize,
+    shape.height / 2 - halfHandleSize,
+    HANDLE_SIZE,
+    HANDLE_SIZE
+  );
+  graphics.fill({ color: 0xFFFFFF, alpha: 1 });
+  graphics.stroke({ width: 1, color: 0x74b9ff, alpha: 0.8 });
+  
+  // Bottom-right corner
+  graphics.rect(
+    shape.width / 2 - halfHandleSize,
+    shape.height / 2 - halfHandleSize,
+    HANDLE_SIZE,
+    HANDLE_SIZE
+  );
+  graphics.fill({ color: 0xFFFFFF, alpha: 1 });
+  graphics.stroke({ width: 1, color: 0x74b9ff, alpha: 0.8 });
 
-        const HANDLE_SIZE = 10;
-        
-        graphics.circle(startX, startY, HANDLE_SIZE / 2);
-        graphics.fill({ color: 0x00ff00, alpha: 0.5 });
-        graphics.stroke({ color: 'cyan', width: 3 });
-        
-        // End po int marker (red)
-        graphics.circle(endX, endY, HANDLE_SIZE / 2);
-        graphics.fill({ color: 0xff0000, alpha: 0.5 });
-        graphics.stroke({ color: 'cyan', width: 3 });
-      }
-      break;
-    case 'path':
-      if (shape.pathPoints && shape.pathPoints.length > 1) {
-        graphics.moveTo(shape.pathPoints[0].x, shape.pathPoints[0].y);
-        for (let i = 1; i < shape.pathPoints.length; i++) {
-          graphics.lineTo(shape.pathPoints[i].x, shape.pathPoints[i].y);
-        }
-      }
-      break;
+  // For line type, we still want to show the endpoint handles
+  if (shape.type === 'line' && shape.lineOptions?.points) {
+    const { start, end } = shape.lineOptions.points;
+    const startX = start.x - shape.x;
+    const startY = start.y - shape.y;
+    const endX = end.x - shape.x;
+    const endY = end.y - shape.y;
+    
+    // Draw a line connecting the endpoints
+    graphics.moveTo(startX, startY).lineTo(endX, endY);
+    graphics.stroke({ width: 1, color: 0x74b9ff, alpha: 0.8 });
+    
+    // Start point marker (green)
+    const HANDLE_SIZE = 10;
+    graphics.circle(startX, startY, HANDLE_SIZE / 2);
+    graphics.fill({ color: 0x00ff00, alpha: 0.8 });
+    graphics.stroke({ color: 0x74b9ff, width: 1 });
+    
+    // End point marker (red)
+    graphics.circle(endX, endY, HANDLE_SIZE / 2);
+    graphics.fill({ color: 0xff0000, alpha: 0.8 });
+    graphics.stroke({ color: 0x74b9ff, width: 1 });
   }
 };
 
@@ -490,4 +508,24 @@ export function updateLineFromLengthAndNorthAngle(
 ): { x: number, y: number } {
   const mathAngle = ((450 - northAngleDegrees) % 360) * Math.PI / 180;
   return updateLineEndPoint(startPoint, length, mathAngle);
-} 
+}
+
+// Add a new function for drawing the hover outline
+export const drawHoverOutline = (graphics: Graphics, shape: AnimatedCanvasElement) => {
+  graphics.clear();
+  
+  // Always draw a rectangular outline regardless of shape type
+  graphics.rect(
+    -shape.width / 2,
+    -shape.height / 2,
+    shape.width,
+    shape.height
+  );
+  
+  // Apply a light stroke for the hover effect
+  graphics.stroke({
+    width: 1,
+    color: 0x74b9ff,
+    alpha: 0.85, // More transparent than selection outline
+  });
+}; 

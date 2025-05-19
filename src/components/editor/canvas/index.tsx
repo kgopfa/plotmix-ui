@@ -4,8 +4,8 @@ import { Application, extend } from '@pixi/react';
 import { Container, Graphics, Texture, Sprite } from 'pixi.js';
 import type { FederatedPointerEvent } from 'pixi.js';
 import type { AnimatedCanvasElement } from '@/types/canvas';
-import { useImperativeHandle, forwardRef, useState, useRef } from 'react';
-import { drawShape, drawSelectionOutline } from '@/utils/drawing-utils';
+import { useImperativeHandle, forwardRef, useState, useRef, useEffect } from 'react';
+import { drawShape, drawSelectionOutline, drawHoverOutline } from '@/utils/drawing-utils';
 import { createNewElement } from '@/lib/element-factory';
 
 extend({ Container, Graphics });
@@ -26,6 +26,18 @@ interface CanvasProps {
 export interface CanvasRef {
   getShapeRefs: () => Record<string, Container>;
 }
+
+// Define resize handle positions
+type ResizeHandle = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | null;
+
+// After the imports, add this for cursor management
+const DEFAULT_CURSOR = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23000\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpath d=\'M5 12h14\'/%3E%3Cpath d=\'M12 5v14\'/%3E%3C/svg%3E") 12 12, auto';
+
+const DRAW_CURSOR = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23000\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpath d=\'M12 19l7-7 3 3-7 7-3-3z\'/%3E%3Cpath d=\'M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z\'/%3E%3Cpath d=\'M2 2l7.586 7.586\'/%3E%3Ccircle cx=\'11\' cy=\'11\' r=\'2\'/%3E%3C/svg%3E") 2 22, auto';
+
+const setCursor = (cursor: string) => {
+  document.body.style.cursor = cursor;
+};
 
 export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   {
@@ -48,6 +60,9 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentPath, setCurrentPath] = useState<Array<{ x: number; y: number }>>([]);
   
+  // Add hover state
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  
   // Create a map to track which SVGs have already been rendered
   // Value is an object with element ID and dimensions for tracking changes
   const svgRenderedMap = useRef(new WeakMap<Container, {id: string, width: number, height: number}>());
@@ -59,11 +74,115 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
   const [draggingEndpoint, setDraggingEndpoint] = useState<'start' | 'end' | null>(null);
+  // Add state for resizing
+  const [resizingHandle, setResizingHandle] = useState<ResizeHandle>(null);
+  const [initialSize, setInitialSize] = useState<{ width: number; height: number } | null>(null);
+  const [initialMouse, setInitialMouse] = useState<{ x: number; y: number } | null>(null);
+
+  // After importing useEffect, also add:
+  useEffect(() => {
+    // Set default cursor when component mounts
+    setCursor(DEFAULT_CURSOR);
+    
+    // Reset to default cursor when component unmounts
+    return () => {
+      document.body.style.cursor = '';
+    };
+  }, []);
+
+  // Check if a point is within a resize handle
+  const getResizeHandleAtPoint = (element: AnimatedCanvasElement, x: number, y: number): ResizeHandle => {
+    if (!element) return null;
+    
+    const halfWidth = element.width / 2;
+    const halfHeight = element.height / 2;
+    const halfHandleSize = HANDLE_SIZE / 2;
+    
+    // Convert global coordinates to element-local coordinates
+    const localX = x - element.x;
+    const localY = y - element.y;
+    
+    // Check top-left handle
+    if (
+      localX >= -halfWidth - halfHandleSize && 
+      localX <= -halfWidth + halfHandleSize &&
+      localY >= -halfHeight - halfHandleSize && 
+      localY <= -halfHeight + halfHandleSize
+    ) {
+      return 'top-left';
+    }
+    
+    // Check top-right handle
+    if (
+      localX >= halfWidth - halfHandleSize && 
+      localX <= halfWidth + halfHandleSize &&
+      localY >= -halfHeight - halfHandleSize && 
+      localY <= -halfHeight + halfHandleSize
+    ) {
+      return 'top-right';
+    }
+    
+    // Check bottom-left handle
+    if (
+      localX >= -halfWidth - halfHandleSize && 
+      localX <= -halfWidth + halfHandleSize &&
+      localY >= halfHeight - halfHandleSize && 
+      localY <= halfHeight + halfHandleSize
+    ) {
+      return 'bottom-left';
+    }
+    
+    // Check bottom-right handle
+    if (
+      localX >= halfWidth - halfHandleSize && 
+      localX <= halfWidth + halfHandleSize &&
+      localY >= halfHeight - halfHandleSize && 
+      localY <= halfHeight + halfHandleSize
+    ) {
+      return 'bottom-right';
+    }
+    
+    return null;
+  };
+
+  // Update the getResizeCursor function
+  const getResizeCursor = (handle: ResizeHandle): string => {
+    switch (handle) {
+      case 'top-left':
+      case 'bottom-right':
+        return 'nwse-resize';
+      case 'top-right':
+      case 'bottom-left':
+        return 'nesw-resize';
+      default:
+        return DEFAULT_CURSOR;
+    }
+  };
 
   const handlePointerDown = (id: string, shapeX: number, shapeY: number) => (e: FederatedPointerEvent) => {
     const pos = e.global;
     const element = elements.find(el => el.id === id);
     
+    if (!element) return;
+    
+    // First, check if we're clicking on a resize handle (only for selected elements)
+    if (id === selectedId && element.type !== 'line' && element.type !== 'path') {
+      const handle = getResizeHandleAtPoint(element, pos.x, pos.y);
+      
+      if (handle) {
+        setResizingHandle(handle);
+        setDraggingId(id);
+        setInitialSize({ width: element.width, height: element.height });
+        setInitialMouse({ x: pos.x, y: pos.y });
+        onElementSelect(id);
+        
+        // Set cursor for resize operation
+        setCursor(getResizeCursor(handle));
+        return;
+      }
+    }
+    
+    // Then check for line endpoint handling (same as before)
     if (element?.type === 'line' && element.lineOptions?.points && onLineEndpointDrag) {
       const { start, end } = element.lineOptions.points;
       const clickX = pos.x;
@@ -88,16 +207,23 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       }
     }
     
-    // Regular shape drag
+    // Regular shape drag (same as before)
     setDraggingId(id);
     onElementSelect(id);
     setDragOffset({ x: pos.x - shapeX, y: pos.y - shapeY });
   };
 
+  // Update the handlePointerUp function
   const handlePointerUp = () => {
-    setDraggingId(null);
-    setDragOffset(null);
-    setDraggingEndpoint(null);
+    // Reset all dragging and resizing state (except resize, which is handled by global handler)
+    if (!resizingHandle) {
+      setDraggingId(null);
+      setDragOffset(null);
+      setDraggingEndpoint(null);
+      
+      // Reset cursor style
+      setCursor(DEFAULT_CURSOR);
+    }
     
     if (isDrawing) {
       if (currentPath.length > 1) {
@@ -124,13 +250,71 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   const handleDragMove = (id: string) => (e: FederatedPointerEvent) => {
     if (draggingId !== id) return;
     
-    const pos = e.global;
+    // Prevent event from propagating to stop interference with other handlers
+    e.stopPropagation();
     
+    const pos = e.global;
+    const element = elements.find(el => el.id === id);
+    if (!element) return;
+    
+    // Handle resizing - only if mouse button is pressed (buttons property > 0)
+    if (resizingHandle && initialSize && initialMouse && e.buttons > 0) {
+      // Calculate the delta from the initial mouse position
+      const deltaX = pos.x - initialMouse.x;
+      const deltaY = pos.y - initialMouse.y;
+      
+      let newWidth = initialSize.width;
+      let newHeight = initialSize.height;
+      
+      // Calculate new dimensions based on the handle being dragged
+      switch (resizingHandle) {
+        case 'top-left':
+          newWidth = Math.max(20, initialSize.width - deltaX);
+          newHeight = Math.max(20, initialSize.height - deltaY);
+          break;
+        case 'top-right':
+          newWidth = Math.max(20, initialSize.width + deltaX);
+          newHeight = Math.max(20, initialSize.height - deltaY);
+          break;
+        case 'bottom-left':
+          newWidth = Math.max(20, initialSize.width - deltaX);
+          newHeight = Math.max(20, initialSize.height + deltaY);
+          break;
+        case 'bottom-right':
+          newWidth = Math.max(20, initialSize.width + deltaX);
+          newHeight = Math.max(20, initialSize.height + deltaY);
+          break;
+      }
+      
+      // Trigger a custom event that the parent component can listen to
+      const resizeEvent = new CustomEvent('element-resize', { 
+        detail: { 
+          id,
+          width: newWidth,
+          height: newHeight,
+          handle: resizingHandle,
+          originalX: element.x,
+          originalY: element.y
+        }
+      });
+      
+      window.dispatchEvent(resizeEvent);
+      return;
+    } else if (resizingHandle && e.buttons === 0) {
+      // If mouse button is released during resize, exit resize mode
+      setResizingHandle(null);
+      setDraggingId(null);
+      setInitialSize(null);
+      setInitialMouse(null);
+      setCursor(DEFAULT_CURSOR);
+      return;
+    }
+    
+    // Handle endpoint dragging (same as before)
     if (draggingEndpoint && onLineEndpointDrag) {
-      // Handle endpoint dragging
       onLineEndpointDrag(id, draggingEndpoint, pos.x, pos.y);
     } else if (dragOffset) {
-      // Handle regular shape dragging
+      // Handle regular shape dragging (same as before)
       onElementDragEnd(id, pos.x - dragOffset.x, pos.y - dragOffset.y);
     }
   };
@@ -168,6 +352,65 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     }
   };
 
+  // Update handleElementMouseMove to manage hover state
+  const handleElementMouseMove = (id: string) => (e: FederatedPointerEvent) => {
+    // Update hover state
+    if (hoveredId !== id) {
+      setHoveredId(id);
+    }
+
+    // Only handle cursor change for selected elements that are not being dragged
+    if (id !== selectedId || draggingId) return;
+    
+    const element = elements.find(el => el.id === id);
+    if (!element || element.type === 'line' || element.type === 'path') return;
+    
+    const handle = getResizeHandleAtPoint(element, e.global.x, e.global.y);
+    if (handle) {
+      setCursor(getResizeCursor(handle));
+    } else {
+      setCursor(DEFAULT_CURSOR);
+    }
+  };
+
+  // Update handleElementMouseLeave to clear hover state
+  const handleElementMouseLeave = (id: string) => () => {
+    if (hoveredId === id) {
+      setHoveredId(null);
+    }
+    
+    if (!draggingId) {
+      setCursor(DEFAULT_CURSOR);
+    }
+  };
+
+  // Update the global pointer up handler
+  useEffect(() => {
+    const handleGlobalPointerUp = () => {
+      if (resizingHandle) {
+        setResizingHandle(null);
+        setDraggingId(null);
+        setInitialSize(null);
+        setInitialMouse(null);
+        setCursor(DEFAULT_CURSOR);
+      }
+    };
+
+    document.addEventListener('pointerup', handleGlobalPointerUp);
+    return () => {
+      document.removeEventListener('pointerup', handleGlobalPointerUp);
+    };
+  }, [resizingHandle]);
+
+  // Update the handleCanvasPointerMove function to set the appropriate cursor based on the tool
+  useEffect(() => {
+    if (tool === 'draw' || tool === 'line') {
+      setCursor(DRAW_CURSOR);
+    } else {
+      setCursor(DEFAULT_CURSOR);
+    }
+  }, [tool]);
+
   return (
     <Application
       width={dimensions.width}
@@ -187,7 +430,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         }}
         interactive={true}
         eventMode="static"
-        cursor={tool === 'draw' ? 'crosshair' : 'default'}
         onPointerDown={(e: FederatedPointerEvent) => {
           if (tool === 'draw') {
             handleCanvasPointerDown(e);
@@ -212,11 +454,12 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
               pivot={{ x: 0, y: 0 }}
               interactive={true}
               eventMode="dynamic"
-              cursor="move"
               onPointerDown={handlePointerDown(el.id, el.x, el.y)}
               onPointerUp={handlePointerUp}
               onPointerUpOutside={handlePointerUp}
               onPointerMove={handleDragMove(el.id)}
+              onPointerOver={handleElementMouseMove(el.id)}
+              onPointerOut={handleElementMouseLeave(el.id)}
               ref={(node) => {
                 if (node) {
                   // Store the container reference
@@ -274,6 +517,13 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                           // Mark as rendered in our map
                           svgRenderedMap.current.set(node, {id: el.id, width: el.width, height: el.height});
                           
+                          // Add hover outline if needed (when hovered but not selected)
+                          if (hoveredId === el.id && selectedId !== el.id) {
+                            const hoverOutline = new Graphics();
+                            drawHoverOutline(hoverOutline, el);
+                            node.addChild(hoverOutline);
+                          }
+                          
                           // Add selection outline if needed
                           if (el.id === selectedId) {
                             const outline = new Graphics();
@@ -322,16 +572,24 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
             pivot={{ x: 0, y: 0 }}
             interactive={true}
             eventMode="dynamic"
-            cursor="move"
             onPointerDown={handlePointerDown(el.id, el.x, el.y)}
             onPointerUp={handlePointerUp}
             onPointerUpOutside={handlePointerUp}
             onPointerMove={handleDragMove(el.id)}
+            onPointerOver={handleElementMouseMove(el.id)}
+            onPointerOut={handleElementMouseLeave(el.id)}
             ref={(node) => {
               if (node) shapeRefs.current[el.id] = node;
             }}
           >
             <pixiGraphics draw={(g) => drawShape(g, el)} />
+            
+            {/* Show hover outline when hovered but not selected */}
+            {hoveredId === el.id && selectedId !== el.id && (
+              <pixiGraphics draw={(g) => drawHoverOutline(g, el)} />
+            )}
+            
+            {/* Show selection outline with corner handles when selected */}
             {el.id === selectedId && (
               <pixiGraphics draw={(g) => drawSelectionOutline(g, el)} />
             )}

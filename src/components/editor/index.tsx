@@ -268,6 +268,62 @@ export default function EditorCanvas() {
     return selectionManager.subscribe(setSelectedElement);
   }, [selectionManager]);
 
+  // Listen for resize events from the Canvas component
+  useEffect(() => {
+    const handleElementResize = (e: CustomEvent) => {
+      const { id, width, height, handle } = e.detail;
+      
+      setElements(elements.map((el) => {
+        if (el.id !== id) return el;
+        
+        // Calculate position adjustments for certain resize handles
+        // This keeps the shape anchored to the opposite corner during resize
+        let x = el.x;
+        let y = el.y;
+        
+        // Calculate position adjustments based on which handle is being dragged
+        const deltaWidth = width - el.width;
+        const deltaHeight = height - el.height;
+        
+        switch(handle) {
+          case 'top-left':
+            x = el.x + deltaWidth / 2;
+            y = el.y + deltaHeight / 2;
+            break;
+          case 'top-right':
+            x = el.x - deltaWidth / 2;
+            y = el.y + deltaHeight / 2;
+            break;
+          case 'bottom-left':
+            x = el.x + deltaWidth / 2;
+            y = el.y - deltaHeight / 2;
+            break;
+          case 'bottom-right':
+            x = el.x - deltaWidth / 2;
+            y = el.y - deltaHeight / 2;
+            break;
+        }
+        
+        // Update the element with new dimensions and position
+        return {
+          ...el,
+          width,
+          height,
+          x,
+          y
+        };
+      }));
+    };
+    
+    // Add event listener for the custom resize event
+    window.addEventListener('element-resize', handleElementResize as EventListener);
+    
+    // Clean up the event listener when component unmounts
+    return () => {
+      window.removeEventListener('element-resize', handleElementResize as EventListener);
+    };
+  }, [elements]);
+
   // Memoize the handleSelectElement function
   const handleSelectElement = useCallback((id: string | null) => {
     const element = id ? elements.find(e => e.id === id) || null : null;
