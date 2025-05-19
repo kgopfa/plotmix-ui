@@ -30,9 +30,12 @@ export interface CanvasRef {
 // Define resize handle positions
 type ResizeHandle = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | null;
 
-const DEFAULT_CURSOR = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 64 64\'%3E%3Cg id=\'_01_Cursor\' data-name=\'01 Cursor\'%3E%3Cpath d=\'m60.2373 22.2021-54.3813-20.2031a3.0174 3.0174 0 0 0 -3.857 3.857l20.2031 54.3813a3.0112 3.0112 0 0 0 5.6763-.15l7.4541-23.8794a1.3336 1.3336 0 0 1 .8745-.875l23.88-7.4541a3.0113 3.0113 0 0 0 .1503-5.6767zm-.7461 3.7671-23.88 7.4541a3.3371 3.3371 0 0 0 -2.1875 2.188l-7.4541 23.88a.9953.9953 0 0 1 -1.8921.05l-20.2035-54.3813c-.2335-1.0229.438-1.4758 1.286-1.286l54.381 20.2031a.9955.9955 0 0 1 -.0498 1.8921z\' fill=\'black\' stroke=\'black\' stroke-width=\'1\'/%3E%3C/g%3E%3C/svg%3E") 3 3, auto';
 
-const DRAW_CURSOR = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23000\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpath d=\'M12 19l7-7 3 3-7 7-3-3z\'/%3E%3Cpath d=\'M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z\'/%3E%3Cpath d=\'M2 2l7.586 7.586\'/%3E%3Ccircle cx=\'11\' cy=\'11\' r=\'2\'/%3E%3C/svg%3E") 2 22, auto';
+const DEFAULT_CURSOR = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 64 64\'%3E%3Cg id=\'_01_Cursor\' data-name=\'01 Cursor\'%3E%3Cpath d=\'m60.2373 22.2021-54.3813-20.2031a3.0174 3.0174 0 0 0 -3.857 3.857l20.2031 54.3813a3.0112 3.0112 0 0 0 5.6763-.15l7.4541-23.8794a1.3336 1.3336 0 0 1 .8745-.875l23.88-7.4541a3.0113 3.0113 0 0 0 .1503-5.6767zm-.7461 3.7671-23.88 7.4541a3.3371 3.3371 0 0 0 -2.1875 2.188l-7.4541 23.88a.9953.9953 0 0 1 -1.8921.05l-20.2035-54.3813c-.2335-1.0229.438-1.4758 1.286-1.286l54.381 20.2031a.9955.9955 0 0 1 -.0498 1.8921z\' fill=\'black\' stroke=\'black\' stroke-width=\'2\'/%3E%3C/g%3E%3C/svg%3E") 3 3, auto';
+
+const LINE_CURSOR = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23000\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpath d=\'M12 19l7-7 3 3-7 7-3-3z\'/%3E%3Cpath d=\'M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z\'/%3E%3Cpath d=\'M2 2l7.586 7.586\'/%3E%3Ccircle cx=\'11\' cy=\'11\' r=\'2\'/%3E%3C/svg%3E") 3 3, auto';
+
+const DRAW_CURSOR = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'20\' height=\'20\' viewBox=\'0 0 512 512\'%3E%3Cpath d=\'M498.125,92.38l-78.505-78.506c-18.496-18.497-48.436-18.5-66.935,0C339.518,27.043,50.046,316.516,44.525,322.035c-2.182,2.182-3.725,4.918-4.46,7.915L0.502,491.068c-3.036,12.368,8.186,23.44,20.431,20.432c8.361-2.053,153.718-37.747,161.117-39.564c2.996-0.735,5.734-2.278,7.915-4.46c5.816-5.816,293.677-293.677,308.161-308.161C516.622,140.818,516.627,110.879,498.125,92.38zM39.957,472.043l1.612-6.562l4.951,4.951L39.957,472.043zM84.874,461.014l-33.887-33.887l14.736-60.009l79.16,79.16L84.874,461.014zM178.022,431.647l-97.668-97.668L332.559,81.773l97.668,97.668L178.022,431.647zM474.24,135.429l-19.508,19.507l-97.667-97.668l19.507-19.507c5.294-5.293,13.867-5.298,19.163,0l78.506,78.507C479.536,121.563,479.536,130.132,474.24,135.429z\' fill=\'black\'/%3E%3C/svg%3E") 0 20, auto';
 
 const setCursor = (cursor: string) => {
   document.body.style.cursor = cursor;
@@ -220,8 +223,14 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       setDragOffset(null);
       setDraggingEndpoint(null);
       
-      // Reset cursor style
-      setCursor(DEFAULT_CURSOR);
+      // Reset cursor style based on current tool
+      if (tool === 'draw') {
+        setCursor(DRAW_CURSOR);
+      } else if (tool === 'line') {
+        setCursor(LINE_CURSOR);
+      } else {
+        setCursor(DEFAULT_CURSOR);
+      }
     }
     
     if (isDrawing) {
@@ -379,7 +388,13 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     }
     
     if (!draggingId) {
-      setCursor(DEFAULT_CURSOR);
+      if (tool === 'draw') {
+        setCursor(DRAW_CURSOR);
+      } else if (tool === 'line') {
+        setCursor(LINE_CURSOR);
+      } else {
+        setCursor(DEFAULT_CURSOR);
+      }
     }
   };
 
@@ -391,7 +406,15 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         setDraggingId(null);
         setInitialSize(null);
         setInitialMouse(null);
-        setCursor(DEFAULT_CURSOR);
+        
+        // Set cursor based on current tool
+        if (tool === 'draw') {
+          setCursor(DRAW_CURSOR);
+        } else if (tool === 'line') {
+          setCursor(LINE_CURSOR);
+        } else {
+          setCursor(DEFAULT_CURSOR);
+        }
       }
     };
 
@@ -403,8 +426,10 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
   // Update the handleCanvasPointerMove function to set the appropriate cursor based on the tool
   useEffect(() => {
-    if (tool === 'draw' || tool === 'line') {
+    if (tool === 'draw') {
       setCursor(DRAW_CURSOR);
+    } else if (tool === 'line') {
+      setCursor(LINE_CURSOR);
     } else {
       setCursor(DEFAULT_CURSOR);
     }
