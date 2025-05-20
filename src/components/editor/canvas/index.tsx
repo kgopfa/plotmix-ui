@@ -237,6 +237,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       if (currentPath.length > 1) {
         if (tool === 'draw') {
           // Create a new path element
+          // Pass 0,0 as position since the element factory now calculates the correct center position
           const newElement = createNewElement('path', 0, 0, elements, currentPath);
           
           // If in path mode, mark it as a path
@@ -422,6 +423,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     return () => {
       document.removeEventListener('pointerup', handleGlobalPointerUp);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resizingHandle]);
 
   // Update the handleCanvasPointerMove function to set the appropriate cursor based on the tool

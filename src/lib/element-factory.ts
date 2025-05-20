@@ -145,17 +145,23 @@ function createPath(props: BaseElementProps): AnimatedCanvasElement {
   const maxY = Math.max(...ys);
   const width = maxX - minX;
   const height = maxY - minY;
-
+  
+  // Calculate centerX and centerY relative to props.x and props.y
+  // (which should now be the first point of the path)
+  const centerX = (minX + maxX) / 2;
+  const centerY = (minY + maxY) / 2;
+  
+  // We'll center the element at the midpoint of the path's bounding box
   return {
     ...generateCommonAttributes('path', props),
     type: 'path',
     width,
     height,
-    x: minX,
-    y: minY,
+    x: centerX,
+    y: centerY,
     pathPoints: props.pathPoints.map(p => ({
-      x: p.x - minX,
-      y: p.y - minY
+      x: p.x - centerX,
+      y: p.y - centerY
     })),
     lineOptions: undefined,
     isPath: props.isPath || false,
