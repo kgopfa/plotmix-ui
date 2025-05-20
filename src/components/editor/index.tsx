@@ -221,29 +221,77 @@ export default function EditorCanvas() {
     }
     
     if (selectedElement) {
+      let updatedElement: AnimatedCanvasElement | null = null;
+      
       if (prop === 'animations') {
-        setElements(elements => {
-          const updatedElements = elements.map(el =>
-            el.id === selectedElement.id ? { ...el, animations: value as ElementAnimation[] } : el
-          );
-          gsapManager.buildAnimationTimeline(updatedElements);
-          return updatedElements;
+        setElements(prevElements => {
+          const newElements = prevElements.map(el => {
+            if (el.id === selectedElement.id) {
+              updatedElement = { ...el, animations: value as ElementAnimation[] };
+              return updatedElement;
+            }
+            return el;
+          });
+          
+          // Update the GSAP timeline after the state update
+          setTimeout(() => {
+            gsapManager.buildAnimationTimeline(newElements);
+          }, 0);
+          
+          return newElements;
         });
+        
+        // Also update the selected element reference to ensure the inspector shows the latest values
+        if (updatedElement) {
+          selectionManager.select(updatedElement);
+        }
       } else if (prop === 'lineOptions') {
-        setElements(elements => {
-          const updatedElements = elements.map(el =>
-            el.id === selectedElement.id ? { ...el, lineOptions: value as NonNullable<AnimatedCanvasElement['lineOptions']> } : el
-          );
-          gsapManager.buildAnimationTimeline(updatedElements);
-          return updatedElements;
+        setElements(prevElements => {
+          const newElements = prevElements.map(el => {
+            if (el.id === selectedElement.id) {
+              updatedElement = { 
+                ...el, 
+                lineOptions: value as NonNullable<AnimatedCanvasElement['lineOptions']> 
+              };
+              return updatedElement;
+            }
+            return el;
+          });
+          
+          // Update the GSAP timeline after the state update
+          setTimeout(() => {
+            gsapManager.buildAnimationTimeline(newElements);
+          }, 0);
+          
+          return newElements;
         });
+        
+        // Also update the selected element reference to ensure the inspector shows the latest values
+        if (updatedElement) {
+          selectionManager.select(updatedElement);
+        }
       } else {
-        setElements(elements => {
-          const updatedElements = elements.map(el =>
-            el.id === selectedElement.id ? { ...el, [prop]: value } : el
-          );
-          return updatedElements;
+        // For regular property changes (width, height, colors, etc.)
+        setElements(prevElements => {
+          const newElements = prevElements.map(el => {
+            if (el.id === selectedElement.id) {
+              updatedElement = { ...el, [prop]: value };
+              return updatedElement;
+            }
+            return el;
+          });
+          
+          return newElements;
         });
+        
+        // For visual properties, we need to ensure the inspector and canvas both show the updated values
+        // This forces a selection update which triggers a re-render with the latest values
+        if (updatedElement) {
+          // Use setTimeout to ensure this happens after the state update
+          setTimeout(() => {
+            selectionManager.select(updatedElement);
+          }, 0);
+        }
       }
     }
   };
