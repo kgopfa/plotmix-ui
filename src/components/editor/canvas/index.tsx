@@ -1,7 +1,7 @@
 'use client';
 
 import { Application, extend } from '@pixi/react';
-import { Container, Graphics, Texture, Sprite } from 'pixi.js';
+import { Container, Graphics, Texture, Sprite, Rectangle } from 'pixi.js';
 import type { FederatedPointerEvent } from 'pixi.js';
 import type { AnimatedCanvasElement } from '@/types/canvas';
 import { useImperativeHandle, forwardRef, useState, useRef, useEffect } from 'react';
@@ -372,14 +372,18 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     if (id !== selectedId || draggingId) return;
     
     const element = elements.find(el => el.id === id);
-    if (!element || element.type === 'line' || element.type === 'path') return;
+    if (!element) return;
     
-    const handle = getResizeHandleAtPoint(element, e.global.x, e.global.y);
-    if (handle) {
-      setCursor(getResizeCursor(handle));
-    } else {
-      setCursor(DEFAULT_CURSOR);
+    // Skip resize handle detection for line and path types
+    if (element.type !== 'line' && element.type !== 'path') {
+      const handle = getResizeHandleAtPoint(element, e.global.x, e.global.y);
+      if (handle) {
+        setCursor(getResizeCursor(handle));
+        return;
+      }
     }
+    
+    setCursor(DEFAULT_CURSOR);
   };
 
   // Update handleElementMouseLeave to clear hover state
@@ -450,9 +454,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       <pixiGraphics
         draw={(g) => {
           g.clear();
-          g.beginFill(0xFFFFFF, 0);
-          g.drawRect(0, 0, dimensions.width, dimensions.height);
-          g.endFill();
+          g.rect(0, 0, dimensions.width, dimensions.height);
+          g.fill({ color: 0xFFFFFF, alpha: 0 });
         }}
         interactive={true}
         eventMode="static"
@@ -480,6 +483,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
               pivot={{ x: 0, y: 0 }}
               interactive={true}
               eventMode="dynamic"
+              hitArea={new Rectangle(-el.width / 2, -el.height / 2, el.width, el.height)}
               onPointerDown={handlePointerDown(el.id, el.x, el.y)}
               onPointerUp={handlePointerUp}
               onPointerUpOutside={handlePointerUp}
@@ -598,6 +602,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
             pivot={{ x: 0, y: 0 }}
             interactive={true}
             eventMode="dynamic"
+            hitArea={(el.type === 'path' || el.type === 'line') ? new Rectangle(-el.width / 2, -el.height / 2, el.width, el.height) : undefined}
             onPointerDown={handlePointerDown(el.id, el.x, el.y)}
             onPointerUp={handlePointerUp}
             onPointerUpOutside={handlePointerUp}
