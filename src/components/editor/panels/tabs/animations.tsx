@@ -2,6 +2,8 @@ import {
   AnimatedCanvasElement, 
   ElementAnimation
 } from '@/types/canvas';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import debounce from 'lodash/debounce';
 
 interface AnimationsTabProps {
   selectedElement: AnimatedCanvasElement;
@@ -20,6 +22,59 @@ export function AnimationsTab({
   onAnimationChange,
   onEnterPathMode
 }: AnimationsTabProps) {
+  // Local state for animations
+  const [animations, setAnimations] = useState<ElementAnimation[]>(localAnimations);
+
+  // Update local state when props change
+  useEffect(() => {
+    setAnimations(localAnimations);
+  }, [localAnimations]);
+
+  // Debounced function to sync with parent
+  const debouncedOnAnimationChange = useCallback((id: string, field: string, value: string | number | boolean) => {
+    onAnimationChange(id, field, value);
+  }, [onAnimationChange]);
+
+  const debouncedHandler = useMemo(
+    () => debounce(debouncedOnAnimationChange, 300),
+    [debouncedOnAnimationChange]
+  );
+
+  // Handle local state changes
+  const handleAnimationChange = (id: string, field: string, value: string | number | boolean) => {
+    setAnimations(prevAnimations => 
+      prevAnimations.map(anim => {
+        if (anim.id !== id) return anim;
+        
+        if (field.includes('.')) {
+          // Handle nested properties (e.g., 'properties.x')
+          const [parent, child] = field.split('.');
+          const parentKey = parent as keyof ElementAnimation;
+          const parentValue = anim[parentKey];
+          
+          if (typeof parentValue === 'object' && parentValue !== null) {
+            return {
+              ...anim,
+              [parent]: {
+                ...parentValue,
+                [child]: value
+              }
+            };
+          }
+          return anim;
+        }
+        
+        return {
+          ...anim,
+          [field]: value
+        };
+      })
+    );
+
+    // Sync with parent state
+    debouncedHandler(id, field, value);
+  };
+
   return (
     <div className="flex flex-col gap-2">
       <button
@@ -30,7 +85,7 @@ export function AnimationsTab({
         + Add Animation
       </button>
       <div className="flex flex-col gap-2">
-        {localAnimations.map((animation) => (
+        {animations.map((animation) => (
           <div key={animation.id} className="border rounded p-2">
             <div className="flex justify-between items-center mb-2 border-b pb-2">
               <span className="font-medium text-blue-600">{animation.type}</span>
@@ -49,7 +104,7 @@ export function AnimationsTab({
                   <input
                     type="number"
                     value={animation.startTime}
-                    onChange={e => onAnimationChange(animation.id, 'startTime', e.target.value)}
+                    onChange={e => handleAnimationChange(animation.id, 'startTime', e.target.value)}
                     className="w-full"
                   />
                 </label>
@@ -58,7 +113,7 @@ export function AnimationsTab({
                   <input
                     type="number"
                     value={animation.duration}
-                    onChange={e => onAnimationChange(animation.id, 'duration', e.target.value)}
+                    onChange={e => handleAnimationChange(animation.id, 'duration', e.target.value)}
                     className="w-full"
                   />
                 </label>
@@ -67,22 +122,22 @@ export function AnimationsTab({
                 Type:
                 <select
                   value={animation.type}
-                  onChange={e => onAnimationChange(animation.id, 'type', e.target.value)}
+                  onChange={e => handleAnimationChange(animation.id, 'type', e.target.value)}
                   className="w-full"
                 >
-                  <option value="rotate">Rotation</option>
+                  <option value="rotate">Rotate</option>
                   <option value="scale">Scale</option>
-                  <option value="move">Movement</option>
+                  <option value="move">Move</option>
                   <option value="color">Color</option>
                   <option value="fade">Fade</option>
-                  <option value="path">Follow Path</option>
+                  <option value="path">Path</option>
                 </select>
               </label>
               <label>
                 Easing:
                 <select
                   value={animation.easing ?? 'none'}
-                  onChange={e => onAnimationChange(animation.id, 'easing', e.target.value)}
+                  onChange={e => handleAnimationChange(animation.id, 'easing', e.target.value)}
                   className="w-full"
                 >
                   {[
@@ -114,7 +169,7 @@ export function AnimationsTab({
                       <input
                         type="number"
                         value={animation.properties.rotation ?? 0}
-                        onChange={e => onAnimationChange(animation.id, 'properties.rotation', e.target.value)}
+                        onChange={e => handleAnimationChange(animation.id, 'properties.rotation', e.target.value)}
                         className="w-full"
                         step="1"
                       />
@@ -127,7 +182,7 @@ export function AnimationsTab({
                         <input
                           type="number"
                           value={animation.properties.scaleX ?? 1}
-                          onChange={e => onAnimationChange(animation.id, 'properties.scaleX', e.target.value)}
+                          onChange={e => handleAnimationChange(animation.id, 'properties.scaleX', e.target.value)}
                           className="w-full"
                           step="0.1"
                         />
@@ -137,7 +192,7 @@ export function AnimationsTab({
                         <input
                           type="number"
                           value={animation.properties.scaleY ?? 1}
-                          onChange={e => onAnimationChange(animation.id, 'properties.scaleY', e.target.value)}
+                          onChange={e => handleAnimationChange(animation.id, 'properties.scaleY', e.target.value)}
                           className="w-full"
                           step="0.1"
                         />
@@ -151,7 +206,7 @@ export function AnimationsTab({
                         <input
                           type="number"
                           value={animation.properties.x ?? 0}
-                          onChange={e => onAnimationChange(animation.id, 'properties.x', e.target.value)}
+                          onChange={e => handleAnimationChange(animation.id, 'properties.x', e.target.value)}
                           className="w-full"
                           step="1"
                         />
@@ -161,7 +216,7 @@ export function AnimationsTab({
                         <input
                           type="number"
                           value={animation.properties.y ?? 0}
-                          onChange={e => onAnimationChange(animation.id, 'properties.y', e.target.value)}
+                          onChange={e => handleAnimationChange(animation.id, 'properties.y', e.target.value)}
                           className="w-full"
                           step="1"
                         />
@@ -174,7 +229,7 @@ export function AnimationsTab({
                       <input
                         type="color"
                         value={animation.properties.fillColor ?? selectedElement.fill}
-                        onChange={e => onAnimationChange(animation.id, 'properties.fillColor', e.target.value)}
+                        onChange={e => handleAnimationChange(animation.id, 'properties.fillColor', e.target.value)}
                         className="w-full"
                       />
                     </label>
@@ -188,7 +243,7 @@ export function AnimationsTab({
                         max="1"
                         step="0.1"
                         value={animation.properties.alpha ?? selectedElement.opacity ?? 1}
-                        onChange={e => onAnimationChange(animation.id, 'properties.alpha', e.target.value)}
+                        onChange={e => handleAnimationChange(animation.id, 'properties.alpha', e.target.value)}
                         className="w-full"
                       />
                     </label>
@@ -216,7 +271,7 @@ export function AnimationsTab({
                           Direction:
                           <select
                             value={animation.properties.pathDirection || 'clockwise'}
-                            onChange={e => onAnimationChange(animation.id, 'properties.pathDirection', e.target.value)}
+                            onChange={e => handleAnimationChange(animation.id, 'properties.pathDirection', e.target.value)}
                             className="w-full mt-1"
                           >
                             <option value="clockwise">Clockwise</option>
@@ -230,7 +285,7 @@ export function AnimationsTab({
                           type="checkbox"
                           id={`yoyo-${animation.id}`}
                           checked={animation.properties.yoyo || false}
-                          onChange={e => onAnimationChange(animation.id, 'properties.yoyo', e.target.checked)}
+                          onChange={e => handleAnimationChange(animation.id, 'properties.yoyo', e.target.checked)}
                           className="mr-2"
                         />
                         <label htmlFor={`yoyo-${animation.id}`}>
