@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { 
   AnimatedCanvasElement,
   ElementAnimation
 } from '@/types/canvas';
 import { PropertiesTab } from './tabs/properties';
 import { AnimationsTab } from './tabs/animations';
-import { useAnimationHandlers } from '../../../hooks/useAnimationHandlers';
+import { useAnimationHandlers } from '../../../hooks/use-animation-handlers';
 
 interface InspectorProps {
   selectedElement: AnimatedCanvasElement | null;
