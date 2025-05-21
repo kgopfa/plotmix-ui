@@ -36,6 +36,13 @@ export class GSAPTimelineManager {
         const config = generateAnimationConfig(element, animation, target);
 
         if (isPathAnimationConfig(config)) {
+          // Get the path element
+          const pathElement = config.pathElement;
+          
+          // Calculate movement duration - each segment takes 1/4 of the total duration
+          const segmentDuration = config.duration / 4;
+          
+          // Initial move to the top-left corner with the attachDelay
           this.timeline.to(
             target,
             {
@@ -45,6 +52,63 @@ export class GSAPTimelineManager {
             },
             config.startTime
           );
+          
+          // Starting point for the animation around the path
+          const pathStartTime = config.startTime + config.attachDelay;
+          // Starting from the top-left position after initial move
+          
+          // 1. Move from top-left to top-right (right: add width)
+          this.timeline.to(
+            target,
+            {
+              pixi: { 
+                x: "+="+pathElement.width
+              },
+              duration: segmentDuration,
+              ease: config.ease,
+            },
+            pathStartTime
+          );
+          
+          // 2. Move from top-right to bottom-right (down: add height)
+          this.timeline.to(
+            target,
+            {
+              pixi: { 
+                y: "+="+pathElement.height
+              },
+              duration: segmentDuration,
+              ease: config.ease,
+            },
+            pathStartTime + segmentDuration
+          );
+          
+          // 3. Move from bottom-right to bottom-left (left: subtract width)
+          this.timeline.to(
+            target,
+            {
+              pixi: { 
+                x: "-="+pathElement.width
+              },
+              duration: segmentDuration,
+              ease: config.ease,
+            },
+            pathStartTime + (segmentDuration * 2)
+          );
+          
+          // 4. Move from bottom-left to top-left (up: subtract height)
+          this.timeline.to(
+            target,
+            {
+              pixi: { 
+                y: "-="+pathElement.height
+              },
+              duration: segmentDuration,
+              ease: config.ease,
+            },
+            pathStartTime + (segmentDuration * 3)
+          );
+          
         } else if (isColorAnimationConfig(config)) {
           this.timeline.to(
             config.oldChild,
