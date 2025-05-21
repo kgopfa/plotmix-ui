@@ -38,7 +38,7 @@ export default function EditorCanvas() {
     scale: 100
   });
   const [isPathMode, setIsPathMode] = useState(false);
-  const [, setAnimationTarget] = useState<{
+  const [animationTarget, setAnimationTarget] = useState<{
     animationId: string;
     elementId: string;
   } | null>(null);
@@ -121,6 +121,7 @@ export default function EditorCanvas() {
           
           // If in path mode, exit after creating the path
           if (isPathMode) {
+            addPathToAnimation(newElement);
             setIsPathMode(false);
             setAnimationTarget(null);
           }
@@ -134,6 +135,7 @@ export default function EditorCanvas() {
         
         // If in path mode, exit after creating the path
         if (isPathMode) {
+          addPathToAnimation(newElement);
           setIsPathMode(false);
           setAnimationTarget(null);
         }
@@ -142,7 +144,35 @@ export default function EditorCanvas() {
       }
     }
   };
-
+  
+  // Helper function to add path shape to animation
+  const addPathToAnimation = (pathShape: AnimatedCanvasElement) => {
+    const target = animationTarget;
+    if (!target) return;
+    
+    const { elementId, animationId } = target;
+    
+    setElements(prev => 
+      prev.map(el => {
+        if (el.id !== elementId) return el;
+        
+        return {
+          ...el,
+          animations: el.animations.map(anim => {
+            if (anim.id !== animationId) return anim;
+            
+            return {
+              ...anim,
+              properties: {
+                ...anim.properties,
+                pathElement: pathShape
+              }
+            };
+          })
+        };
+      })
+    );
+  };
 
   const handleElementDragEnd = (id: string, x: number, y: number) => {
     setElements(elements.map((el) => {

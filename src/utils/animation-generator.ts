@@ -15,8 +15,18 @@ export interface ColorAnimationConfig extends BaseAnimationConfig {
   newChild: Graphics;
 }
 
+export interface PathAnimationConfig extends BaseAnimationConfig {
+  type: 'path';
+  pathElement: AnimatedCanvasElement;
+  targetElement: AnimatedCanvasElement;
+}
+
 export function isColorAnimationConfig(config: BaseAnimationConfig): config is ColorAnimationConfig {
   return 'type' in config && config.type === 'color';
+}
+
+export function isPathAnimationConfig(config: BaseAnimationConfig): config is PathAnimationConfig {
+  return 'type' in config && config.type === 'path';
 }
 
 function generateAnimationProperties(
@@ -63,8 +73,9 @@ function generateAnimationProperties(
 export function generateAnimationConfig(
   element: AnimatedCanvasElement,
   animation: ElementAnimation,
-  target: Container
-): BaseAnimationConfig | ColorAnimationConfig {
+  target: Container,
+  pathElement?: AnimatedCanvasElement
+): BaseAnimationConfig | ColorAnimationConfig | PathAnimationConfig {
   const animationProps = generateAnimationProperties(animation, element);
   const baseConfig = {
     target,
@@ -99,6 +110,16 @@ export function generateAnimationConfig(
       oldChild,
       newChild,
       properties: { alpha: 1 }
+    };
+  }
+
+  if (animation.type === 'path' && pathElement) {
+    return {
+      ...baseConfig,
+      type: 'path',
+      pathElement: pathElement,
+      targetElement: element,
+      properties: animationProps
     };
   }
 

@@ -3,7 +3,7 @@ import type { AnimatedCanvasElement } from '@/types/canvas';
 import type { CanvasRef } from '@/components/editor/canvas';
 import { PixiPlugin } from "gsap/PixiPlugin";
 import * as PIXI from 'pixi.js';
-import { generateAnimationConfig, isColorAnimationConfig } from '@/utils/animation-generator';
+import { generateAnimationConfig, isColorAnimationConfig, isPathAnimationConfig } from '@/utils/animation-generator';
 
 gsap.registerPlugin(PixiPlugin);
 PixiPlugin.registerPIXI(PIXI);
@@ -32,12 +32,20 @@ export class GSAPTimelineManager {
       const target = shapeRefs[element.id];
       if (!target) return;
 
-      console.log("target children", target.children);
-
       element.animations.forEach((animation) => {
         const config = generateAnimationConfig(element, animation, target);
 
-        if (isColorAnimationConfig(config)) {
+        if (isPathAnimationConfig(config)) {
+          this.timeline.to(
+            config.pathElement,
+            {
+              pixi: config.properties,
+              duration: config.duration,
+              ease: config.ease,
+            },
+            config.startTime
+          );
+        } else if (isColorAnimationConfig(config)) {
           this.timeline.to(
             config.oldChild,
             {
