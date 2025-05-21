@@ -28,7 +28,7 @@ export class GSAPTimelineManager {
 
     elements.forEach((element) => {
       if (element.isPath) return;
-      
+
       const target = shapeRefs[element.id];
       if (!target) return;
 
@@ -36,78 +36,137 @@ export class GSAPTimelineManager {
         const config = generateAnimationConfig(element, animation, target);
 
         if (isPathAnimationConfig(config)) {
-          // Get the path element
           const pathElement = config.pathElement;
-          
-          // Calculate movement duration - each segment takes 1/4 of the total duration
-          const segmentDuration = config.duration / 4;
-          
-          // Initial move to the top-left corner with the attachDelay
-          this.timeline.to(
-            target,
-            {
-              pixi: config.properties,
-              duration: config.attachDelay,
-              ease: config.ease,
-            },
-            config.startTime
-          );
-          
-          // Starting point for the animation around the path
-          const pathStartTime = config.startTime + config.attachDelay;
-          // Starting from the top-left position after initial move
-          
-          // 1. Move from top-left to top-right (right: add width)
-          this.timeline.to(
-            target,
-            {
-              pixi: { 
-                x: "+="+pathElement.width
+
+          if (pathElement.type === 'rectangle') {
+            const segmentDuration = config.duration / 4;
+
+            // Initial move to the top-left corner with the attachDelay
+            this.timeline.to(
+              target,
+              {
+                pixi: config.properties,
+                duration: config.attachDelay,
+                ease: config.ease,
               },
-              duration: segmentDuration,
-              ease: config.ease,
-            },
-            pathStartTime
-          );
-          
-          // 2. Move from top-right to bottom-right (down: add height)
-          this.timeline.to(
-            target,
-            {
-              pixi: { 
-                y: "+="+pathElement.height
+              config.startTime
+            );
+
+            const pathStartTime = config.startTime + config.attachDelay;
+
+            // 1. Move from top-left to top-right (right: add width)
+            this.timeline.to(
+              target,
+              {
+                pixi: {
+                  x: "+=" + pathElement.width
+                },
+                duration: segmentDuration,
+                ease: config.ease,
               },
-              duration: segmentDuration,
-              ease: config.ease,
-            },
-            pathStartTime + segmentDuration
-          );
-          
-          // 3. Move from bottom-right to bottom-left (left: subtract width)
-          this.timeline.to(
-            target,
-            {
-              pixi: { 
-                x: "-="+pathElement.width
+              pathStartTime
+            );
+
+            // 2. Move from top-right to bottom-right (down: add height)
+            this.timeline.to(
+              target,
+              {
+                pixi: {
+                  y: "+=" + pathElement.height
+                },
+                duration: segmentDuration,
+                ease: config.ease,
               },
-              duration: segmentDuration,
-              ease: config.ease,
-            },
-            pathStartTime + (segmentDuration * 2)
-          );
-          
-          // 4. Move from bottom-left to top-left (up: subtract height)
-          this.timeline.to(
-            target,
-            {
-              pixi: { 
-                y: "-="+pathElement.height
+              pathStartTime + segmentDuration
+            );
+
+            // 3. Move from bottom-right to bottom-left (left: subtract width)
+            this.timeline.to(
+              target,
+              {
+                pixi: {
+                  x: "-=" + pathElement.width
+                },
+                duration: segmentDuration,
+                ease: config.ease,
               },
-              duration: segmentDuration,
-              ease: config.ease,
-            },
-            pathStartTime + (segmentDuration * 3)
-          );
+              pathStartTime + (segmentDuration * 2)
+            );
+
+            // 4. Move from bottom-left to top-left (up: subtract height)
+            this.timeline.to(
+              target,
+              {
+                pixi: {
+                  y: "-=" + pathElement.height
+                },
+                duration: segmentDuration,
+                ease: config.ease,
+              },
+              pathStartTime + (segmentDuration * 3)
+            );
+          }
+
+          if (pathElement.type === 'triangle') {
+            const segmentDuration = config.duration / 3;
+            
+            // Initial move to the path's starting point
+            this.timeline.to(
+              target,
+              {
+                pixi: config.properties,
+                duration: config.attachDelay,
+                ease: config.ease,
+              },
+              config.startTime
+            );
+
+            const pathStartTime = config.startTime + config.attachDelay;
+
+            // For triangles, we need to move along the three edges
+            // Using relative movements like we did for rectangles
+            
+            // 1. First edge - move to the right and down
+            this.timeline.to(
+              target,
+              {
+                pixi: {
+                  x: "+=" + pathElement.width,
+                  y: "+=" + pathElement.height
+                },
+                duration: segmentDuration,
+                ease: config.ease,
+              },
+              pathStartTime
+            );
+
+            // 2. Second edge - move to the left
+            this.timeline.to(
+              target,
+              {
+                pixi: {
+                  x: "-=" + pathElement.width
+                },
+                duration: segmentDuration,
+                ease: config.ease,
+              },
+              pathStartTime + segmentDuration
+            );
+
+            // 3. Third edge - move back to the starting point
+            this.timeline.to(
+              target,
+              {
+                pixi: {
+                  x: "+=" + pathElement.width,
+                  y: "-=" + pathElement.height
+                },
+                duration: segmentDuration,
+                ease: config.ease,
+              },
+              pathStartTime + (segmentDuration * 2)
+            );
+          }
           
         } else if (isColorAnimationConfig(config)) {
           this.timeline.to(
