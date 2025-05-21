@@ -42,6 +42,8 @@ export type AnimatableProperties = {
   pathPoints?: Array<{x: number, y: number}>;
   pathDirection?: 'clockwise' | 'counterclockwise';
   yoyo?: boolean;
+  pathElement?: AnimatedCanvasElement;
+  attachDelay?: number; // Time to move to the starting corner of the path
 };
 
 export type AnimationType = 'rotate' | 'scale' | 'move' | 'color' | 'fade' | 'path';

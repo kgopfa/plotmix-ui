@@ -19,6 +19,9 @@ export interface PathAnimationConfig extends BaseAnimationConfig {
   type: 'path';
   pathElement: AnimatedCanvasElement;
   targetElement: AnimatedCanvasElement;
+  pathTopLeftX: number;
+  pathTopLeftY: number;
+  attachDelay: number;
 }
 
 export function isColorAnimationConfig(config: BaseAnimationConfig): config is ColorAnimationConfig {
@@ -118,6 +121,8 @@ export function generateAnimationConfig(
       const pathTopLeftX = pathElement.x - pathElement.width / 2;
       const pathTopLeftY = pathElement.y - pathElement.height / 2;
       
+      const attachDelay = (animation.properties as Record<string, unknown>)['attachDelay'] as number ?? 0.5;
+      
       const updatedProps = {
         ...animationProps,
         x: pathTopLeftX,
@@ -129,6 +134,9 @@ export function generateAnimationConfig(
         type: 'path',
         pathElement: pathElement,
         targetElement: element,
+        pathTopLeftX,
+        pathTopLeftY,
+        attachDelay,
         properties: updatedProps
       };
     }

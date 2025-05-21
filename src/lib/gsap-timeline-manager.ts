@@ -40,7 +40,7 @@ export class GSAPTimelineManager {
             target,
             {
               pixi: config.properties,
-              duration: config.duration,
+              duration: config.attachDelay,
               ease: config.ease,
             },
             config.startTime

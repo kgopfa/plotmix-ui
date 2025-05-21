@@ -73,7 +73,8 @@ export function useAnimationHandlers(
           path: { 
             pathPoints: [],
             pathDirection: 'clockwise' as 'clockwise' | 'counterclockwise',
-            yoyo: false 
+            yoyo: false,
+            attachDelay: 0.5
           }
         };
         return { 
@@ -132,7 +133,8 @@ export function useAnimationHandlers(
       path: { 
         pathPoints: [],
         pathDirection: 'clockwise' as 'clockwise' | 'counterclockwise',
-        yoyo: false 
+        yoyo: false,
+        attachDelay: 0.5
       }
     };
 

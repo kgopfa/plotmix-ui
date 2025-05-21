@@ -280,6 +280,21 @@ export function AnimationsTab({
                         </label>
                       </div>
                       
+                      <div className="col-span-2">
+                        <label className="block">
+                          Attach Delay (seconds):
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.1"
+                            value={animation.properties.attachDelay ?? 0.5}
+                            onChange={e => handleAnimationChange(animation.id, 'properties.attachDelay', e.target.value)}
+                            className="w-full mt-1"
+                          />
+                          <span className="text-xs text-gray-500">Time to move to starting position</span>
+                        </label>
+                      </div>
+                      
                       <div className="col-span-2 flex items-center">
                         <input
                           type="checkbox"
