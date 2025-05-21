@@ -37,7 +37,7 @@ export class GSAPTimelineManager {
 
         if (isPathAnimationConfig(config)) {
           this.timeline.to(
-            config.pathElement,
+            target,
             {
               pixi: config.properties,
               duration: config.duration,

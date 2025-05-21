@@ -73,8 +73,7 @@ function generateAnimationProperties(
 export function generateAnimationConfig(
   element: AnimatedCanvasElement,
   animation: ElementAnimation,
-  target: Container,
-  pathElement?: AnimatedCanvasElement
+  target: Container
 ): BaseAnimationConfig | ColorAnimationConfig | PathAnimationConfig {
   const animationProps = generateAnimationProperties(animation, element);
   const baseConfig = {
@@ -113,14 +112,26 @@ export function generateAnimationConfig(
     };
   }
 
-  if (animation.type === 'path' && pathElement) {
-    return {
-      ...baseConfig,
-      type: 'path',
-      pathElement: pathElement,
-      targetElement: element,
-      properties: animationProps
-    };
+  if (animation.type === 'path') {
+    const pathElement = (animation.properties as Record<string, unknown>)['pathElement'] as AnimatedCanvasElement;
+    if (pathElement) {
+      const pathTopLeftX = pathElement.x - pathElement.width / 2;
+      const pathTopLeftY = pathElement.y - pathElement.height / 2;
+      
+      const updatedProps = {
+        ...animationProps,
+        x: pathTopLeftX,
+        y: pathTopLeftY
+      };
+      
+      return {
+        ...baseConfig,
+        type: 'path',
+        pathElement: pathElement,
+        targetElement: element,
+        properties: updatedProps
+      };
+    }
   }
 
   return {
