@@ -186,6 +186,7 @@ export function createShapeGraphics(shape: AnimatedCanvasElement, color?: string
     const grayColor = 0x888888;
     
     if (shape.type === 'line' || shape.type === 'path') {
+      graphics.clear(); // Make sure to clear before drawing
       drawShapePath(graphics, shape);
       const dashLine = new DashLine(graphics, {
         dash: [5, 3],
@@ -199,6 +200,9 @@ export function createShapeGraphics(shape: AnimatedCanvasElement, color?: string
         dashLine
           .moveTo(start.x - shape.x, start.y - shape.y)
           .lineTo(end.x - shape.x, end.y - shape.y);
+          
+        // Make sure the line is actually drawn
+        graphics.stroke({ color: grayColor, width: 2, alpha: 0.7 });
       } else if (shape.type === 'path' && shape.pathPoints && shape.pathPoints.length > 1) {
         dashLine.moveTo(shape.pathPoints[0].x, shape.pathPoints[0].y);
         for (let i = 1; i < shape.pathPoints.length; i++) {
@@ -306,6 +310,11 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasElement) {
           0.7, // Slightly transparent
           [5, 3] // Smaller dash pattern for path elements
         );
+        
+        // Ensure the line is actually drawn by adding a regular stroke as well
+        graphics.moveTo(startPoint.x, startPoint.y);
+        graphics.lineTo(endPoint.x, endPoint.y);
+        graphics.stroke({ color: grayColor, width: 2, alpha: 0.7 });
       }
     } else if (shape.type === 'path') {
       // For free-drawn paths, use dotted line dash pattern

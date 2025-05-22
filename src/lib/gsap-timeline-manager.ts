@@ -168,7 +168,7 @@ export class GSAPTimelineManager {
             );
           }
           
-          else if (pathElement.type === 'circle') {
+          if (pathElement.type === 'circle') {
             // For circles, we'll use angle interpolation for smooth circular motion
             const radius = pathElement.radius || pathElement.width / 2;
             const centerX = pathElement.x;
@@ -210,6 +210,46 @@ export class GSAPTimelineManager {
                     target.y = y;
                   }
                 }
+              },
+              pathStartTime
+            );
+          }
+
+          if (pathElement.type === 'line') {
+            // For lines, we need to animate from start point to end point
+            if (!pathElement.lineOptions || !pathElement.lineOptions.points) {
+              console.error('Line element missing points for animation');
+              return;
+            }
+            
+            const { start, end } = pathElement.lineOptions.points;
+            
+            // Initial move to the start point of the line
+            this.timeline.to(
+              target,
+              {
+                pixi: {
+                  x: start.x,
+                  y: start.y
+                },
+                duration: config.attachDelay,
+                ease: config.ease,
+              },
+              config.startTime
+            );
+            
+            const pathStartTime = config.startTime + config.attachDelay;
+            
+            // Animate from start to end point
+            this.timeline.to(
+              target,
+              {
+                pixi: {
+                  x: end.x,
+                  y: end.y
+                },
+                duration: config.duration,
+                ease: config.ease,
               },
               pathStartTime
             );
