@@ -7,6 +7,7 @@ import type { AnimatedCanvasElement } from '@/types/canvas';
 import { useImperativeHandle, forwardRef, useState, useRef, useEffect } from 'react';
 import { drawShape, drawSelectionOutline, drawHoverOutline } from '@/utils/drawing-utils';
 import { createNewElement } from '@/lib/element-factory';
+import SelectionOutlineComponent from './selection-outline-component';
 
 extend({ Container, Graphics });
 
@@ -18,6 +19,7 @@ interface CanvasProps {
   onElementDragEnd: (id: string, x: number, y: number) => void;
   onCanvasClick: (e: FederatedPointerEvent) => void;
   onLineEndpointDrag?: (id: string, endpoint: 'start' | 'end', x: number, y: number) => void;
+  onElementResize?: (id: string, width: number, height: number) => void;
   tool: string;
   onAddElement?: (element: AnimatedCanvasElement) => void;
   isPathMode?: boolean;
@@ -50,6 +52,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     onElementDragEnd,
     onCanvasClick,
     onLineEndpointDrag,
+    onElementResize,
     tool,
     onAddElement,
     isPathMode = false
@@ -68,6 +71,9 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   // Create a map to track which SVGs have already been rendered
   // Value is an object with element ID and dimensions for tracking changes
   const svgRenderedMap = useRef(new WeakMap<Container, {id: string, width: number, height: number}>());
+
+  // Calculate the canvas scale factor based on device pixel ratio and any additional scaling
+  const canvasScaleFactor = useRef(window.devicePixelRatio || 1);
 
   useImperativeHandle(ref, () => ({
     getShapeRefs: () => shapeRefs.current,
@@ -447,6 +453,31 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     }
   }, [tool]);
 
+  // Add event listener for element-resize events
+  useEffect(() => {
+    const handleElementResize = (e: CustomEvent) => {
+      // Extract details from the event
+      const { id, width, height } = e.detail;
+      
+      // Find the element to update
+      const elementToResize = elements.find(el => el.id === id);
+      if (!elementToResize) return;
+      
+      // Call the resize callback if provided
+      if (onElementResize) {
+        onElementResize(id, width, height);
+      }
+    };
+    
+    // Add the event listener
+    window.addEventListener('element-resize', handleElementResize as EventListener);
+    
+    // Clean up
+    return () => {
+      window.removeEventListener('element-resize', handleElementResize as EventListener);
+    };
+  }, [elements, onElementResize]);
+
   return (
     <Application
       width={dimensions.width}
@@ -565,6 +596,10 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                             const outline = new Graphics();
                             drawSelectionOutline(outline, el);
                             node.addChild(outline);
+                            
+                            // TODO: For full integration, replace the above with:
+                            // - Create and append a SelectionOutlineComponent instance
+                            // - Or convert the SVG rendering to use JSX with <pixiContainer> like other elements
                           }
                         } catch (error) {
                           console.error('Error creating texture from SVG image:', error);
@@ -628,7 +663,29 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
             
             {/* Show selection outline with corner handles when selected */}
             {el.id === selectedId && (
-              <pixiGraphics draw={(g) => drawSelectionOutline(g, el)} />
+              <SelectionOutlineComponent 
+                element={el}
+                scaleFactor={canvasScaleFactor.current}
+                onResize={(newWidth, newHeight, handle) => {
+                  // Trigger resize event
+                  const resizeEvent = new CustomEvent('element-resize', { 
+                    detail: { 
+                      id: el.id,
+                      width: newWidth,
+                      height: newHeight,
+                      handle: handle,
+                      originalX: el.x,
+                      originalY: el.y
+                    }
+                  });
+                  
+                  window.dispatchEvent(resizeEvent);
+                }}
+                onResizeComplete={() => {
+                  // Handle resize complete (optional)
+                  // This could trigger a save or other finalization actions
+                }}
+              />
             )}
           </pixiContainer>
         );
