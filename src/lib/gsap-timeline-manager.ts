@@ -2,10 +2,11 @@ import { gsap } from 'gsap';
 import type { AnimatedCanvasElement } from '@/types/canvas';
 import type { CanvasRef } from '@/components/editor/canvas';
 import { PixiPlugin } from "gsap/PixiPlugin";
+import { MotionPathPlugin } from 'gsap/MotionPathPlugin';
 import * as PIXI from 'pixi.js';
 import { generateAnimationConfig, isColorAnimationConfig, isPathAnimationConfig } from '@/utils/animation-generator';
 
-gsap.registerPlugin(PixiPlugin);
+gsap.registerPlugin(PixiPlugin, MotionPathPlugin);
 PixiPlugin.registerPIXI(PIXI);
 
 export class GSAPTimelineManager {
@@ -278,25 +279,35 @@ export class GSAPTimelineManager {
             
             const pathStartTime = config.startTime + config.attachDelay;
             
-            // Create separate animations for each path segment for reliability
-            if (pathPoints.length > 1) {
-              const segmentDuration = config.duration / (pathPoints.length - 1);
-              
-              for (let i = 1; i < pathPoints.length; i++) {
-                this.timeline.to(
-                  target,
-                  {
-                    pixi: {
-                      x: pathPoints[i].x,
-                      y: pathPoints[i].y
-                    },
-                    duration: segmentDuration,
-                    ease: config.ease
-                  },
-                  pathStartTime + ((i-1) * segmentDuration)
-                );
-              }
+            // Use MotionPathPlugin with proper SVG path format
+            // Convert points to SVG path string
+            let svgPath = `M${pathPoints[0].x},${pathPoints[0].y} `;
+            
+            for (let i = 1; i < pathPoints.length; i++) {
+              svgPath += `L${pathPoints[i].x},${pathPoints[i].y} `;
             }
+            
+            // Create a proxy object that MotionPathPlugin can animate
+            const proxy = { x: 0, y: 0 };
+            
+            this.timeline.to(
+              proxy,
+              {
+                motionPath: {
+                  path: svgPath,
+                  autoRotate: false,
+                },
+                duration: config.duration,
+                ease: config.ease,
+                onUpdate: () => {
+                  if (target) {
+                    target.x = proxy.x;
+                    target.y = proxy.y;
+                  }
+                }
+              },
+              pathStartTime
+            );
           }
         } else if (isColorAnimationConfig(config)) {
           this.timeline.to(
