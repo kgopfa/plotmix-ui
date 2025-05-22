@@ -146,7 +146,7 @@ export default function EditorCanvas() {
   };
   
   // Helper function to add path shape to animation
-  const addPathToAnimation = (pathShape: AnimatedCanvasElement) => {
+  const addPathToAnimation = useCallback((pathShape: AnimatedCanvasElement) => {
     const target = animationTarget;
     if (!target) return;
     
@@ -172,7 +172,7 @@ export default function EditorCanvas() {
         };
       })
     );
-  };
+  }, [animationTarget, setElements]);
 
   const handleElementDragEnd = (id: string, x: number, y: number) => {
     setElements(elements.map((el) => {
@@ -401,6 +401,20 @@ export default function EditorCanvas() {
       window.removeEventListener('element-resize', handleElementResize as EventListener);
     };
   }, [elements]);
+  
+  // Listen for draw completion events
+  useEffect(() => {
+    const handleDrawComplete = () => {
+      // Exit draw mode when a path is completed
+      setTool('select');
+    };
+    
+    window.addEventListener('draw-complete', handleDrawComplete);
+    
+    return () => {
+      window.removeEventListener('draw-complete', handleDrawComplete);
+    };
+  }, []);
 
   // Memoize the handleSelectElement function
   const handleSelectElement = useCallback((id: string | null) => {
@@ -442,7 +456,13 @@ export default function EditorCanvas() {
   const handleAddElement = useCallback((element: AnimatedCanvasElement) => {
     setElements(prev => [...prev, element]);
     selectionManager.select(element);
-  }, [selectionManager]);
+    
+    if (isPathMode && element.type === 'path' && element.isPath) {
+      addPathToAnimation(element);
+      setIsPathMode(false);
+      setAnimationTarget(null);
+    }
+  }, [selectionManager, isPathMode, addPathToAnimation, setIsPathMode, setAnimationTarget]);
 
   const handleSvgImport = useCallback(async (file: File) => {
     try {

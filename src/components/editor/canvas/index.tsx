@@ -248,6 +248,12 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           onElementSelect(newElement.id);
           if (onAddElement) {
             onAddElement(newElement);
+            
+            // Signal to parent that drawing is complete and we should exit draw mode
+            const customEvent = new CustomEvent('draw-complete', {
+              detail: { tool: 'draw' }
+            });
+            window.dispatchEvent(customEvent);
           }
         }
       }

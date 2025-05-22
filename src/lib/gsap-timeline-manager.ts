@@ -254,6 +254,50 @@ export class GSAPTimelineManager {
               pathStartTime
             );
           }
+          
+          if (pathElement.type === 'path' && pathElement.pathPoints) {
+            // Convert pathPoints to the format for animation
+            const pathPoints = pathElement.pathPoints.map(p => ({
+              x: pathElement.x + p.x,
+              y: pathElement.y + p.y
+            }));
+            
+            // Initial move to the starting point
+            this.timeline.to(
+              target,
+              {
+                pixi: {
+                  x: pathPoints[0].x,
+                  y: pathPoints[0].y
+                },
+                duration: config.attachDelay,
+                ease: config.ease,
+              },
+              config.startTime
+            );
+            
+            const pathStartTime = config.startTime + config.attachDelay;
+            
+            // Create separate animations for each path segment for reliability
+            if (pathPoints.length > 1) {
+              const segmentDuration = config.duration / (pathPoints.length - 1);
+              
+              for (let i = 1; i < pathPoints.length; i++) {
+                this.timeline.to(
+                  target,
+                  {
+                    pixi: {
+                      x: pathPoints[i].x,
+                      y: pathPoints[i].y
+                    },
+                    duration: segmentDuration,
+                    ease: config.ease
+                  },
+                  pathStartTime + ((i-1) * segmentDuration)
+                );
+              }
+            }
+          }
         } else if (isColorAnimationConfig(config)) {
           this.timeline.to(
             config.oldChild,
