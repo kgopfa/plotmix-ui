@@ -36,11 +36,12 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
     g.clear();
     
     // Draw rectangular outline
-    g.rect(
+    g.roundRect(
       -dimensions.width / 2,
       -dimensions.height / 2,
       dimensions.width,
-      dimensions.height
+      dimensions.height,
+      element.cornerRadius
     );
     
     g.stroke({

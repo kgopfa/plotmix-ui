@@ -108,11 +108,12 @@ function drawShapePath(graphics: Graphics, shape: AnimatedCanvasElement) {
   switch (shape.type) {
     case 'rectangle':
       // Draw rectangle centered around origin
-      graphics.rect(
+      graphics.roundRect(
         -shape.width / 2,
         -shape.height / 2,
         shape.width,
-        shape.height
+        shape.height,
+        shape.cornerRadius
       );
       break;
       
@@ -156,7 +157,7 @@ function drawShapePath(graphics: Graphics, shape: AnimatedCanvasElement) {
       break;
       
     case 'svg':
-      graphics.rect(
+      graphics.roundRect(
         -shape.width / 2,
         -shape.height / 2,
         shape.width,
@@ -551,11 +552,12 @@ export const drawHoverOutline = (graphics: Graphics, shape: AnimatedCanvasElemen
   graphics.clear();
   
   // Always draw a rectangular outline regardless of shape type
-  graphics.rect(
+  graphics.roundRect(
     -shape.width / 2,
     -shape.height / 2,
     shape.width,
-    shape.height
+    shape.height,
+    shape.cornerRadius
   );
   
   // Apply a light stroke for the hover effect
