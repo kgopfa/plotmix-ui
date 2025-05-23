@@ -5,9 +5,10 @@ import { Container, Graphics, Texture, Sprite, Rectangle } from 'pixi.js';
 import type { FederatedPointerEvent } from 'pixi.js';
 import type { AnimatedCanvasElement } from '@/types/canvas';
 import { useImperativeHandle, forwardRef, useState, useRef, useEffect } from 'react';
-import { drawShape, drawSelectionOutline, drawHoverOutline } from '@/utils/drawing-utils';
+import { drawShape, drawHoverOutline } from '@/utils/drawing-utils';
 import { createNewElement } from '@/lib/element-factory';
 import ShapeSelect from './select-shape';
+import * as PIXI from 'pixi.js';
 
 extend({ Container, Graphics });
 
@@ -567,6 +568,11 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                           // Create a PIXI texture from the image
                           const texture = Texture.from(img);
                           
+                          // Enable texture smoothing for better quality
+                          texture.source.scaleMode = PIXI.SCALE_MODES.LINEAR;
+                          // Improved resolution for better quality
+                          texture.source.resolution = window.devicePixelRatio || 2;
+                          
                           // Create a sprite from the texture
                           const sprite = new Sprite(texture);
                           
@@ -574,6 +580,9 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                           sprite.anchor.set(0.5, 0.5);
                           sprite.width = el.width;
                           sprite.height = el.height;
+                          
+                          // Apply anti-aliasing settings to the sprite
+                          sprite.roundPixels = false;
                           
                           // Remove the placeholder
                           node.removeChild(placeholder);
@@ -594,7 +603,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                           // Add selection outline if needed
                           if (el.id === selectedId) {
                             const outline = new Graphics();
-                            drawSelectionOutline(outline, el);
                             node.addChild(outline);
                             
                             // TODO: For full integration, replace the above with:
@@ -621,8 +629,43 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                       
                       // Convert SVG to base64 data URL - ensure svgData is string
                       if (el.svgData) {
-                        const base64 = window.btoa(unescape(encodeURIComponent(el.svgData)));
+                        // Add width and height attributes to SVG if they're missing
+                        let svgContent = el.svgData;
+                        if (!svgContent.includes('width=') || !svgContent.includes('height=')) {
+                          // Extract SVG tag
+                          const svgTagMatch = svgContent.match(/<svg[^>]*>/);
+                          if (svgTagMatch) {
+                            const svgTag = svgTagMatch[0];
+                            // Create new tag with width and height
+                            const newSvgTag = svgTag.replace('<svg', 
+                              `<svg width="${el.width}" height="${el.height}" preserveAspectRatio="xMidYMid meet"`);
+                            // Replace in content
+                            svgContent = svgContent.replace(svgTag, newSvgTag);
+                          }
+                        }
+                        
+                        // Use higher resolution for SVG rendering
+                        const scaleFactor = 2; // Render at 2x for higher quality
+                        // Scale the viewBox if it exists
+                        if (!svgContent.includes('viewBox=')) {
+                          // Extract SVG tag
+                          const svgTagMatch = svgContent.match(/<svg[^>]*>/);
+                          if (svgTagMatch) {
+                            const svgTag = svgTagMatch[0];
+                            // Create new tag with viewBox
+                            const newSvgTag = svgTag.replace('<svg', 
+                              `<svg viewBox="0 0 ${el.width} ${el.height}"`);
+                            // Replace in content
+                            svgContent = svgContent.replace(svgTag, newSvgTag);
+                          }
+                        }
+
+                        const base64 = window.btoa(unescape(encodeURIComponent(svgContent)));
                         img.src = `data:image/svg+xml;base64,${base64}`;
+                        
+                        // Set image to load at higher resolution
+                        img.width = el.width * scaleFactor;
+                        img.height = el.height * scaleFactor;
                       }
                     } catch (error) {
                       console.error("Error in SVG rendering setup:", error);
