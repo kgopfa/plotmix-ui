@@ -6,14 +6,14 @@ import type { AnimatedCanvasElement } from '@/types/canvas';
 
 extend({ Container, Graphics });
 
-interface SelectionOutlineProps {
+interface ShapeSelectProps {
   element: AnimatedCanvasElement;
   onResize: (newWidth: number, newHeight: number, handle?: string) => void;
   onResizeComplete: () => void;
   scaleFactor?: number; // Optional prop to account for canvas scaling
 }
 
-const SelectionOutlineComponent: React.FC<SelectionOutlineProps> = ({ 
+const ShapeSelect: React.FC<ShapeSelectProps> = ({ 
   element, 
   onResize, 
   onResizeComplete,
@@ -274,4 +274,4 @@ const SelectionOutlineComponent: React.FC<SelectionOutlineProps> = ({
   );
 };
 
-export default SelectionOutlineComponent; 
+export default ShapeSelect; 

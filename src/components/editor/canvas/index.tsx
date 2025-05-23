@@ -7,7 +7,7 @@ import type { AnimatedCanvasElement } from '@/types/canvas';
 import { useImperativeHandle, forwardRef, useState, useRef, useEffect } from 'react';
 import { drawShape, drawSelectionOutline, drawHoverOutline } from '@/utils/drawing-utils';
 import { createNewElement } from '@/lib/element-factory';
-import SelectionOutlineComponent from './selection-outline-component';
+import ShapeSelect from './select-shape';
 
 extend({ Container, Graphics });
 
@@ -663,7 +663,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
             
             {/* Show selection outline with corner handles when selected */}
             {el.id === selectedId && (
-              <SelectionOutlineComponent 
+              <ShapeSelect 
                 element={el}
                 scaleFactor={canvasScaleFactor.current}
                 onResize={(newWidth, newHeight, handle) => {
