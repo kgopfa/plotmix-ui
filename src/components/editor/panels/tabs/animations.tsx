@@ -4,6 +4,7 @@ import {
 } from '@/types/canvas';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import debounce from 'lodash/debounce';
+import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
 
 interface AnimationsTabProps {
   selectedElement: AnimatedCanvasElement;
@@ -24,11 +25,24 @@ export function AnimationsTab({
 }: AnimationsTabProps) {
   // Local state for animations
   const [animations, setAnimations] = useState<ElementAnimation[]>(localAnimations);
+  const [selectedAnimationId, setSelectedAnimationId] = useState<string | null>(null);
+  const animationSelectionManager = AnimationSelectionManager.getInstance();
 
   // Update local state when props change
   useEffect(() => {
     setAnimations(localAnimations);
   }, [localAnimations]);
+
+  // Listen for animation selections
+  useEffect(() => {
+    return animationSelectionManager.subscribe((selection) => {
+      if (selection && selection.elementId === selectedElement.id) {
+        setSelectedAnimationId(selection.animationId);
+      } else {
+        setSelectedAnimationId(null);
+      }
+    });
+  }, [animationSelectionManager, selectedElement.id]);
 
   // Debounced function to sync with parent
   const debouncedOnAnimationChange = useCallback((id: string, field: string, value: string | number | boolean) => {
@@ -86,7 +100,9 @@ export function AnimationsTab({
       </button>
       <div className="flex flex-col gap-2">
         {animations.map((animation) => (
-          <div key={animation.id} className="border rounded p-2">
+          <div key={animation.id} className={`border rounded p-2 ${
+            selectedAnimationId === animation.id ? 'border-green-500 bg-green-50' : ''
+          }`}>
             <div className="flex justify-between items-center mb-2 border-b pb-2">
               <span className="font-medium text-blue-600">{animation.type}</span>
               <button

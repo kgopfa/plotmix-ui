@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   AnimatedCanvasElement,
   ElementAnimation
@@ -6,6 +6,7 @@ import {
 import { PropertiesTab } from './tabs/properties';
 import { AnimationsTab } from './tabs/animations';
 import { useAnimationHandlers } from '../../../hooks/use-animation-handlers';
+import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
 
 interface InspectorProps {
   selectedElement: AnimatedCanvasElement | null;
@@ -23,6 +24,7 @@ type Tab = 'properties' | 'animations';
 
 export function Inspector({ selectedElement, onInspectorChange }: InspectorProps) {
   const [activeTab, setActiveTab] = useState<Tab>('properties');
+  const animationSelectionManager = AnimationSelectionManager.getInstance();
   
   const {
     localAnimations,
@@ -31,6 +33,20 @@ export function Inspector({ selectedElement, onInspectorChange }: InspectorProps
     handleAddAnimation,
     handleDeleteAnimation
   } = useAnimationHandlers(selectedElement, onInspectorChange);
+
+  // Listen for animation selections and auto-switch to animations tab
+  useEffect(() => {
+    return animationSelectionManager.subscribe((selection) => {
+      if (selection) {
+        setActiveTab('animations');
+      }
+    });
+  }, [animationSelectionManager]);
+
+  // Clear animation selection when element changes
+  useEffect(() => {
+    animationSelectionManager.clearSelection();
+  }, [selectedElement?.id, animationSelectionManager]);
 
   if (!selectedElement) {
     return (
