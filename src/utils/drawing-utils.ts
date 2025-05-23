@@ -1,4 +1,4 @@
-import { Graphics } from 'pixi.js';
+import { Graphics, Texture, Sprite } from 'pixi.js';
 import { DashLine } from '@/utils/dash-line';
 import type { AnimatedCanvasElement } from '@/types/canvas';
 
@@ -270,12 +270,126 @@ export function createShapeGraphics(shape: AnimatedCanvasElement, color?: string
 export function drawShape(graphics: Graphics, shape: AnimatedCanvasElement) {
   graphics.clear();
   
-  // Skip SVG elements - they're handled directly in the Canvas component
-  if (shape.type === 'svg') {
-    // Just draw a bounding box
-    graphics.rect(-shape.width/2, -shape.height/2, shape.width, shape.height);
-    graphics.fill({ color: 0xFFFFFF, alpha: 0.01 });
-    graphics.stroke({ color: parseColor(shape.stroke || '#cccccc'), width: shape.strokeWidth || 1, alpha: 0.3 });
+  if (shape.type === 'svg' && shape.svgData) {
+    // Check if we already have a sprite to avoid recursive rendering
+    const existingSprite = graphics.children.find(child => child instanceof Sprite);
+    if (existingSprite) {
+      // Just update the existing sprite dimensions if they changed
+      const sprite = existingSprite as Sprite;
+      if (sprite.width !== shape.width || sprite.height !== shape.height) {
+        sprite.width = shape.width;
+        sprite.height = shape.height;
+      }
+      return;
+    }
+
+    try {
+      // Create a placeholder graphics while SVG is loading
+      const placeholder = new Graphics();
+      placeholder.rect(-shape.width/2, -shape.height/2, shape.width, shape.height);
+      placeholder.fill({ color: 0xEEEEEE, alpha: 0.5 });
+      placeholder.stroke({ color: 0xCCCCCC, width: 1, alpha: 0.8 });
+      graphics.addChild(placeholder);
+      
+      // Create the SVG image element
+      const img = document.createElement('img');
+      img.onload = () => {
+        try {
+          // Remove the placeholder first
+          if (graphics.children.includes(placeholder)) {
+            graphics.removeChild(placeholder);
+          }
+          
+          // Create a PIXI texture from the image
+          const texture = Texture.from(img);
+          
+          // Enable texture smoothing for better quality
+          if (texture.source) {
+            texture.source.scaleMode = 'linear';
+            texture.source.resolution = 2; // Higher resolution for better quality
+            texture.source.alphaMode = 'premultiply-alpha-on-upload';
+          }
+          
+          // Create a sprite from the texture
+          const sprite = new Sprite(texture);
+          
+          // Center the sprite
+          sprite.anchor.set(0.5, 0.5);
+          sprite.width = shape.width;
+          sprite.height = shape.height;
+          
+          // Apply anti-aliasing settings to the sprite
+          sprite.roundPixels = false;
+          
+          // Clear any existing children and add the sprite
+          graphics.removeChildren();
+          graphics.addChild(sprite);
+        } catch (error) {
+          console.error('Error creating texture from SVG image:', error);
+          // Remove placeholder and show error state
+          graphics.removeChildren();
+          graphics.rect(-shape.width/2, -shape.height/2, shape.width, shape.height);
+          graphics.fill({ color: 0xFFDDDD, alpha: 0.5 });
+          graphics.stroke({ color: 0xFF0000, width: 1 });
+        }
+      };
+      
+      img.onerror = () => {
+        console.error('Failed to load SVG as image');
+        // Clear and show error state
+        graphics.removeChildren();
+        graphics.rect(-shape.width/2, -shape.height/2, shape.width, shape.height);
+        graphics.fill({ color: 0xFFDDDD, alpha: 0.5 });
+        graphics.stroke({ color: 0xFF0000, width: 1, alpha: 0.8 });
+        // Draw X to indicate error
+        graphics.moveTo(-shape.width/4, -shape.height/4);
+        graphics.lineTo(shape.width/4, shape.height/4);
+        graphics.moveTo(shape.width/4, -shape.height/4);
+        graphics.lineTo(-shape.width/4, shape.height/4);
+        graphics.stroke({ color: 0xFF0000, width: 2 });
+      };
+      
+      // Convert SVG to base64 data URL - ensure svgData is string
+      if (shape.svgData) {
+        // Add width and height attributes to SVG if they're missing
+        let svgContent = shape.svgData;
+        if (!svgContent.includes('width=') || !svgContent.includes('height=')) {
+          // Extract SVG tag
+          const svgTagMatch = svgContent.match(/<svg[^>]*>/);
+          if (svgTagMatch) {
+            const svgTag = svgTagMatch[0];
+            // Create new tag with width and height
+            const newSvgTag = svgTag.replace('<svg', 
+              `<svg width="${shape.width}" height="${shape.height}" preserveAspectRatio="xMidYMid meet"`);
+            // Replace in content
+            svgContent = svgContent.replace(svgTag, newSvgTag);
+          }
+        }
+        
+        // Add viewBox for better scaling
+        if (!svgContent.includes('viewBox=')) {
+          // Extract SVG tag
+          const svgTagMatch = svgContent.match(/<svg[^>]*>/);
+          if (svgTagMatch) {
+            const svgTag = svgTagMatch[0];
+            // Create new tag with viewBox
+            const newSvgTag = svgTag.replace('<svg', 
+              `<svg viewBox="0 0 ${shape.width} ${shape.height}"`);
+            // Replace in content
+            svgContent = svgContent.replace(svgTag, newSvgTag);
+          }
+        }
+
+        const base64 = window.btoa(unescape(encodeURIComponent(svgContent)));
+        img.src = `data:image/svg+xml;base64,${base64}`;
+      }
+    } catch (error) {
+      console.error("Error in SVG rendering setup:", error);
+      // Fallback to drawing a simple rectangle
+      graphics.rect(-shape.width/2, -shape.height/2, shape.width, shape.height);
+      graphics.fill({ color: 0xFFDDDD, alpha: 0.5 });
+      graphics.stroke({ color: 0xFF0000, width: 1 });
+    }
     return;
   }
   

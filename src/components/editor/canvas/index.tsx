@@ -1,14 +1,13 @@
 'use client';
 
 import { Application, extend } from '@pixi/react';
-import { Container, Graphics, Texture, Sprite, Rectangle } from 'pixi.js';
+import { Container, Graphics, Rectangle } from 'pixi.js';
 import type { FederatedPointerEvent } from 'pixi.js';
 import type { AnimatedCanvasElement } from '@/types/canvas';
 import { useImperativeHandle, forwardRef, useState, useRef, useEffect } from 'react';
 import { drawShape, drawHoverOutline } from '@/utils/drawing-utils';
 import { createNewElement } from '@/lib/element-factory';
 import ShapeSelect from './select-shape';
-import * as PIXI from 'pixi.js';
 
 extend({ Container, Graphics });
 
@@ -69,10 +68,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   // Add hover state
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   
-  // Create a map to track which SVGs have already been rendered
-  // Value is an object with element ID and dimensions for tracking changes
-  const svgRenderedMap = useRef(new WeakMap<Container, {id: string, width: number, height: number}>());
-
   // Calculate the canvas scale factor based on device pixel ratio and any additional scaling
   const canvasScaleFactor = useRef(window.devicePixelRatio || 1);
 
@@ -511,173 +506,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       />
 
       {elements.map((el) => {
-        // Special handling for SVG elements
-        if (el.type === 'svg' && el.svgData) {
-          return (
-            <pixiContainer
-              key={el.id}
-              x={el.x}
-              y={el.y}
-              pivot={{ x: 0, y: 0 }}
-              interactive={true}
-              eventMode="dynamic"
-              hitArea={new Rectangle(-el.width / 2, -el.height / 2, el.width, el.height)}
-              onPointerDown={handlePointerDown(el.id, el.x, el.y)}
-              onPointerUp={handlePointerUp}
-              onPointerUpOutside={handlePointerUp}
-              onPointerMove={handleDragMove(el.id)}
-              onPointerOver={handleElementMouseMove(el.id)}
-              onPointerOut={handleElementMouseLeave(el.id)}
-              ref={(node) => {
-                if (node) {
-                  // Store the container reference
-                  shapeRefs.current[el.id] = node;
-                  
-                  // Check if we need to render or re-render the SVG
-                  const needsRender = !svgRenderedMap.current.has(node);
-                  const renderedInfo = svgRenderedMap.current.get(node);
-                  const needsUpdate = renderedInfo && 
-                    (renderedInfo.id !== el.id || 
-                     renderedInfo.width !== el.width || 
-                     renderedInfo.height !== el.height);
-                  
-                  // Clear existing if dimensions changed
-                  if (needsUpdate) {
-                    // Remove all children to redraw
-                    while (node.children.length > 0) {
-                      node.removeChild(node.children[0]);
-                    }
-                  }
-                  
-                  // Render SVG if it hasn't been rendered yet or needs update
-                  if (needsRender || needsUpdate) {
-                    try {
-                      // Create a placeholder graphics while SVG is loading
-                      const placeholder = new Graphics();
-                      placeholder.rect(-el.width/2, -el.height/2, el.width, el.height);
-                      placeholder.fill({ color: 0xEEEEEE, alpha: 0.5 });
-                      placeholder.stroke({ color: 0xCCCCCC, width: 1, alpha: 0.8 });
-                      node.addChild(placeholder);
-                      
-                      // Create the SVG image element
-                      const img = document.createElement('img');
-                      img.onload = () => {
-                        if (!node.parent) return; // Container was removed
-                        
-                        try {
-                          // Create a PIXI texture from the image
-                          const texture = Texture.from(img);
-                          
-                          // Enable texture smoothing for better quality
-                          texture.source.scaleMode = PIXI.SCALE_MODES.LINEAR;
-                          // Improved resolution for better quality
-                          texture.source.resolution = window.devicePixelRatio || 2;
-                          
-                          // Create a sprite from the texture
-                          const sprite = new Sprite(texture);
-                          
-                          // Center the sprite
-                          sprite.anchor.set(0.5, 0.5);
-                          sprite.width = el.width;
-                          sprite.height = el.height;
-                          
-                          // Apply anti-aliasing settings to the sprite
-                          sprite.roundPixels = false;
-                          
-                          // Remove the placeholder
-                          node.removeChild(placeholder);
-                          
-                          // Add to container
-                          node.addChild(sprite);
-                          
-                          // Mark as rendered in our map
-                          svgRenderedMap.current.set(node, {id: el.id, width: el.width, height: el.height});
-                          
-                          // Add hover outline if needed (when hovered but not selected)
-                          if (hoveredId === el.id && selectedId !== el.id) {
-                            const hoverOutline = new Graphics();
-                            drawHoverOutline(hoverOutline, el);
-                            node.addChild(hoverOutline);
-                          }
-                          
-                          // Add selection outline if needed
-                          if (el.id === selectedId) {
-                            const outline = new Graphics();
-                            node.addChild(outline);
-                            
-                            // TODO: For full integration, replace the above with:
-                            // - Create and append a SelectionOutlineComponent instance
-                            // - Or convert the SVG rendering to use JSX with <pixiContainer> like other elements
-                          }
-                        } catch (error) {
-                          console.error('Error creating texture from SVG image:', error);
-                        }
-                      };
-                      
-                      img.onerror = () => {
-                        console.error('Failed to load SVG as image');
-                        // Update placeholder to show error
-                        placeholder.clear();
-                        placeholder.rect(-el.width/2, -el.height/2, el.width, el.height);
-                        placeholder.fill({ color: 0xFFDDDD, alpha: 0.5 });
-                        placeholder.stroke({ color: 0xFF0000, width: 1, alpha: 0.8 });
-                        // Draw X to indicate error
-                        placeholder.moveTo(-el.width/2, -el.height/2).lineTo(el.width/2, el.height/2);
-                        placeholder.moveTo(el.width/2, -el.height/2).lineTo(-el.width/2, el.height/2);
-                        placeholder.stroke({ color: 0xFF0000, width: 1, alpha: 0.8 });
-                      };
-                      
-                      // Convert SVG to base64 data URL - ensure svgData is string
-                      if (el.svgData) {
-                        // Add width and height attributes to SVG if they're missing
-                        let svgContent = el.svgData;
-                        if (!svgContent.includes('width=') || !svgContent.includes('height=')) {
-                          // Extract SVG tag
-                          const svgTagMatch = svgContent.match(/<svg[^>]*>/);
-                          if (svgTagMatch) {
-                            const svgTag = svgTagMatch[0];
-                            // Create new tag with width and height
-                            const newSvgTag = svgTag.replace('<svg', 
-                              `<svg width="${el.width}" height="${el.height}" preserveAspectRatio="xMidYMid meet"`);
-                            // Replace in content
-                            svgContent = svgContent.replace(svgTag, newSvgTag);
-                          }
-                        }
-                        
-                        // Use higher resolution for SVG rendering
-                        const scaleFactor = 2; // Render at 2x for higher quality
-                        // Scale the viewBox if it exists
-                        if (!svgContent.includes('viewBox=')) {
-                          // Extract SVG tag
-                          const svgTagMatch = svgContent.match(/<svg[^>]*>/);
-                          if (svgTagMatch) {
-                            const svgTag = svgTagMatch[0];
-                            // Create new tag with viewBox
-                            const newSvgTag = svgTag.replace('<svg', 
-                              `<svg viewBox="0 0 ${el.width} ${el.height}"`);
-                            // Replace in content
-                            svgContent = svgContent.replace(svgTag, newSvgTag);
-                          }
-                        }
-
-                        const base64 = window.btoa(unescape(encodeURIComponent(svgContent)));
-                        img.src = `data:image/svg+xml;base64,${base64}`;
-                        
-                        // Set image to load at higher resolution
-                        img.width = el.width * scaleFactor;
-                        img.height = el.height * scaleFactor;
-                      }
-                    } catch (error) {
-                      console.error("Error in SVG rendering setup:", error);
-                    }
-                  }
-                }
-              }}
-            />
-          );
-        }
-        
-        // Standard rendering for non-SVG elements
+        // Handle all element types consistently, including SVGs
         return (
           <pixiContainer
             key={el.id}
@@ -686,7 +515,10 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
             pivot={{ x: 0, y: 0 }}
             interactive={true}
             eventMode="dynamic"
-            hitArea={(el.type === 'path' || el.type === 'line') ? new Rectangle(-el.width / 2, -el.height / 2, el.width, el.height) : undefined}
+            hitArea={(el.type === 'path' || el.type === 'line' || el.type === 'svg') 
+              ? new Rectangle(-el.width / 2, -el.height / 2, el.width, el.height) 
+              : undefined
+            }
             onPointerDown={handlePointerDown(el.id, el.x, el.y)}
             onPointerUp={handlePointerUp}
             onPointerUpOutside={handlePointerUp}
@@ -726,7 +558,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                 }}
                 onResizeComplete={() => {
                   // Handle resize complete (optional)
-                  // This could trigger a save or other finalization actions
                 }}
               />
             )}
