@@ -161,76 +161,35 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
     const rawDeltaX = (e.clientX - startPointRef.current.x) / scaleFactor;
     const rawDeltaY = (e.clientY - startPointRef.current.y) / scaleFactor;
     
-    // Constrain movement to diagonal directions based on the handle
-    let deltaX = rawDeltaX;
-    let deltaY = rawDeltaY;
-    
-    // For diagonal consistency, use the larger of the two deltas to determine movement
+    // Use the larger absolute delta for consistent scaling
     const absDeltaX = Math.abs(rawDeltaX);
     const absDeltaY = Math.abs(rawDeltaY);
-    const maxDelta = Math.max(absDeltaX, absDeltaY);
+    const scaleMagnitude = Math.max(absDeltaX, absDeltaY);
+    
+    // Determine if movement is outward (increasing size) or inward (decreasing size)
+    let isOutward = false;
     
     switch (handle) {
-      case 'tl': // top-left: both deltaX and deltaY should be negative
-      case 'br': // bottom-right: both deltaX and deltaY should be positive
-        // Constrain to main diagonal (same sign)
-        deltaX = maxDelta * (rawDeltaX < 0 ? -1 : 1);
-        deltaY = maxDelta * (rawDeltaY < 0 ? -1 : 1);
-        
-        // Ensure proper directional constraint
-        if (handle === 'tl') {
-          deltaX = -Math.abs(deltaX);
-          deltaY = -Math.abs(deltaY);
-        } else { // br
-          deltaX = Math.abs(deltaX);
-          deltaY = Math.abs(deltaY);
-        }
+      case 'tl': // top-left: outward = left AND up (negative X, negative Y)
+        isOutward = rawDeltaX < 0 && rawDeltaY < 0;
         break;
-        
-      case 'tr': // top-right: deltaX positive, deltaY negative
-      case 'bl': // bottom-left: deltaX negative, deltaY positive
-        // Constrain to anti-diagonal (opposite signs)
-        deltaX = maxDelta * (rawDeltaX < 0 ? -1 : 1);
-        deltaY = maxDelta * (rawDeltaY < 0 ? -1 : 1);
-        
-        // Ensure proper directional constraint
-        if (handle === 'tr') {
-          deltaX = Math.abs(deltaX);
-          deltaY = -Math.abs(deltaY);
-        } else { // bl
-          deltaX = -Math.abs(deltaX);
-          deltaY = Math.abs(deltaY);
-        }
+      case 'tr': // top-right: outward = right AND up (positive X, negative Y)
+        isOutward = rawDeltaX > 0 && rawDeltaY < 0;
+        break;
+      case 'bl': // bottom-left: outward = left AND down (negative X, positive Y)
+        isOutward = rawDeltaX < 0 && rawDeltaY > 0;
+        break;
+      case 'br': // bottom-right: outward = right AND down (positive X, positive Y)
+        isOutward = rawDeltaX > 0 && rawDeltaY > 0;
         break;
     }
     
-    // Calculate new dimensions
-    let newWidth = startDimensionsRef.current.width;
-    let newHeight = startDimensionsRef.current.height;
+    // Apply the scale change: positive for outward (bigger), negative for inward (smaller)
+    const scaleChange = isOutward ? scaleMagnitude : -scaleMagnitude;
     
-    // Apply the constrained deltas based on handle
-    switch (handle) {
-      case 'tl': // top-left
-        newWidth = startDimensionsRef.current.width - deltaX;
-        newHeight = startDimensionsRef.current.height - deltaY;
-        break;
-      case 'tr': // top-right
-        newWidth = startDimensionsRef.current.width + deltaX;
-        newHeight = startDimensionsRef.current.height - deltaY;
-        break;
-      case 'bl': // bottom-left
-        newWidth = startDimensionsRef.current.width - deltaX;
-        newHeight = startDimensionsRef.current.height + deltaY;
-        break;
-      case 'br': // bottom-right
-        newWidth = startDimensionsRef.current.width + deltaX;
-        newHeight = startDimensionsRef.current.height + deltaY;
-        break;
-    }
-    
-    // Enforce minimum dimensions
-    newWidth = Math.max(10, newWidth);
-    newHeight = Math.max(10, newHeight);
+    // Calculate new dimensions by applying the same scale change to both dimensions
+    const newWidth = Math.max(10, startDimensionsRef.current.width + scaleChange);
+    const newHeight = Math.max(10, startDimensionsRef.current.height + scaleChange);
     
     // Update dimensions state
     setDimensions({ width: newWidth, height: newHeight });
