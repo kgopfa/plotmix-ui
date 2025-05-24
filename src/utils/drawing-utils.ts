@@ -57,9 +57,12 @@ export const drawDottedLine = (
   color: number,
   width: number,
   alpha: number,
-  dashPattern: [number, number] = [10, 5]
+  dashPattern: [number, number] = [10, 5],
+  shouldClear: boolean = true
 ) => {
-  graphics.clear();
+  if (shouldClear) {
+    graphics.clear();
+  }
   new AnimationPath(graphics, { dash: dashPattern, width, color, alpha })
     .moveTo(start.x, start.y)
     .lineTo(end.x, end.y);
@@ -276,98 +279,57 @@ export function createShapeGraphics(shape: AnimatedCanvasElement, color?: string
 
 export function drawShape(graphics: Graphics, shape: AnimatedCanvasElement) {
   graphics.clear();
-  
-  if (shape.type === 'svg' && shape.svgData) {
-    // Check if we already have a sprite to avoid recursive rendering
-    const existingSprite = graphics.children.find(child => child instanceof Sprite);
-    if (existingSprite) {
-      // Just update the existing sprite dimensions if they changed
-      const sprite = existingSprite as Sprite;
-      if (sprite.width !== shape.width || sprite.height !== shape.height) {
-        sprite.width = shape.width;
-        sprite.height = shape.height;
-      }
-      return;
-    }
 
+  if (shape.type === 'svg' && shape.svgData) {
     try {
-      // Create a placeholder graphics while SVG is loading
-      const placeholder = new Graphics();
-      placeholder.rect(-shape.width/2, -shape.height/2, shape.width, shape.height);
-      placeholder.fill({ color: 0xEEEEEE, alpha: 0.5 });
-      placeholder.stroke({ color: 0xCCCCCC, width: 1, alpha: 0.8 });
-      graphics.addChild(placeholder);
+      // Create an image from the SVG
+      const img = new Image();
       
-      // Create the SVG image element
-      const img = document.createElement('img');
       img.onload = () => {
         try {
-          // Remove the placeholder first
-          if (graphics.children.includes(placeholder)) {
-            graphics.removeChild(placeholder);
-          }
-          
-          // Create a PIXI texture from the image
+          // Create a texture from the image
           const texture = Texture.from(img);
           
-          // Enable texture smoothing for better quality
-          if (texture.source) {
-            texture.source.scaleMode = 'linear';
-            texture.source.resolution = 2; // Higher resolution for better quality
-            texture.source.alphaMode = 'premultiply-alpha-on-upload';
-          }
+          // Clear and recreate the graphics with the texture
+          graphics.clear();
           
-          // Create a sprite from the texture
-          const sprite = new Sprite(texture);
-          
-          // Center the sprite
-          sprite.anchor.set(0.5, 0.5);
-          sprite.width = shape.width;
-          sprite.height = shape.height;
-          
-          // Apply anti-aliasing settings to the sprite
-          sprite.roundPixels = false;
-          
-          // Clear any existing children and add the sprite
-          graphics.removeChildren();
-          graphics.addChild(sprite);
-        } catch (error) {
-          console.error('Error creating texture from SVG image:', error);
-          // Remove placeholder and show error state
-          graphics.removeChildren();
+          // Draw a rectangle with the SVG texture
+          graphics.rect(-shape.width/2, -shape.height/2, shape.width, shape.height);
+          graphics.fill({
+            texture: texture,
+            alpha: shape.opacity ?? 1
+          });
+        } catch (textureError) {
+          console.error("Error creating texture from SVG:", textureError);
+          // Fallback to drawing a simple rectangle
+          graphics.clear();
           graphics.rect(-shape.width/2, -shape.height/2, shape.width, shape.height);
           graphics.fill({ color: 0xFFDDDD, alpha: 0.5 });
           graphics.stroke({ color: 0xFF0000, width: 1 });
         }
       };
       
-      img.onerror = () => {
-        console.error('Failed to load SVG as image');
-        // Clear and show error state
-        graphics.removeChildren();
+      img.onerror = (error) => {
+        console.error("Error loading SVG image:", error);
+        // Fallback to drawing a simple rectangle
+        graphics.clear();
         graphics.rect(-shape.width/2, -shape.height/2, shape.width, shape.height);
         graphics.fill({ color: 0xFFDDDD, alpha: 0.5 });
-        graphics.stroke({ color: 0xFF0000, width: 1, alpha: 0.8 });
-        // Draw X to indicate error
-        graphics.moveTo(-shape.width/4, -shape.height/4);
-        graphics.lineTo(shape.width/4, shape.height/4);
-        graphics.moveTo(shape.width/4, -shape.height/4);
-        graphics.lineTo(-shape.width/4, shape.height/4);
-        graphics.stroke({ color: 0xFF0000, width: 2 });
+        graphics.stroke({ color: 0xFF0000, width: 1 });
       };
       
-      // Convert SVG to base64 data URL - ensure svgData is string
       if (shape.svgData) {
-        // Add width and height attributes to SVG if they're missing
         let svgContent = shape.svgData;
+        
+        // Set explicit dimensions for the SVG
         if (!svgContent.includes('width=') || !svgContent.includes('height=')) {
           // Extract SVG tag
           const svgTagMatch = svgContent.match(/<svg[^>]*>/);
           if (svgTagMatch) {
             const svgTag = svgTagMatch[0];
-            // Create new tag with width and height
+            // Create new tag with dimensions
             const newSvgTag = svgTag.replace('<svg', 
-              `<svg width="${shape.width}" height="${shape.height}" preserveAspectRatio="xMidYMid meet"`);
+              `<svg width="${shape.width}" height="${shape.height}"`);
             // Replace in content
             svgContent = svgContent.replace(svgTag, newSvgTag);
           }
@@ -404,9 +366,6 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasElement) {
     // For path elements, use a gray dotted line style
     const grayColor = 0x888888; // Light gray color
     
-    // Draw the shape with special path styling
-    drawShapePath(graphics, shape);
-    
     if (shape.type === 'line') {
       // For line paths, use the dotted line directly
       if (shape.lineOptions?.points) {
@@ -421,7 +380,7 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasElement) {
           y: end.y - shape.y
         };
         
-        // Draw as dotted line with gray color
+        // Draw as dotted line with gray color - don't clear graphics first since we already did
         drawDottedLine(
           graphics, 
           startPoint, 
@@ -429,13 +388,11 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasElement) {
           grayColor, 
           2, 
           0.7, // Slightly transparent
-          [5, 3] // Smaller dash pattern for path elements
+          [5, 3], // Smaller dash pattern for path elements
+          false // Don't clear graphics since we already cleared at the start
         );
         
-        // Ensure the line is actually drawn by adding a regular stroke as well
-        graphics.moveTo(startPoint.x, startPoint.y);
-        graphics.lineTo(endPoint.x, endPoint.y);
-        graphics.stroke({ color: grayColor, width: 2, alpha: 0.7 });
+        // Don't add regular stroke - it overwrites the dotted line
       }
     } else if (shape.type === 'path') {
       // For free-drawn paths, use dotted line dash pattern
@@ -454,6 +411,7 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasElement) {
       }
     } else {
       // For other shapes (rectangle, circle, triangle), use dotted stroke and semi-transparent fill
+      drawShapePath(graphics, shape);
       graphics.fill({ 
         color: shape.fill, 
         alpha: 0.15 // Very transparent fill
