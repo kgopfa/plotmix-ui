@@ -57,7 +57,7 @@ export class GSAPTimelineManager {
           if (pathElement.type === 'rectangle') {
             const segmentDuration = config.duration / 4;
 
-            const pathStartTime = config.startTime + config.attachDelay;
+            const pathStartTime = config.startTime;
 
             // 1. Move from top-left to top-right (right: add width)
             this.timeline.to(
@@ -171,9 +171,6 @@ export class GSAPTimelineManager {
           if (pathElement.type === 'circle') {
             // For circles, we'll use angle interpolation for smooth circular motion
             const radius = pathElement.radius || pathElement.width / 2;
-            const centerX = pathElement.x;
-            const centerY = pathElement.y;
-            
             const state = { angle: -Math.PI/2 }; // Start at 12 o'clock position (top)
             
             this.timeline.to(
@@ -186,8 +183,8 @@ export class GSAPTimelineManager {
                   // Get the current target from the GSAP timeline
                   if (target && target.parent && !target.destroyed) {
                     // Calculate position based on current angle
-                    const x = centerX + radius * Math.cos(state.angle);
-                    const y = centerY + radius * Math.sin(state.angle);
+                    const x = element.x + radius * Math.cos(state.angle);
+                    const y = element.y + radius * Math.sin(state.angle);
                     
                     // Set the position directly
                     target.x = x;
