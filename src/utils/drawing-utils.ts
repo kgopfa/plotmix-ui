@@ -1,5 +1,5 @@
 import { Graphics, Texture, Sprite } from 'pixi.js';
-import { DashLine } from '@/utils/dash-line';
+import { AnimationPath } from '@/utils/animation-path';
 import type { AnimatedCanvasElement } from '@/types/canvas';
 
 export const parseColor = (color: string | number | undefined): number => {
@@ -60,7 +60,7 @@ export const drawDottedLine = (
   dashPattern: [number, number] = [10, 5]
 ) => {
   graphics.clear();
-  new DashLine(graphics, { dash: dashPattern, width, color, alpha })
+  new AnimationPath(graphics, { dash: dashPattern, width, color, alpha })
     .moveTo(start.x, start.y)
     .lineTo(end.x, end.y);
 };
@@ -168,12 +168,12 @@ function drawShapePath(graphics: Graphics, shape: AnimatedCanvasElement) {
 }
 
 function drawShapeAsPath(graphics: Graphics, shape: AnimatedCanvasElement) {
-  const grayColor = 0x888888;
+  const grayColor = 0xD3D3D3;
   
   if (shape.type === 'line' || shape.type === 'path') {
     graphics.clear(); // Make sure to clear before drawing
     drawShapePath(graphics, shape);
-    const dashLine = new DashLine(graphics, {
+    const dashLine = new AnimationPath(graphics, {
       dash: [5, 3],
       width: 2,
       color: grayColor,
@@ -198,7 +198,7 @@ function drawShapeAsPath(graphics: Graphics, shape: AnimatedCanvasElement) {
     drawShapePath(graphics, shape);
     graphics.fill({ color: '0xFFFFFF', alpha: 0.15 });
     
-    const dashLine = new DashLine(graphics, {
+    const dashLine = new AnimationPath(graphics, {
       dash: [5, 3],
       width: 2,
       color: grayColor,
@@ -440,7 +440,7 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasElement) {
     } else if (shape.type === 'path') {
       // For free-drawn paths, use dotted line dash pattern
       if (shape.pathPoints && shape.pathPoints.length > 1) {
-        const dashLine = new DashLine(graphics, { 
+        const dashLine = new AnimationPath(graphics, { 
           dash: [5, 3], 
           width: 2, 
           color: grayColor, 
@@ -460,7 +460,7 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasElement) {
       });
       
       // Add dotted stroke with gray color
-      const dashLine = new DashLine(graphics, { 
+      const dashLine = new AnimationPath(graphics, { 
         dash: [5, 3], 
         width: 2, 
         color: grayColor, 
