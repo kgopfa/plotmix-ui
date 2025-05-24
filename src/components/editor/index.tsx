@@ -528,6 +528,32 @@ export default function EditorCanvas() {
     };
   }, []);
 
+  // Listen for animation path updates (from ShapeSelect component)
+  useEffect(() => {
+    const handleAnimationPathUpdate = (e: CustomEvent) => {
+      const { pathElement } = e.detail;
+      console.log('Animation path updated from ShapeSelect:', pathElement.name, 'new dimensions:', pathElement.width, 'x', pathElement.height);
+      
+      setElements(prevElements => {
+        const elementsWithUpdatedAnimations = updateAnimationsForPathElement(prevElements, pathElement);
+        
+        // Rebuild timeline after animation path update
+        setTimeout(() => {
+          console.log('Rebuilding timeline after path element resize via ShapeSelect');
+          gsapManager.buildAnimationTimeline(elementsWithUpdatedAnimations);
+        }, 10);
+        
+        return elementsWithUpdatedAnimations;
+      });
+    };
+    
+    window.addEventListener('animation-path-updated', handleAnimationPathUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('animation-path-updated', handleAnimationPathUpdate as EventListener);
+    };
+  }, [updateAnimationsForPathElement, gsapManager]);
+
   // Memoize the handleSelectElement function
   const handleSelectElement = useCallback((id: string | null) => {
     const element = id ? elements.find(e => e.id === id) || null : null;

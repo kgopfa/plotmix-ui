@@ -220,7 +220,18 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
       width: element.width,
       height: element.height
     });
-  }, [element.width, element.height]);
+
+    if (element.isAnimationPath) {
+      // Dispatch a custom event to trigger animation updates for path elements
+      const animationPathUpdateEvent = new CustomEvent('animation-path-updated', {
+        detail: {
+          pathElement: element
+        }
+      });
+      
+      window.dispatchEvent(animationPathUpdateEvent);
+    }
+  }, [element.width, element.height, element]);
   
   return (
     <pixiContainer x={0} y={0} sortableChildren={true}>
