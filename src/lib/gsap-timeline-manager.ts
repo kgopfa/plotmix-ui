@@ -4,7 +4,11 @@ import type { CanvasRef } from '@/components/editor/canvas';
 import { PixiPlugin } from "gsap/PixiPlugin";
 import { MotionPathPlugin } from 'gsap/MotionPathPlugin';
 import * as PIXI from 'pixi.js';
-import { generateAnimationConfig, isColorAnimationConfig, isPathAnimationConfig } from '@/utils/animation-generator';
+import { 
+  generateAnimationConfig, 
+  isColorAnimationConfig, 
+  isPathAnimationConfig 
+} from '@/utils/animation-generator';
 
 gsap.registerPlugin(PixiPlugin, MotionPathPlugin);
 PixiPlugin.registerPIXI(PIXI);
@@ -52,17 +56,6 @@ export class GSAPTimelineManager {
 
           if (pathElement.type === 'rectangle') {
             const segmentDuration = config.duration / 4;
-
-            // Initial move to the top-left corner with the attachDelay
-            this.timeline.to(
-              target,
-              {
-                pixi: config.properties,
-                duration: config.attachDelay,
-                ease: config.ease,
-              },
-              config.startTime
-            );
 
             const pathStartTime = config.startTime + config.attachDelay;
 
@@ -129,22 +122,8 @@ export class GSAPTimelineManager {
             const topPoint = { x: pathElement.x, y: pathElement.y - height/2 };
             const bottomLeft = { x: pathElement.x - halfWidth, y: pathElement.y + height/2 };
             const bottomRight = { x: pathElement.x + halfWidth, y: pathElement.y + height/2 };
-            
-            // Initial move to the top point of the triangle
-            this.timeline.to(
-              target,
-              {
-                pixi: {
-                  x: topPoint.x,
-                  y: topPoint.y
-                },
-                duration: config.attachDelay,
-                ease: config.ease,
-              },
-              config.startTime
-            );
 
-            const pathStartTime = config.startTime + config.attachDelay;
+            const pathStartTime = config.startTime;
 
             // 1. Move from top to bottom-right
             this.timeline.to(
@@ -195,24 +174,6 @@ export class GSAPTimelineManager {
             const centerX = pathElement.x;
             const centerY = pathElement.y;
             
-            console.log(`Building circle animation: radius=${radius}, center=(${centerX}, ${centerY}), pathElement.width=${pathElement.width}`);
-            
-            // Initial move to the starting point of the circle (12 o'clock position)
-            this.timeline.to(
-              target,
-              {
-                pixi: {
-                  x: centerX,
-                  y: centerY - radius
-                },
-                duration: config.attachDelay,
-                ease: config.ease,
-              },
-              config.startTime
-            );
-            
-            const pathStartTime = config.startTime + config.attachDelay;
-            
             const state = { angle: -Math.PI/2 }; // Start at 12 o'clock position (top)
             
             this.timeline.to(
@@ -234,14 +195,13 @@ export class GSAPTimelineManager {
                   }
                 }
               },
-              pathStartTime
+              config.startTime
             );
           }
 
           if (pathElement.type === 'line') {
             // For lines, we need to animate from start point to end point
             if (!pathElement.lineOptions || !pathElement.lineOptions.points) {
-              console.error('Line element missing points for animation');
               return;
             }
             
@@ -285,22 +245,6 @@ export class GSAPTimelineManager {
               y: pathElement.y + p.y
             }));
             
-            // Initial move to the starting point
-            this.timeline.to(
-              target,
-              {
-                pixi: {
-                  x: pathPoints[0].x,
-                  y: pathPoints[0].y
-                },
-                duration: config.attachDelay,
-                ease: config.ease,
-              },
-              config.startTime
-            );
-            
-            const pathStartTime = config.startTime + config.attachDelay;
-            
             // Use MotionPathPlugin with proper SVG path format
             // Convert points to SVG path string
             let svgPath = `M${pathPoints[0].x},${pathPoints[0].y} `;
@@ -328,7 +272,7 @@ export class GSAPTimelineManager {
                   }
                 }
               },
-              pathStartTime
+              config.startTime
             );
           }
         } else if (isColorAnimationConfig(config)) {
