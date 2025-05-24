@@ -9,7 +9,7 @@ interface SceneExplorerProps {
 }
 
 export function SceneExplorer({ elements, selectionManager }: SceneExplorerProps) {
-  const shapes = elements.filter(element => !element.isPath);
+  const shapes = elements.filter(element => !element.isAnimationPath);
   const animationSelectionManager = AnimationSelectionManager.getInstance();
   const [expandedShapes, setExpandedShapes] = useState<Set<string>>(new Set());
 

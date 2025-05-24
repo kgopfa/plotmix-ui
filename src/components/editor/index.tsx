@@ -457,7 +457,7 @@ export default function EditorCanvas() {
     setElements(prev => [...prev, element]);
     selectionManager.select(element);
     
-    if (isPathMode && element.type === 'path' && element.isPath) {
+    if (isPathMode && element.type === 'path' && element.isAnimationPath) {
       addPathToAnimation(element);
       setIsPathMode(false);
       setAnimationTarget(null);
@@ -603,7 +603,7 @@ export default function EditorCanvas() {
           />
 
           {/* Only show path visibility toggle if paths exist */}
-          {elements.some(el => el.isPath) && (
+          {elements.some(el => el.isAnimationPath) && (
             <div className="absolute bottom-4 right-4 z-10">
               <button 
                 className={`px-3 py-1.5 rounded shadow flex items-center ${showPaths ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'}`}
@@ -625,7 +625,7 @@ export default function EditorCanvas() {
             <Canvas
               ref={canvasRef}
               dimensions={dimensions}
-              elements={showPaths ? elements : elements.filter(el => !el.isPath)}
+              elements={showPaths ? elements : elements.filter(el => !el.isAnimationPath)}
               selectedId={selectedElement?.id || null}
               onElementSelect={handleSelectElement}
               onElementDragEnd={handleElementDragEnd}
@@ -645,7 +645,7 @@ export default function EditorCanvas() {
       </div>
 
       <Timeline
-        elements={elements.filter(el => !el.isPath)}
+        elements={elements.filter(el => !el.isAnimationPath)}
         timelineState={timelineState}
         timeState={timeState}
         onPlayPause={handlePlayPause}

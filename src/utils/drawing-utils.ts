@@ -167,8 +167,84 @@ function drawShapePath(graphics: Graphics, shape: AnimatedCanvasElement) {
   }
 }
 
+function drawShapeAsPath(graphics: Graphics, shape: AnimatedCanvasElement) {
+  const grayColor = 0x888888;
+  
+  if (shape.type === 'line' || shape.type === 'path') {
+    graphics.clear(); // Make sure to clear before drawing
+    drawShapePath(graphics, shape);
+    const dashLine = new DashLine(graphics, {
+      dash: [5, 3],
+      width: 2,
+      color: grayColor,
+      alpha: 0.7
+    });
+    
+    if (shape.type === 'line' && shape.lineOptions?.points) {
+      const { start, end } = shape.lineOptions.points;
+      dashLine
+        .moveTo(start.x - shape.x, start.y - shape.y)
+        .lineTo(end.x - shape.x, end.y - shape.y);
+        
+      // Make sure the line is actually drawn
+      graphics.stroke({ color: grayColor, width: 2, alpha: 0.7 });
+    } else if (shape.type === 'path' && shape.pathPoints && shape.pathPoints.length > 1) {
+      dashLine.moveTo(shape.pathPoints[0].x, shape.pathPoints[0].y);
+      for (let i = 1; i < shape.pathPoints.length; i++) {
+        dashLine.lineTo(shape.pathPoints[i].x, shape.pathPoints[i].y);
+      }
+    }
+  } else {
+    drawShapePath(graphics, shape);
+    graphics.fill({ color: '0xFFFFFF', alpha: 0.15 });
+    
+    const dashLine = new DashLine(graphics, {
+      dash: [5, 3],
+      width: 2,
+      color: grayColor,
+      alpha: 0.7
+    });
+    
+    switch (shape.type) {
+      case 'rectangle':
+        dashLine.drawRect(
+          -shape.width / 2,
+          -shape.height / 2,
+          shape.width,
+          shape.height
+        );
+        break;
+        
+      case 'circle':
+        dashLine.drawCircle(
+          0,
+          0,
+          shape.height / 2
+        );
+        break;
+        
+      case 'triangle':
+        const height = shape.height;
+        const sideLength = (2 * height) / Math.sqrt(3);
+        const halfWidth = sideLength / 2;
+        
+        dashLine.moveTo(0, -height/2)
+          .lineTo(halfWidth, height/2)
+          .lineTo(-halfWidth, height/2)
+          .closePath();
+        break;
+    }
+  }
+}
+
 export function createShapeGraphics(shape: AnimatedCanvasElement, color?: string | number): Graphics {
   const graphics = new Graphics();
+
+  if (shape.isAnimationPath) {
+    drawShapeAsPath(graphics, shape);
+    return graphics;
+  }
+
   const fillColor = color ?? shape.fill;
   
   if (shape.type === 'svg' && shape.svgData) {
@@ -182,87 +258,17 @@ export function createShapeGraphics(shape: AnimatedCanvasElement, color?: string
     
     return graphics;
   }
-  
-  if (shape.isPath) {
-    const grayColor = 0x888888;
-    
-    if (shape.type === 'line' || shape.type === 'path') {
-      graphics.clear(); // Make sure to clear before drawing
-      drawShapePath(graphics, shape);
-      const dashLine = new DashLine(graphics, {
-        dash: [5, 3],
-        width: 2,
-        color: grayColor,
-        alpha: 0.7
-      });
-      
-      if (shape.type === 'line' && shape.lineOptions?.points) {
-        const { start, end } = shape.lineOptions.points;
-        dashLine
-          .moveTo(start.x - shape.x, start.y - shape.y)
-          .lineTo(end.x - shape.x, end.y - shape.y);
-          
-        // Make sure the line is actually drawn
-        graphics.stroke({ color: grayColor, width: 2, alpha: 0.7 });
-      } else if (shape.type === 'path' && shape.pathPoints && shape.pathPoints.length > 1) {
-        dashLine.moveTo(shape.pathPoints[0].x, shape.pathPoints[0].y);
-        for (let i = 1; i < shape.pathPoints.length; i++) {
-          dashLine.lineTo(shape.pathPoints[i].x, shape.pathPoints[i].y);
-        }
-      }
-    } else {
-      drawShapePath(graphics, shape);
-      graphics.fill({ color: fillColor, alpha: 0.15 });
-      
-      const dashLine = new DashLine(graphics, {
-        dash: [5, 3],
-        width: 2,
-        color: grayColor,
-        alpha: 0.7
-      });
-      
-      switch (shape.type) {
-        case 'rectangle':
-          dashLine.drawRect(
-            -shape.width / 2,
-            -shape.height / 2,
-            shape.width,
-            shape.height
-          );
-          break;
-          
-        case 'circle':
-          dashLine.drawCircle(
-            0,
-            0,
-            shape.height / 2
-          );
-          break;
-          
-        case 'triangle':
-          const height = shape.height;
-          const sideLength = (2 * height) / Math.sqrt(3);
-          const halfWidth = sideLength / 2;
-          
-          dashLine.moveTo(0, -height/2)
-            .lineTo(halfWidth, height/2)
-            .lineTo(-halfWidth, height/2)
-            .closePath();
-          break;
-      }
-    }
+
+  if (shape.type === 'line' || shape.type === 'path') {
+    drawShapePath(graphics, shape);
+    graphics.stroke({ 
+      color: fillColor, 
+      width: shape.strokeWidth || 2, 
+      alpha: shape.opacity ?? 1 
+    });
   } else {
-    if (shape.type === 'line' || shape.type === 'path') {
-      drawShapePath(graphics, shape);
-      graphics.stroke({ 
-        color: fillColor, 
-        width: shape.strokeWidth || 2, 
-        alpha: shape.opacity ?? 1 
-      });
-    } else {
-      drawShapePath(graphics, shape);
-      graphics.fill({ color: fillColor, alpha: shape.opacity ?? 1 });
-    }
+    drawShapePath(graphics, shape);
+    graphics.fill({ color: fillColor, alpha: shape.opacity ?? 1 });
   }
   
   return graphics;
@@ -394,7 +400,7 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasElement) {
     return;
   }
   
-  if (shape.isPath) {
+  if (shape.isAnimationPath) {
     // For path elements, use a gray dotted line style
     const grayColor = 0x888888; // Light gray color
     

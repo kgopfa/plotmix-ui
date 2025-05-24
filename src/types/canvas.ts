@@ -95,7 +95,7 @@ export interface AnimatedCanvasElement {
   pathPoints?: Array<{x: number, y: number}>;
   svgData?: string;
   animations: ElementAnimation[];
-  isPath?: boolean;
+  isAnimationPath?: boolean;
 }
 
 export const EASING_OPTIONS: GsapEase[] = [

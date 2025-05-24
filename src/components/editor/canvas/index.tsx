@@ -244,7 +244,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           
           // If in path mode, mark it as a path
           if (isPathMode) {
-            newElement.isPath = true;
+            newElement.isAnimationPath = true;
           }
           
           onElementSelect(newElement.id);

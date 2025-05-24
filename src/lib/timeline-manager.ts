@@ -48,7 +48,7 @@ export class TimelineManager {
   }
 
   addTrack(track: AnimatedCanvasElement): void {
-    if (track.isPath) return;
+    if (track.isAnimationPath) return;
     
     this.state.tracks.push(track);
     this.updateDuration();
@@ -100,7 +100,7 @@ export class TimelineManager {
   }
 
   setTracks(tracks: AnimatedCanvasElement[]): void {
-    this.state.tracks = tracks.filter(track => !track.isPath);
+    this.state.tracks = tracks.filter(track => !track.isAnimationPath);
     this.updateDuration();
     this.notifyListeners();
   }

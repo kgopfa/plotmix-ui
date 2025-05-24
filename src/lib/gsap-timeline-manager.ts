@@ -28,7 +28,7 @@ export class GSAPTimelineManager {
     this.timeline.clear();
 
     elements.forEach((element) => {
-      if (element.isPath) return;
+      if (element.isAnimationPath) return;
 
       const target = shapeRefs[element.id];
       if (!target) return;

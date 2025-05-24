@@ -74,7 +74,7 @@ function createRectangle(props: BaseElementProps): AnimatedCanvasElement {
     y: props.y,
     pivotX: width / 2,
     pivotY: height / 2,
-    isPath: props.isPath || false,
+    isAnimationPath: props.isPath || false,
   };
 }
 
@@ -93,7 +93,7 @@ function createCircle(props: BaseElementProps): AnimatedCanvasElement {
     y: props.y,
     pivotX: width / 2,
     pivotY: height / 2,
-    isPath: props.isPath || false,
+    isAnimationPath: props.isPath || false,
     cornerRadius: 0,
   };
 }
@@ -113,7 +113,7 @@ function createTriangle(props: BaseElementProps): AnimatedCanvasElement {
     y: props.y,
     pivotX: width / 2,
     pivotY: height / 2,
-    isPath: props.isPath || false,
+    isAnimationPath: props.isPath || false,
     cornerRadius: 0,
   };
 }
@@ -129,7 +129,7 @@ function createLine(props: BaseElementProps): AnimatedCanvasElement {
       arrow: false,
       dotted: false,
     },
-    isPath: props.isPath || false,
+    isAnimationPath: props.isPath || false,
     cornerRadius: 0,
   };
 }
@@ -167,7 +167,7 @@ function createPath(props: BaseElementProps): AnimatedCanvasElement {
       y: p.y - centerY
     })),
     lineOptions: undefined,
-    isPath: props.isPath || false,
+    isAnimationPath: props.isPath || false,
     cornerRadius: 0,
   };
 }
@@ -191,7 +191,7 @@ function createSvg(props: BaseElementProps): AnimatedCanvasElement {
     lineOptions: undefined,
     pivotX: width / 2,
     pivotY: height / 2,
-    isPath: props.isPath || false,
+    isAnimationPath: props.isPath || false,
     cornerRadius: 0,
   };
 }
