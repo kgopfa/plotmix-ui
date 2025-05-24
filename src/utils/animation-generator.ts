@@ -118,6 +118,7 @@ export function generateAnimationConfig(
   if (animation.type === 'path') {
     const pathElement = (animation.properties as Record<string, unknown>)['pathElement'] as AnimatedCanvasElement;
     if (pathElement) {
+      console.log(`generateAnimationConfig: pathElement width=${pathElement.width}, height=${pathElement.height} for element ${element.name}`);
       const pathTopLeftX = pathElement.x - pathElement.width / 2;
       const pathTopLeftY = pathElement.y - pathElement.height / 2;
       

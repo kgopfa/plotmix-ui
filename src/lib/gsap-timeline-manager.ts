@@ -23,15 +23,26 @@ export class GSAPTimelineManager {
 
   buildAnimationTimeline(elements: AnimatedCanvasElement[]) {
     const shapeRefs = this.canvasRef?.current?.getShapeRefs();
-    if (!shapeRefs) return;
+    if (!shapeRefs) {
+      console.warn('No shape refs available, skipping timeline build');
+      return;
+    }
 
+    console.log('Building timeline for', elements.length, 'elements');
+    
+    // Kill all existing tweens and clear timeline
+    this.timeline.kill();
     this.timeline.clear();
+    this.timeline = gsap.timeline({ paused: true });
 
     elements.forEach((element) => {
       if (element.isAnimationPath) return;
 
       const target = shapeRefs[element.id];
-      if (!target) return;
+      if (!target || target.destroyed || !target.parent) {
+        console.warn(`Skipping animation for element ${element.id} - invalid target`);
+        return;
+      }
 
       element.animations.forEach((animation) => {
         const config = generateAnimationConfig(element, animation, target);
@@ -110,12 +121,23 @@ export class GSAPTimelineManager {
 
           if (pathElement.type === 'triangle') {
             const segmentDuration = config.duration / 3;
+            const height = pathElement.height;
+            const sideLength = (2 * height) / Math.sqrt(3);
+            const halfWidth = sideLength / 2;
             
-            // Initial move to the path's starting point
+            // Calculate triangle vertices relative to center
+            const topPoint = { x: pathElement.x, y: pathElement.y - height/2 };
+            const bottomLeft = { x: pathElement.x - halfWidth, y: pathElement.y + height/2 };
+            const bottomRight = { x: pathElement.x + halfWidth, y: pathElement.y + height/2 };
+            
+            // Initial move to the top point of the triangle
             this.timeline.to(
               target,
               {
-                pixi: config.properties,
+                pixi: {
+                  x: topPoint.x,
+                  y: topPoint.y
+                },
                 duration: config.attachDelay,
                 ease: config.ease,
               },
@@ -124,16 +146,13 @@ export class GSAPTimelineManager {
 
             const pathStartTime = config.startTime + config.attachDelay;
 
-            // For triangles, we need to move along the three edges
-            // Using relative movements like we did for rectangles
-            
-            // 1. First edge - move to the right and down
+            // 1. Move from top to bottom-right
             this.timeline.to(
               target,
               {
                 pixi: {
-                  x: "+=" + pathElement.width,
-                  y: "+=" + pathElement.height
+                  x: bottomRight.x,
+                  y: bottomRight.y
                 },
                 duration: segmentDuration,
                 ease: config.ease,
@@ -141,12 +160,13 @@ export class GSAPTimelineManager {
               pathStartTime
             );
 
-            // 2. Second edge - move to the left
+            // 2. Move from bottom-right to bottom-left
             this.timeline.to(
               target,
               {
                 pixi: {
-                  x: "-=" + pathElement.width
+                  x: bottomLeft.x,
+                  y: bottomLeft.y
                 },
                 duration: segmentDuration,
                 ease: config.ease,
@@ -154,13 +174,13 @@ export class GSAPTimelineManager {
               pathStartTime + segmentDuration
             );
 
-            // 3. Third edge - move back to the starting point
+            // 3. Move from bottom-left back to top
             this.timeline.to(
               target,
               {
                 pixi: {
-                  x: "+=" + pathElement.width,
-                  y: "-=" + pathElement.height
+                  x: topPoint.x,
+                  y: topPoint.y
                 },
                 duration: segmentDuration,
                 ease: config.ease,
@@ -174,6 +194,8 @@ export class GSAPTimelineManager {
             const radius = pathElement.radius || pathElement.width / 2;
             const centerX = pathElement.x;
             const centerY = pathElement.y;
+            
+            console.log(`Building circle animation: radius=${radius}, center=(${centerX}, ${centerY}), pathElement.width=${pathElement.width}`);
             
             // Initial move to the starting point of the circle (12 o'clock position)
             this.timeline.to(
@@ -201,7 +223,7 @@ export class GSAPTimelineManager {
                 ease: config.ease,
                 onUpdate: () => {
                   // Get the current target from the GSAP timeline
-                  if (target) {
+                  if (target && target.parent && !target.destroyed) {
                     // Calculate position based on current angle
                     const x = centerX + radius * Math.cos(state.angle);
                     const y = centerY + radius * Math.sin(state.angle);
@@ -300,7 +322,7 @@ export class GSAPTimelineManager {
                 duration: config.duration,
                 ease: config.ease,
                 onUpdate: () => {
-                  if (target) {
+                  if (target && target.parent && !target.destroyed) {
                     target.x = proxy.x;
                     target.y = proxy.y;
                   }
@@ -350,7 +372,13 @@ export class GSAPTimelineManager {
   }
 
   updateTime(elapsedTime: number) {
-    this.timeline.time(elapsedTime);
+    try {
+      this.timeline.time(elapsedTime);
+    } catch (error) {
+      console.warn('Error updating timeline:', error);
+      // Clear the timeline if it's corrupted
+      this.clearTimeline();
+    }
   }
 
   handlePlayback(isPlaying: boolean, updateTick: () => void) {
@@ -359,5 +387,16 @@ export class GSAPTimelineManager {
     } else {
       gsap.ticker.remove(updateTick);
     }
+  }
+
+  clearTimeline() {
+    this.timeline.kill();
+    this.timeline.clear();
+    this.timeline = gsap.timeline({ paused: true });
+  }
+
+  destroy() {
+    this.timeline.kill();
+    gsap.ticker.remove(this.updateTime);
   }
 } 

@@ -77,11 +77,19 @@ export default function EditorCanvas() {
 
   useEffect(() => {
     gsapManager.setCanvasRef(canvasRef);
+    
+    // Cleanup on unmount
+    return () => {
+      gsapManager.clearTimeline();
+    };
   }, [gsapManager]);
 
   useEffect(() => {
-    if (dimensions.width > 0 && elements.length > 0) {
-      gsapManager.buildAnimationTimeline(elements);
+    if (dimensions.width > 0 && elements.length > 0 && gsapManager) {
+      // Small delay to ensure canvas refs are ready
+      setTimeout(() => {
+        gsapManager.buildAnimationTimeline(elements);
+      }, 10);
     }
   }, [elements, dimensions, gsapManager]);
 
@@ -174,38 +182,95 @@ export default function EditorCanvas() {
     );
   }, [animationTarget, setElements]);
 
-  const handleElementDragEnd = (id: string, x: number, y: number) => {
-    setElements(elements.map((el) => {
-      if (el.id !== id) return el;
-      
-      // For lines, we need to update both position and points
-      if (el.type === 'line' && el.lineOptions?.points) {
-        const dx = x - el.x;
-        const dy = y - el.y;
-        return {
-          ...el,
-          x,
-          y,
-          lineOptions: {
-            ...el.lineOptions,
-            points: {
-              start: {
-                x: el.lineOptions.points.start.x + dx,
-                y: el.lineOptions.points.start.y + dy
-              },
-              end: {
-                x: el.lineOptions.points.end.x + dx,
-                y: el.lineOptions.points.end.y + dy
-              }
+  // Update animations when their path element is modified
+  const updateAnimationsForPathElement = useCallback((elements: AnimatedCanvasElement[], pathElement: AnimatedCanvasElement) => {
+    let animationsUpdated = 0;
+    
+    const updatedElements = elements.map(element => {
+      // Find animations that reference this path element
+      const updatedAnimations = element.animations.map(animation => {
+        if (animation.properties.pathElement?.id === pathElement.id) {
+          animationsUpdated++;
+          console.log(`Updating animation for element ${element.name}: old pathElement width=${animation.properties.pathElement.width}, new width=${pathElement.width}`);
+          // Update the animation with the new path element data
+          return {
+            ...animation,
+            properties: {
+              ...animation.properties,
+              pathElement: pathElement // Update with the new position/size
             }
-          }
-        };
+          };
+        }
+        return animation;
+      });
+
+      // Return element with updated animations if any were changed
+      if (updatedAnimations.some((anim, index) => anim !== element.animations[index])) {
+        return { ...element, animations: updatedAnimations };
       }
       
-      // For other shapes, just update position
-      return { ...el, x, y };
-    }));
-    gsapManager.buildAnimationTimeline(elements);
+      return element;
+    });
+
+    if (animationsUpdated > 0) {
+      console.log(`Updated ${animationsUpdated} animation(s) for path element ${pathElement.name || pathElement.id}`);
+    }
+
+    return updatedElements;
+  }, []);
+
+  const handleElementDragEnd = (id: string, x: number, y: number) => {
+    setElements(prevElements => {
+      const updatedElements = prevElements.map((el) => {
+        if (el.id !== id) return el;
+        
+        // For lines, we need to update both position and points
+        if (el.type === 'line' && el.lineOptions?.points) {
+          const dx = x - el.x;
+          const dy = y - el.y;
+          return {
+            ...el,
+            x,
+            y,
+            lineOptions: {
+              ...el.lineOptions,
+              points: {
+                start: {
+                  x: el.lineOptions.points.start.x + dx,
+                  y: el.lineOptions.points.start.y + dy
+                },
+                end: {
+                  x: el.lineOptions.points.end.x + dx,
+                  y: el.lineOptions.points.end.y + dy
+                }
+              }
+            }
+          };
+        }
+        
+        // For other shapes, just update position
+        return { ...el, x, y };
+      });
+
+      // If this is an animation path element, update related animations
+      const movedElement = updatedElements.find(el => el.id === id);
+      if (movedElement?.isAnimationPath) {
+        const elementsWithUpdatedAnimations = updateAnimationsForPathElement(updatedElements, movedElement);
+        // Rebuild timeline after animation path update
+        setTimeout(() => gsapManager.buildAnimationTimeline(elementsWithUpdatedAnimations), 0);
+        return elementsWithUpdatedAnimations;
+      }
+
+      return updatedElements;
+    });
+    
+    // Rebuild timeline for regular element moves - use the updated elements
+    setTimeout(() => {
+      setElements(currentElements => {
+        gsapManager.buildAnimationTimeline(currentElements);
+        return currentElements;
+      });
+    }, 0);
   };
 
   const handleAnimationChange = (
@@ -232,7 +297,13 @@ export default function EditorCanvas() {
         };
       })
     );
-    gsapManager.buildAnimationTimeline(elements);
+    // Use the updated elements for timeline rebuild
+    setTimeout(() => {
+      setElements(currentElements => {
+        gsapManager.buildAnimationTimeline(currentElements);
+        return currentElements;
+      });
+    }, 0);
   };
 
   const handleInspectorChange = (
@@ -346,51 +417,91 @@ export default function EditorCanvas() {
     return selectionManager.subscribe(setSelectedElement);
   }, [selectionManager]);
 
+  // Use a ref to access current elements to avoid dependency issues
+  const elementsRef = useRef(elements);
+  elementsRef.current = elements;
+  
   // Listen for resize events from the Canvas component
   useEffect(() => {
     const handleElementResize = (e: CustomEvent) => {
       const { id, width, height, handle } = e.detail;
+      console.log('Resize event:', { id, width, height, handle });
       
-      setElements(elements.map((el) => {
-        if (el.id !== id) return el;
+      setElements(() => {
+        // Use the ref to get current elements to avoid stale closure
+        const currentElements = elementsRef.current;
+        const updatedElements = currentElements.map((el) => {
+          if (el.id !== id) return el;
+          
+          // Calculate position adjustments for certain resize handles
+          // This keeps the shape anchored to the opposite corner during resize
+          let x = el.x;
+          let y = el.y;
+          
+          // Calculate position adjustments based on which handle is being dragged
+          const deltaWidth = width - el.width;
+          const deltaHeight = height - el.height;
+          
+          switch(handle) {
+            case 'top-left':
+              x = el.x + deltaWidth / 2;
+              y = el.y + deltaHeight / 2;
+              break;
+            case 'top-right':
+              x = el.x - deltaWidth / 2;
+              y = el.y + deltaHeight / 2;
+              break;
+            case 'bottom-left':
+              x = el.x + deltaWidth / 2;
+              y = el.y - deltaHeight / 2;
+              break;
+            case 'bottom-right':
+              x = el.x - deltaWidth / 2;
+              y = el.y - deltaHeight / 2;
+              break;
+          }
+          
+          // Update the element with new dimensions and position
+          const updatedElement = {
+            ...el,
+            width,
+            height,
+            x,
+            y
+          };
+          
+          // For circles, update radius to match the height (as used in drawing)
+          if (el.type === 'circle') {
+            updatedElement.radius = height / 2;
+          }
+          
+          // For triangles, update radius to match the height 
+          if (el.type === 'triangle') {
+            updatedElement.radius = height / 2;
+          }
+          
+          return updatedElement;
+        });
+
+        // If this is an animation path element, update related animations
+        const resizedElement = updatedElements.find(el => el.id === id);
+        console.log('Resized element:', resizedElement?.name, 'isAnimationPath:', resizedElement?.isAnimationPath);
         
-        // Calculate position adjustments for certain resize handles
-        // This keeps the shape anchored to the opposite corner during resize
-        let x = el.x;
-        let y = el.y;
-        
-        // Calculate position adjustments based on which handle is being dragged
-        const deltaWidth = width - el.width;
-        const deltaHeight = height - el.height;
-        
-        switch(handle) {
-          case 'top-left':
-            x = el.x + deltaWidth / 2;
-            y = el.y + deltaHeight / 2;
-            break;
-          case 'top-right':
-            x = el.x - deltaWidth / 2;
-            y = el.y + deltaHeight / 2;
-            break;
-          case 'bottom-left':
-            x = el.x + deltaWidth / 2;
-            y = el.y - deltaHeight / 2;
-            break;
-          case 'bottom-right':
-            x = el.x - deltaWidth / 2;
-            y = el.y - deltaHeight / 2;
-            break;
+        if (resizedElement?.isAnimationPath) {
+          console.log('Updating animations for resized path element');
+          const elementsWithUpdatedAnimations = updateAnimationsForPathElement(updatedElements, resizedElement);
+          
+          // Force a state update first, then rebuild timeline
+          setTimeout(() => {
+            console.log('Rebuilding timeline with updated path element:', resizedElement.name, 'new width:', resizedElement.width);
+            gsapManager.buildAnimationTimeline(elementsWithUpdatedAnimations);
+          }, 10); // Small delay to ensure state is updated
+          
+          return elementsWithUpdatedAnimations;
         }
-        
-        // Update the element with new dimensions and position
-        return {
-          ...el,
-          width,
-          height,
-          x,
-          y
-        };
-      }));
+
+        return updatedElements;
+      });
     };
     
     // Add event listener for the custom resize event
@@ -400,7 +511,8 @@ export default function EditorCanvas() {
     return () => {
       window.removeEventListener('element-resize', handleElementResize as EventListener);
     };
-  }, [elements]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
   // Listen for draw completion events
   useEffect(() => {
@@ -437,20 +549,33 @@ export default function EditorCanvas() {
   }, [timeManager]);
 
   const handleLineEndpointDrag = (id: string, endpoint: 'start' | 'end', x: number, y: number) => {
-    setElements(elements.map((el) => {
-      if (el.id !== id || el.type !== 'line' || !el.lineOptions?.points) return el;
-      
-      return {
-        ...el,
-        lineOptions: {
-          ...el.lineOptions,
-          points: {
-            ...el.lineOptions.points,
-            [endpoint]: { x, y }
+    setElements(prevElements => {
+      const updatedElements = prevElements.map((el) => {
+        if (el.id !== id || el.type !== 'line' || !el.lineOptions?.points) return el;
+        
+        return {
+          ...el,
+          lineOptions: {
+            ...el.lineOptions,
+            points: {
+              ...el.lineOptions.points,
+              [endpoint]: { x, y }
+            }
           }
-        }
-      };
-    }));
+        };
+      });
+
+      // If this is an animation path element, update related animations
+      const modifiedElement = updatedElements.find(el => el.id === id);
+      if (modifiedElement?.isAnimationPath) {
+        const elementsWithUpdatedAnimations = updateAnimationsForPathElement(updatedElements, modifiedElement);
+        // Rebuild timeline after animation path update
+        setTimeout(() => gsapManager.buildAnimationTimeline(elementsWithUpdatedAnimations), 0);
+        return elementsWithUpdatedAnimations;
+      }
+
+      return updatedElements;
+    });
   };
 
   const handleAddElement = useCallback((element: AnimatedCanvasElement) => {
@@ -604,7 +729,7 @@ export default function EditorCanvas() {
 
           {/* Only show path visibility toggle if paths exist */}
           {elements.some(el => el.isAnimationPath) && (
-            <div className="absolute bottom-4 right-4 z-10">
+            <div className="absolute bottom-4 right-4 z-10 flex flex-col gap-2">
               <button 
                 className={`px-3 py-1.5 rounded shadow flex items-center ${showPaths ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'}`}
                 onClick={() => setShowPaths(!showPaths)}
