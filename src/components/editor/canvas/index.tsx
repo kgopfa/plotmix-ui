@@ -5,9 +5,10 @@ import { Container, Graphics, Rectangle } from 'pixi.js';
 import type { FederatedPointerEvent } from 'pixi.js';
 import type { AnimatedCanvasElement } from '@/types/canvas';
 import { useImperativeHandle, forwardRef, useState, useRef, useEffect } from 'react';
-import { drawShape, drawHoverOutline } from '@/utils/drawing-utils';
+import { drawShape } from '@/utils/drawing-utils';
 import { createNewElement } from '@/lib/element-factory';
 import ShapeSelect from './select-shape';
+import HoverOutline from './hover-outline';
 
 extend({ Container, Graphics });
 
@@ -533,7 +534,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
             
             {/* Show hover outline when hovered but not selected */}
             {hoveredId === el.id && selectedId !== el.id && (
-              <pixiGraphics draw={(g) => drawHoverOutline(g, el)} />
+              <HoverOutline element={el} />
             )}
             
             {/* Show selection outline with corner handles when selected */}

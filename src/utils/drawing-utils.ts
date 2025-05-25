@@ -1,4 +1,4 @@
-import { Graphics, Texture, Sprite } from 'pixi.js';
+import { Graphics, Texture } from 'pixi.js';
 import { AnimationPath } from '@/utils/animation-path';
 import type { AnimatedCanvasElement } from '@/types/canvas';
 
@@ -510,24 +510,3 @@ export function updateLineFromLengthAndNorthAngle(
   const mathAngle = ((450 - northAngleDegrees) % 360) * Math.PI / 180;
   return updateLineEndPoint(startPoint, length, mathAngle);
 }
-
-// Add a new function for drawing the hover outline
-export const drawHoverOutline = (graphics: Graphics, shape: AnimatedCanvasElement) => {
-  graphics.clear();
-  
-  // Always draw a rectangular outline regardless of shape type
-  graphics.roundRect(
-    -shape.width / 2,
-    -shape.height / 2,
-    shape.width,
-    shape.height,
-    shape.cornerRadius
-  );
-  
-  // Apply a light stroke for the hover effect
-  graphics.stroke({
-    width: 1,
-    color: 0x74b9ff,
-    alpha: 0.85, // More transparent than selection outline
-  });
-}; 
