@@ -33,7 +33,6 @@ export interface CanvasRef {
 // Define resize handle positions
 type ResizeHandle = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | null;
 
-
 const DEFAULT_CURSOR = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 64 64\'%3E%3Cg id=\'_01_Cursor\' data-name=\'01 Cursor\'%3E%3Cpath d=\'m60.2373 22.2021-54.3813-20.2031a3.0174 3.0174 0 0 0 -3.857 3.857l20.2031 54.3813a3.0112 3.0112 0 0 0 5.6763-.15l7.4541-23.8794a1.3336 1.3336 0 0 1 .8745-.875l23.88-7.4541a3.0113 3.0113 0 0 0 .1503-5.6767zm-.7461 3.7671-23.88 7.4541a3.3371 3.3371 0 0 0 -2.1875 2.188l-7.4541 23.88a.9953.9953 0 0 1 -1.8921.05l-20.2035-54.3813c-.2335-1.0229.438-1.4758 1.286-1.286l54.381 20.2031a.9955.9955 0 0 1 -.0498 1.8921z\' fill=\'black\' stroke=\'black\' stroke-width=\'2\'/%3E%3C/g%3E%3C/svg%3E") 3 3, auto';
 
 const LINE_CURSOR = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23000\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpath d=\'M12 19l7-7 3 3-7 7-3-3z\'/%3E%3Cpath d=\'M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z\'/%3E%3Cpath d=\'M2 2l7.586 7.586\'/%3E%3Ccircle cx=\'11\' cy=\'11\' r=\'2\'/%3E%3C/svg%3E") 3 3, auto';
@@ -265,21 +264,28 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     }
   };
 
-  const handleDragMove = (id: string) => (e: FederatedPointerEvent) => {
-    if (draggingId !== id) return;
+  // NEW: Global pointer move handler for dragging operations
+  const handleGlobalPointerMove = (e: PointerEvent) => {
+    if (!draggingId) return;
     
-    // Prevent event from propagating to stop interference with other handlers
-    e.stopPropagation();
-    
-    const pos = e.global;
-    const element = elements.find(el => el.id === id);
+    const element = elements.find(el => el.id === draggingId);
     if (!element) return;
+    
+    // Get the canvas element to calculate proper coordinates
+    const canvasElement = document.querySelector('canvas');
+    if (!canvasElement) return;
+    
+    const rect = canvasElement.getBoundingClientRect();
+    const canvasX = e.clientX - rect.left;
+    const canvasY = e.clientY - rect.top;
     
     // Handle resizing - only if mouse button is pressed (buttons property > 0)
     if (resizingHandle && initialSize && initialMouse && e.buttons > 0) {
-      // Calculate the delta from the initial mouse position
-      const deltaX = pos.x - initialMouse.x;
-      const deltaY = pos.y - initialMouse.y;
+      // Calculate the delta from the initial mouse position (using canvas coordinates)
+      const initialCanvasX = initialMouse.x;
+      const initialCanvasY = initialMouse.y;
+      const deltaX = canvasX - initialCanvasX;
+      const deltaY = canvasY - initialCanvasY;
       
       let newWidth = initialSize.width;
       let newHeight = initialSize.height;
@@ -307,7 +313,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       // Trigger a custom event that the parent component can listen to
       const resizeEvent = new CustomEvent('element-resize', { 
         detail: { 
-          id,
+          id: draggingId,
           width: newWidth,
           height: newHeight,
           handle: resizingHandle,
@@ -328,14 +334,16 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       return;
     }
     
-    // Handle endpoint dragging (same as before)
+    // Handle endpoint dragging
     if (draggingEndpoint && onLineEndpointDrag) {
-      onLineEndpointDrag(id, draggingEndpoint, pos.x, pos.y);
+      onLineEndpointDrag(draggingId, draggingEndpoint, canvasX, canvasY);
     } else if (dragOffset) {
-      // Handle regular shape dragging (same as before)
-      onElementDragEnd(id, pos.x - dragOffset.x, pos.y - dragOffset.y);
+      // Handle regular shape dragging using canvas coordinates
+      onElementDragEnd(draggingId, canvasX - dragOffset.x, canvasY - dragOffset.y);
     }
   };
+
+  // REMOVED: Individual element handleDragMove function - no longer needed
 
   const handleCanvasPointerDown = (e: FederatedPointerEvent) => {
     if (tool === 'draw') {
@@ -412,7 +420,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     }
   };
 
-  // Update the global pointer up handler
+  // NEW: Global event handlers for pointer capture
   useEffect(() => {
     const handleGlobalPointerUp = () => {
       if (resizingHandle) {
@@ -430,14 +438,33 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           setCursor(DEFAULT_CURSOR);
         }
       }
+      
+      // Also handle other drag operations
+      if (draggingId) {
+        setDraggingId(null);
+        setDragOffset(null);
+        setDraggingEndpoint(null);
+        
+        // Reset cursor style based on current tool
+        if (tool === 'draw') {
+          setCursor(DRAW_CURSOR);
+        } else if (tool === 'line') {
+          setCursor(LINE_CURSOR);
+        } else {
+          setCursor(DEFAULT_CURSOR);
+        }
+      }
     };
 
+    // Add global event listeners for pointer capture
+    document.addEventListener('pointermove', handleGlobalPointerMove);
     document.addEventListener('pointerup', handleGlobalPointerUp);
+    
     return () => {
+      document.removeEventListener('pointermove', handleGlobalPointerMove);
       document.removeEventListener('pointerup', handleGlobalPointerUp);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resizingHandle]);
+  }, [draggingId, resizingHandle, initialSize, initialMouse, dragOffset, draggingEndpoint, elements, onElementDragEnd, onLineEndpointDrag, tool]);
 
   // Update the handleCanvasPointerMove function to set the appropriate cursor based on the tool
   useEffect(() => {
@@ -523,7 +550,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
             onPointerDown={handlePointerDown(el.id, el.x, el.y)}
             onPointerUp={handlePointerUp}
             onPointerUpOutside={handlePointerUp}
-            onPointerMove={handleDragMove(el.id)}
+            // REMOVED: onPointerMove handler - now handled globally
             onPointerOver={handleElementMouseMove(el.id)}
             onPointerOut={handleElementMouseLeave(el.id)}
             ref={(node) => {
