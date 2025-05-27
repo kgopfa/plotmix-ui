@@ -44,10 +44,55 @@ export default function EditorCanvas() {
   } | null>(null);
   const [showPaths, setShowPaths] = useState(true);
 
+  // Panel state management
+  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
+  const [leftPanelWidth, setLeftPanelWidth] = useState(320); // Default 320px (w-80)
+  const [rightPanelWidth, setRightPanelWidth] = useState(320); // Default 320px (w-80)
+  const [isResizing, setIsResizing] = useState<'left' | 'right' | null>(null);
+
   const MASK_OFFSET_X = 0;
   const MASK_OFFSET_Y = 0;
 
   const canvasRef = useRef<CanvasRef | null>(null);
+
+  // Panel resize handlers
+  const handleMouseDown = useCallback((panel: 'left' | 'right') => (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(panel);
+  }, []);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isResizing) return;
+
+    if (isResizing === 'left') {
+      const newWidth = Math.max(200, Math.min(600, e.clientX)); // Min 200px, max 600px
+      setLeftPanelWidth(newWidth);
+    } else if (isResizing === 'right') {
+      const newWidth = Math.max(200, Math.min(600, window.innerWidth - e.clientX)); // Min 200px, max 600px
+      setRightPanelWidth(newWidth);
+    }
+  }, [isResizing]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsResizing(null);
+  }, []);
+
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      };
+    }
+  }, [isResizing, handleMouseMove, handleMouseUp]);
   const gsapManager = useMemo(() => new GSAPTimelineManager(), []);
 
   // Memoize the time manager instance
@@ -701,7 +746,33 @@ export default function EditorCanvas() {
 
       {/* Main Body */}
       <div className="flex flex-1 overflow-hidden">
-        <SceneExplorer elements={elements} selectionManager={selectionManager} />
+        {/* Left Panel - Scene Explorer */}
+        {!leftPanelCollapsed && (
+          <>
+            <div 
+              className="bg-gray-50 border-r border-gray-200 overflow-y-auto flex-shrink-0"
+              style={{ width: `${leftPanelWidth}px` }}
+            >
+              <SceneExplorer elements={elements} selectionManager={selectionManager} />
+            </div>
+            {/* Left Resize Handle */}
+            <div
+              className="w-1 bg-gray-300 hover:bg-blue-500 cursor-col-resize flex-shrink-0 transition-colors"
+              onMouseDown={handleMouseDown('left')}
+            />
+          </>
+        )}
+
+        {/* Collapse/Expand Button for Left Panel */}
+        <div className="flex flex-col justify-start bg-gray-200 flex-shrink-0">
+          <button
+            onClick={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
+            className="w-6 h-8 flex items-center justify-center text-gray-600 hover:text-gray-800 hover:bg-gray-300 transition-colors"
+            title={leftPanelCollapsed ? 'Show Scene Explorer' : 'Hide Scene Explorer'}
+          >
+            {leftPanelCollapsed ? '▶' : '◀'}
+          </button>
+        </div>
 
         {/* Canvas + Element Toolbar */}
         <main
@@ -789,10 +860,36 @@ export default function EditorCanvas() {
           )}
         </main>
 
-        <Inspector
-          selectedElement={selectedElement}
-          onInspectorChange={handleInspectorChange}
-        />
+        {/* Collapse/Expand Button for Right Panel */}
+        <div className="flex flex-col justify-start bg-gray-200 flex-shrink-0">
+          <button
+            onClick={() => setRightPanelCollapsed(!rightPanelCollapsed)}
+            className="w-6 h-8 flex items-center justify-center text-gray-600 hover:text-gray-800 hover:bg-gray-300 transition-colors"
+            title={rightPanelCollapsed ? 'Show Inspector' : 'Hide Inspector'}
+          >
+            {rightPanelCollapsed ? '◀' : '▶'}
+          </button>
+        </div>
+
+        {/* Right Panel - Inspector */}
+        {!rightPanelCollapsed && (
+          <>
+            {/* Right Resize Handle */}
+            <div
+              className="w-1 bg-gray-300 hover:bg-blue-500 cursor-col-resize flex-shrink-0 transition-colors"
+              onMouseDown={handleMouseDown('right')}
+            />
+            <div 
+              className="bg-gray-50 border-l border-gray-200 overflow-y-auto flex-shrink-0"
+              style={{ width: `${rightPanelWidth}px` }}
+            >
+              <Inspector
+                selectedElement={selectedElement}
+                onInspectorChange={handleInspectorChange}
+              />
+            </div>
+          </>
+        )}
       </div>
 
       <Timeline

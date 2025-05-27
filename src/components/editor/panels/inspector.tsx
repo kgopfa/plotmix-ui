@@ -50,14 +50,14 @@ export function Inspector({ selectedElement, onInspectorChange }: InspectorProps
 
   if (!selectedElement) {
     return (
-      <aside className="w-80 min-w-48 max-w-xs bg-gray-50 border-l border-gray-200 p-2 overflow-y-auto text-gray-800">
+      <div className="h-full p-2 text-gray-800">
         <p>Select an element to edit properties</p>
-      </aside>
+      </div>
     );
   }
 
   return (
-    <aside className="w-80 min-w-48 max-w-xs bg-gray-50 border-l border-gray-200 p-2 overflow-y-auto text-gray-800">
+    <div className="h-full p-2 text-gray-800">
       <div className="flex border-b mb-4">
         <button
           className={`px-4 py-2 ${activeTab === 'properties' ? 'border-b-2 border-blue-500' : ''}`}
@@ -88,6 +88,6 @@ export function Inspector({ selectedElement, onInspectorChange }: InspectorProps
           onEnterPathMode={handleEnterPathMode}
         />
       )}
-    </aside>
+    </div>
   );
 } 

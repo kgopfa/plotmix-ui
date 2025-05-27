@@ -71,8 +71,8 @@ export function SceneExplorer({ elements, selectionManager }: SceneExplorerProps
   };
 
   return (
-    <aside 
-      className="w-80 min-w-48 max-w-xs bg-gray-50 border-r border-gray-200 p-2 overflow-y-auto text-gray-800"
+    <div 
+      className="h-full p-2 text-gray-800"
       onClick={handleEmptySpaceClick}
     >
       <h3 className="font-semibold mb-2">Scenes</h3>
@@ -186,6 +186,6 @@ export function SceneExplorer({ elements, selectionManager }: SceneExplorerProps
           </details>
         </li>
       </ul>
-    </aside>
+    </div>
   );
 } 
