@@ -464,6 +464,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       document.removeEventListener('pointermove', handleGlobalPointerMove);
       document.removeEventListener('pointerup', handleGlobalPointerUp);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draggingId, resizingHandle, initialSize, initialMouse, dragOffset, draggingEndpoint, elements, onElementDragEnd, onLineEndpointDrag, tool]);
 
   // Update the handleCanvasPointerMove function to set the appropriate cursor based on the tool
