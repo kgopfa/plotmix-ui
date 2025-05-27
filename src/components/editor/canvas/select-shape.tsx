@@ -30,6 +30,7 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
   const activeHandleRef = useRef<string | null>(null);
   const startPointRef = useRef({ x: 0, y: 0 });
   const startDimensionsRef = useRef({ width: 0, height: 0 });
+  const isShiftPressedRef = useRef(false);
   
   // Draw the selection outline with handles
   const drawOutline = (g: PIXI.Graphics) => {
@@ -101,6 +102,7 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
       { x: dimensions.width / 2, y: dimensions.height / 2, handle: 'br' }    // bottom-right
     ];
     
+    // Draw corner handles
     corners.forEach(corner => {
       g.rect(
         corner.x - halfHandleSize,
@@ -124,12 +126,18 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
     const halfW = width / 2;
     const halfH = height / 2;
     
-    // Define handle hit areas
+    // Define handle hit areas (corners and edges)
     const handles = {
+      // Corner handles
       tl: { x: -halfW, y: -halfH },
       tr: { x: halfW, y: -halfH },
       bl: { x: -halfW, y: halfH },
-      br: { x: halfW, y: halfH }
+      br: { x: halfW, y: halfH },
+      // Edge handles
+      t: { x: 0, y: -halfH },
+      r: { x: halfW, y: 0 },
+      b: { x: 0, y: halfH },
+      l: { x: -halfW, y: 0 }
     };
     
     // Check if we clicked on a handle
@@ -143,10 +151,18 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
         isDraggingRef.current = true;
         activeHandleRef.current = handle;
         
-        // Store client coordinates for tracking movement in screen space
+        // Get the canvas element to calculate proper coordinates
+        const canvasElement = document.querySelector('canvas');
+        if (!canvasElement) return;
+        
+        const rect = canvasElement.getBoundingClientRect();
+        const canvasX = e.client.x - rect.left;
+        const canvasY = e.client.y - rect.top;
+        
+        // Store canvas-relative coordinates for consistent tracking
         startPointRef.current = { 
-          x: e.client.x, 
-          y: e.client.y 
+          x: canvasX, 
+          y: canvasY 
         };
         
         // Store initial dimensions for reference during resize
@@ -155,6 +171,8 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
         // Add global listeners
         window.addEventListener('pointermove', handlePointerMove);
         window.addEventListener('pointerup', handlePointerUp);
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
         
         // Prevent default to avoid text selection during drag
         e.preventDefault();
@@ -164,46 +182,120 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
     }
   };
   
+  // Handle key down for shift key detection
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Shift') {
+      isShiftPressedRef.current = true;
+    }
+  };
+  
+  // Handle key up for shift key detection
+  const handleKeyUp = (e: KeyboardEvent) => {
+    if (e.key === 'Shift') {
+      isShiftPressedRef.current = false;
+    }
+  };
+  
   // Handle pointer move during resize
   const handlePointerMove = (e: PointerEvent) => {
     if (!isDraggingRef.current || !activeHandleRef.current) return;
     
     const handle = activeHandleRef.current;
     
-    // Calculate the mouse movement delta from the starting point
+    // Get the canvas element to calculate proper coordinates
+    const canvasElement = document.querySelector('canvas');
+    if (!canvasElement) return;
+    
+    const rect = canvasElement.getBoundingClientRect();
+    const canvasX = e.clientX - rect.left;
+    const canvasY = e.clientY - rect.top;
+    
+    // Calculate the mouse movement delta from the starting point using canvas coordinates
     // Apply scaling factor to convert screen coordinates to canvas coordinates
-    const rawDeltaX = (e.clientX - startPointRef.current.x) / scaleFactor;
-    const rawDeltaY = (e.clientY - startPointRef.current.y) / scaleFactor;
+    const deltaX = (canvasX - startPointRef.current.x) / scaleFactor;
+    const deltaY = (canvasY - startPointRef.current.y) / scaleFactor;
     
-    // Use the larger absolute delta for consistent scaling
-    const absDeltaX = Math.abs(rawDeltaX);
-    const absDeltaY = Math.abs(rawDeltaY);
-    const scaleMagnitude = Math.max(absDeltaX, absDeltaY);
+    let newWidth = startDimensionsRef.current.width;
+    let newHeight = startDimensionsRef.current.height;
     
-    // Determine if movement is outward (increasing size) or inward (decreasing size)
-    let isOutward = false;
-    
-    switch (handle) {
-      case 'tl': // top-left: outward = left AND up (negative X, negative Y)
-        isOutward = rawDeltaX < 0 && rawDeltaY < 0;
-        break;
-      case 'tr': // top-right: outward = right AND up (positive X, negative Y)
-        isOutward = rawDeltaX > 0 && rawDeltaY < 0;
-        break;
-      case 'bl': // bottom-left: outward = left AND down (negative X, positive Y)
-        isOutward = rawDeltaX < 0 && rawDeltaY > 0;
-        break;
-      case 'br': // bottom-right: outward = right AND down (positive X, positive Y)
-        isOutward = rawDeltaX > 0 && rawDeltaY > 0;
-        break;
+    // If shift is pressed, use proportional scaling for any handle
+    if (isShiftPressedRef.current) {
+      // Use the larger absolute delta for consistent scaling
+      const absDeltaX = Math.abs(deltaX);
+      const absDeltaY = Math.abs(deltaY);
+      const scaleMagnitude = Math.max(absDeltaX, absDeltaY);
+      
+      // Determine if movement is outward or inward based on handle
+      let isOutward = false;
+      
+      switch (handle) {
+        case 'tl': // top-left: outward = left AND up (negative X, negative Y)
+          isOutward = deltaX < 0 && deltaY < 0;
+          break;
+        case 'tr': // top-right: outward = right AND up (positive X, negative Y)
+          isOutward = deltaX > 0 && deltaY < 0;
+          break;
+        case 'bl': // bottom-left: outward = left AND down (negative X, positive Y)
+          isOutward = deltaX < 0 && deltaY > 0;
+          break;
+        case 'br': // bottom-right: outward = right AND down (positive X, positive Y)
+          isOutward = deltaX > 0 && deltaY > 0;
+          break;
+        case 't': // top edge: outward = up (negative Y)
+          isOutward = deltaY < 0;
+          break;
+        case 'b': // bottom edge: outward = down (positive Y)
+          isOutward = deltaY > 0;
+          break;
+        case 'l': // left edge: outward = left (negative X)
+          isOutward = deltaX < 0;
+          break;
+        case 'r': // right edge: outward = right (positive X)
+          isOutward = deltaX > 0;
+          break;
+      }
+      
+      // Apply the scale change: positive for outward (bigger), negative for inward (smaller)
+      const scaleChange = isOutward ? scaleMagnitude : -scaleMagnitude;
+      
+      // Calculate new dimensions by applying the same scale change to both dimensions
+      newWidth = Math.max(10, startDimensionsRef.current.width + scaleChange);
+      newHeight = Math.max(10, startDimensionsRef.current.height + scaleChange);
+    } else {
+      // Normal resize behavior - only affect the relevant dimensions
+      switch (handle) {
+        // Corner handles - affect both dimensions
+        case 'tl': // top-left
+          newWidth = Math.max(10, startDimensionsRef.current.width - deltaX);
+          newHeight = Math.max(10, startDimensionsRef.current.height - deltaY);
+          break;
+        case 'tr': // top-right
+          newWidth = Math.max(10, startDimensionsRef.current.width + deltaX);
+          newHeight = Math.max(10, startDimensionsRef.current.height - deltaY);
+          break;
+        case 'bl': // bottom-left
+          newWidth = Math.max(10, startDimensionsRef.current.width - deltaX);
+          newHeight = Math.max(10, startDimensionsRef.current.height + deltaY);
+          break;
+        case 'br': // bottom-right
+          newWidth = Math.max(10, startDimensionsRef.current.width + deltaX);
+          newHeight = Math.max(10, startDimensionsRef.current.height + deltaY);
+          break;
+        // Edge handles - affect only one dimension
+        case 't': // top edge - only height
+          newHeight = Math.max(10, startDimensionsRef.current.height - deltaY);
+          break;
+        case 'b': // bottom edge - only height
+          newHeight = Math.max(10, startDimensionsRef.current.height + deltaY);
+          break;
+        case 'l': // left edge - only width
+          newWidth = Math.max(10, startDimensionsRef.current.width - deltaX);
+          break;
+        case 'r': // right edge - only width
+          newWidth = Math.max(10, startDimensionsRef.current.width + deltaX);
+          break;
+      }
     }
-    
-    // Apply the scale change: positive for outward (bigger), negative for inward (smaller)
-    const scaleChange = isOutward ? scaleMagnitude : -scaleMagnitude;
-    
-    // Calculate new dimensions by applying the same scale change to both dimensions
-    const newWidth = Math.max(10, startDimensionsRef.current.width + scaleChange);
-    const newHeight = Math.max(10, startDimensionsRef.current.height + scaleChange);
     
     // Update dimensions state
     setDimensions({ width: newWidth, height: newHeight });
@@ -217,10 +309,13 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
     if (isDraggingRef.current) {
       isDraggingRef.current = false;
       activeHandleRef.current = null;
+      isShiftPressedRef.current = false;
       
       // Remove global listeners
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
       
       // Notify parent that resize is complete
       onResizeComplete();
@@ -258,4 +353,4 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
   );
 };
 
-export default ShapeSelect; 
+export default ShapeSelect;
