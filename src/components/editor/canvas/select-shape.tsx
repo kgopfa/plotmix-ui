@@ -91,7 +91,7 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
     });
 
     // Draw resize handles for non-line elements
-    const HANDLE_SIZE = 8;
+    const HANDLE_SIZE = 7;
     const halfHandleSize = HANDLE_SIZE / 2;
     
     // Draw the four corner handles
@@ -113,6 +113,43 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
       g.fill({ color: 0xFFFFFF, alpha: 1 });
       g.stroke({ width: 1, color: 0x74b9ff, alpha: 0.8 });
     });
+
+    // Draw corner radius handles for shapes that support corner radius
+    if (element.type === 'rectangle' || element.type === 'triangle') {
+      const RADIUS_HANDLE_SIZE = 7;
+      const RADIUS_HANDLE_OFFSET = 12; // Distance from corner
+      
+      // Calculate positions for corner radius handles (inside the shape, near corners)
+      const radiusHandles = [
+        { 
+          x: -dimensions.width / 2 + RADIUS_HANDLE_OFFSET, 
+          y: -dimensions.height / 2 + RADIUS_HANDLE_OFFSET, 
+          corner: 'tl' 
+        }, // top-left
+        { 
+          x: dimensions.width / 2 - RADIUS_HANDLE_OFFSET, 
+          y: -dimensions.height / 2 + RADIUS_HANDLE_OFFSET, 
+          corner: 'tr' 
+        }, // top-right
+        { 
+          x: -dimensions.width / 2 + RADIUS_HANDLE_OFFSET, 
+          y: dimensions.height / 2 - RADIUS_HANDLE_OFFSET, 
+          corner: 'bl' 
+        }, // bottom-left
+        { 
+          x: dimensions.width / 2 - RADIUS_HANDLE_OFFSET, 
+          y: dimensions.height / 2 - RADIUS_HANDLE_OFFSET, 
+          corner: 'br' 
+        } // bottom-right
+      ];
+      
+      // Draw corner radius handles as circles
+      radiusHandles.forEach(handle => {
+        g.circle(handle.x, handle.y, RADIUS_HANDLE_SIZE / 2);
+        g.fill({ color: 0xFFFFFF, alpha: 1 });
+        g.stroke({ width: 1, color: 0x74b9ff, alpha: 0.8 });
+      });
+    }
   };
   
   // Handle pointer down on resize handle
