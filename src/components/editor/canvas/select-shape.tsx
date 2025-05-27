@@ -3,6 +3,7 @@ import { extend } from '@pixi/react';
 import { Container, Graphics } from 'pixi.js';
 import * as PIXI from 'pixi.js';
 import type { AnimatedCanvasElement } from '@/types/canvas';
+import RadiusCircle from './radius-circle';
 
 extend({ Container, Graphics });
 
@@ -10,19 +11,27 @@ interface ShapeSelectProps {
   element: AnimatedCanvasElement;
   onResize: (newWidth: number, newHeight: number, handle?: string) => void;
   onResizeComplete: () => void;
-  scaleFactor?: number; // Optional prop to account for canvas scaling
+  scaleFactor?: number;
 }
 
 const ShapeSelect: React.FC<ShapeSelectProps> = ({ 
   element, 
   onResize, 
   onResizeComplete,
-  scaleFactor = 1 // Default to 1 (no scaling) if not provided
+  scaleFactor = 1
 }) => {
   // State for tracking resize dimensions
   const [dimensions, setDimensions] = useState({
     width: element.width,
     height: element.height
+  });
+  
+  // NEW: State for circle positions
+  const [circlePositions, setCirclePositions] = useState({
+    tl: { x: -dimensions.width / 2 + 12, y: -dimensions.height / 2 + 12 },
+    tr: { x: dimensions.width / 2 - 12, y: -dimensions.height / 2 + 12 },
+    bl: { x: -dimensions.width / 2 + 12, y: dimensions.height / 2 - 12 },
+    br: { x: dimensions.width / 2 - 12, y: dimensions.height / 2 - 12 }
   });
   
   // Refs for tracking resize interaction
@@ -32,7 +41,7 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
   const startDimensionsRef = useRef({ width: 0, height: 0 });
   const isShiftPressedRef = useRef(false);
   
-  // Draw the selection outline with handles
+  // UPDATED: Draw the selection outline with handles (NO CIRCLES HERE)
   const drawOutline = (g: PIXI.Graphics) => {
     g.clear();
     
@@ -114,45 +123,26 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
       g.stroke({ width: 1, color: 0x74b9ff, alpha: 0.8 });
     });
 
-    // Draw corner radius handles for shapes that support corner radius
-    if (element.type === 'rectangle' || element.type === 'triangle') {
-      const RADIUS_HANDLE_SIZE = 7;
-      const RADIUS_HANDLE_OFFSET = 12; // Distance from corner
-      
-      // Calculate positions for corner radius handles (inside the shape, near corners)
-      const radiusHandles = [
-        { 
-          x: -dimensions.width / 2 + RADIUS_HANDLE_OFFSET, 
-          y: -dimensions.height / 2 + RADIUS_HANDLE_OFFSET, 
-          corner: 'tl' 
-        }, // top-left
-        { 
-          x: dimensions.width / 2 - RADIUS_HANDLE_OFFSET, 
-          y: -dimensions.height / 2 + RADIUS_HANDLE_OFFSET, 
-          corner: 'tr' 
-        }, // top-right
-        { 
-          x: -dimensions.width / 2 + RADIUS_HANDLE_OFFSET, 
-          y: dimensions.height / 2 - RADIUS_HANDLE_OFFSET, 
-          corner: 'bl' 
-        }, // bottom-left
-        { 
-          x: dimensions.width / 2 - RADIUS_HANDLE_OFFSET, 
-          y: dimensions.height / 2 - RADIUS_HANDLE_OFFSET, 
-          corner: 'br' 
-        } // bottom-right
-      ];
-      
-      // Draw corner radius handles as circles
-      radiusHandles.forEach(handle => {
-        g.circle(handle.x, handle.y, RADIUS_HANDLE_SIZE / 2);
-        g.fill({ color: 0xFFFFFF, alpha: 1 });
-        g.stroke({ width: 1, color: 0x74b9ff, alpha: 0.8 });
-      });
-    }
+    // REMOVED: No longer drawing circles here - they're separate components now
   };
+
+  // NEW: Handler for when circles move
+  const handleCircleMove = (corner: keyof typeof circlePositions, newX: number, newY: number) => {
+    setCirclePositions(prev => ({
+      ...prev,
+      [corner]: { x: newX, y: newY }
+    }));
+  };
+
+  // NEW: Calculate bounds for circles
+  const getCircleBounds = () => ({
+    minX: -dimensions.width / 2 + 7,
+    maxX: dimensions.width / 2 - 7,
+    minY: -dimensions.height / 2 + 7,
+    maxY: dimensions.height / 2 - 7
+  });
   
-  // Handle pointer down on resize handle
+  // Handle pointer down on resize handle (UNCHANGED - only handles resize handles now)
   const handlePointerDown = (e: PIXI.FederatedPointerEvent) => {
     // Get local position relative to the component's parent
     const localPos = e.getLocalPosition(e.currentTarget.parent);
@@ -219,21 +209,21 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
     }
   };
   
-  // Handle key down for shift key detection
+  // Handle key down for shift key detection (UNCHANGED)
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Shift') {
       isShiftPressedRef.current = true;
     }
   };
   
-  // Handle key up for shift key detection
+  // Handle key up for shift key detection (UNCHANGED)
   const handleKeyUp = (e: KeyboardEvent) => {
     if (e.key === 'Shift') {
       isShiftPressedRef.current = false;
     }
   };
   
-  // Handle pointer move during resize
+  // Handle pointer move during resize (UNCHANGED)
   const handlePointerMove = (e: PointerEvent) => {
     if (!isDraggingRef.current || !activeHandleRef.current) return;
     
@@ -341,7 +331,7 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
     onResize(newWidth, newHeight, handle);
   };
   
-  // Handle pointer up to complete resize
+  // Handle pointer up to complete resize (UNCHANGED)
   const handlePointerUp = () => {
     if (isDraggingRef.current) {
       isDraggingRef.current = false;
@@ -359,7 +349,7 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
     }
   };
   
-  // Update local dimensions when element props change
+  // Update local dimensions when element props change (UNCHANGED)
   useEffect(() => {
     setDimensions({
       width: element.width,
@@ -380,12 +370,47 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
   
   return (
     <pixiContainer x={0} y={0} sortableChildren={true}>
+      {/* Selection outline and resize handles */}
       <pixiGraphics
         draw={drawOutline}
         eventMode="static"
         cursor="pointer"
         onPointerDown={handlePointerDown}
       />
+      
+      {/* NEW: Separate moveable circles - only for rectangle/triangle */}
+      {(element.type === 'rectangle' || element.type === 'triangle') && (
+        <>
+          <RadiusCircle
+            x={circlePositions.tl.x}
+            y={circlePositions.tl.y}
+            onMove={(newX, newY) => handleCircleMove('tl', newX, newY)}
+            bounds={getCircleBounds()}
+            scaleFactor={scaleFactor}
+          />
+          <RadiusCircle
+            x={circlePositions.tr.x}
+            y={circlePositions.tr.y}
+            onMove={(newX, newY) => handleCircleMove('tr', newX, newY)}
+            bounds={getCircleBounds()}
+            scaleFactor={scaleFactor}
+          />
+          <RadiusCircle
+            x={circlePositions.bl.x}
+            y={circlePositions.bl.y}
+            onMove={(newX, newY) => handleCircleMove('bl', newX, newY)}
+            bounds={getCircleBounds()}
+            scaleFactor={scaleFactor}
+          />
+          <RadiusCircle
+            x={circlePositions.br.x}
+            y={circlePositions.br.y}
+            onMove={(newX, newY) => handleCircleMove('br', newX, newY)}
+            bounds={getCircleBounds()}
+            scaleFactor={scaleFactor}
+          />
+        </>
+      )}
     </pixiContainer>
   );
 };
