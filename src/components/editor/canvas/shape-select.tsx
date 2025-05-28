@@ -493,9 +493,13 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
     }
   }, [element.width, element.height, element]);
 
-  const LEFT_ROTATION_CURSOR = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 38 38\'%3E%3Cpath d=\'m25.769 37.448h-10.627l10.627-10.626z\' fill=\'black\'/%3E%3Cpath d=\'m25.769.552h-10.627l10.627 10.626z\' fill=\'black\'/%3E%3Cpath d=\'m19.259 33.9-4.039-4.089a14.506 14.506 0 0 1 0-20.487l4.913-4.924 1.767 1.767-4.909 4.924a12.005 12.005 0 0 0 0 16.957l4.044 4.092z\' fill=\'black\'/%3E%3C/svg%3E") 8 8, auto';
+  const TOP_LEFT_CURSOR = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 38 38\'%3E%3Cpath d=\'m35.508 9.419-7.513-7.514v15.028z\' fill=\'black\'/%3E%3Cpath d=\'m10.005 36.095-7.513-7.514h15.027z\' fill=\'black\'/%3E%3Cpath d=\'m11.253 29.4h-2.5v-6.962a14.506 14.506 0 0 1 14.489-14.491h4.772v2.5h-4.772a12 12 0 0 0 -11.989 11.991z\' fill=\'black\'/%3E%3C/svg%3E") 8 8, auto';
 
-  const RIGHT_ROTATION_CURSOR = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 38 38\'%3E%3Cpath d=\'m12.231 37.448h10.627l-10.627-10.626z\' fill=\'black\'/%3E%3Cpath d=\'m12.231.552h10.627l-10.627 10.626z\' fill=\'black\'/%3E%3Cpath d=\'m18.74 33.9-1.777-1.76 4.037-4.087a11.989 11.989 0 0 0 .005-16.961l-4.905-4.925 1.768-1.767 4.909 4.924a14.491 14.491 0 0 1 0 20.491z\' fill=\'black\'/%3E%3C/svg%3E") 8 8, auto';
+  const TOP_RIGHT_CURSOR = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 38 38\'%3E%3Cpath d=\'m2.492 9.419 7.513-7.514v15.028z\' fill=\'black\'/%3E%3Cpath d=\'m27.995 36.095 7.513-7.514h-15.027z\' fill=\'black\'/%3E%3Cpath d=\'m29.247 29.4h-2.5v-6.962a12 12 0 0 0 -11.99-11.991h-4.771v-2.5h4.771a14.506 14.506 0 0 1 14.49 14.491z\' fill=\'black\'/%3E%3C/svg%3E") 8 8, auto';
+
+  const BOTTOM_LEFT_CURSOR = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 38 38\'%3E%3Cpath d=\'m35.508 28.581-7.513 7.514v-15.028z\' fill=\'black\'/%3E%3Cpath d=\'m10.005 1.905-7.513 7.514h15.027z\' fill=\'black\'/%3E%3Cpath d=\'m28.014 30.053h-4.772a14.506 14.506 0 0 1 -14.489-14.49v-6.963h2.5v6.966a12 12 0 0 0 11.989 11.99h4.772z\' fill=\'black\'/%3E%3C/svg%3E") 8 8, auto';
+
+  const BOTTOM_RIGHT_CURSOR = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 38 38\'%3E%3Cpath d=\'m2.492 28.581 7.513 7.514v-15.028z\' fill=\'black\'/%3E%3Cpath d=\'m27.995 1.905 7.513 7.514h-15.027z\' fill=\'black\'/%3E%3Cpath d=\'m14.757 30.053h-4.771v-2.5h4.771a12 12 0 0 0 11.99-11.99v-6.963h2.5v6.966a14.506 14.506 0 0 1 -14.49 14.487z\' fill=\'black\'/%3E%3C/svg%3E") 8 8, auto';
 
   // Make squares invisible again now that we're testing the real SVG cursors
   const drawInvisibleSquare = (g: PIXI.Graphics) => {
@@ -526,7 +530,7 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
             draw={drawInvisibleSquare}
             interactive={true}
             eventMode="static"
-            cursor={LEFT_ROTATION_CURSOR}
+            cursor={TOP_LEFT_CURSOR}
           />
 
           {/* Top-right rotation square */}
@@ -536,7 +540,7 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
             draw={drawInvisibleSquare}
             interactive={true}
             eventMode="static"
-            cursor={RIGHT_ROTATION_CURSOR}
+            cursor={TOP_RIGHT_CURSOR}
           />
 
           {/* Bottom-left rotation square */}
@@ -546,7 +550,7 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
             draw={drawInvisibleSquare}
             interactive={true}
             eventMode="static"
-            cursor={LEFT_ROTATION_CURSOR}
+            cursor={BOTTOM_LEFT_CURSOR}
           />
 
           {/* Bottom-right rotation square */}
@@ -556,7 +560,7 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
             draw={drawInvisibleSquare}
             interactive={true}
             eventMode="static"
-            cursor={RIGHT_ROTATION_CURSOR}
+            cursor={BOTTOM_RIGHT_CURSOR}
           />
         </>
       )}
