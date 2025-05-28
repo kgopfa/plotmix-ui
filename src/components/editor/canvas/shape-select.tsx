@@ -31,7 +31,7 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
     const baseDistance = 12; // Default distance from corner
     const radiusOffset = element.cornerRadius || 0; // Current corner radius
     const totalDistance = baseDistance + radiusOffset; // Move circles inward by radius amount
-    
+
     return {
       tl: { x: -dimensions.width / 2 + totalDistance, y: -dimensions.height / 2 + totalDistance },
       tr: { x: dimensions.width / 2 - totalDistance, y: -dimensions.height / 2 + totalDistance },
@@ -46,17 +46,17 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
   // Calculate initial distance from center for each corner
   const getInitialDistanceFromCenter = (corner: keyof typeof circlePositions) => {
     // Use default positions to calculate initial distance (accounting for current corner radius)
-    const baseDistance = 12; 
+    const baseDistance = 12;
     const radiusOffset = element.cornerRadius || 0;
     const totalDistance = baseDistance + radiusOffset;
-    
+
     const defaultPositions = {
       tl: { x: -dimensions.width / 2 + totalDistance, y: -dimensions.height / 2 + totalDistance },
       tr: { x: dimensions.width / 2 - totalDistance, y: -dimensions.height / 2 + totalDistance },
       bl: { x: -dimensions.width / 2 + totalDistance, y: dimensions.height / 2 - totalDistance },
       br: { x: dimensions.width / 2 - totalDistance, y: dimensions.height / 2 - totalDistance }
     };
-    
+
     const pos = defaultPositions[corner];
     return Math.sqrt(pos.x * pos.x + pos.y * pos.y);
   };
@@ -67,19 +67,19 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
     const baseDistance = 12;
     const radiusOffset = element.cornerRadius || 0;
     const totalDistance = baseDistance + radiusOffset;
-    
+
     const defaultPositions = {
       tl: { x: -dimensions.width / 2 + totalDistance, y: -dimensions.height / 2 + totalDistance },
       tr: { x: dimensions.width / 2 - totalDistance, y: -dimensions.height / 2 + totalDistance },
       bl: { x: -dimensions.width / 2 + totalDistance, y: dimensions.height / 2 - totalDistance },
       br: { x: dimensions.width / 2 - totalDistance, y: dimensions.height / 2 - totalDistance }
     };
-    
+
     const initialPos = defaultPositions[corner];
     const initialDistance = getInitialDistanceFromCenter(corner);
-    
+
     if (initialDistance === 0) return initialPos;
-    
+
     // Scale the position to achieve the desired distance
     const scale = distance / initialDistance;
     return {
@@ -91,15 +91,15 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
   // Synchronized move handler
   const handleSyncMove = (draggedCorner: keyof typeof circlePositions, inwardDistance: number) => {
     const newPositions = { ...circlePositions };
-    
+
     // Calculate new distance for all circles
     Object.keys(circlePositions).forEach(corner => {
       const cornerKey = corner as keyof typeof circlePositions;
       const initialDistance = getInitialDistanceFromCenter(cornerKey);
       const newDistance = Math.max(7, initialDistance - inwardDistance); // Minimum distance of 7
-      
+
       const newPos = getPositionAtDistance(cornerKey, newDistance);
-      
+
       // Apply bounds
       const bounds = getCircleBounds();
       newPositions[cornerKey] = {
@@ -107,13 +107,13 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
         y: Math.max(bounds.minY, Math.min(bounds.maxY, newPos.y))
       };
     });
-    
+
     setCirclePositions(newPositions);
-    
+
     // Calculate border radius based on circle positions
     // Use the distance from corner to shape edge as the radius
     const cornerRadius = calculateBorderRadius(newPositions);
-    
+
     // Update the element's corner radius
     updateElementCornerRadius(cornerRadius);
   };
@@ -123,34 +123,34 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
     // Calculate distance from each circle to its respective corner
     const halfWidth = dimensions.width / 2;
     const halfHeight = dimensions.height / 2;
-    
+
     const corners = {
       tl: { x: -halfWidth, y: -halfHeight },
       tr: { x: halfWidth, y: -halfHeight },
       bl: { x: -halfWidth, y: halfHeight },
       br: { x: halfWidth, y: halfHeight }
     };
-    
+
     // Calculate the minimum distance from any circle to its corner
     // This represents how "inward" the circles have moved
     let minDistanceFromCorner = Infinity;
-    
+
     Object.keys(positions).forEach(corner => {
       const cornerKey = corner as keyof typeof positions;
       const circlePos = positions[cornerKey];
       const cornerPos = corners[cornerKey];
-      
+
       const dx = circlePos.x - cornerPos.x;
       const dy = circlePos.y - cornerPos.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      
+
       minDistanceFromCorner = Math.min(minDistanceFromCorner, distance);
     });
-    
+
     // Convert distance to radius (limit to reasonable values)
     const maxRadius = Math.min(halfWidth, halfHeight) / 2;
     const radius = Math.min(maxRadius, Math.max(0, minDistanceFromCorner - 7)); // Subtract 7 for handle size
-    
+
     return radius;
   };
 
@@ -163,7 +163,7 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
         cornerRadius: radius
       }
     });
-    
+
     window.dispatchEvent(radiusEvent);
   };
   // Refs for tracking resize interaction
@@ -172,7 +172,7 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
   const startPointRef = useRef({ x: 0, y: 0 });
   const startDimensionsRef = useRef({ width: 0, height: 0 });
   const isShiftPressedRef = useRef(false);
-  
+
 
   // UPDATED: Draw the selection outline with handles (NO CIRCLES HERE)
   const drawOutline = (g: PIXI.Graphics) => {
@@ -493,6 +493,19 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
     }
   }, [element.width, element.height, element]);
 
+  const LEFT_ROTATION_CURSOR = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 38 38\'%3E%3Cpath d=\'m25.769 37.448h-10.627l10.627-10.626z\' fill=\'black\'/%3E%3Cpath d=\'m25.769.552h-10.627l10.627 10.626z\' fill=\'black\'/%3E%3Cpath d=\'m19.259 33.9-4.039-4.089a14.506 14.506 0 0 1 0-20.487l4.913-4.924 1.767 1.767-4.909 4.924a12.005 12.005 0 0 0 0 16.957l4.044 4.092z\' fill=\'black\'/%3E%3C/svg%3E") 8 8, auto';
+
+  const RIGHT_ROTATION_CURSOR = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 38 38\'%3E%3Cpath d=\'m12.231 37.448h10.627l-10.627-10.626z\' fill=\'black\'/%3E%3Cpath d=\'m12.231.552h10.627l-10.627 10.626z\' fill=\'black\'/%3E%3Cpath d=\'m18.74 33.9-1.777-1.76 4.037-4.087a11.989 11.989 0 0 0 .005-16.961l-4.905-4.925 1.768-1.767 4.909 4.924a14.491 14.491 0 0 1 0 20.491z\' fill=\'black\'/%3E%3C/svg%3E") 8 8, auto';
+
+  // Make squares invisible again now that we're testing the real SVG cursors
+  const drawInvisibleSquare = (g: PIXI.Graphics) => {
+    g.clear();
+    const SQUARE_SIZE = 10; // 5px radius = 10px square
+    g.rect(-SQUARE_SIZE / 2, -SQUARE_SIZE / 2, SQUARE_SIZE, SQUARE_SIZE);
+    g.fill({ color: 0x000000, alpha: 0 }); // Completely transparent
+  };
+
+
   return (
     <pixiContainer x={0} y={0} sortableChildren={true}>
       {/* Selection outline and resize handles */}
@@ -502,7 +515,52 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
         cursor="pointer"
         onPointerDown={handlePointerDown}
       />
-      
+
+      {/* Invisible rotation squares - only for non-line elements */}
+      {element.type !== 'line' && element.type !== 'path' && (
+        <>
+          {/* Top-left rotation square */}
+          <pixiGraphics
+            x={-dimensions.width / 2 - 8} // 8px outside the corner
+            y={-dimensions.height / 2 - 8}
+            draw={drawInvisibleSquare}
+            interactive={true}
+            eventMode="static"
+            cursor={LEFT_ROTATION_CURSOR}
+          />
+
+          {/* Top-right rotation square */}
+          <pixiGraphics
+            x={dimensions.width / 2 + 8} // 8px outside the corner
+            y={-dimensions.height / 2 - 8}
+            draw={drawInvisibleSquare}
+            interactive={true}
+            eventMode="static"
+            cursor={RIGHT_ROTATION_CURSOR}
+          />
+
+          {/* Bottom-left rotation square */}
+          <pixiGraphics
+            x={-dimensions.width / 2 - 8} // 8px outside the corner
+            y={dimensions.height / 2 + 8}
+            draw={drawInvisibleSquare}
+            interactive={true}
+            eventMode="static"
+            cursor={LEFT_ROTATION_CURSOR}
+          />
+
+          {/* Bottom-right rotation square */}
+          <pixiGraphics
+            x={dimensions.width / 2 + 8} // 8px outside the corner
+            y={dimensions.height / 2 + 8}
+            draw={drawInvisibleSquare}
+            interactive={true}
+            eventMode="static"
+            cursor={RIGHT_ROTATION_CURSOR}
+          />
+        </>
+      )}
+
       {/* Synchronized moveable circles */}
       {(element.type === 'rectangle' || element.type === 'triangle') && (
         <>

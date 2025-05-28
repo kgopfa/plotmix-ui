@@ -7,7 +7,7 @@ import type { AnimatedCanvasElement } from '@/types/canvas';
 import { useImperativeHandle, forwardRef, useState, useRef, useEffect } from 'react';
 import { drawShape } from '@/utils/drawing-utils';
 import { createNewElement } from '@/lib/element-factory';
-import ShapeSelect from './select-shape';
+import ShapeSelect from './shape-select';
 import HoverOutline from './hover-outline';
 
 extend({ Container, Graphics });
