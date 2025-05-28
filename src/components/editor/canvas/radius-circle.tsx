@@ -21,6 +21,7 @@ const RadiusCircle: React.FC<RadiusCircleProps> = ({
   scaleFactor = 1
 }) => {
   const [isDragging, setIsDragging] = useState(false);
+  const isDraggingRef = useRef(false); // CRITICAL: Use ref for immediate access
   const dragStartRef = useRef({ x: 0, y: 0, startX: 0, startY: 0 });
 
   const drawCircle = (g: PIXI.Graphics) => {
@@ -33,6 +34,8 @@ const RadiusCircle: React.FC<RadiusCircleProps> = ({
   };
 
   const handlePointerDown = (e: PIXI.FederatedPointerEvent) => {
+    // CRITICAL: Set ref immediately before any async operations
+    isDraggingRef.current = true;
     setIsDragging(true);
     
     const canvasElement = document.querySelector('canvas');
@@ -49,7 +52,7 @@ const RadiusCircle: React.FC<RadiusCircleProps> = ({
       startY: y
     };
     
-    // CRITICAL: Use capture phase to intercept events before Canvas gets them
+    // CRITICAL: Add listeners immediately after setting the ref
     document.addEventListener('pointermove', handlePointerMove, { capture: true });
     document.addEventListener('pointerup', handlePointerUp, { capture: true });
     
@@ -60,7 +63,8 @@ const RadiusCircle: React.FC<RadiusCircleProps> = ({
   };
 
   const handlePointerMove = (e: PointerEvent) => {
-    if (!isDragging) return;
+    // CRITICAL: Use ref instead of state for immediate access
+    if (!isDraggingRef.current) return;
     
     // CRITICAL: Stop event in capture phase before Canvas gets it
     e.preventDefault();
@@ -88,7 +92,9 @@ const RadiusCircle: React.FC<RadiusCircleProps> = ({
   };
 
   const handlePointerUp = (e: PointerEvent) => {
-    if (isDragging) {
+    if (isDraggingRef.current) {
+      // CRITICAL: Update both ref and state
+      isDraggingRef.current = false;
       setIsDragging(false);
       
       // CRITICAL: Stop event in capture phase
