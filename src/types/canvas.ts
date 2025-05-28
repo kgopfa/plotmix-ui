@@ -78,6 +78,7 @@ export interface AnimatedCanvasElement {
   stroke?: string;
   strokeWidth?: number;
   cornerRadius?: number;
+  rotation?: number;
   opacity?: number;
   shadowEnabled?: boolean;
   shadowColor?: string;

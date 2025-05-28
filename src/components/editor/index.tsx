@@ -78,6 +78,14 @@ export default function EditorCanvas() {
     setIsResizing(null);
   }, []);
 
+  const handleElementRotate = (id: string, rotation: number) => {
+    setElements(prev => prev.map(el => 
+      el.id === id 
+        ? { ...el, rotation } 
+        : el
+    ));
+  };
+
   useEffect(() => {
     if (isResizing) {
       document.addEventListener('mousemove', handleMouseMove);
@@ -870,6 +878,7 @@ export default function EditorCanvas() {
               tool={tool}
               onAddElement={handleAddElement}
               isPathMode={isPathMode}
+              onElementRotate={handleElementRotate}
             />
           )}
         </main>

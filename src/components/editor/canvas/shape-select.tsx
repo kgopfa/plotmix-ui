@@ -509,6 +509,59 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
     g.fill({ color: 0x000000, alpha: 0 }); // Completely transparent
   };
 
+  const handleRotationStart = (e: PIXI.FederatedPointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+
+    const canvasElement = document.querySelector('canvas');
+    if (!canvasElement) return;
+    
+    const rect = canvasElement.getBoundingClientRect();
+    const startMouseX = e.client.x - rect.left;
+    const startMouseY = e.client.y - rect.top;
+    
+    // Calculate initial angle from shape center to mouse
+    const shapeCenterX = element.x;
+    const shapeCenterY = element.y;
+    const initialAngle = Math.atan2(startMouseY - shapeCenterY, startMouseX - shapeCenterX);
+    
+    // Store initial rotation
+    const initialRotation = element.rotation || 0;
+    
+    const handleRotationMove = (moveEvent: PointerEvent) => {
+      const currentMouseX = moveEvent.clientX - rect.left;
+      const currentMouseY = moveEvent.clientY - rect.top;
+      
+      // Calculate current angle from shape center to mouse
+      const currentAngle = Math.atan2(currentMouseY - shapeCenterY, currentMouseX - shapeCenterX);
+      
+      // Calculate rotation delta
+      const deltaAngle = currentAngle - initialAngle;
+      const newRotation = initialRotation + deltaAngle;
+      
+      // Dispatch rotation event
+      const rotationEvent = new CustomEvent('element-rotation-change', {
+        detail: {
+          id: element.id,
+          rotation: newRotation
+        }
+      });
+      
+      window.dispatchEvent(rotationEvent);
+    };
+    
+    const handleRotationEnd = () => {
+      document.removeEventListener('pointermove', handleRotationMove);
+      document.removeEventListener('pointerup', handleRotationEnd);
+    };
+    
+    document.addEventListener('pointermove', handleRotationMove);
+    document.addEventListener('pointerup', handleRotationEnd);
+    
+    e.preventDefault();
+    e.stopPropagation();
+  };
 
   return (
     <pixiContainer x={0} y={0} sortableChildren={true}>
@@ -531,6 +584,7 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
             interactive={true}
             eventMode="static"
             cursor={TOP_LEFT_CURSOR}
+            onPointerDown={handleRotationStart}
           />
 
           {/* Top-right rotation square */}
@@ -541,6 +595,7 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
             interactive={true}
             eventMode="static"
             cursor={TOP_RIGHT_CURSOR}
+            onPointerDown={handleRotationStart}
           />
 
           {/* Bottom-left rotation square */}
@@ -551,6 +606,7 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
             interactive={true}
             eventMode="static"
             cursor={BOTTOM_LEFT_CURSOR}
+            onPointerDown={handleRotationStart}
           />
 
           {/* Bottom-right rotation square */}
@@ -561,6 +617,7 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
             interactive={true}
             eventMode="static"
             cursor={BOTTOM_RIGHT_CURSOR}
+            onPointerDown={handleRotationStart}
           />
         </>
       )}
