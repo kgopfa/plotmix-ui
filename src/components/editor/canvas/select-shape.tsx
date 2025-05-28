@@ -26,20 +26,83 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
     height: element.height
   });
 
-  // NEW: State for circle positions
-  const [circlePositions, setCirclePositions] = useState({
+  // State for circle positions (keep existing)
+const [circlePositions, setCirclePositions] = useState({
+  tl: { x: -dimensions.width / 2 + 12, y: -dimensions.height / 2 + 12 },
+  tr: { x: dimensions.width / 2 - 12, y: -dimensions.height / 2 + 12 },
+  bl: { x: -dimensions.width / 2 + 12, y: dimensions.height / 2 - 12 },
+  br: { x: dimensions.width / 2 - 12, y: dimensions.height / 2 - 12 }
+});
+
+// Shape center (always 0,0 since element is centered)
+const shapeCenter = { x: 0, y: 0 };
+
+// Calculate initial distance from center for each corner
+const getInitialDistanceFromCenter = (corner: keyof typeof circlePositions) => {
+  // Use default positions to calculate initial distance
+  const defaultPositions = {
     tl: { x: -dimensions.width / 2 + 12, y: -dimensions.height / 2 + 12 },
     tr: { x: dimensions.width / 2 - 12, y: -dimensions.height / 2 + 12 },
     bl: { x: -dimensions.width / 2 + 12, y: dimensions.height / 2 - 12 },
     br: { x: dimensions.width / 2 - 12, y: dimensions.height / 2 - 12 }
-  });
+  };
+  
+  const pos = defaultPositions[corner];
+  return Math.sqrt(pos.x * pos.x + pos.y * pos.y);
+};
 
+// Calculate position at specific distance from center for each corner
+const getPositionAtDistance = (corner: keyof typeof circlePositions, distance: number) => {
+  // Use default positions as the direction template
+  const defaultPositions = {
+    tl: { x: -dimensions.width / 2 + 12, y: -dimensions.height / 2 + 12 },
+    tr: { x: dimensions.width / 2 - 12, y: -dimensions.height / 2 + 12 },
+    bl: { x: -dimensions.width / 2 + 12, y: dimensions.height / 2 - 12 },
+    br: { x: dimensions.width / 2 - 12, y: dimensions.height / 2 - 12 }
+  };
+  
+  const initialPos = defaultPositions[corner];
+  const initialDistance = getInitialDistanceFromCenter(corner);
+  
+  if (initialDistance === 0) return initialPos;
+  
+  // Scale the position to achieve the desired distance
+  const scale = distance / initialDistance;
+  return {
+    x: initialPos.x * scale,
+    y: initialPos.y * scale
+  };
+};
+
+// Synchronized move handler
+const handleSyncMove = (draggedCorner: keyof typeof circlePositions, inwardDistance: number) => {
+  const newPositions = { ...circlePositions };
+  
+  // Calculate new distance for all circles
+  Object.keys(circlePositions).forEach(corner => {
+    const cornerKey = corner as keyof typeof circlePositions;
+    const initialDistance = getInitialDistanceFromCenter(cornerKey);
+    const newDistance = Math.max(7, initialDistance - inwardDistance); // Minimum distance of 7
+    
+    const newPos = getPositionAtDistance(cornerKey, newDistance);
+    
+    // Apply bounds
+    const bounds = getCircleBounds();
+    newPositions[cornerKey] = {
+      x: Math.max(bounds.minX, Math.min(bounds.maxX, newPos.x)),
+      y: Math.max(bounds.minY, Math.min(bounds.maxY, newPos.y))
+    };
+  });
+  
+  setCirclePositions(newPositions);
+};
   // Refs for tracking resize interaction
   const isDraggingRef = useRef(false);
   const activeHandleRef = useRef<string | null>(null);
   const startPointRef = useRef({ x: 0, y: 0 });
   const startDimensionsRef = useRef({ width: 0, height: 0 });
   const isShiftPressedRef = useRef(false);
+  
 
   // UPDATED: Draw the selection outline with handles (NO CIRCLES HERE)
   const drawOutline = (g: PIXI.Graphics) => {
@@ -124,14 +187,6 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
     });
 
     // REMOVED: No longer drawing circles here - they're separate components now
-  };
-
-  // NEW: Handler for when circles move
-  const handleCircleMove = (corner: keyof typeof circlePositions, newX: number, newY: number) => {
-    setCirclePositions(prev => ({
-      ...prev,
-      [corner]: { x: newX, y: newY }
-    }));
   };
 
   // NEW: Calculate bounds for circles
@@ -377,41 +432,45 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
         cursor="pointer"
         onPointerDown={handlePointerDown}
       />
-
-      {/* Separate moveable circles - only for rectangle/triangle */}
+      
+      {/* Synchronized moveable circles */}
       {(element.type === 'rectangle' || element.type === 'triangle') && (
         <>
           <RadiusCircle
             x={circlePositions.tl.x}
             y={circlePositions.tl.y}
-            onMove={(newX, newY) => handleCircleMove('tl', newX, newY)}
             bounds={getCircleBounds()}
             scaleFactor={scaleFactor}
-            corner="tl" // Top-left corner
+            corner="tl"
+            onSyncMove={handleSyncMove}
+            shapeCenter={shapeCenter}
           />
           <RadiusCircle
             x={circlePositions.tr.x}
             y={circlePositions.tr.y}
-            onMove={(newX, newY) => handleCircleMove('tr', newX, newY)}
             bounds={getCircleBounds()}
             scaleFactor={scaleFactor}
-            corner="tr" // Top-right corner
+            corner="tr"
+            onSyncMove={handleSyncMove}
+            shapeCenter={shapeCenter}
           />
           <RadiusCircle
             x={circlePositions.bl.x}
             y={circlePositions.bl.y}
-            onMove={(newX, newY) => handleCircleMove('bl', newX, newY)}
             bounds={getCircleBounds()}
             scaleFactor={scaleFactor}
-            corner="bl" // Bottom-left corner
+            corner="bl"
+            onSyncMove={handleSyncMove}
+            shapeCenter={shapeCenter}
           />
           <RadiusCircle
             x={circlePositions.br.x}
             y={circlePositions.br.y}
-            onMove={(newX, newY) => handleCircleMove('br', newX, newY)}
             bounds={getCircleBounds()}
             scaleFactor={scaleFactor}
-            corner="br" // Bottom-right corner
+            corner="br"
+            onSyncMove={handleSyncMove}
+            shapeCenter={shapeCenter}
           />
         </>
       )}

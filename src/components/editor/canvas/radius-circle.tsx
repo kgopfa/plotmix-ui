@@ -8,23 +8,25 @@ extend({ Container, Graphics });
 interface RadiusCircleProps {
   x: number;
   y: number;
-  onMove: (newX: number, newY: number) => void;  
   bounds: { minX: number, maxX: number, minY: number, maxY: number };
   scaleFactor?: number;
-  corner: 'tl' | 'tr' | 'bl' | 'br'; // NEW: Specify which corner this circle represents
+  corner: 'tl' | 'tr' | 'bl' | 'br';
+  onSyncMove: (corner: 'tl' | 'tr' | 'bl' | 'br', inwardDistance: number) => void;
+  shapeCenter: { x: number, y: number };
 }
 
 const RadiusCircle: React.FC<RadiusCircleProps> = ({
   x,
   y,
-  onMove,
   bounds,
   scaleFactor = 1,
-  corner
+  corner,
+  onSyncMove,
+  shapeCenter
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const isDraggingRef = useRef(false);
-  const dragStartRef = useRef({ x: 0, y: 0, startX: 0, startY: 0 });
+  const dragStartRef = useRef({ x: 0, y: 0, startX: 0, startY: 0, initialDistance: 0 });
 
   const drawCircle = (g: PIXI.Graphics) => {
     g.clear();
@@ -33,6 +35,13 @@ const RadiusCircle: React.FC<RadiusCircleProps> = ({
     g.circle(0, 0, RADIUS_HANDLE_SIZE / 2);
     g.fill({ color: 0xFFFFFF, alpha: 1 });
     g.stroke({ width: 1, color: 0x74b9ff, alpha: 0.8 });
+  };
+
+  // Calculate distance from shape center to circle position
+  const getDistanceFromCenter = (circleX: number, circleY: number) => {
+    const dx = circleX - shapeCenter.x;
+    const dy = circleY - shapeCenter.y;
+    return Math.sqrt(dx * dx + dy * dy);
   };
 
   const handlePointerDown = (e: PIXI.FederatedPointerEvent) => {
@@ -46,11 +55,15 @@ const RadiusCircle: React.FC<RadiusCircleProps> = ({
     const canvasX = e.client.x - rect.left;
     const canvasY = e.client.y - rect.top;
     
+    // Calculate initial distance from center
+    const initialDistance = getDistanceFromCenter(x, y);
+    
     dragStartRef.current = {
       x: canvasX,
       y: canvasY,
       startX: x,
-      startY: y
+      startY: y,
+      initialDistance
     };
     
     document.addEventListener('pointermove', handlePointerMove, { capture: true });
@@ -78,20 +91,20 @@ const RadiusCircle: React.FC<RadiusCircleProps> = ({
     const deltaX = (canvasX - dragStartRef.current.x) / scaleFactor;
     const deltaY = (canvasY - dragStartRef.current.y) / scaleFactor;
     
-    // CRITICAL: Calculate diagonal-constrained movement based on corner
+    // Calculate new position based on corner's diagonal constraint
     let newX = dragStartRef.current.startX;
     let newY = dragStartRef.current.startY;
     
     switch (corner) {
-      case 'tl': // Top-left: diagonal down-right (positive X = positive Y)
+      case 'tl': // Top-left: diagonal down-right
         {
-          const diagonalDelta = (deltaX + deltaY) / 2; // Average the deltas for smooth diagonal
+          const diagonalDelta = (deltaX + deltaY) / 2;
           newX = dragStartRef.current.startX + diagonalDelta;
           newY = dragStartRef.current.startY + diagonalDelta;
         }
         break;
         
-      case 'tr': // Top-right: anti-diagonal down-left (positive X = negative Y)
+      case 'tr': // Top-right: anti-diagonal down-left
         {
           const antiDiagonalDelta = (deltaX - deltaY) / 2;
           newX = dragStartRef.current.startX + antiDiagonalDelta;
@@ -99,7 +112,7 @@ const RadiusCircle: React.FC<RadiusCircleProps> = ({
         }
         break;
         
-      case 'bl': // Bottom-left: anti-diagonal up-right (positive X = negative Y)
+      case 'bl': // Bottom-left: anti-diagonal up-right
         {
           const antiDiagonalDelta = (deltaX - deltaY) / 2;
           newX = dragStartRef.current.startX + antiDiagonalDelta;
@@ -107,7 +120,7 @@ const RadiusCircle: React.FC<RadiusCircleProps> = ({
         }
         break;
         
-      case 'br': // Bottom-right: diagonal down-right (positive X = positive Y)
+      case 'br': // Bottom-right: diagonal down-right
         {
           const diagonalDelta = (deltaX + deltaY) / 2;
           newX = dragStartRef.current.startX + diagonalDelta;
@@ -120,7 +133,12 @@ const RadiusCircle: React.FC<RadiusCircleProps> = ({
     const boundedX = Math.max(bounds.minX, Math.min(bounds.maxX, newX));
     const boundedY = Math.max(bounds.minY, Math.min(bounds.maxY, newY));
     
-    onMove(boundedX, boundedY);
+    // Calculate how far inward/outward this circle moved
+    const newDistance = getDistanceFromCenter(boundedX, boundedY);
+    const inwardDistance = dragStartRef.current.initialDistance - newDistance;
+    
+    // Sync all circles to move the same inward distance
+    onSyncMove(corner, inwardDistance);
   };
 
   const handlePointerUp = (e: PointerEvent) => {
