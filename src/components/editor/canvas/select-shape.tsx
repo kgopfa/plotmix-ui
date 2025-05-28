@@ -26,76 +26,146 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
     height: element.height
   });
 
-  // State for circle positions (keep existing)
-const [circlePositions, setCirclePositions] = useState({
-  tl: { x: -dimensions.width / 2 + 12, y: -dimensions.height / 2 + 12 },
-  tr: { x: dimensions.width / 2 - 12, y: -dimensions.height / 2 + 12 },
-  bl: { x: -dimensions.width / 2 + 12, y: dimensions.height / 2 - 12 },
-  br: { x: dimensions.width / 2 - 12, y: dimensions.height / 2 - 12 }
-});
-
-// Shape center (always 0,0 since element is centered)
-const shapeCenter = { x: 0, y: 0 };
-
-// Calculate initial distance from center for each corner
-const getInitialDistanceFromCenter = (corner: keyof typeof circlePositions) => {
-  // Use default positions to calculate initial distance
-  const defaultPositions = {
-    tl: { x: -dimensions.width / 2 + 12, y: -dimensions.height / 2 + 12 },
-    tr: { x: dimensions.width / 2 - 12, y: -dimensions.height / 2 + 12 },
-    bl: { x: -dimensions.width / 2 + 12, y: dimensions.height / 2 - 12 },
-    br: { x: dimensions.width / 2 - 12, y: dimensions.height / 2 - 12 }
-  };
-  
-  const pos = defaultPositions[corner];
-  return Math.sqrt(pos.x * pos.x + pos.y * pos.y);
-};
-
-// Calculate position at specific distance from center for each corner
-const getPositionAtDistance = (corner: keyof typeof circlePositions, distance: number) => {
-  // Use default positions as the direction template
-  const defaultPositions = {
-    tl: { x: -dimensions.width / 2 + 12, y: -dimensions.height / 2 + 12 },
-    tr: { x: dimensions.width / 2 - 12, y: -dimensions.height / 2 + 12 },
-    bl: { x: -dimensions.width / 2 + 12, y: dimensions.height / 2 - 12 },
-    br: { x: dimensions.width / 2 - 12, y: dimensions.height / 2 - 12 }
-  };
-  
-  const initialPos = defaultPositions[corner];
-  const initialDistance = getInitialDistanceFromCenter(corner);
-  
-  if (initialDistance === 0) return initialPos;
-  
-  // Scale the position to achieve the desired distance
-  const scale = distance / initialDistance;
-  return {
-    x: initialPos.x * scale,
-    y: initialPos.y * scale
-  };
-};
-
-// Synchronized move handler
-const handleSyncMove = (draggedCorner: keyof typeof circlePositions, inwardDistance: number) => {
-  const newPositions = { ...circlePositions };
-  
-  // Calculate new distance for all circles
-  Object.keys(circlePositions).forEach(corner => {
-    const cornerKey = corner as keyof typeof circlePositions;
-    const initialDistance = getInitialDistanceFromCenter(cornerKey);
-    const newDistance = Math.max(7, initialDistance - inwardDistance); // Minimum distance of 7
+  // State for circle positions (initialize based on corner radius)
+  const [circlePositions, setCirclePositions] = useState(() => {
+    const baseDistance = 12; // Default distance from corner
+    const radiusOffset = element.cornerRadius || 0; // Current corner radius
+    const totalDistance = baseDistance + radiusOffset; // Move circles inward by radius amount
     
-    const newPos = getPositionAtDistance(cornerKey, newDistance);
-    
-    // Apply bounds
-    const bounds = getCircleBounds();
-    newPositions[cornerKey] = {
-      x: Math.max(bounds.minX, Math.min(bounds.maxX, newPos.x)),
-      y: Math.max(bounds.minY, Math.min(bounds.maxY, newPos.y))
+    return {
+      tl: { x: -dimensions.width / 2 + totalDistance, y: -dimensions.height / 2 + totalDistance },
+      tr: { x: dimensions.width / 2 - totalDistance, y: -dimensions.height / 2 + totalDistance },
+      bl: { x: -dimensions.width / 2 + totalDistance, y: dimensions.height / 2 - totalDistance },
+      br: { x: dimensions.width / 2 - totalDistance, y: dimensions.height / 2 - totalDistance }
     };
   });
-  
-  setCirclePositions(newPositions);
-};
+
+  // Shape center (always 0,0 since element is centered)
+  const shapeCenter = { x: 0, y: 0 };
+
+  // Calculate initial distance from center for each corner
+  const getInitialDistanceFromCenter = (corner: keyof typeof circlePositions) => {
+    // Use default positions to calculate initial distance (accounting for current corner radius)
+    const baseDistance = 12; 
+    const radiusOffset = element.cornerRadius || 0;
+    const totalDistance = baseDistance + radiusOffset;
+    
+    const defaultPositions = {
+      tl: { x: -dimensions.width / 2 + totalDistance, y: -dimensions.height / 2 + totalDistance },
+      tr: { x: dimensions.width / 2 - totalDistance, y: -dimensions.height / 2 + totalDistance },
+      bl: { x: -dimensions.width / 2 + totalDistance, y: dimensions.height / 2 - totalDistance },
+      br: { x: dimensions.width / 2 - totalDistance, y: dimensions.height / 2 - totalDistance }
+    };
+    
+    const pos = defaultPositions[corner];
+    return Math.sqrt(pos.x * pos.x + pos.y * pos.y);
+  };
+
+  // Calculate position at specific distance from center for each corner
+  const getPositionAtDistance = (corner: keyof typeof circlePositions, distance: number) => {
+    // Use default positions as the direction template (accounting for current corner radius)
+    const baseDistance = 12;
+    const radiusOffset = element.cornerRadius || 0;
+    const totalDistance = baseDistance + radiusOffset;
+    
+    const defaultPositions = {
+      tl: { x: -dimensions.width / 2 + totalDistance, y: -dimensions.height / 2 + totalDistance },
+      tr: { x: dimensions.width / 2 - totalDistance, y: -dimensions.height / 2 + totalDistance },
+      bl: { x: -dimensions.width / 2 + totalDistance, y: dimensions.height / 2 - totalDistance },
+      br: { x: dimensions.width / 2 - totalDistance, y: dimensions.height / 2 - totalDistance }
+    };
+    
+    const initialPos = defaultPositions[corner];
+    const initialDistance = getInitialDistanceFromCenter(corner);
+    
+    if (initialDistance === 0) return initialPos;
+    
+    // Scale the position to achieve the desired distance
+    const scale = distance / initialDistance;
+    return {
+      x: initialPos.x * scale,
+      y: initialPos.y * scale
+    };
+  };
+
+  // Synchronized move handler
+  const handleSyncMove = (draggedCorner: keyof typeof circlePositions, inwardDistance: number) => {
+    const newPositions = { ...circlePositions };
+    
+    // Calculate new distance for all circles
+    Object.keys(circlePositions).forEach(corner => {
+      const cornerKey = corner as keyof typeof circlePositions;
+      const initialDistance = getInitialDistanceFromCenter(cornerKey);
+      const newDistance = Math.max(7, initialDistance - inwardDistance); // Minimum distance of 7
+      
+      const newPos = getPositionAtDistance(cornerKey, newDistance);
+      
+      // Apply bounds
+      const bounds = getCircleBounds();
+      newPositions[cornerKey] = {
+        x: Math.max(bounds.minX, Math.min(bounds.maxX, newPos.x)),
+        y: Math.max(bounds.minY, Math.min(bounds.maxY, newPos.y))
+      };
+    });
+    
+    setCirclePositions(newPositions);
+    
+    // Calculate border radius based on circle positions
+    // Use the distance from corner to shape edge as the radius
+    const cornerRadius = calculateBorderRadius(newPositions);
+    
+    // Update the element's corner radius
+    updateElementCornerRadius(cornerRadius);
+  };
+
+  // Calculate border radius based on circle positions
+  const calculateBorderRadius = (positions: typeof circlePositions) => {
+    // Calculate distance from each circle to its respective corner
+    const halfWidth = dimensions.width / 2;
+    const halfHeight = dimensions.height / 2;
+    
+    const corners = {
+      tl: { x: -halfWidth, y: -halfHeight },
+      tr: { x: halfWidth, y: -halfHeight },
+      bl: { x: -halfWidth, y: halfHeight },
+      br: { x: halfWidth, y: halfHeight }
+    };
+    
+    // Calculate the minimum distance from any circle to its corner
+    // This represents how "inward" the circles have moved
+    let minDistanceFromCorner = Infinity;
+    
+    Object.keys(positions).forEach(corner => {
+      const cornerKey = corner as keyof typeof positions;
+      const circlePos = positions[cornerKey];
+      const cornerPos = corners[cornerKey];
+      
+      const dx = circlePos.x - cornerPos.x;
+      const dy = circlePos.y - cornerPos.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      minDistanceFromCorner = Math.min(minDistanceFromCorner, distance);
+    });
+    
+    // Convert distance to radius (limit to reasonable values)
+    const maxRadius = Math.min(halfWidth, halfHeight) / 2;
+    const radius = Math.min(maxRadius, Math.max(0, minDistanceFromCorner - 7)); // Subtract 7 for handle size
+    
+    return radius;
+  };
+
+  // Update element's corner radius through parent
+  const updateElementCornerRadius = (radius: number) => {
+    // Dispatch a custom event to update the element's corner radius
+    const radiusEvent = new CustomEvent('element-border-radius-change', {
+      detail: {
+        id: element.id,
+        cornerRadius: radius
+      }
+    });
+    
+    window.dispatchEvent(radiusEvent);
+  };
   // Refs for tracking resize interaction
   const isDraggingRef = useRef(false);
   const activeHandleRef = useRef<string | null>(null);

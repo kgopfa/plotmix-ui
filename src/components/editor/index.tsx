@@ -548,13 +548,27 @@ export default function EditorCanvas() {
         return updatedElements;
       });
     };
+
+    const handleBorderRadiusChange = (e: CustomEvent) => {
+      const { id, cornerRadius } = e.detail;
+      
+      setElements(prevElements => 
+        prevElements.map(el => 
+          el.id === id 
+            ? { ...el, cornerRadius }
+            : el
+        )
+      );
+    };
     
-    // Add event listener for the custom resize event
+    // Add event listeners for both resize and border radius changes
     window.addEventListener('element-resize', handleElementResize as EventListener);
+    window.addEventListener('element-border-radius-change', handleBorderRadiusChange as EventListener);
     
-    // Clean up the event listener when component unmounts
+    // Clean up the event listeners when component unmounts
     return () => {
       window.removeEventListener('element-resize', handleElementResize as EventListener);
+      window.removeEventListener('element-border-radius-change', handleBorderRadiusChange as EventListener);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

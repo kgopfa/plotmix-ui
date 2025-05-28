@@ -91,41 +91,32 @@ const RadiusCircle: React.FC<RadiusCircleProps> = ({
     const deltaX = (canvasX - dragStartRef.current.x) / scaleFactor;
     const deltaY = (canvasY - dragStartRef.current.y) / scaleFactor;
     
-    // Calculate new position based on corner's diagonal constraint
+    // For border radius control, move circles along the diagonal from corner to center
+    // This gives a more intuitive feel for adjusting border radius
+    const diagonalDelta = (deltaX + deltaY) / 2; // Average of both movements
+    
     let newX = dragStartRef.current.startX;
     let newY = dragStartRef.current.startY;
     
     switch (corner) {
-      case 'tl': // Top-left: diagonal down-right
-        {
-          const diagonalDelta = (deltaX + deltaY) / 2;
-          newX = dragStartRef.current.startX + diagonalDelta;
-          newY = dragStartRef.current.startY + diagonalDelta;
-        }
+      case 'tl': // Top-left: move diagonally toward center
+        newX = dragStartRef.current.startX + diagonalDelta;
+        newY = dragStartRef.current.startY + diagonalDelta;
         break;
         
-      case 'tr': // Top-right: anti-diagonal down-left
-        {
-          const antiDiagonalDelta = (deltaX - deltaY) / 2;
-          newX = dragStartRef.current.startX + antiDiagonalDelta;
-          newY = dragStartRef.current.startY - antiDiagonalDelta;
-        }
+      case 'tr': // Top-right: move diagonally toward center
+        newX = dragStartRef.current.startX - diagonalDelta;
+        newY = dragStartRef.current.startY + diagonalDelta;
         break;
         
-      case 'bl': // Bottom-left: anti-diagonal up-right
-        {
-          const antiDiagonalDelta = (deltaX - deltaY) / 2;
-          newX = dragStartRef.current.startX + antiDiagonalDelta;
-          newY = dragStartRef.current.startY - antiDiagonalDelta;
-        }
+      case 'bl': // Bottom-left: move diagonally toward center
+        newX = dragStartRef.current.startX + diagonalDelta;
+        newY = dragStartRef.current.startY - diagonalDelta;
         break;
         
-      case 'br': // Bottom-right: diagonal down-right
-        {
-          const diagonalDelta = (deltaX + deltaY) / 2;
-          newX = dragStartRef.current.startX + diagonalDelta;
-          newY = dragStartRef.current.startY + diagonalDelta;
-        }
+      case 'br': // Bottom-right: move diagonally toward center
+        newX = dragStartRef.current.startX - diagonalDelta;
+        newY = dragStartRef.current.startY - diagonalDelta;
         break;
     }
     
