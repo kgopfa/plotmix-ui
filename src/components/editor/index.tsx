@@ -154,7 +154,7 @@ export default function EditorCanvas() {
   }, [timeManager, gsapManager]);
 
   const canvasClickHandler = (e: FederatedPointerEvent) => {
-    const isEmptyClick = !(e.target && (e.target as Container).name === 'shape');
+    const isEmptyClick = !(e.target && (e.target as Container).label === 'shape');
 
     if (isEmptyClick) {
       if (tool === 'line') {
