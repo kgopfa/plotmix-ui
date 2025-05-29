@@ -278,18 +278,13 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
     const halfW = width / 2;
     const halfH = height / 2;
 
-    // Define handle hit areas (corners and edges)
+    // Define handle hit areas (corners only)
     const handles = {
       // Corner handles
       tl: { x: -halfW, y: -halfH },
       tr: { x: halfW, y: -halfH },
       bl: { x: -halfW, y: halfH },
-      br: { x: halfW, y: halfH },
-      // Edge handles
-      t: { x: 0, y: -halfH },
-      r: { x: halfW, y: 0 },
-      b: { x: 0, y: halfH },
-      l: { x: -halfW, y: 0 }
+      br: { x: halfW, y: halfH }
     };
 
     // Check if we clicked on a handle
@@ -393,18 +388,6 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
         case 'br': // bottom-right: outward = right AND down (positive X, positive Y)
           isOutward = deltaX > 0 && deltaY > 0;
           break;
-        case 't': // top edge: outward = up (negative Y)
-          isOutward = deltaY < 0;
-          break;
-        case 'b': // bottom edge: outward = down (positive Y)
-          isOutward = deltaY > 0;
-          break;
-        case 'l': // left edge: outward = left (negative X)
-          isOutward = deltaX < 0;
-          break;
-        case 'r': // right edge: outward = right (positive X)
-          isOutward = deltaX > 0;
-          break;
       }
 
       // Apply the scale change: positive for outward (bigger), negative for inward (smaller)
@@ -432,19 +415,6 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
         case 'br': // bottom-right
           newWidth = Math.max(10, startDimensionsRef.current.width + deltaX);
           newHeight = Math.max(10, startDimensionsRef.current.height + deltaY);
-          break;
-        // Edge handles - affect only one dimension
-        case 't': // top edge - only height
-          newHeight = Math.max(10, startDimensionsRef.current.height - deltaY);
-          break;
-        case 'b': // bottom edge - only height
-          newHeight = Math.max(10, startDimensionsRef.current.height + deltaY);
-          break;
-        case 'l': // left edge - only width
-          newWidth = Math.max(10, startDimensionsRef.current.width - deltaX);
-          break;
-        case 'r': // right edge - only width
-          newWidth = Math.max(10, startDimensionsRef.current.width + deltaX);
           break;
       }
     }
@@ -521,9 +491,12 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
     const startMouseX = e.client.x - rect.left;
     const startMouseY = e.client.y - rect.top;
     
+    // FIXED: Use fixed shape center coordinates instead of element.x, element.y
+    // Calculate where the shape center is in canvas coordinates
+    const shapeCenterX = element.x; // This won't change during rotation
+    const shapeCenterY = element.y; // This won't change during rotation
+    
     // Calculate initial angle from shape center to mouse
-    const shapeCenterX = element.x;
-    const shapeCenterY = element.y;
     const initialAngle = Math.atan2(startMouseY - shapeCenterY, startMouseX - shapeCenterX);
     
     // Store initial rotation
@@ -533,7 +506,7 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
       const currentMouseX = moveEvent.clientX - rect.left;
       const currentMouseY = moveEvent.clientY - rect.top;
       
-      // Calculate current angle from shape center to mouse
+      // FIXED: Use the same fixed shape center coordinates
       const currentAngle = Math.atan2(currentMouseY - shapeCenterY, currentMouseX - shapeCenterX);
       
       // Calculate rotation delta
