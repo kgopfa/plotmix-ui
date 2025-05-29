@@ -26,65 +26,57 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
     height: element.height
   });
 
-  // State for circle positions (initialize based on corner radius)
-  const [circlePositions, setCirclePositions] = useState(() => {
+  // Track the inward distance of circles from their default positions
+  const [circleInwardDistance, setCircleInwardDistance] = useState(0);
+
+  // Calculate circle positions based on current dimensions and inward distance
+  const getCirclePositions = (width: number, height: number, inwardDistance: number) => {
     const baseDistance = 12; // Default distance from corner
     const radiusOffset = element.cornerRadius || 0; // Current corner radius
-    const totalDistance = baseDistance + radiusOffset; // Move circles inward by radius amount
+    const totalDistance = baseDistance + radiusOffset + inwardDistance; // Move circles inward by radius amount + manual adjustment
 
     return {
-      tl: { x: -dimensions.width / 2 + totalDistance, y: -dimensions.height / 2 + totalDistance },
-      tr: { x: dimensions.width / 2 - totalDistance, y: -dimensions.height / 2 + totalDistance },
-      bl: { x: -dimensions.width / 2 + totalDistance, y: dimensions.height / 2 - totalDistance },
-      br: { x: dimensions.width / 2 - totalDistance, y: dimensions.height / 2 - totalDistance }
+      tl: { x: -width / 2 + totalDistance, y: -height / 2 + totalDistance },
+      tr: { x: width / 2 - totalDistance, y: -height / 2 + totalDistance },
+      bl: { x: -width / 2 + totalDistance, y: height / 2 - totalDistance },
+      br: { x: width / 2 - totalDistance, y: height / 2 - totalDistance }
     };
-  });
+  };
+
+  // State for circle positions (calculated based on dimensions and inward distance)
+  const [circlePositions, setCirclePositions] = useState(() => 
+    getCirclePositions(dimensions.width, dimensions.height, circleInwardDistance)
+  );
+
+  // Update circle positions when dimensions change (during resize)
+  useEffect(() => {
+    const newPositions = getCirclePositions(dimensions.width, dimensions.height, circleInwardDistance);
+    setCirclePositions(newPositions);
+  }, [dimensions.width, dimensions.height, circleInwardDistance, element.cornerRadius]);
 
   // Shape center (always 0,0 since element is centered)
   const shapeCenter = { x: 0, y: 0 };
 
   // Calculate initial distance from center for each corner
   const getInitialDistanceFromCenter = (corner: keyof typeof circlePositions) => {
-    // Use default positions to calculate initial distance (accounting for current corner radius)
-    const baseDistance = 12;
-    const radiusOffset = element.cornerRadius || 0;
-    const totalDistance = baseDistance + radiusOffset;
-
-    const defaultPositions = {
-      tl: { x: -dimensions.width / 2 + totalDistance, y: -dimensions.height / 2 + totalDistance },
-      tr: { x: dimensions.width / 2 - totalDistance, y: -dimensions.height / 2 + totalDistance },
-      bl: { x: -dimensions.width / 2 + totalDistance, y: dimensions.height / 2 - totalDistance },
-      br: { x: dimensions.width / 2 - totalDistance, y: dimensions.height / 2 - totalDistance }
-    };
-
-    const pos = defaultPositions[corner];
+    // Use current positions to calculate distance
+    const pos = circlePositions[corner];
     return Math.sqrt(pos.x * pos.x + pos.y * pos.y);
   };
 
   // Calculate position at specific distance from center for each corner
   const getPositionAtDistance = (corner: keyof typeof circlePositions, distance: number) => {
-    // Use default positions as the direction template (accounting for current corner radius)
-    const baseDistance = 12;
-    const radiusOffset = element.cornerRadius || 0;
-    const totalDistance = baseDistance + radiusOffset;
+    // Use current positions as the direction template
+    const currentPos = circlePositions[corner];
+    const currentDistance = getInitialDistanceFromCenter(corner);
 
-    const defaultPositions = {
-      tl: { x: -dimensions.width / 2 + totalDistance, y: -dimensions.height / 2 + totalDistance },
-      tr: { x: dimensions.width / 2 - totalDistance, y: -dimensions.height / 2 + totalDistance },
-      bl: { x: -dimensions.width / 2 + totalDistance, y: dimensions.height / 2 - totalDistance },
-      br: { x: dimensions.width / 2 - totalDistance, y: dimensions.height / 2 - totalDistance }
-    };
-
-    const initialPos = defaultPositions[corner];
-    const initialDistance = getInitialDistanceFromCenter(corner);
-
-    if (initialDistance === 0) return initialPos;
+    if (currentDistance === 0) return currentPos;
 
     // Scale the position to achieve the desired distance
-    const scale = distance / initialDistance;
+    const scale = distance / currentDistance;
     return {
-      x: initialPos.x * scale,
-      y: initialPos.y * scale
+      x: currentPos.x * scale,
+      y: currentPos.y * scale
     };
   };
 
@@ -110,8 +102,10 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
 
     setCirclePositions(newPositions);
 
+    // Update the stored inward distance for future resize calculations
+    setCircleInwardDistance(inwardDistance);
+
     // Calculate border radius based on circle positions
-    // Use the distance from corner to shape edge as the radius
     const cornerRadius = calculateBorderRadius(newPositions);
 
     // Update the element's corner radius
@@ -166,13 +160,13 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
 
     window.dispatchEvent(radiusEvent);
   };
+
   // Refs for tracking resize interaction
   const isDraggingRef = useRef(false);
   const activeHandleRef = useRef<string | null>(null);
   const startPointRef = useRef({ x: 0, y: 0 });
   const startDimensionsRef = useRef({ width: 0, height: 0 });
   const isShiftPressedRef = useRef(false);
-
 
   // UPDATED: Draw the selection outline with handles (NO CIRCLES HERE)
   const drawOutline = (g: PIXI.Graphics) => {
