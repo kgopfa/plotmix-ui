@@ -9,6 +9,7 @@ import { drawShape } from '@/utils/drawing-utils';
 import { createNewElement } from '@/lib/element-factory';
 import ShapeSelect from './shape-select';
 import HoverOutline from './hover-outline';
+import RotationHandles from './rotation-handles';
 
 extend({ Container, Graphics });
 
@@ -639,6 +640,24 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           }}
         />
       )}
+
+      {/* NEW: Add rotation handles OUTSIDE the rotating containers */}
+      {selectedId && elements.find(el => el.id === selectedId) &&
+        elements.find(el => el.id === selectedId)?.type !== 'line' &&
+        elements.find(el => el.id === selectedId)?.type !== 'path' && (
+          <RotationHandles
+            element={elements.find(el => el.id === selectedId)!}
+            onRotate={(newRotation) => {
+              const rotationEvent = new CustomEvent('element-rotation-change', {
+                detail: {
+                  id: selectedId,
+                  rotation: newRotation
+                }
+              });
+              window.dispatchEvent(rotationEvent);
+            }}
+          />
+        )}
     </Application>
   );
 });
