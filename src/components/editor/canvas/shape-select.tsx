@@ -463,79 +463,6 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
     }
   }, [element.width, element.height, element]);
 
-  const TOP_LEFT_CURSOR = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 38 38\'%3E%3Cpath d=\'m35.508 9.419-7.513-7.514v15.028z\' fill=\'black\'/%3E%3Cpath d=\'m10.005 36.095-7.513-7.514h15.027z\' fill=\'black\'/%3E%3Cpath d=\'m11.253 29.4h-2.5v-6.962a14.506 14.506 0 0 1 14.489-14.491h4.772v2.5h-4.772a12 12 0 0 0 -11.989 11.991z\' fill=\'black\'/%3E%3C/svg%3E") 8 8, auto';
-
-  const TOP_RIGHT_CURSOR = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 38 38\'%3E%3Cpath d=\'m2.492 9.419 7.513-7.514v15.028z\' fill=\'black\'/%3E%3Cpath d=\'m27.995 36.095 7.513-7.514h-15.027z\' fill=\'black\'/%3E%3Cpath d=\'m29.247 29.4h-2.5v-6.962a12 12 0 0 0 -11.99-11.991h-4.771v-2.5h4.771a14.506 14.506 0 0 1 14.49 14.491z\' fill=\'black\'/%3E%3C/svg%3E") 8 8, auto';
-
-  const BOTTOM_LEFT_CURSOR = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 38 38\'%3E%3Cpath d=\'m35.508 28.581-7.513 7.514v-15.028z\' fill=\'black\'/%3E%3Cpath d=\'m10.005 1.905-7.513 7.514h15.027z\' fill=\'black\'/%3E%3Cpath d=\'m28.014 30.053h-4.772a14.506 14.506 0 0 1 -14.489-14.49v-6.963h2.5v6.966a12 12 0 0 0 11.989 11.99h4.772z\' fill=\'black\'/%3E%3C/svg%3E") 8 8, auto';
-
-  const BOTTOM_RIGHT_CURSOR = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 38 38\'%3E%3Cpath d=\'m2.492 28.581 7.513 7.514v-15.028z\' fill=\'black\'/%3E%3Cpath d=\'m27.995 1.905 7.513 7.514h-15.027z\' fill=\'black\'/%3E%3Cpath d=\'m14.757 30.053h-4.771v-2.5h4.771a12 12 0 0 0 11.99-11.99v-6.963h2.5v6.966a14.506 14.506 0 0 1 -14.49 14.487z\' fill=\'black\'/%3E%3C/svg%3E") 8 8, auto';
-
-  // Make squares invisible again now that we're testing the real SVG cursors
-  const drawInvisibleSquare = (g: PIXI.Graphics) => {
-    g.clear();
-    const SQUARE_SIZE = 10; // 5px radius = 10px square
-    g.rect(-SQUARE_SIZE / 2, -SQUARE_SIZE / 2, SQUARE_SIZE, SQUARE_SIZE);
-    g.fill({ color: 0x000000, alpha: 0 }); // Completely transparent
-  };
-
-  const handleRotationStart = (e: PIXI.FederatedPointerEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    e.stopImmediatePropagation();
-
-    const canvasElement = document.querySelector('canvas');
-    if (!canvasElement) return;
-    
-    const rect = canvasElement.getBoundingClientRect();
-    const startMouseX = e.client.x - rect.left;
-    const startMouseY = e.client.y - rect.top;
-    
-    // FIXED: Use fixed shape center coordinates instead of element.x, element.y
-    // Calculate where the shape center is in canvas coordinates
-    const shapeCenterX = element.x; // This won't change during rotation
-    const shapeCenterY = element.y; // This won't change during rotation
-    
-    // Calculate initial angle from shape center to mouse
-    const initialAngle = Math.atan2(startMouseY - shapeCenterY, startMouseX - shapeCenterX);
-    
-    // Store initial rotation
-    const initialRotation = element.rotation || 0;
-    
-    const handleRotationMove = (moveEvent: PointerEvent) => {
-      const currentMouseX = moveEvent.clientX - rect.left;
-      const currentMouseY = moveEvent.clientY - rect.top;
-      
-      // FIXED: Use the same fixed shape center coordinates
-      const currentAngle = Math.atan2(currentMouseY - shapeCenterY, currentMouseX - shapeCenterX);
-      
-      // Calculate rotation delta
-      const deltaAngle = currentAngle - initialAngle;
-      const newRotation = initialRotation + deltaAngle;
-      
-      // Dispatch rotation event
-      const rotationEvent = new CustomEvent('element-rotation-change', {
-        detail: {
-          id: element.id,
-          rotation: newRotation
-        }
-      });
-      
-      window.dispatchEvent(rotationEvent);
-    };
-    
-    const handleRotationEnd = () => {
-      document.removeEventListener('pointermove', handleRotationMove);
-      document.removeEventListener('pointerup', handleRotationEnd);
-    };
-    
-    document.addEventListener('pointermove', handleRotationMove);
-    document.addEventListener('pointerup', handleRotationEnd);
-    
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
   return (
     <pixiContainer x={0} y={0} sortableChildren={true}>
       {/* Selection outline and resize handles */}
@@ -545,55 +472,6 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
         cursor="pointer"
         onPointerDown={handlePointerDown}
       />
-
-      {/* Invisible rotation squares - only for non-line elements */}
-      {element.type !== 'line' && element.type !== 'path' && (
-        <>
-          {/* Top-left rotation square */}
-          <pixiGraphics
-            x={-dimensions.width / 2 - 8} // 8px outside the corner
-            y={-dimensions.height / 2 - 8}
-            draw={drawInvisibleSquare}
-            interactive={true}
-            eventMode="static"
-            cursor={TOP_LEFT_CURSOR}
-            onPointerDown={handleRotationStart}
-          />
-
-          {/* Top-right rotation square */}
-          <pixiGraphics
-            x={dimensions.width / 2 + 8} // 8px outside the corner
-            y={-dimensions.height / 2 - 8}
-            draw={drawInvisibleSquare}
-            interactive={true}
-            eventMode="static"
-            cursor={TOP_RIGHT_CURSOR}
-            onPointerDown={handleRotationStart}
-          />
-
-          {/* Bottom-left rotation square */}
-          <pixiGraphics
-            x={-dimensions.width / 2 - 8} // 8px outside the corner
-            y={dimensions.height / 2 + 8}
-            draw={drawInvisibleSquare}
-            interactive={true}
-            eventMode="static"
-            cursor={BOTTOM_LEFT_CURSOR}
-            onPointerDown={handleRotationStart}
-          />
-
-          {/* Bottom-right rotation square */}
-          <pixiGraphics
-            x={dimensions.width / 2 + 8} // 8px outside the corner
-            y={dimensions.height / 2 + 8}
-            draw={drawInvisibleSquare}
-            interactive={true}
-            eventMode="static"
-            cursor={BOTTOM_RIGHT_CURSOR}
-            onPointerDown={handleRotationStart}
-          />
-        </>
-      )}
 
       {/* Synchronized moveable circles */}
       {(element.type === 'rectangle' || element.type === 'triangle') && (
