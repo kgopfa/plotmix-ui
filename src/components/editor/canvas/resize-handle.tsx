@@ -74,6 +74,7 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({
     if (!isDraggingRef.current) {
       setPosition(getRotatedCornerPosition());
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elementX, elementY, elementWidth, elementHeight, elementRotation]);
 
   // Effect to watch position changes and trigger resize
@@ -190,7 +191,7 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({
         resizeInProgressRef.current = false;
       }, 16);
     }
-    
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [position.x, position.y]);
 
   const drawHandle = (g: PIXI.Graphics) => {

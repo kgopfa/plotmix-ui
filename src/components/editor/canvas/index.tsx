@@ -11,6 +11,7 @@ import ShapeSelect from './shape-select';
 import HoverOutline from './hover-outline';
 import RotationHandles from './rotation-handles';
 import ResizeHandle from './resize-handle';
+import RadiusHandle from './radius-handle';
 
 extend({ Container, Graphics });
 
@@ -27,6 +28,7 @@ interface CanvasProps {
   onAddElement?: (element: AnimatedCanvasElement) => void;
   isPathMode?: boolean;
   onElementRotate?: (id: string, rotation: number) => void;
+  onElementRadiusChange?: (id: string, cornerRadius: number) => void;
 }
 
 export interface CanvasRef {
@@ -59,7 +61,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     tool,
     onAddElement,
     isPathMode = false,
-    onElementRotate
+    onElementRotate,
+    onElementRadiusChange
   },
   ref
 ) {
@@ -442,7 +445,29 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     }
   };
 
-  // NEW: Global event handlers for pointer capture
+  useEffect(() => {
+    const handleElementRadiusChange = (e: CustomEvent) => {
+      const { id, cornerRadius } = e.detail;
+
+      // Find the element to update
+      const elementToUpdate = elements.find(el => el.id === id);
+      if (!elementToUpdate) return;
+
+      // You'll need to add an onElementRadiusChange callback prop to Canvas
+      // and pass it from the parent component to handle the radius update
+      if (onElementRadiusChange) {
+        onElementRadiusChange(id, cornerRadius);
+      }
+    };
+
+    window.addEventListener('element-radius-change', handleElementRadiusChange as EventListener);
+
+    return () => {
+      window.removeEventListener('element-radius-change', handleElementRadiusChange as EventListener);
+    };
+  }, [elements, onElementRadiusChange]);
+
+  // Global event handlers for pointer capture
   useEffect(() => {
     const handleGlobalPointerUp = () => {
       if (resizingHandle) {
@@ -489,7 +514,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draggingId, resizingHandle, initialSize, initialMouse, dragOffset, draggingEndpoint, elements, onElementDragEnd, onLineEndpointDrag, tool]);
 
-  // Update the handleCanvasPointerMove function to set the appropriate cursor based on the tool
   useEffect(() => {
     if (tool === 'draw') {
       setCursor(DRAW_CURSOR);
@@ -500,7 +524,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     }
   }, [tool]);
 
-  // Add event listener for element-resize events
   useEffect(() => {
     const handleElementResize = (e: CustomEvent) => {
       // Extract details from the event
@@ -524,8 +547,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       window.removeEventListener('element-resize', handleElementResize as EventListener);
     };
   }, [elements, onElementResize]);
-
-  // Add this useEffect to your Canvas component, after the existing event listeners
 
   useEffect(() => {
     const handleElementRotation = (e: CustomEvent) => {
@@ -647,9 +668,26 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         elements.find(el => el.id === selectedId)?.type !== 'path' && (
           (() => {
             const selectedElement = elements.find(el => el.id === selectedId)!;
+
+            // Calculate radius handle positions (similar to ShapeSelect logic)
+            const getRadiusHandlePositions = () => {
+              const baseDistance = 12;
+              const radiusOffset = selectedElement.cornerRadius || 0;
+              const totalDistance = baseDistance + radiusOffset;
+
+              return {
+                tl: { x: selectedElement.x - selectedElement.width / 2 + totalDistance, y: selectedElement.y - selectedElement.height / 2 + totalDistance },
+                tr: { x: selectedElement.x + selectedElement.width / 2 - totalDistance, y: selectedElement.y - selectedElement.height / 2 + totalDistance },
+                bl: { x: selectedElement.x - selectedElement.width / 2 + totalDistance, y: selectedElement.y + selectedElement.height / 2 - totalDistance },
+                br: { x: selectedElement.x + selectedElement.width / 2 - totalDistance, y: selectedElement.y + selectedElement.height / 2 - totalDistance }
+              };
+            };
+
+            const radiusPositions = getRadiusHandlePositions();
+
             return (
               <>
-                {/* Top-left corner */}
+                {/* Resize Handles */}
                 <ResizeHandle
                   elementX={selectedElement.x}
                   elementY={selectedElement.y}
@@ -659,8 +697,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                   corner="tl"
                   elementId={selectedElement.id}
                 />
-
-                {/* Top-right corner */}
                 <ResizeHandle
                   elementX={selectedElement.x}
                   elementY={selectedElement.y}
@@ -670,8 +706,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                   corner="tr"
                   elementId={selectedElement.id}
                 />
-
-                {/* Bottom-left corner */}
                 <ResizeHandle
                   elementX={selectedElement.x}
                   elementY={selectedElement.y}
@@ -681,8 +715,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                   corner="bl"
                   elementId={selectedElement.id}
                 />
-
-                {/* Bottom-right corner */}
                 <ResizeHandle
                   elementX={selectedElement.x}
                   elementY={selectedElement.y}
@@ -692,6 +724,84 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                   corner="br"
                   elementId={selectedElement.id}
                 />
+
+                {/* Radius Handles (only for rectangle/triangle) */}
+                {(selectedElement.type === 'rectangle' || selectedElement.type === 'triangle') && (
+                  <>
+                    {/* Top-left radius handle */}
+                    <RadiusHandle
+                      x={radiusPositions.tl.x}
+                      y={radiusPositions.tl.y}
+                      scaleFactor={canvasScaleFactor.current}
+                      corner="tl"
+                      currentRadius={selectedElement.cornerRadius || 0}
+                      onRadiusChange={(newRadius) => {
+                        const radiusChangeEvent = new CustomEvent('element-border-radius-change', {
+                          detail: {
+                            id: selectedElement.id,
+                            cornerRadius: newRadius
+                          }
+                        });
+                        window.dispatchEvent(radiusChangeEvent);
+                      }}
+                    />
+
+                    {/* Top-right radius handle */}
+                    <RadiusHandle
+                      x={radiusPositions.tr.x}
+                      y={radiusPositions.tr.y}
+                      scaleFactor={canvasScaleFactor.current}
+                      corner="tr"
+                      currentRadius={selectedElement.cornerRadius || 0}
+                      onRadiusChange={(newRadius) => {
+                        const radiusChangeEvent = new CustomEvent('element-border-radius-change', {
+                          detail: {
+                            id: selectedElement.id,
+                            cornerRadius: newRadius
+                          }
+                        });
+                        window.dispatchEvent(radiusChangeEvent);
+                      }}
+                    />
+
+                    {/* Bottom-left radius handle */}
+                    <RadiusHandle
+                      x={radiusPositions.bl.x}
+                      y={radiusPositions.bl.y}
+                      scaleFactor={canvasScaleFactor.current}
+                      corner="bl"
+                      currentRadius={selectedElement.cornerRadius || 0}
+                      onRadiusChange={(newRadius) => {
+                        const radiusChangeEvent = new CustomEvent('element-border-radius-change', {
+                          detail: {
+                            id: selectedElement.id,
+                            cornerRadius: newRadius
+                          }
+                        });
+                        window.dispatchEvent(radiusChangeEvent);
+                      }}
+                    />
+
+                    {/* Bottom-right radius handle */}
+                    <RadiusHandle
+                      x={radiusPositions.br.x}
+                      y={radiusPositions.br.y}
+                      scaleFactor={canvasScaleFactor.current}
+                      corner="br"
+                      currentRadius={selectedElement.cornerRadius || 0}
+                      onRadiusChange={(newRadius) => {
+                        const radiusChangeEvent = new CustomEvent('element-border-radius-change', {
+                          detail: {
+                            id: selectedElement.id,
+                            cornerRadius: newRadius
+                          }
+                        });
+                        window.dispatchEvent(radiusChangeEvent);
+                      }}
+                    />
+                  </>
+                )}
+
               </>
             );
           })()
