@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { extend } from '@pixi/react';
 import { Container, Graphics } from 'pixi.js';
 import * as PIXI from 'pixi.js';
@@ -9,15 +9,11 @@ extend({ Container, Graphics });
 
 interface ShapeSelectProps {
   element: AnimatedCanvasElement;
-  onResize: (newWidth: number, newHeight: number, handle?: string) => void;
-  onResizeComplete: () => void;
   scaleFactor?: number;
 }
 
 const ShapeSelect: React.FC<ShapeSelectProps> = ({
   element,
-  onResize,
-  onResizeComplete,
   scaleFactor = 1
 }) => {
   // State for tracking resize dimensions
@@ -44,7 +40,7 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
   };
 
   // State for circle positions (calculated based on dimensions and inward distance)
-  const [circlePositions, setCirclePositions] = useState(() => 
+  const [circlePositions, setCirclePositions] = useState(() =>
     getCirclePositions(dimensions.width, dimensions.height, circleInwardDistance)
   );
 
@@ -52,6 +48,7 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
   useEffect(() => {
     const newPositions = getCirclePositions(dimensions.width, dimensions.height, circleInwardDistance);
     setCirclePositions(newPositions);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dimensions.width, dimensions.height, circleInwardDistance, element.cornerRadius]);
 
   // Shape center (always 0,0 since element is centered)
@@ -161,14 +158,15 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
     window.dispatchEvent(radiusEvent);
   };
 
-  // Refs for tracking resize interaction
-  const isDraggingRef = useRef(false);
-  const activeHandleRef = useRef<string | null>(null);
-  const startPointRef = useRef({ x: 0, y: 0 });
-  const startDimensionsRef = useRef({ width: 0, height: 0 });
-  const isShiftPressedRef = useRef(false);
+  // Calculate bounds for circles
+  const getCircleBounds = () => ({
+    minX: -dimensions.width / 2 + 7,
+    maxX: dimensions.width / 2 - 7,
+    minY: -dimensions.height / 2 + 7,
+    maxY: dimensions.height / 2 - 7
+  });
 
-  // UPDATED: Draw the selection outline with handles (NO CIRCLES HERE)
+  // SIMPLIFIED: Draw only the selection outline - NO handles here
   const drawOutline = (g: PIXI.Graphics) => {
     g.clear();
 
@@ -198,12 +196,12 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
       // Draw endpoint markers
       const ENDPOINT_SIZE = 10;
 
-      // Start point (green)
+      // Start point
       g.circle(startX, startY, ENDPOINT_SIZE / 2);
       g.fill({ color: 0x74b9ff, alpha: 0.8 });
       g.stroke({ color: 0x74b9ff, width: 1 });
 
-      // End point (red)
+      // End point
       g.circle(endX, endY, ENDPOINT_SIZE / 2);
       g.fill({ color: 0x74b9ff, alpha: 0.8 });
       g.stroke({ color: 0x74b9ff, width: 1 });
@@ -211,7 +209,7 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
       return; // Exit early for line elements
     }
 
-    // Draw rectangular outline for non-line elements
+    // Draw rectangular outline for non-line elements - NO HANDLES
     g.roundRect(
       -dimensions.width / 2,
       -dimensions.height / 2,
@@ -225,220 +223,9 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
       color: 0x74b9ff,
       alpha: 0.85,
     });
-
-    // Draw resize handles for non-line elements
-    const HANDLE_SIZE = 7;
-    const halfHandleSize = HANDLE_SIZE / 2;
-
-    // Draw the four corner handles
-    const corners = [
-      { x: -dimensions.width / 2, y: -dimensions.height / 2, handle: 'tl' }, // top-left
-      { x: dimensions.width / 2, y: -dimensions.height / 2, handle: 'tr' },  // top-right
-      { x: -dimensions.width / 2, y: dimensions.height / 2, handle: 'bl' },  // bottom-left
-      { x: dimensions.width / 2, y: dimensions.height / 2, handle: 'br' }    // bottom-right
-    ];
-
-    // Draw corner handles
-    corners.forEach(corner => {
-      g.rect(
-        corner.x - halfHandleSize,
-        corner.y - halfHandleSize,
-        HANDLE_SIZE,
-        HANDLE_SIZE
-      );
-      g.fill({ color: 0xFFFFFF, alpha: 1 });
-      g.stroke({ width: 1, color: 0x74b9ff, alpha: 0.8 });
-    });
-
-    // REMOVED: No longer drawing circles here - they're separate components now
   };
 
-  // NEW: Calculate bounds for circles
-  const getCircleBounds = () => ({
-    minX: -dimensions.width / 2 + 7,
-    maxX: dimensions.width / 2 - 7,
-    minY: -dimensions.height / 2 + 7,
-    maxY: dimensions.height / 2 - 7
-  });
-
-  // Handle pointer down on resize handle (UNCHANGED - only handles resize handles now)
-  const handlePointerDown = (e: PIXI.FederatedPointerEvent) => {
-    // Get local position relative to the component's parent
-    const localPos = e.getLocalPosition(e.currentTarget.parent);
-    const { width, height } = dimensions;
-    const HANDLE_SIZE = 8;
-
-    // Check if we're clicking on a handle
-    const halfW = width / 2;
-    const halfH = height / 2;
-
-    // Define handle hit areas (corners only)
-    const handles = {
-      // Corner handles
-      tl: { x: -halfW, y: -halfH },
-      tr: { x: halfW, y: -halfH },
-      bl: { x: -halfW, y: halfH },
-      br: { x: halfW, y: halfH }
-    };
-
-    // Check if we clicked on a handle
-    for (const [handle, pos] of Object.entries(handles)) {
-      if (
-        localPos.x >= pos.x - HANDLE_SIZE &&
-        localPos.x <= pos.x + HANDLE_SIZE &&
-        localPos.y >= pos.y - HANDLE_SIZE &&
-        localPos.y <= pos.y + HANDLE_SIZE
-      ) {
-        isDraggingRef.current = true;
-        activeHandleRef.current = handle;
-
-        // Get the canvas element to calculate proper coordinates
-        const canvasElement = document.querySelector('canvas');
-        if (!canvasElement) return;
-
-        const rect = canvasElement.getBoundingClientRect();
-        const canvasX = e.client.x - rect.left;
-        const canvasY = e.client.y - rect.top;
-
-        // Store canvas-relative coordinates for consistent tracking
-        startPointRef.current = {
-          x: canvasX,
-          y: canvasY
-        };
-
-        // Store initial dimensions for reference during resize
-        startDimensionsRef.current = { width, height };
-
-        // Add global listeners
-        window.addEventListener('pointermove', handlePointerMove);
-        window.addEventListener('pointerup', handlePointerUp);
-        window.addEventListener('keydown', handleKeyDown);
-        window.addEventListener('keyup', handleKeyUp);
-
-        // Prevent default to avoid text selection during drag
-        e.preventDefault();
-        e.stopPropagation();
-        break;
-      }
-    }
-  };
-
-  // Handle key down for shift key detection (UNCHANGED)
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'Shift') {
-      isShiftPressedRef.current = true;
-    }
-  };
-
-  // Handle key up for shift key detection (UNCHANGED)
-  const handleKeyUp = (e: KeyboardEvent) => {
-    if (e.key === 'Shift') {
-      isShiftPressedRef.current = false;
-    }
-  };
-
-  // Handle pointer move during resize (UNCHANGED)
-  const handlePointerMove = (e: PointerEvent) => {
-    if (!isDraggingRef.current || !activeHandleRef.current) return;
-
-    const handle = activeHandleRef.current;
-
-    // Get the canvas element to calculate proper coordinates
-    const canvasElement = document.querySelector('canvas');
-    if (!canvasElement) return;
-
-    const rect = canvasElement.getBoundingClientRect();
-    const canvasX = e.clientX - rect.left;
-    const canvasY = e.clientY - rect.top;
-
-    // Calculate the mouse movement delta from the starting point using canvas coordinates
-    // Apply scaling factor to convert screen coordinates to canvas coordinates
-    const deltaX = (canvasX - startPointRef.current.x) / scaleFactor;
-    const deltaY = (canvasY - startPointRef.current.y) / scaleFactor;
-
-    let newWidth = startDimensionsRef.current.width;
-    let newHeight = startDimensionsRef.current.height;
-
-    // If shift is pressed, use proportional scaling for any handle
-    if (isShiftPressedRef.current) {
-      // Use the larger absolute delta for consistent scaling
-      const absDeltaX = Math.abs(deltaX);
-      const absDeltaY = Math.abs(deltaY);
-      const scaleMagnitude = Math.max(absDeltaX, absDeltaY);
-
-      // Determine if movement is outward or inward based on handle
-      let isOutward = false;
-
-      switch (handle) {
-        case 'tl': // top-left: outward = left AND up (negative X, negative Y)
-          isOutward = deltaX < 0 && deltaY < 0;
-          break;
-        case 'tr': // top-right: outward = right AND up (positive X, negative Y)
-          isOutward = deltaX > 0 && deltaY < 0;
-          break;
-        case 'bl': // bottom-left: outward = left AND down (negative X, positive Y)
-          isOutward = deltaX < 0 && deltaY > 0;
-          break;
-        case 'br': // bottom-right: outward = right AND down (positive X, positive Y)
-          isOutward = deltaX > 0 && deltaY > 0;
-          break;
-      }
-
-      // Apply the scale change: positive for outward (bigger), negative for inward (smaller)
-      const scaleChange = isOutward ? scaleMagnitude : -scaleMagnitude;
-
-      // Calculate new dimensions by applying the same scale change to both dimensions
-      newWidth = Math.max(10, startDimensionsRef.current.width + scaleChange);
-      newHeight = Math.max(10, startDimensionsRef.current.height + scaleChange);
-    } else {
-      // Normal resize behavior - only affect the relevant dimensions
-      switch (handle) {
-        // Corner handles - affect both dimensions
-        case 'tl': // top-left
-          newWidth = Math.max(10, startDimensionsRef.current.width - deltaX);
-          newHeight = Math.max(10, startDimensionsRef.current.height - deltaY);
-          break;
-        case 'tr': // top-right
-          newWidth = Math.max(10, startDimensionsRef.current.width + deltaX);
-          newHeight = Math.max(10, startDimensionsRef.current.height - deltaY);
-          break;
-        case 'bl': // bottom-left
-          newWidth = Math.max(10, startDimensionsRef.current.width - deltaX);
-          newHeight = Math.max(10, startDimensionsRef.current.height + deltaY);
-          break;
-        case 'br': // bottom-right
-          newWidth = Math.max(10, startDimensionsRef.current.width + deltaX);
-          newHeight = Math.max(10, startDimensionsRef.current.height + deltaY);
-          break;
-      }
-    }
-
-    // Update dimensions state
-    setDimensions({ width: newWidth, height: newHeight });
-
-    // Call the parent's onResize callback
-    onResize(newWidth, newHeight, handle);
-  };
-
-  // Handle pointer up to complete resize (UNCHANGED)
-  const handlePointerUp = () => {
-    if (isDraggingRef.current) {
-      isDraggingRef.current = false;
-      activeHandleRef.current = null;
-      isShiftPressedRef.current = false;
-
-      // Remove global listeners
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerUp);
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-
-      // Notify parent that resize is complete
-      onResizeComplete();
-    }
-  };
-
-  // Update local dimensions when element props change (UNCHANGED)
+  // Update local dimensions when element props change
   useEffect(() => {
     setDimensions({
       width: element.width,
@@ -459,15 +246,13 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
 
   return (
     <pixiContainer x={0} y={0} sortableChildren={true}>
-      {/* Selection outline and resize handles */}
+      {/* VISUAL ONLY: Selection outline - NO event handling */}
       <pixiGraphics
         draw={drawOutline}
-        eventMode="static"
-        cursor="pointer"
-        onPointerDown={handlePointerDown}
+        eventMode="passive"
       />
 
-      {/* Synchronized moveable circles */}
+      {/* Synchronized moveable circles for border radius */}
       {(element.type === 'rectangle' || element.type === 'triangle') && (
         <>
           <RadiusCircle

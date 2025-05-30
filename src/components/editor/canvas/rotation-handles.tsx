@@ -34,7 +34,7 @@ const RotationHandles: React.FC<RotationHandlesProps> = ({
   };
 
   // Calculate positions for all four corners (outside the shape)
-  const handleOffset = 8; // Distance outside the shape
+  const handleOffset = 14; // Distance outside the shape
   const corners = {
     topLeft: getCornerPosition(-width / 2 - handleOffset, -height / 2 - handleOffset),
     topRight: getCornerPosition(width / 2 + handleOffset, -height / 2 - handleOffset),

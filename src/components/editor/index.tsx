@@ -514,13 +514,12 @@ export default function EditorCanvas() {
               break;
           }
           
-          // Update the element with new dimensions and position
           const updatedElement = {
             ...el,
             width,
             height,
-            x,
-            y
+            x: e.detail.x !== undefined ? e.detail.x : x,
+            y: e.detail.y !== undefined ? e.detail.y : y
           };
           
           // For circles, update radius to match the height (as used in drawing)

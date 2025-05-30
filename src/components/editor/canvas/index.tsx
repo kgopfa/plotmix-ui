@@ -10,6 +10,7 @@ import { createNewElement } from '@/lib/element-factory';
 import ShapeSelect from './shape-select';
 import HoverOutline from './hover-outline';
 import RotationHandles from './rotation-handles';
+import ResizeHandle from './resize-handle';
 
 extend({ Container, Graphics });
 
@@ -96,6 +97,26 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       document.body.style.cursor = '';
     };
   }, []);
+
+  // Add this useEffect in your Canvas component
+  useEffect(() => {
+    const handleCornerSquareResize = (e: CustomEvent) => {
+      const { elementId, width, height } = e.detail;
+
+      console.log(`Corner square triggered resize for ${elementId}:`, { width, height });
+
+      // Use your existing resize callback
+      if (onElementResize) {
+        onElementResize(elementId, width, height);
+      }
+    };
+
+    window.addEventListener('corner-square-resize', handleCornerSquareResize as EventListener);
+
+    return () => {
+      window.removeEventListener('corner-square-resize', handleCornerSquareResize as EventListener);
+    };
+  }, [onElementResize]);
 
   // Check if a point is within a resize handle
   const getResizeHandleAtPoint = (element: AnimatedCanvasElement, x: number, y: number): ResizeHandle => {
@@ -267,7 +288,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     }
   };
 
-  // NEW: Global pointer move handler for dragging operations
+  // Global pointer move handler for dragging operations
   const handleGlobalPointerMove = (e: PointerEvent) => {
     if (!draggingId) return;
 
@@ -345,8 +366,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       onElementDragEnd(draggingId, canvasX - dragOffset.x, canvasY - dragOffset.y);
     }
   };
-
-  // REMOVED: Individual element handleDragMove function - no longer needed
 
   const handleCanvasPointerDown = (e: FederatedPointerEvent) => {
     if (tool === 'draw') {
@@ -595,29 +614,10 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
               <HoverOutline element={el} />
             )}
 
-            {/* Show selection outline with corner handles when selected */}
             {el.id === selectedId && (
               <ShapeSelect
                 element={el}
                 scaleFactor={canvasScaleFactor.current}
-                onResize={(newWidth, newHeight, handle) => {
-                  // Trigger resize event
-                  const resizeEvent = new CustomEvent('element-resize', {
-                    detail: {
-                      id: el.id,
-                      width: newWidth,
-                      height: newHeight,
-                      handle: handle,
-                      originalX: el.x,
-                      originalY: el.y
-                    }
-                  });
-
-                  window.dispatchEvent(resizeEvent);
-                }}
-                onResizeComplete={() => {
-                  // Handle resize complete (optional)
-                }}
               />
             )}
           </pixiContainer>
@@ -641,7 +641,63 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         />
       )}
 
-      {/* NEW: Add rotation handles OUTSIDE the rotating containers */}
+      {/* Draggable corner squares - completely independent of shapes */}
+      {selectedId && elements.find(el => el.id === selectedId) &&
+        elements.find(el => el.id === selectedId)?.type !== 'line' &&
+        elements.find(el => el.id === selectedId)?.type !== 'path' && (
+          (() => {
+            const selectedElement = elements.find(el => el.id === selectedId)!;
+            return (
+              <>
+                {/* Top-left corner */}
+                <ResizeHandle
+                  elementX={selectedElement.x}
+                  elementY={selectedElement.y}
+                  elementWidth={selectedElement.width}
+                  elementHeight={selectedElement.height}
+                  elementRotation={selectedElement.rotation || 0}
+                  corner="tl"
+                  elementId={selectedElement.id}
+                />
+
+                {/* Top-right corner */}
+                <ResizeHandle
+                  elementX={selectedElement.x}
+                  elementY={selectedElement.y}
+                  elementWidth={selectedElement.width}
+                  elementHeight={selectedElement.height}
+                  elementRotation={selectedElement.rotation || 0}
+                  corner="tr"
+                  elementId={selectedElement.id}
+                />
+
+                {/* Bottom-left corner */}
+                <ResizeHandle
+                  elementX={selectedElement.x}
+                  elementY={selectedElement.y}
+                  elementWidth={selectedElement.width}
+                  elementHeight={selectedElement.height}
+                  elementRotation={selectedElement.rotation || 0}
+                  corner="bl"
+                  elementId={selectedElement.id}
+                />
+
+                {/* Bottom-right corner */}
+                <ResizeHandle
+                  elementX={selectedElement.x}
+                  elementY={selectedElement.y}
+                  elementWidth={selectedElement.width}
+                  elementHeight={selectedElement.height}
+                  elementRotation={selectedElement.rotation || 0}
+                  corner="br"
+                  elementId={selectedElement.id}
+                />
+              </>
+            );
+          })()
+        )}
+
+      {/* Rotation handles OUTSIDE the rotating containers */}
       {selectedId && elements.find(el => el.id === selectedId) &&
         elements.find(el => el.id === selectedId)?.type !== 'line' &&
         elements.find(el => el.id === selectedId)?.type !== 'path' && (
