@@ -674,12 +674,37 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
               const baseDistance = 12;
               const radiusOffset = selectedElement.cornerRadius || 0;
               const totalDistance = baseDistance + radiusOffset;
-
+              const rotation = selectedElement.rotation || 0;
+            
+              // Calculate local positions relative to shape center
+              const localPositions = {
+                tl: { x: -selectedElement.width / 2 + totalDistance, y: -selectedElement.height / 2 + totalDistance },
+                tr: { x: selectedElement.width / 2 - totalDistance, y: -selectedElement.height / 2 + totalDistance },
+                bl: { x: -selectedElement.width / 2 + totalDistance, y: selectedElement.height / 2 - totalDistance },
+                br: { x: selectedElement.width / 2 - totalDistance, y: selectedElement.height / 2 - totalDistance }
+              };
+            
+              // Apply rotation transformation
+              const cos = Math.cos(rotation);
+              const sin = Math.sin(rotation);
+            
               return {
-                tl: { x: selectedElement.x - selectedElement.width / 2 + totalDistance, y: selectedElement.y - selectedElement.height / 2 + totalDistance },
-                tr: { x: selectedElement.x + selectedElement.width / 2 - totalDistance, y: selectedElement.y - selectedElement.height / 2 + totalDistance },
-                bl: { x: selectedElement.x - selectedElement.width / 2 + totalDistance, y: selectedElement.y + selectedElement.height / 2 - totalDistance },
-                br: { x: selectedElement.x + selectedElement.width / 2 - totalDistance, y: selectedElement.y + selectedElement.height / 2 - totalDistance }
+                tl: {
+                  x: selectedElement.x + localPositions.tl.x * cos - localPositions.tl.y * sin,
+                  y: selectedElement.y + localPositions.tl.x * sin + localPositions.tl.y * cos
+                },
+                tr: {
+                  x: selectedElement.x + localPositions.tr.x * cos - localPositions.tr.y * sin,
+                  y: selectedElement.y + localPositions.tr.x * sin + localPositions.tr.y * cos
+                },
+                bl: {
+                  x: selectedElement.x + localPositions.bl.x * cos - localPositions.bl.y * sin,
+                  y: selectedElement.y + localPositions.bl.x * sin + localPositions.bl.y * cos
+                },
+                br: {
+                  x: selectedElement.x + localPositions.br.x * cos - localPositions.br.y * sin,
+                  y: selectedElement.y + localPositions.br.x * sin + localPositions.br.y * cos
+                }
               };
             };
 
@@ -779,7 +804,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                           }
                         });
                         window.dispatchEvent(radiusChangeEvent);
-                      }}
+                      }}  
                     />
 
                     {/* Bottom-right radius handle */}
