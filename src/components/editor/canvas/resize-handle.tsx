@@ -269,24 +269,47 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({
 
   // Get cursor style based on corner position and rotation
   const getCursor = () => {
-    // Base cursor for the corner type
-    let baseCursor;
+    // Calculate the effective resize direction after rotation
+    // We need to determine which diagonal direction this handle represents in world coordinates
+    
+    // Get the local corner direction (relative to shape center)
+    let localX, localY;
     switch (corner) {
-      case 'tl':
-      case 'br':
-        baseCursor = 'nwse-resize';
+      case 'tl': // top-left
+        localX = -1;
+        localY = -1;
         break;
-      case 'tr':
-      case 'bl':
-        baseCursor = 'nesw-resize';
+      case 'tr': // top-right
+        localX = 1;
+        localY = -1;
         break;
-      default:
-        baseCursor = 'default';
+      case 'bl': // bottom-left
+        localX = -1;
+        localY = 1;
+        break;
+      case 'br': // bottom-right
+        localX = 1;
+        localY = 1;
+        break;
     }
     
-    // TODO: For rotated shapes, we might want to adjust the cursor based on rotation
-    // For now, keep the base cursor
-    return baseCursor;
+    // Apply rotation to get the world direction
+    const cos = Math.cos(elementRotation);
+    const sin = Math.sin(elementRotation);
+    
+    const worldX = localX * cos - localY * sin;
+    const worldY = localX * sin + localY * cos;
+    
+    // Determine which diagonal based on the world direction
+    // We use the signs of worldX and worldY to determine the cursor
+    
+    if ((worldX > 0 && worldY > 0) || (worldX < 0 && worldY < 0)) {
+      // Top-left to bottom-right diagonal
+      return 'nwse-resize';
+    } else {
+      // Top-right to bottom-left diagonal  
+      return 'nesw-resize';
+    }
   };
 
   return (
