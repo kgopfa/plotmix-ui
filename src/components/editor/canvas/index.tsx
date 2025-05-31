@@ -696,7 +696,9 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
             {el.type === 'text' && editingTextId !== el.id && (
                 <pixiText
                   text={el.text || 'Text'}
-                  anchor={0.5}
+                  anchor={{ x: 0, y: 0 }}
+                  x={-el.width / 2 + 8}
+                  y={-el.height / 2 + 8}
                   alpha={el.opacity ?? 1}
                   style={{
                     fontFamily: el.fontFamily || 'Arial, sans-serif',
@@ -707,7 +709,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                     align: (el.textAlign as 'left' | 'center' | 'right') || 'left',
                     lineHeight: el.lineHeight || 1.2,
                     wordWrap: true,
-                    wordWrapWidth: el.width,
+                    wordWrapWidth: el.width - 16,
                   }}
                 />
               )}
