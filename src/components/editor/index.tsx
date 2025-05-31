@@ -86,6 +86,14 @@ export default function EditorCanvas() {
     ));
   };
 
+  const handleTextChange = (id: string, text: string) => {
+    setElements(prev => prev.map(el => 
+      el.id === id 
+        ? { ...el, text } 
+        : el
+    ));
+  };
+
   useEffect(() => {
     if (isResizing) {
       document.addEventListener('mousemove', handleMouseMove);
@@ -189,6 +197,19 @@ export default function EditorCanvas() {
         }
       } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle') {
         const newElement = createNewElement(tool, e.global.x, e.global.y, elements, undefined, isPathMode);
+        setElements(prev => [...prev, newElement]);
+        selectionManager.select(newElement);
+        setTool('select');
+        setMaskPos(null);
+        
+        // If in path mode, exit after creating the path
+        if (isPathMode) {
+          addPathToAnimation(newElement);
+          setIsPathMode(false);
+          setAnimationTarget(null);
+        }
+      } else if (tool === 'text') {
+        const newElement = createNewElement('text', e.global.x, e.global.y, elements, undefined, isPathMode);
         setElements(prev => [...prev, newElement]);
         selectionManager.select(newElement);
         setTool('select');
@@ -878,6 +899,7 @@ export default function EditorCanvas() {
               onAddElement={handleAddElement}
               isPathMode={isPathMode}
               onElementRotate={handleElementRotate}
+              onTextChange={handleTextChange}
             />
           )}
         </main>

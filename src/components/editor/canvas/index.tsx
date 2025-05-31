@@ -1,7 +1,7 @@
 'use client';
 
 import { Application, extend } from '@pixi/react';
-import { Container, Graphics, Rectangle } from 'pixi.js';
+import { Container, Graphics, Rectangle, Text } from 'pixi.js';
 import type { FederatedPointerEvent } from 'pixi.js';
 import type { AnimatedCanvasElement } from '@/types/canvas';
 import { useImperativeHandle, forwardRef, useState, useRef, useEffect } from 'react';
@@ -12,8 +12,9 @@ import HoverOutline from './hover-outline';
 import RotationHandles from './rotation-handles';
 import ResizeHandle from './resize-handle';
 import RadiusHandle from './radius-handle';
+import { TextEditor } from './text-editor';
 
-extend({ Container, Graphics });
+extend({ Container, Graphics, Text });
 
 interface CanvasProps {
   dimensions: { width: number; height: number };
@@ -29,6 +30,7 @@ interface CanvasProps {
   isPathMode?: boolean;
   onElementRotate?: (id: string, rotation: number) => void;
   onElementRadiusChange?: (id: string, cornerRadius: number) => void;
+  onTextChange?: (id: string, text: string) => void;
 }
 
 export interface CanvasRef {
@@ -43,6 +45,8 @@ const DEFAULT_CURSOR = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org
 const LINE_CURSOR = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23000\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpath d=\'M12 19l7-7 3 3-7 7-3-3z\'/%3E%3Cpath d=\'M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z\'/%3E%3Cpath d=\'M2 2l7.586 7.586\'/%3E%3Ccircle cx=\'11\' cy=\'11\' r=\'2\'/%3E%3C/svg%3E") 3 3, auto';
 
 const DRAW_CURSOR = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'20\' height=\'20\' viewBox=\'0 0 512 512\'%3E%3Cpath d=\'M498.125,92.38l-78.505-78.506c-18.496-18.497-48.436-18.5-66.935,0C339.518,27.043,50.046,316.516,44.525,322.035c-2.182,2.182-3.725,4.918-4.46,7.915L0.502,491.068c-3.036,12.368,8.186,23.44,20.431,20.432c8.361-2.053,153.718-37.747,161.117-39.564c2.996-0.735,5.734-2.278,7.915-4.46c5.816-5.816,293.677-293.677,308.161-308.161C516.622,140.818,516.627,110.879,498.125,92.38zM39.957,472.043l1.612-6.562l4.951,4.951L39.957,472.043zM84.874,461.014l-33.887-33.887l14.736-60.009l79.16,79.16L84.874,461.014zM178.022,431.647l-97.668-97.668L332.559,81.773l97.668,97.668L178.022,431.647zM474.24,135.429l-19.508,19.507l-97.667-97.668l19.507-19.507c5.294-5.293,13.867-5.298,19.163,0l78.506,78.507C479.536,121.563,479.536,130.132,474.24,135.429z\' fill=\'black\'/%3E%3C/svg%3E") 0 20, auto';
+
+const TEXT_CURSOR = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'20\' height=\'20\' viewBox=\'0 0 24 24\'%3E%3Cpath d=\'M12 20c-4.418 0-8-3.582-8-8s3.582-8 8-8 8 3.582 8 8-3.582 8-8 8zm0-14c-3.314 0-6 2.686-6 6s2.686 6 6 6 6-2.686 6-6-2.686-6-6-6z\' fill=\'black\'/%3E%3C/svg%3E") 0 20, auto';
 
 const setCursor = (cursor: string) => {
   document.body.style.cursor = cursor;
@@ -62,13 +66,16 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     onAddElement,
     isPathMode = false,
     onElementRotate,
-    onElementRadiusChange
+    onElementRadiusChange,
+    onTextChange,
   },
   ref
 ) {
   const shapeRefs = useRef<Record<string, Container>>({});
   const HANDLE_SIZE = 10;
   const drawingRef = useRef<Graphics | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const textClickTimeRef = useRef<Map<string, number>>(new Map());
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentPath, setCurrentPath] = useState<Array<{ x: number; y: number }>>([]);
 
@@ -89,11 +96,21 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   const [resizingHandle, setResizingHandle] = useState<ResizeHandle>(null);
   const [initialSize, setInitialSize] = useState<{ width: number; height: number } | null>(null);
   const [initialMouse, setInitialMouse] = useState<{ x: number; y: number } | null>(null);
+  const [editingTextId, setEditingTextId] = useState<string | null>(null);
 
   // After importing useEffect, also add:
   useEffect(() => {
     // Set default cursor when component mounts
     setCursor(DEFAULT_CURSOR);
+
+    // Find the canvas element after mount
+    const canvas = document.querySelector('canvas');
+    if (canvas) {
+      canvasRef.current = canvas;
+      console.log('Canvas element found and set to canvasRef');
+    } else {
+      console.log('Canvas element not found');
+    }
 
     // Reset to default cursor when component unmounts
     return () => {
@@ -105,8 +122,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   useEffect(() => {
     const handleCornerSquareResize = (e: CustomEvent) => {
       const { elementId, width, height } = e.detail;
-
-      console.log(`Corner square triggered resize for ${elementId}:`, { width, height });
 
       // Use your existing resize callback
       if (onElementResize) {
@@ -196,6 +211,29 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
     if (!element) return;
 
+    // For text elements, handle double-click to edit, single click to drag
+    if (element.type === 'text') {
+      // Check if this is a double-click
+      const currentTime = Date.now();
+      const lastClickTime = textClickTimeRef.current.get(id) || 0;
+      const timeDiff = currentTime - lastClickTime;
+      
+      console.log('Text click detected:', { id, currentTime, lastClickTime, timeDiff });
+      
+      if (timeDiff < 300) { // Double-click detected (within 300ms)
+        console.log('Double-click detected, entering edit mode for:', id);
+        setEditingTextId(id);
+        onElementSelect(id);
+        textClickTimeRef.current.delete(id); // Clear the click time
+        return;
+      } else {
+        // Single click - store the time and continue with dragging logic
+        console.log('Single click detected, storing time for:', id);
+        textClickTimeRef.current.set(id, currentTime);
+        // Don't return here, let it fall through to normal drag handling
+      }
+    }
+
     // First, check if we're clicking on a resize handle (only for selected elements)
     if (id === selectedId && element.type !== 'line' && element.type !== 'path') {
       const handle = getResizeHandleAtPoint(element, pos.x, pos.y);
@@ -257,6 +295,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         setCursor(DRAW_CURSOR);
       } else if (tool === 'line') {
         setCursor(LINE_CURSOR);
+      } else if (tool === 'text') {
+        setCursor(TEXT_CURSOR);
       } else {
         setCursor(DEFAULT_CURSOR);
       }
@@ -439,11 +479,28 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         setCursor(DRAW_CURSOR);
       } else if (tool === 'line') {
         setCursor(LINE_CURSOR);
+      } else if (tool === 'text') {
+        setCursor(TEXT_CURSOR);
       } else {
         setCursor(DEFAULT_CURSOR);
       }
     }
   };
+
+  const handleTextChange = (id: string, text: string) => {
+    if (onTextChange) {
+      onTextChange(id, text);
+    }
+  };
+
+  const handleTextEditEnd = () => {
+    setEditingTextId(null);
+  };
+
+  // Debug effect to track editingTextId changes
+  useEffect(() => {
+    console.log('editingTextId changed to:', editingTextId);
+  }, [editingTextId]);
 
   useEffect(() => {
     const handleElementRadiusChange = (e: CustomEvent) => {
@@ -481,6 +538,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           setCursor(DRAW_CURSOR);
         } else if (tool === 'line') {
           setCursor(LINE_CURSOR);
+        } else if (tool === 'text') {
+          setCursor(TEXT_CURSOR);
         } else {
           setCursor(DEFAULT_CURSOR);
         }
@@ -497,6 +556,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           setCursor(DRAW_CURSOR);
         } else if (tool === 'line') {
           setCursor(LINE_CURSOR);
+        } else if (tool === 'text') {
+          setCursor(TEXT_CURSOR);
         } else {
           setCursor(DEFAULT_CURSOR);
         }
@@ -573,6 +634,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   }, [elements, onElementRotate]);
 
   return (
+    <>
     <Application
       width={dimensions.width}
       height={dimensions.height}
@@ -629,6 +691,26 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
             }}
           >
             <pixiGraphics draw={(g) => drawShape(g, el)} />
+
+            {/* Render text separately for text elements */}
+            {el.type === 'text' && editingTextId !== el.id && (
+                <pixiText
+                  text={el.text || 'Text'}
+                  anchor={0.5}
+                  alpha={el.opacity ?? 1}
+                  style={{
+                    fontFamily: el.fontFamily || 'Arial, sans-serif',
+                    fontSize: el.fontSize || 16,
+                    fontWeight: (el.fontWeight as 'normal' | 'bold' | 'bolder' | 'lighter' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900') || 'normal',
+                    fontStyle: (el.fontStyle as 'normal' | 'italic' | 'oblique') || 'normal',
+                    fill: el.fill || '#000000',
+                    align: (el.textAlign as 'left' | 'center' | 'right') || 'left',
+                    lineHeight: el.lineHeight || 1.2,
+                    wordWrap: true,
+                    wordWrapWidth: el.width,
+                  }}
+                />
+              )}
 
             {/* Show hover outline when hovered but not selected */}
             {hoveredId === el.id && selectedId !== el.id && (
@@ -850,5 +932,15 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           />
         )}
     </Application>
+    {/* Text Editor Overlay */}
+    {editingTextId && (
+      <TextEditor
+        element={elements.find(el => el.id === editingTextId)!}
+        onTextChange={handleTextChange}
+        onTextEnd={handleTextEditEnd}
+        canvasElement={canvasRef.current}
+      />
+    )}
+    </>
   );
 });

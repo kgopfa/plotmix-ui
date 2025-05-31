@@ -80,6 +80,13 @@ export function Toolbar({
         <span className="text-xl">✏️</span>
       </button>
       <button
+        className={`flex flex-col items-center justify-center p-2 ${currentTool === 'text' ? (isPathMode ? 'bg-blue-100' : 'bg-gray-100') : 'hover:bg-gray-100'}`}
+        onClick={() => onToolChange('text')}
+        title="Text"
+      >
+        <span className="text-xl">T</span>
+      </button>
+      <button
         className={`flex flex-col items-center justify-center p-2 ${currentTool === 'svg' ? 'bg-gray-100' : 'hover:bg-gray-100'}`}
         onClick={handleSvgClick}
         title="Import SVG"
@@ -131,4 +138,4 @@ export function Toolbar({
   }
   
   return renderVerticalToolbar();
-} 
+}

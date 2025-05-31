@@ -1,4 +1,4 @@
-import { Graphics, Texture } from 'pixi.js';
+import { Graphics, Texture, Text, TextStyle, TextStyleFontWeight, TextStyleFontStyle } from 'pixi.js';
 import { AnimationPath } from '@/utils/animation-path';
 import type { AnimatedCanvasElement } from '@/types/canvas';
 
@@ -470,7 +470,11 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasElement) {
     } else {
       drawShapePath(graphics, shape);
       graphics.fill({ color: shape.fill, alpha: shape.opacity });
-      graphics.stroke({ color: shape.stroke, width: shape.strokeWidth, alpha: shape.opacity });
+      graphics.stroke({ 
+        color: parseColor(shape.stroke || shape.fill), 
+        width: shape.strokeWidth || 1, 
+        alpha: shape.opacity ?? 1 
+      });
     }
   }
 }
@@ -509,4 +513,29 @@ export function updateLineFromLengthAndNorthAngle(
 ): { x: number, y: number } {
   const mathAngle = ((450 - northAngleDegrees) % 360) * Math.PI / 180;
   return updateLineEndPoint(startPoint, length, mathAngle);
+}
+
+export function createTextObject(shape: AnimatedCanvasElement): Text {
+  const style = new TextStyle({
+    fontFamily: shape.fontFamily || 'Arial, sans-serif',
+    fontSize: shape.fontSize || 16,
+    fontWeight: (shape.fontWeight as TextStyleFontWeight) || 'normal',
+    fontStyle: (shape.fontStyle as TextStyleFontStyle) || 'normal', 
+    fill: shape.fill || '#000000',
+    align: (shape.textAlign as 'left' | 'center' | 'right') || 'left',
+    lineHeight: shape.lineHeight || 1.2,
+    wordWrap: true,
+    wordWrapWidth: shape.width,
+  });
+
+  const text = new Text({
+    text: shape.text || 'Text',
+    style: style
+  });
+
+  // Center the text
+  text.anchor.set(0.5, 0.5);
+  text.alpha = shape.opacity ?? 1;
+
+  return text;
 }

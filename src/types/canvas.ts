@@ -2,7 +2,7 @@ import { Container } from "pixi.js";
 
 export interface CanvasElement {
   id: string;
-  type: 'rectangle' | 'circle' | 'triangle';
+  type: 'rectangle' | 'circle' | 'triangle' | 'text';
   x: number;
   y: number;
   width: number;
@@ -19,6 +19,14 @@ export interface CanvasElement {
   shadowOffsetY?: number;
   shadowOpacity?: number;
   shadowEnabled?: boolean;
+  // Text-specific properties
+  text?: string;
+  fontSize?: number;
+  fontFamily?: string;
+  fontWeight?: string;
+  fontStyle?: string;
+  textAlign?: string;
+  lineHeight?: number;
 }
 
 export type AnimatableProperties = {
@@ -44,9 +52,13 @@ export type AnimatableProperties = {
   yoyo?: boolean;
   pathElement?: AnimatedCanvasElement;
   attachDelay?: number; // Time to move to the starting corner of the path
+  // Text animation properties
+  text?: string;
+  fontSize?: number;
+  letterSpacing?: number;
 };
 
-export type AnimationType = 'rotate' | 'scale' | 'move' | 'color' | 'fade' | 'path';
+export type AnimationType = 'rotate' | 'scale' | 'move' | 'color' | 'fade' | 'path' | 'typewriter' | 'textScale';
 
 export interface ElementAnimation {
   id: string;
@@ -68,7 +80,7 @@ export interface BaseAnimationConfig {
 export interface AnimatedCanvasElement {
   id: string;
   name: string;
-  type: 'rectangle' | 'circle' | 'triangle' | 'line' | 'path' | 'svg';
+  type: 'rectangle' | 'circle' | 'triangle' | 'line' | 'path' | 'svg' | 'text';
   x: number;
   y: number;
   width: number;
@@ -97,6 +109,14 @@ export interface AnimatedCanvasElement {
   svgData?: string;
   animations: ElementAnimation[];
   isAnimationPath?: boolean;
+  // Text-specific properties
+  text?: string;
+  fontSize?: number;
+  fontFamily?: string;
+  fontWeight?: string;
+  fontStyle?: string;
+  textAlign?: string;
+  lineHeight?: number;
 }
 
 export const EASING_OPTIONS: GsapEase[] = [

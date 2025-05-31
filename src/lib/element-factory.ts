@@ -1,6 +1,6 @@
 import type { AnimatedCanvasElement, ElementAnimation } from '@/types/canvas';
 
-type ShapeType = 'rectangle' | 'circle' | 'triangle' | 'line' | 'path' | 'svg';
+type ShapeType = 'rectangle' | 'circle' | 'triangle' | 'line' | 'path' | 'svg' | 'text';
 
 interface BaseElementProps {
   x: number;
@@ -11,6 +11,7 @@ interface BaseElementProps {
   svgData?: string;
   width?: number;
   height?: number;
+  text?: string;
 }
 
 interface CommonElementAttributes {
@@ -196,6 +197,35 @@ function createSvg(props: BaseElementProps): AnimatedCanvasElement {
   };
 }
 
+function createText(props: BaseElementProps): AnimatedCanvasElement {
+  const width = props.width || 200;
+  const height = props.height || 40;
+  
+  return {
+    ...generateCommonAttributes('text', props),
+    type: 'text',
+    width,
+    height,
+    x: props.x,
+    y: props.y,
+    fill: '#000000', // Override default white fill for text
+    stroke: undefined, // Text typically doesn't have stroke
+    strokeWidth: 0,
+    text: props.text || 'Double click to edit',
+    fontSize: 16,
+    fontFamily: 'Arial, sans-serif',
+    fontWeight: 'normal',
+    fontStyle: 'normal',
+    textAlign: 'left',
+    lineHeight: 1.2,
+    lineOptions: undefined,
+    pivotX: width / 2,
+    pivotY: height / 2,
+    isAnimationPath: props.isPath || false,
+    cornerRadius: 0,
+  };
+}
+
 export function createNewElement(
   type: ShapeType,
   x: number,
@@ -205,9 +235,10 @@ export function createNewElement(
   isPath?: boolean,
   svgData?: string,
   width?: number,
-  height?: number
+  height?: number,
+  text?: string
 ): AnimatedCanvasElement {
-  const props: BaseElementProps = { x, y, elements, pathPoints, isPath, svgData, width, height };
+  const props: BaseElementProps = { x, y, elements, pathPoints, isPath, svgData, width, height, text };
   
   switch (type) {
     case 'rectangle':
@@ -222,5 +253,7 @@ export function createNewElement(
       return createPath(props);
     case 'svg':
       return createSvg(props);
+    case 'text':
+      return createText(props);
   }
 }
