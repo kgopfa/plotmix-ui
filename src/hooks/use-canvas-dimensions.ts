@@ -12,11 +12,10 @@ export function useCanvasDimensions() {
     const updateDimensions = () => {
       const sidebarWidth = 288; // w-72 in Tailwind
       const topBarHeight = 48; // h-12
-      const timelineHeight = 160; // estimated height of timeline
 
       setDimensions({
         width: window.innerWidth - sidebarWidth * 2,
-        height: window.innerHeight - topBarHeight - timelineHeight,
+        height: window.innerHeight - topBarHeight,
       });
     };
 

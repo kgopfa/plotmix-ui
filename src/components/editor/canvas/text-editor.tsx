@@ -53,6 +53,7 @@ export const TextEditor = ({ element, onTextChange, onTextEnd, canvasElement }: 
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleEscape);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleTextEnd = () => {

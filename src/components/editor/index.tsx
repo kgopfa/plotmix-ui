@@ -45,8 +45,6 @@ export default function EditorCanvas() {
   const [showPaths, setShowPaths] = useState(true);
 
   // Panel state management
-  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
-  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
   const [leftPanelWidth, setLeftPanelWidth] = useState(320); // Default 320px (w-80)
   const [rightPanelWidth, setRightPanelWidth] = useState(320); // Default 320px (w-80)
   const [isResizing, setIsResizing] = useState<'left' | 'right' | null>(null);
@@ -79,17 +77,17 @@ export default function EditorCanvas() {
   }, []);
 
   const handleElementRotate = (id: string, rotation: number) => {
-    setElements(prev => prev.map(el => 
-      el.id === id 
-        ? { ...el, rotation } 
+    setElements(prev => prev.map(el =>
+      el.id === id
+        ? { ...el, rotation }
         : el
     ));
   };
 
   const handleTextChange = (id: string, text: string) => {
-    setElements(prev => prev.map(el => 
-      el.id === id 
-        ? { ...el, text } 
+    setElements(prev => prev.map(el =>
+      el.id === id
+        ? { ...el, text }
         : el
     ));
   };
@@ -138,7 +136,7 @@ export default function EditorCanvas() {
 
   useEffect(() => {
     gsapManager.setCanvasRef(canvasRef);
-    
+
     // Cleanup on unmount
     return () => {
       gsapManager.clearTimeline();
@@ -181,13 +179,13 @@ export default function EditorCanvas() {
             arrow: false,
             dotted: false
           };
-          
+
           setElements(prev => [...prev, newElement]);
           selectionManager.select(newElement);
           setTool('select');
           setLineStartPoint(null);
           setMaskPos(null);
-          
+
           // If in path mode, exit after creating the path
           if (isPathMode) {
             addPathToAnimation(newElement);
@@ -201,7 +199,7 @@ export default function EditorCanvas() {
         selectionManager.select(newElement);
         setTool('select');
         setMaskPos(null);
-        
+
         // If in path mode, exit after creating the path
         if (isPathMode) {
           addPathToAnimation(newElement);
@@ -214,7 +212,7 @@ export default function EditorCanvas() {
         selectionManager.select(newElement);
         setTool('select');
         setMaskPos(null);
-        
+
         // If in path mode, exit after creating the path
         if (isPathMode) {
           addPathToAnimation(newElement);
@@ -226,23 +224,23 @@ export default function EditorCanvas() {
       }
     }
   };
-  
+
   // Helper function to add path shape to animation
   const addPathToAnimation = useCallback((pathShape: AnimatedCanvasElement) => {
     const target = animationTarget;
     if (!target) return;
-    
+
     const { elementId, animationId } = target;
-    
-    setElements(prev => 
+
+    setElements(prev =>
       prev.map(el => {
         if (el.id !== elementId) return el;
-        
+
         return {
           ...el,
           animations: el.animations.map(anim => {
             if (anim.id !== animationId) return anim;
-            
+
             return {
               ...anim,
               properties: {
@@ -259,7 +257,7 @@ export default function EditorCanvas() {
   // Update animations when their path element is modified
   const updateAnimationsForPathElement = useCallback((elements: AnimatedCanvasElement[], pathElement: AnimatedCanvasElement) => {
     let animationsUpdated = 0;
-    
+
     const updatedElements = elements.map(element => {
       // Find animations that reference this path element
       const updatedAnimations = element.animations.map(animation => {
@@ -282,7 +280,7 @@ export default function EditorCanvas() {
       if (updatedAnimations.some((anim, index) => anim !== element.animations[index])) {
         return { ...element, animations: updatedAnimations };
       }
-      
+
       return element;
     });
 
@@ -297,7 +295,7 @@ export default function EditorCanvas() {
     setElements(prevElements => {
       const updatedElements = prevElements.map((el) => {
         if (el.id !== id) return el;
-        
+
         // For lines, we need to update both position and points
         if (el.type === 'line' && el.lineOptions?.points) {
           const dx = x - el.x;
@@ -321,7 +319,7 @@ export default function EditorCanvas() {
             }
           };
         }
-        
+
         // For other shapes, just update position
         return { ...el, x, y };
       });
@@ -337,7 +335,7 @@ export default function EditorCanvas() {
 
       return updatedElements;
     });
-    
+
     // Rebuild timeline for regular element moves - use the updated elements
     setTimeout(() => {
       setElements(currentElements => {
@@ -394,10 +392,10 @@ export default function EditorCanvas() {
       setAnimationTarget(pathTarget);
       return;
     }
-    
+
     if (selectedElement) {
       let updatedElement: AnimatedCanvasElement | null = null;
-      
+
       if (prop === 'animations') {
         setElements(prevElements => {
           const newElements = prevElements.map(el => {
@@ -407,15 +405,15 @@ export default function EditorCanvas() {
             }
             return el;
           });
-          
+
           // Update the GSAP timeline after the state update
           setTimeout(() => {
             gsapManager.buildAnimationTimeline(newElements);
           }, 0);
-          
+
           return newElements;
         });
-        
+
         // Also update the selected element reference to ensure the inspector shows the latest values
         if (updatedElement) {
           selectionManager.select(updatedElement);
@@ -424,23 +422,23 @@ export default function EditorCanvas() {
         setElements(prevElements => {
           const newElements = prevElements.map(el => {
             if (el.id === selectedElement.id) {
-              updatedElement = { 
-                ...el, 
-                lineOptions: value as NonNullable<AnimatedCanvasElement['lineOptions']> 
+              updatedElement = {
+                ...el,
+                lineOptions: value as NonNullable<AnimatedCanvasElement['lineOptions']>
               };
               return updatedElement;
             }
             return el;
           });
-          
+
           // Update the GSAP timeline after the state update
           setTimeout(() => {
             gsapManager.buildAnimationTimeline(newElements);
           }, 0);
-          
+
           return newElements;
         });
-        
+
         // Also update the selected element reference to ensure the inspector shows the latest values
         if (updatedElement) {
           selectionManager.select(updatedElement);
@@ -455,10 +453,10 @@ export default function EditorCanvas() {
             }
             return el;
           });
-          
+
           return newElements;
         });
-        
+
         // For visual properties, we need to ensure the inspector and canvas both show the updated values
         // This forces a selection update which triggers a re-render with the latest values
         if (updatedElement) {
@@ -494,29 +492,29 @@ export default function EditorCanvas() {
   // Use a ref to access current elements to avoid dependency issues
   const elementsRef = useRef(elements);
   elementsRef.current = elements;
-  
+
   // Listen for resize events from the Canvas component
   useEffect(() => {
     const handleElementResize = (e: CustomEvent) => {
       const { id, width, height, handle } = e.detail;
       console.log('Resize event:', { id, width, height, handle });
-      
+
       setElements(() => {
         // Use the ref to get current elements to avoid stale closure
         const currentElements = elementsRef.current;
         const updatedElements = currentElements.map((el) => {
           if (el.id !== id) return el;
-          
+
           // Calculate position adjustments for certain resize handles
           // This keeps the shape anchored to the opposite corner during resize
           let x = el.x;
           let y = el.y;
-          
+
           // Calculate position adjustments based on which handle is being dragged
           const deltaWidth = width - el.width;
           const deltaHeight = height - el.height;
-          
-          switch(handle) {
+
+          switch (handle) {
             case 'top-left':
               x = el.x + deltaWidth / 2;
               y = el.y + deltaHeight / 2;
@@ -534,7 +532,7 @@ export default function EditorCanvas() {
               y = el.y - deltaHeight / 2;
               break;
           }
-          
+
           const updatedElement = {
             ...el,
             width,
@@ -542,34 +540,34 @@ export default function EditorCanvas() {
             x: e.detail.x !== undefined ? e.detail.x : x,
             y: e.detail.y !== undefined ? e.detail.y : y
           };
-          
+
           // For circles, update radius to match the height (as used in drawing)
           if (el.type === 'circle') {
             updatedElement.radius = height / 2;
           }
-          
+
           // For triangles, update radius to match the height 
           if (el.type === 'triangle') {
             updatedElement.radius = height / 2;
           }
-          
+
           return updatedElement;
         });
 
         // If this is an animation path element, update related animations
         const resizedElement = updatedElements.find(el => el.id === id);
         console.log('Resized element:', resizedElement?.name, 'isAnimationPath:', resizedElement?.isAnimationPath);
-        
+
         if (resizedElement?.isAnimationPath) {
           console.log('Updating animations for resized path element');
           const elementsWithUpdatedAnimations = updateAnimationsForPathElement(updatedElements, resizedElement);
-          
+
           // Force a state update first, then rebuild timeline
           setTimeout(() => {
             console.log('Rebuilding timeline with updated path element:', resizedElement.name, 'new width:', resizedElement.width);
             gsapManager.buildAnimationTimeline(elementsWithUpdatedAnimations);
           }, 10); // Small delay to ensure state is updated
-          
+
           return elementsWithUpdatedAnimations;
         }
 
@@ -579,20 +577,20 @@ export default function EditorCanvas() {
 
     const handleBorderRadiusChange = (e: CustomEvent) => {
       const { id, cornerRadius } = e.detail;
-      
-      setElements(prevElements => 
-        prevElements.map(el => 
-          el.id === id 
+
+      setElements(prevElements =>
+        prevElements.map(el =>
+          el.id === id
             ? { ...el, cornerRadius }
             : el
         )
       );
     };
-    
+
     // Add event listeners for both resize and border radius changes
     window.addEventListener('element-resize', handleElementResize as EventListener);
     window.addEventListener('element-border-radius-change', handleBorderRadiusChange as EventListener);
-    
+
     // Clean up the event listeners when component unmounts
     return () => {
       window.removeEventListener('element-resize', handleElementResize as EventListener);
@@ -600,16 +598,16 @@ export default function EditorCanvas() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  
+
   // Listen for draw completion events
   useEffect(() => {
     const handleDrawComplete = () => {
       // Exit draw mode when a path is completed
       setTool('select');
     };
-    
+
     window.addEventListener('draw-complete', handleDrawComplete);
-    
+
     return () => {
       window.removeEventListener('draw-complete', handleDrawComplete);
     };
@@ -620,22 +618,22 @@ export default function EditorCanvas() {
     const handleAnimationPathUpdate = (e: CustomEvent) => {
       const { pathElement } = e.detail;
       console.log('Animation path updated from ShapeSelect:', pathElement.name, 'new dimensions:', pathElement.width, 'x', pathElement.height);
-      
+
       setElements(prevElements => {
         const elementsWithUpdatedAnimations = updateAnimationsForPathElement(prevElements, pathElement);
-        
+
         // Rebuild timeline after animation path update
         setTimeout(() => {
           console.log('Rebuilding timeline after path element resize via ShapeSelect');
           gsapManager.buildAnimationTimeline(elementsWithUpdatedAnimations);
         }, 10);
-        
+
         return elementsWithUpdatedAnimations;
       });
     };
-    
+
     window.addEventListener('animation-path-updated', handleAnimationPathUpdate as EventListener);
-    
+
     return () => {
       window.removeEventListener('animation-path-updated', handleAnimationPathUpdate as EventListener);
     };
@@ -665,7 +663,7 @@ export default function EditorCanvas() {
     setElements(prevElements => {
       const updatedElements = prevElements.map((el) => {
         if (el.id !== id || el.type !== 'line' || !el.lineOptions?.points) return el;
-        
+
         return {
           ...el,
           lineOptions: {
@@ -694,7 +692,7 @@ export default function EditorCanvas() {
   const handleAddElement = useCallback((element: AnimatedCanvasElement) => {
     setElements(prev => [...prev, element]);
     selectionManager.select(element);
-    
+
     if (isPathMode && element.type === 'path' && element.isAnimationPath) {
       addPathToAnimation(element);
       setIsPathMode(false);
@@ -706,9 +704,9 @@ export default function EditorCanvas() {
     try {
       // Read the file contents
       const svgData = await file.text();
-      
+
       console.log("Importing SVG:", file.name);
-      
+
       // Create a placeholder first while we wait for the image to load
       const placeholderElement = createNewElement(
         'rectangle',
@@ -720,25 +718,25 @@ export default function EditorCanvas() {
       );
       placeholderElement.fill = '#e0e0e0';
       placeholderElement.name = "SVG Loading...";
-      
+
       setElements(prev => [...prev, placeholderElement]);
       selectionManager.select(placeholderElement);
-      
+
       // Load the SVG to get its aspects/dimensions
       const imgUrl = URL.createObjectURL(new Blob([svgData], { type: 'image/svg+xml' }));
       const img = new Image();
-      
+
       // Wait for image to load
       await new Promise<void>((resolve, reject) => {
         img.onload = () => resolve();
         img.onerror = () => reject(new Error("Failed to load SVG"));
         img.src = imgUrl;
       });
-      
+
       // Use default dimensions of 100x100 (same as rectangle)
       const svgWidth = 100;
       const svgHeight = 100;
-      
+
       // Create SVG element with standard size
       const svgElement = createNewElement(
         'svg',
@@ -751,19 +749,19 @@ export default function EditorCanvas() {
         svgWidth,   // Fixed size of 100px width
         svgHeight   // Fixed size of 100px height
       );
-      
+
       // Replace the placeholder with the SVG
       setElements(prev => {
         const filtered = prev.filter(el => el.id !== placeholderElement.id);
         return [...filtered, svgElement];
       });
-      
+
       selectionManager.select(svgElement);
       setTool('select');
-      
+
       // Clean up
       URL.revokeObjectURL(imgUrl);
-      
+
     } catch (error) {
       console.error("Error importing SVG:", error);
       alert("Failed to import SVG. Please try another file.");
@@ -789,32 +787,19 @@ export default function EditorCanvas() {
       {/* Main Body */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left Panel - Scene Explorer */}
-        {!leftPanelCollapsed && (
-          <>
-            <div 
-              className="bg-gray-50 border-r border-gray-200 overflow-y-auto flex-shrink-0"
-              style={{ width: `${leftPanelWidth}px` }}
-            >
-              <SceneExplorer elements={elements} selectionManager={selectionManager} />
-            </div>
-            {/* Left Resize Handle */}
-            <div
-              className="w-1 bg-gray-300 hover:bg-blue-500 cursor-col-resize flex-shrink-0 transition-colors"
-              onMouseDown={handleMouseDown('left')}
-            />
-          </>
-        )}
-
-        {/* Collapse/Expand Button for Left Panel */}
-        <div className="flex flex-col justify-start bg-gray-200 flex-shrink-0">
-          <button
-            onClick={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
-            className="w-6 h-8 flex items-center justify-center text-gray-600 hover:text-gray-800 hover:bg-gray-300 transition-colors"
-            title={leftPanelCollapsed ? 'Show Scene Explorer' : 'Hide Scene Explorer'}
+        <>
+          <div
+            className="bg-gray-50 border-r border-gray-200 overflow-y-auto flex-shrink-0"
+            style={{ width: `${leftPanelWidth}px` }}
           >
-            {leftPanelCollapsed ? '▶' : '◀'}
-          </button>
-        </div>
+            <SceneExplorer elements={elements} selectionManager={selectionManager} />
+          </div>
+          {/* Left Resize Handle */}
+          <div
+            className="border-r border-gray-300 hover:bg-blue-500 cursor-col-resize flex-shrink-0 transition-colors"
+            onMouseDown={handleMouseDown('left')}
+          />
+        </>
 
         {/* Canvas + Element Toolbar */}
         <main
@@ -835,7 +820,7 @@ export default function EditorCanvas() {
               <span>
                 <strong>Path Drawing Mode:</strong> Select a tool and draw a path that your element will follow.
               </span>
-              <button 
+              <button
                 className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
                 onClick={() => {
                   setIsPathMode(false);
@@ -846,7 +831,7 @@ export default function EditorCanvas() {
               </button>
             </div>
           )}
-          
+
           <Toolbar
             currentTool={tool}
             onToolChange={handleToolChange}
@@ -869,16 +854,16 @@ export default function EditorCanvas() {
           {/* Only show path visibility toggle if paths exist */}
           {elements.some(el => el.isAnimationPath) && (
             <div className="absolute bottom-4 right-4 z-10 flex flex-col gap-2">
-              <button 
+              <button
                 className={`px-3 py-1.5 rounded shadow flex items-center ${showPaths ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'}`}
                 onClick={() => setShowPaths(!showPaths)}
                 title={showPaths ? 'Hide Animation Paths' : 'Show Animation Paths'}
               >
                 <svg className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M3 17.25V21H6.75L17.81 9.94L14.06 6.19L3 17.25Z" 
-                    fill={showPaths ? "white" : "currentColor"}/>
-                  <path d="M20.71 7.04C21.1 6.65 21.1 6.02 20.71 5.63L18.37 3.29C17.98 2.9 17.35 2.9 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04Z" 
-                    fill={showPaths ? "white" : "currentColor"}/>
+                  <path d="M3 17.25V21H6.75L17.81 9.94L14.06 6.19L3 17.25Z"
+                    fill={showPaths ? "white" : "currentColor"} />
+                  <path d="M20.71 7.04C21.1 6.65 21.1 6.02 20.71 5.63L18.37 3.29C17.98 2.9 17.35 2.9 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04Z"
+                    fill={showPaths ? "white" : "currentColor"} />
                 </svg>
                 {showPaths ? 'Paths Visible' : 'Paths Hidden'}
               </button>
@@ -904,47 +889,37 @@ export default function EditorCanvas() {
           )}
         </main>
 
-        {/* Collapse/Expand Button for Right Panel */}
-        <div className="flex flex-col justify-start bg-gray-200 flex-shrink-0">
-          <button
-            onClick={() => setRightPanelCollapsed(!rightPanelCollapsed)}
-            className="w-6 h-8 flex items-center justify-center text-gray-600 hover:text-gray-800 hover:bg-gray-300 transition-colors"
-            title={rightPanelCollapsed ? 'Show Inspector' : 'Hide Inspector'}
-          >
-            {rightPanelCollapsed ? '◀' : '▶'}
-          </button>
-        </div>
-
         {/* Right Panel - Inspector */}
-        {!rightPanelCollapsed && (
-          <>
-            {/* Right Resize Handle */}
-            <div
-              className="w-1 bg-gray-300 hover:bg-blue-500 cursor-col-resize flex-shrink-0 transition-colors"
-              onMouseDown={handleMouseDown('right')}
+        <>
+          {/* Right Resize Handle */}
+          <div
+            className="border-l border-gray-300 hover:bg-blue-500 cursor-col-resize flex-shrink-0 transition-colors"
+            onMouseDown={handleMouseDown('right')}
+          />
+          <div
+            className="bg-gray-50 border-l border-gray-200 overflow-y-auto flex-shrink-0"
+            style={{ width: `${rightPanelWidth}px` }}
+          >
+            <Inspector
+              selectedElement={selectedElement}
+              onInspectorChange={handleInspectorChange}
             />
-            <div 
-              className="bg-gray-50 border-l border-gray-200 overflow-y-auto flex-shrink-0"
-              style={{ width: `${rightPanelWidth}px` }}
-            >
-              <Inspector
-                selectedElement={selectedElement}
-                onInspectorChange={handleInspectorChange}
-              />
-            </div>
-          </>
-        )}
+          </div>
+        </>
       </div>
 
-      <Timeline
-        elements={elements.filter(el => !el.isAnimationPath)}
-        timelineState={timelineState}
-        timeState={timeState}
-        onPlayPause={handlePlayPause}
-        onStop={handleStop}
-        onAnimationChange={handleAnimationChange}
-        selectionManager={selectionManager}
-      />
+      {/* Timeline - positioned absolutely when collapsed to float on top */}
+      <div className="relative">
+        <Timeline
+          elements={elements.filter(el => !el.isAnimationPath)}
+          timelineState={timelineState}
+          timeState={timeState}
+          onPlayPause={handlePlayPause}
+          onStop={handleStop}
+          onAnimationChange={handleAnimationChange}
+          selectionManager={selectionManager}
+        />
+      </div>
     </div>
   );
 }

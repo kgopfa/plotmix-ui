@@ -42,7 +42,11 @@ export function Timeline({
   };
 
   return (
-    <footer className={`border-t border-gray-200 bg-white transition-all duration-200 ${isCollapsed ? 'h-8' : 'h-60'}`}>
+    <footer className={`border-t border-gray-200 bg-white transition-all duration-200 ${
+      isCollapsed 
+        ? 'h-8 absolute bottom-0 left-0 right-0 z-50' 
+        : 'h-60 relative'
+    }`}>
       {/* Controls */}
       <div className="h-8 border-b border-gray-200 flex items-center px-4 justify-between">
         <div className="flex items-center gap-4">
