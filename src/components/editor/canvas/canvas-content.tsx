@@ -1,12 +1,15 @@
 import { extend, useApplication } from '@pixi/react';
-import { useEffect, useRef } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { Viewport } from 'pixi-viewport';
 
 extend({ Viewport });
 
-export const CanvasContent = ({ children }: { children: React.ReactNode }) => {
+export const CanvasContent = forwardRef<Viewport | null, { children: React.ReactNode }>(
+  ({ children }, ref) => {
   const { app } = useApplication();
   const viewportRef = useRef<Viewport | null>(null);
+
+  useImperativeHandle(ref, () => viewportRef.current!);
 
   useEffect(() => {
     if (!viewportRef.current || !app?.renderer) return;
@@ -22,7 +25,7 @@ export const CanvasContent = ({ children }: { children: React.ReactNode }) => {
 
   }, [app]);
 
-  if (!app?.renderer) return null;
+  if (!app?.renderer?.events) return null;
 
   return (
     <viewport
@@ -37,4 +40,6 @@ export const CanvasContent = ({ children }: { children: React.ReactNode }) => {
       {children}
     </viewport>
   );
-};
+});
+
+CanvasContent.displayName = 'CanvasContent';

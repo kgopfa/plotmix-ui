@@ -115,7 +115,7 @@ export default function EditorCanvas() {
   const selectionManager = useMemo(() => SelectionManager.getInstance(), []);
 
   // Use the canvas dimensions hook
-  const dimensions = useCanvasDimensions();
+  const { dimensions, containerRef } = useCanvasDimensions();
 
   // Handle keyboard shortcuts
   const handleDeleteElement = useCallback((elementId: string) => {
@@ -779,8 +779,8 @@ export default function EditorCanvas() {
         </div>
         <div className="flex gap-2">
           <button className="btn">Export ▼</button>
-          <button className="btn">Zoom In</button>
-          <button className="btn">Zoom Out</button>
+          <button className="btn" onClick={() => canvasRef.current?.zoomIn()}>Zoom In</button>
+          <button className="btn" onClick={() => canvasRef.current?.zoomOut()}>Zoom Out</button>
         </div>
       </div>
 
@@ -803,6 +803,7 @@ export default function EditorCanvas() {
 
         {/* Canvas + Element Toolbar */}
         <main
+          ref={containerRef}
           className="flex-1 relative bg-white overflow-hidden"
           onMouseMove={e => {
             if (tool !== 'select') {

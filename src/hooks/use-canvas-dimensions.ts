@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useLayoutEffect, useRef } from 'react';
 
 interface Dimensions {
   width: number;
@@ -7,27 +7,22 @@ interface Dimensions {
 
 export function useCanvasDimensions() {
   const [dimensions, setDimensions] = useState<Dimensions>({ width: 0, height: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const updateDimensions = () => {
-      const sidebarWidth = 288; // w-72 in Tailwind
-      const topBarHeight = 48; // h-12
+  useLayoutEffect(() => {
+    if (!containerRef.current) return;
 
-      setDimensions({
-        width: window.innerWidth - sidebarWidth * 2,
-        height: window.innerHeight - topBarHeight,
-      });
+    const updateSize = () => {
+      const rect = containerRef.current!.getBoundingClientRect();
+      setDimensions({ width: rect.width, height: rect.height });
     };
 
-    // Initial dimensions
-    updateDimensions();
+    const resizeObserver = new ResizeObserver(updateSize);
+    resizeObserver.observe(containerRef.current);
+    updateSize(); // initial
 
-    // Update dimensions on window resize
-    window.addEventListener('resize', updateDimensions);
-
-    // Cleanup
-    return () => window.removeEventListener('resize', updateDimensions);
+    return () => resizeObserver.disconnect();
   }, []);
 
-  return dimensions;
-} 
+  return { dimensions, containerRef };
+}

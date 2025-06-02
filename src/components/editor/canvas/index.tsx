@@ -14,6 +14,7 @@ import ResizeHandle from './resize-handle';
 import RadiusHandle from './radius-handle';
 import { TextEditor } from './text-editor';
 import { CanvasContent } from './canvas-content';
+import { Viewport } from 'pixi-viewport';
 
 extend({ Container, Graphics, Text });
 
@@ -36,6 +37,9 @@ interface CanvasProps {
 
 export interface CanvasRef {
   getShapeRefs: () => Record<string, Container>;
+  zoomIn: () => void;
+  zoomOut: () => void;
+  getViewport: () => Viewport | null;
 }
 
 // Define resize handle positions
@@ -73,6 +77,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   ref
 ) {
   const shapeRefs = useRef<Record<string, Container>>({});
+  const viewportRef = useRef<Viewport | null>(null);
   const HANDLE_SIZE = 10;
   const drawingRef = useRef<Graphics | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -88,6 +93,9 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
   useImperativeHandle(ref, () => ({
     getShapeRefs: () => shapeRefs.current,
+    zoomIn: () => viewportRef.current?.zoomPercent(1.1, true),
+    zoomOut: () => viewportRef.current?.zoomPercent(0.9, true),
+    getViewport: () => viewportRef.current,
   }));
 
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -644,7 +652,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         resolution={window.devicePixelRatio || 2}
         autoDensity={true}
       >
-        <CanvasContent>
+        <CanvasContent ref={viewportRef}>
           {/* Full-size transparent interactive layer to capture background clicks */}
           <pixiGraphics
             draw={(g) => {
