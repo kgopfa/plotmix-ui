@@ -13,6 +13,7 @@ import RotationHandles from './rotation-handles';
 import ResizeHandle from './resize-handle';
 import RadiusHandle from './radius-handle';
 import { TextEditor } from './text-editor';
+import { CanvasContent } from './canvas-content';
 
 extend({ Container, Graphics, Text });
 
@@ -217,9 +218,9 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       const currentTime = Date.now();
       const lastClickTime = textClickTimeRef.current.get(id) || 0;
       const timeDiff = currentTime - lastClickTime;
-      
+
       console.log('Text click detected:', { id, currentTime, lastClickTime, timeDiff });
-      
+
       if (timeDiff < 300) { // Double-click detected (within 300ms)
         console.log('Double-click detected, entering edit mode for:', id);
         setEditingTextId(id);
@@ -635,314 +636,316 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
   return (
     <>
-    <Application
-      width={dimensions.width}
-      height={dimensions.height}
-      backgroundColor={0xFFFFFF}
-      antialias={true}
-      resolution={window.devicePixelRatio || 2}
-      autoDensity={true}
-    >
-      {/* Full-size transparent interactive layer to capture background clicks */}
-      <pixiGraphics
-        draw={(g) => {
-          g.clear();
-          g.rect(0, 0, dimensions.width, dimensions.height);
-          g.fill({ color: 0xFFFFFF, alpha: 0 });
-        }}
-        interactive={true}
-        eventMode="static"
-        onPointerDown={(e: FederatedPointerEvent) => {
-          if (tool === 'draw') {
-            handleCanvasPointerDown(e);
-          } else {
-            onElementSelect(null);
-            onCanvasClick(e);
-          }
-        }}
-        onPointerMove={handleCanvasPointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerUpOutside={handlePointerUp}
-      />
-
-      {elements.map((el) => {
-        // Handle all element types consistently, including SVGs
-        return (
-          <pixiContainer
-            key={el.id}
-            x={el.x}
-            y={el.y}
-            pivot={{ x: 0, y: 0 }}
+      <Application
+        width={dimensions.width}
+        height={dimensions.height}
+        backgroundColor={0xFFFFFF}
+        antialias={true}
+        resolution={window.devicePixelRatio || 2}
+        autoDensity={true}
+      >
+        <CanvasContent>
+          {/* Full-size transparent interactive layer to capture background clicks */}
+          <pixiGraphics
+            draw={(g) => {
+              g.clear();
+              g.rect(0, 0, dimensions.width, dimensions.height);
+              g.fill({ color: 0xFFFFFF, alpha: 0 });
+            }}
             interactive={true}
-            eventMode="dynamic"
-            hitArea={(el.type === 'path' || el.type === 'line' || el.type === 'svg')
-              ? new Rectangle(-el.width / 2, -el.height / 2, el.width, el.height)
-              : undefined
-            }
-            rotation={el.rotation || 0}
-            onPointerDown={handlePointerDown(el.id, el.x, el.y)}
+            eventMode="static"
+            onPointerDown={(e: FederatedPointerEvent) => {
+              if (tool === 'draw') {
+                handleCanvasPointerDown(e);
+              } else {
+                onElementSelect(null);
+                onCanvasClick(e);
+              }
+            }}
+            onPointerMove={handleCanvasPointerMove}
             onPointerUp={handlePointerUp}
             onPointerUpOutside={handlePointerUp}
-            // REMOVED: onPointerMove handler - now handled globally
-            onPointerOver={handleElementMouseMove(el.id)}
-            onPointerOut={handleElementMouseLeave(el.id)}
-            ref={(node) => {
-              if (node) shapeRefs.current[el.id] = node;
-            }}
-          >
-            <pixiGraphics draw={(g) => drawShape(g, el)} />
+          />
 
-            {/* Render text separately for text elements */}
-            {el.type === 'text' && editingTextId !== el.id && (
-                <pixiText
-                  text={el.text || 'Text'}
-                  anchor={{ x: 0, y: 0 }}
-                  x={-el.width / 2 + 8}
-                  y={-el.height / 2 + 8}
-                  alpha={el.opacity ?? 1}
-                  style={{
-                    fontFamily: el.fontFamily || 'Arial, sans-serif',
-                    fontSize: el.fontSize || 16,
-                    fontWeight: (el.fontWeight as 'normal' | 'bold' | 'bolder' | 'lighter' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900') || 'normal',
-                    fontStyle: (el.fontStyle as 'normal' | 'italic' | 'oblique') || 'normal',
-                    fill: el.fill || '#000000',
-                    align: (el.textAlign as 'left' | 'center' | 'right') || 'left',
-                    lineHeight: el.lineHeight || 1.2,
-                    wordWrap: true,
-                    wordWrapWidth: el.width - 16,
-                  }}
-                />
-              )}
-
-            {/* Show hover outline when hovered but not selected */}
-            {hoveredId === el.id && selectedId !== el.id && (
-              <HoverOutline element={el} />
-            )}
-
-            {el.id === selectedId && (
-              <ShapeSelect
-                element={el}
-                scaleFactor={canvasScaleFactor.current}
-              />
-            )}
-          </pixiContainer>
-        );
-      })}
-
-      {/* Drawing preview layer */}
-      {tool === 'draw' && (
-        <pixiGraphics
-          ref={drawingRef}
-          draw={(g) => {
-            g.clear();
-            if (currentPath.length > 1) {
-              g.moveTo(currentPath[0].x, currentPath[0].y);
-              currentPath.slice(1).forEach(point => {
-                g.lineTo(point.x, point.y);
-              });
-              g.stroke({ width: 2, color: 0x000000, alpha: 1 });
-            }
-          }}
-        />
-      )}
-
-      {/* Draggable corner squares - completely independent of shapes */}
-      {selectedId && elements.find(el => el.id === selectedId) &&
-        elements.find(el => el.id === selectedId)?.type !== 'line' &&
-        elements.find(el => el.id === selectedId)?.type !== 'path' && (
-          (() => {
-            const selectedElement = elements.find(el => el.id === selectedId)!;
-
-            // Calculate radius handle positions (similar to ShapeSelect logic)
-            const getRadiusHandlePositions = () => {
-              const baseDistance = 12;
-              const radiusOffset = selectedElement.cornerRadius || 0;
-              const totalDistance = baseDistance + radiusOffset;
-              const rotation = selectedElement.rotation || 0;
-            
-              // Calculate local positions relative to shape center
-              const localPositions = {
-                tl: { x: -selectedElement.width / 2 + totalDistance, y: -selectedElement.height / 2 + totalDistance },
-                tr: { x: selectedElement.width / 2 - totalDistance, y: -selectedElement.height / 2 + totalDistance },
-                bl: { x: -selectedElement.width / 2 + totalDistance, y: selectedElement.height / 2 - totalDistance },
-                br: { x: selectedElement.width / 2 - totalDistance, y: selectedElement.height / 2 - totalDistance }
-              };
-            
-              // Apply rotation transformation
-              const cos = Math.cos(rotation);
-              const sin = Math.sin(rotation);
-            
-              return {
-                tl: {
-                  x: selectedElement.x + localPositions.tl.x * cos - localPositions.tl.y * sin,
-                  y: selectedElement.y + localPositions.tl.x * sin + localPositions.tl.y * cos
-                },
-                tr: {
-                  x: selectedElement.x + localPositions.tr.x * cos - localPositions.tr.y * sin,
-                  y: selectedElement.y + localPositions.tr.x * sin + localPositions.tr.y * cos
-                },
-                bl: {
-                  x: selectedElement.x + localPositions.bl.x * cos - localPositions.bl.y * sin,
-                  y: selectedElement.y + localPositions.bl.x * sin + localPositions.bl.y * cos
-                },
-                br: {
-                  x: selectedElement.x + localPositions.br.x * cos - localPositions.br.y * sin,
-                  y: selectedElement.y + localPositions.br.x * sin + localPositions.br.y * cos
-                }
-              };
-            };
-
-            const radiusPositions = getRadiusHandlePositions();
-
+          {elements.map((el) => {
+            // Handle all element types consistently, including SVGs
             return (
-              <>
-                {/* Resize Handles */}
-                <ResizeHandle
-                  elementX={selectedElement.x}
-                  elementY={selectedElement.y}
-                  elementWidth={selectedElement.width}
-                  elementHeight={selectedElement.height}
-                  elementRotation={selectedElement.rotation || 0}
-                  corner="tl"
-                  elementId={selectedElement.id}
-                />
-                <ResizeHandle
-                  elementX={selectedElement.x}
-                  elementY={selectedElement.y}
-                  elementWidth={selectedElement.width}
-                  elementHeight={selectedElement.height}
-                  elementRotation={selectedElement.rotation || 0}
-                  corner="tr"
-                  elementId={selectedElement.id}
-                />
-                <ResizeHandle
-                  elementX={selectedElement.x}
-                  elementY={selectedElement.y}
-                  elementWidth={selectedElement.width}
-                  elementHeight={selectedElement.height}
-                  elementRotation={selectedElement.rotation || 0}
-                  corner="bl"
-                  elementId={selectedElement.id}
-                />
-                <ResizeHandle
-                  elementX={selectedElement.x}
-                  elementY={selectedElement.y}
-                  elementWidth={selectedElement.width}
-                  elementHeight={selectedElement.height}
-                  elementRotation={selectedElement.rotation || 0}
-                  corner="br"
-                  elementId={selectedElement.id}
-                />
+              <pixiContainer
+                key={el.id}
+                x={el.x}
+                y={el.y}
+                pivot={{ x: 0, y: 0 }}
+                interactive={true}
+                eventMode="dynamic"
+                hitArea={(el.type === 'path' || el.type === 'line' || el.type === 'svg')
+                  ? new Rectangle(-el.width / 2, -el.height / 2, el.width, el.height)
+                  : undefined
+                }
+                rotation={el.rotation || 0}
+                onPointerDown={handlePointerDown(el.id, el.x, el.y)}
+                onPointerUp={handlePointerUp}
+                onPointerUpOutside={handlePointerUp}
+                // REMOVED: onPointerMove handler - now handled globally
+                onPointerOver={handleElementMouseMove(el.id)}
+                onPointerOut={handleElementMouseLeave(el.id)}
+                ref={(node) => {
+                  if (node) shapeRefs.current[el.id] = node;
+                }}
+              >
+                <pixiGraphics draw={(g) => drawShape(g, el)} />
 
-                {/* Radius Handles (only for rectangle/triangle) */}
-                {(selectedElement.type === 'rectangle' || selectedElement.type === 'triangle') && (
-                  <>
-                    {/* Top-left radius handle */}
-                    <RadiusHandle
-                      x={radiusPositions.tl.x}
-                      y={radiusPositions.tl.y}
-                      scaleFactor={canvasScaleFactor.current}
-                      corner="tl"
-                      currentRadius={selectedElement.cornerRadius || 0}
-                      onRadiusChange={(newRadius) => {
-                        const radiusChangeEvent = new CustomEvent('element-border-radius-change', {
-                          detail: {
-                            id: selectedElement.id,
-                            cornerRadius: newRadius
-                          }
-                        });
-                        window.dispatchEvent(radiusChangeEvent);
-                      }}
-                    />
-
-                    {/* Top-right radius handle */}
-                    <RadiusHandle
-                      x={radiusPositions.tr.x}
-                      y={radiusPositions.tr.y}
-                      scaleFactor={canvasScaleFactor.current}
-                      corner="tr"
-                      currentRadius={selectedElement.cornerRadius || 0}
-                      onRadiusChange={(newRadius) => {
-                        const radiusChangeEvent = new CustomEvent('element-border-radius-change', {
-                          detail: {
-                            id: selectedElement.id,
-                            cornerRadius: newRadius
-                          }
-                        });
-                        window.dispatchEvent(radiusChangeEvent);
-                      }}
-                    />
-
-                    {/* Bottom-left radius handle */}
-                    <RadiusHandle
-                      x={radiusPositions.bl.x}
-                      y={radiusPositions.bl.y}
-                      scaleFactor={canvasScaleFactor.current}
-                      corner="bl"
-                      currentRadius={selectedElement.cornerRadius || 0}
-                      onRadiusChange={(newRadius) => {
-                        const radiusChangeEvent = new CustomEvent('element-border-radius-change', {
-                          detail: {
-                            id: selectedElement.id,
-                            cornerRadius: newRadius
-                          }
-                        });
-                        window.dispatchEvent(radiusChangeEvent);
-                      }}  
-                    />
-
-                    {/* Bottom-right radius handle */}
-                    <RadiusHandle
-                      x={radiusPositions.br.x}
-                      y={radiusPositions.br.y}
-                      scaleFactor={canvasScaleFactor.current}
-                      corner="br"
-                      currentRadius={selectedElement.cornerRadius || 0}
-                      onRadiusChange={(newRadius) => {
-                        const radiusChangeEvent = new CustomEvent('element-border-radius-change', {
-                          detail: {
-                            id: selectedElement.id,
-                            cornerRadius: newRadius
-                          }
-                        });
-                        window.dispatchEvent(radiusChangeEvent);
-                      }}
-                    />
-                  </>
+                {/* Render text separately for text elements */}
+                {el.type === 'text' && editingTextId !== el.id && (
+                  <pixiText
+                    text={el.text || 'Text'}
+                    anchor={{ x: 0, y: 0 }}
+                    x={-el.width / 2 + 8}
+                    y={-el.height / 2 + 8}
+                    alpha={el.opacity ?? 1}
+                    style={{
+                      fontFamily: el.fontFamily || 'Arial, sans-serif',
+                      fontSize: el.fontSize || 16,
+                      fontWeight: (el.fontWeight as 'normal' | 'bold' | 'bolder' | 'lighter' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900') || 'normal',
+                      fontStyle: (el.fontStyle as 'normal' | 'italic' | 'oblique') || 'normal',
+                      fill: el.fill || '#000000',
+                      align: (el.textAlign as 'left' | 'center' | 'right') || 'left',
+                      lineHeight: el.lineHeight || 1.2,
+                      wordWrap: true,
+                      wordWrapWidth: el.width - 16,
+                    }}
+                  />
                 )}
 
-              </>
-            );
-          })()
-        )}
+                {/* Show hover outline when hovered but not selected */}
+                {hoveredId === el.id && selectedId !== el.id && (
+                  <HoverOutline element={el} />
+                )}
 
-      {/* Rotation handles OUTSIDE the rotating containers */}
-      {selectedId && elements.find(el => el.id === selectedId) &&
-        elements.find(el => el.id === selectedId)?.type !== 'line' &&
-        elements.find(el => el.id === selectedId)?.type !== 'path' && (
-          <RotationHandles
-            element={elements.find(el => el.id === selectedId)!}
-            onRotate={(newRotation) => {
-              const rotationEvent = new CustomEvent('element-rotation-change', {
-                detail: {
-                  id: selectedId,
-                  rotation: newRotation
+                {el.id === selectedId && (
+                  <ShapeSelect
+                    element={el}
+                    scaleFactor={canvasScaleFactor.current}
+                  />
+                )}
+              </pixiContainer>
+            );
+          })}
+
+          {/* Drawing preview layer */}
+          {tool === 'draw' && (
+            <pixiGraphics
+              ref={drawingRef}
+              draw={(g) => {
+                g.clear();
+                if (currentPath.length > 1) {
+                  g.moveTo(currentPath[0].x, currentPath[0].y);
+                  currentPath.slice(1).forEach(point => {
+                    g.lineTo(point.x, point.y);
+                  });
+                  g.stroke({ width: 2, color: 0x000000, alpha: 1 });
                 }
-              });
-              window.dispatchEvent(rotationEvent);
-            }}
-          />
-        )}
-    </Application>
-    {/* Text Editor Overlay */}
-    {editingTextId && (
-      <TextEditor
-        element={elements.find(el => el.id === editingTextId)!}
-        onTextChange={handleTextChange}
-        onTextEnd={handleTextEditEnd}
-        canvasElement={canvasRef.current}
-      />
-    )}
+              }}
+            />
+          )}
+
+          {/* Draggable corner squares - completely independent of shapes */}
+          {selectedId && elements.find(el => el.id === selectedId) &&
+            elements.find(el => el.id === selectedId)?.type !== 'line' &&
+            elements.find(el => el.id === selectedId)?.type !== 'path' && (
+              (() => {
+                const selectedElement = elements.find(el => el.id === selectedId)!;
+
+                // Calculate radius handle positions (similar to ShapeSelect logic)
+                const getRadiusHandlePositions = () => {
+                  const baseDistance = 12;
+                  const radiusOffset = selectedElement.cornerRadius || 0;
+                  const totalDistance = baseDistance + radiusOffset;
+                  const rotation = selectedElement.rotation || 0;
+
+                  // Calculate local positions relative to shape center
+                  const localPositions = {
+                    tl: { x: -selectedElement.width / 2 + totalDistance, y: -selectedElement.height / 2 + totalDistance },
+                    tr: { x: selectedElement.width / 2 - totalDistance, y: -selectedElement.height / 2 + totalDistance },
+                    bl: { x: -selectedElement.width / 2 + totalDistance, y: selectedElement.height / 2 - totalDistance },
+                    br: { x: selectedElement.width / 2 - totalDistance, y: selectedElement.height / 2 - totalDistance }
+                  };
+
+                  // Apply rotation transformation
+                  const cos = Math.cos(rotation);
+                  const sin = Math.sin(rotation);
+
+                  return {
+                    tl: {
+                      x: selectedElement.x + localPositions.tl.x * cos - localPositions.tl.y * sin,
+                      y: selectedElement.y + localPositions.tl.x * sin + localPositions.tl.y * cos
+                    },
+                    tr: {
+                      x: selectedElement.x + localPositions.tr.x * cos - localPositions.tr.y * sin,
+                      y: selectedElement.y + localPositions.tr.x * sin + localPositions.tr.y * cos
+                    },
+                    bl: {
+                      x: selectedElement.x + localPositions.bl.x * cos - localPositions.bl.y * sin,
+                      y: selectedElement.y + localPositions.bl.x * sin + localPositions.bl.y * cos
+                    },
+                    br: {
+                      x: selectedElement.x + localPositions.br.x * cos - localPositions.br.y * sin,
+                      y: selectedElement.y + localPositions.br.x * sin + localPositions.br.y * cos
+                    }
+                  };
+                };
+
+                const radiusPositions = getRadiusHandlePositions();
+
+                return (
+                  <>
+                    {/* Resize Handles */}
+                    <ResizeHandle
+                      elementX={selectedElement.x}
+                      elementY={selectedElement.y}
+                      elementWidth={selectedElement.width}
+                      elementHeight={selectedElement.height}
+                      elementRotation={selectedElement.rotation || 0}
+                      corner="tl"
+                      elementId={selectedElement.id}
+                    />
+                    <ResizeHandle
+                      elementX={selectedElement.x}
+                      elementY={selectedElement.y}
+                      elementWidth={selectedElement.width}
+                      elementHeight={selectedElement.height}
+                      elementRotation={selectedElement.rotation || 0}
+                      corner="tr"
+                      elementId={selectedElement.id}
+                    />
+                    <ResizeHandle
+                      elementX={selectedElement.x}
+                      elementY={selectedElement.y}
+                      elementWidth={selectedElement.width}
+                      elementHeight={selectedElement.height}
+                      elementRotation={selectedElement.rotation || 0}
+                      corner="bl"
+                      elementId={selectedElement.id}
+                    />
+                    <ResizeHandle
+                      elementX={selectedElement.x}
+                      elementY={selectedElement.y}
+                      elementWidth={selectedElement.width}
+                      elementHeight={selectedElement.height}
+                      elementRotation={selectedElement.rotation || 0}
+                      corner="br"
+                      elementId={selectedElement.id}
+                    />
+
+                    {/* Radius Handles (only for rectangle/triangle) */}
+                    {(selectedElement.type === 'rectangle' || selectedElement.type === 'triangle') && (
+                      <>
+                        {/* Top-left radius handle */}
+                        <RadiusHandle
+                          x={radiusPositions.tl.x}
+                          y={radiusPositions.tl.y}
+                          scaleFactor={canvasScaleFactor.current}
+                          corner="tl"
+                          currentRadius={selectedElement.cornerRadius || 0}
+                          onRadiusChange={(newRadius) => {
+                            const radiusChangeEvent = new CustomEvent('element-border-radius-change', {
+                              detail: {
+                                id: selectedElement.id,
+                                cornerRadius: newRadius
+                              }
+                            });
+                            window.dispatchEvent(radiusChangeEvent);
+                          }}
+                        />
+
+                        {/* Top-right radius handle */}
+                        <RadiusHandle
+                          x={radiusPositions.tr.x}
+                          y={radiusPositions.tr.y}
+                          scaleFactor={canvasScaleFactor.current}
+                          corner="tr"
+                          currentRadius={selectedElement.cornerRadius || 0}
+                          onRadiusChange={(newRadius) => {
+                            const radiusChangeEvent = new CustomEvent('element-border-radius-change', {
+                              detail: {
+                                id: selectedElement.id,
+                                cornerRadius: newRadius
+                              }
+                            });
+                            window.dispatchEvent(radiusChangeEvent);
+                          }}
+                        />
+
+                        {/* Bottom-left radius handle */}
+                        <RadiusHandle
+                          x={radiusPositions.bl.x}
+                          y={radiusPositions.bl.y}
+                          scaleFactor={canvasScaleFactor.current}
+                          corner="bl"
+                          currentRadius={selectedElement.cornerRadius || 0}
+                          onRadiusChange={(newRadius) => {
+                            const radiusChangeEvent = new CustomEvent('element-border-radius-change', {
+                              detail: {
+                                id: selectedElement.id,
+                                cornerRadius: newRadius
+                              }
+                            });
+                            window.dispatchEvent(radiusChangeEvent);
+                          }}
+                        />
+
+                        {/* Bottom-right radius handle */}
+                        <RadiusHandle
+                          x={radiusPositions.br.x}
+                          y={radiusPositions.br.y}
+                          scaleFactor={canvasScaleFactor.current}
+                          corner="br"
+                          currentRadius={selectedElement.cornerRadius || 0}
+                          onRadiusChange={(newRadius) => {
+                            const radiusChangeEvent = new CustomEvent('element-border-radius-change', {
+                              detail: {
+                                id: selectedElement.id,
+                                cornerRadius: newRadius
+                              }
+                            });
+                            window.dispatchEvent(radiusChangeEvent);
+                          }}
+                        />
+                      </>
+                    )}
+
+                  </>
+                );
+              })()
+            )}
+
+          {/* Rotation handles OUTSIDE the rotating containers */}
+          {selectedId && elements.find(el => el.id === selectedId) &&
+            elements.find(el => el.id === selectedId)?.type !== 'line' &&
+            elements.find(el => el.id === selectedId)?.type !== 'path' && (
+              <RotationHandles
+                element={elements.find(el => el.id === selectedId)!}
+                onRotate={(newRotation) => {
+                  const rotationEvent = new CustomEvent('element-rotation-change', {
+                    detail: {
+                      id: selectedId,
+                      rotation: newRotation
+                    }
+                  });
+                  window.dispatchEvent(rotationEvent);
+                }}
+              />
+            )}
+        </CanvasContent>
+      </Application>
+      {/* Text Editor Overlay */}
+      {editingTextId && (
+        <TextEditor
+          element={elements.find(el => el.id === editingTextId)!}
+          onTextChange={handleTextChange}
+          onTextEnd={handleTextEditEnd}
+          canvasElement={canvasRef.current}
+        />
+      )}
     </>
   );
 });
