@@ -951,14 +951,12 @@ export default function EditorCanvas() {
         >
                     {/* Full canvas area - clean infinite canvas */}
           <div 
-            className="relative bg-white origin-center transition-transform duration-200"
+            className="relative bg-white"
             style={{ 
               width: '300vw', // 3x viewport width for more space
               height: '300vh', // 3x viewport height for more space
               minWidth: '4000px', // Larger minimum size
-              minHeight: '4000px',
-              transform: `scale(${canvasZoom})`,
-              transformOrigin: 'center center'
+              minHeight: '4000px'
             }}
           >
               {isPathMode && (
@@ -1032,6 +1030,8 @@ export default function EditorCanvas() {
                   isPathMode={isPathMode}
                   onElementRotate={handleElementRotate}
                   onTextChange={handleTextChange}
+                  zoom={canvasZoom}
+                  onZoomChange={setCanvasZoom}
                 />
               )}
             </div>

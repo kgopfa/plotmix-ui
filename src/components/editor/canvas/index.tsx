@@ -33,6 +33,8 @@ interface CanvasProps {
   onElementRotate?: (id: string, rotation: number) => void;
   onElementRadiusChange?: (id: string, cornerRadius: number) => void;
   onTextChange?: (id: string, text: string) => void;
+  zoom?: number; // External zoom control
+  onZoomChange?: (zoom: number) => void; // Callback when zoom changes
 }
 
 export interface CanvasRef {
@@ -79,6 +81,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     onElementRotate,
     onElementRadiusChange,
     onTextChange,
+    zoom = 1,
+    onZoomChange,
   },
   ref
 ) {
@@ -230,7 +234,19 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     };
   }, []);
 
-  // Sync zoom state with viewport's actual scale
+  // Sync external zoom with viewport
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+
+    // Apply external zoom to viewport
+    if (Math.abs(viewport.scale.x - zoom) > 0.01) { // Only if there's a meaningful difference
+      viewport.setZoom(zoom, true);
+      setCurrentZoom(zoom);
+    }
+  }, [zoom]);
+
+  // Sync zoom state with viewport's actual scale and notify parent
   useEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport) return;
@@ -238,6 +254,9 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     const handleZoomChange = () => {
       const currentScale = viewport.scale.x;
       setCurrentZoom(currentScale);
+      if (onZoomChange && Math.abs(currentScale - zoom) > 0.01) {
+        onZoomChange(currentScale);
+      }
     };
 
     // Listen for zoom changes from user interactions (wheel, pinch, etc.)
@@ -246,7 +265,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     return () => {
       viewport.off('zoomed', handleZoomChange);
     };
-  }, [viewportRef.current]);
+  }, [zoom, onZoomChange]);
 
   // Add this useEffect in your Canvas component
   useEffect(() => {
