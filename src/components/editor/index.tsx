@@ -119,6 +119,9 @@ export default function EditorCanvas() {
   // Use the canvas dimensions hook
   const { dimensions, containerRef } = useCanvasDimensions();
 
+  // Canvas zoom state
+  const [canvasZoom, setCanvasZoom] = useState(1);
+
   // Auto-center the scroll view when dimensions are ready
   useEffect(() => {
     if (dimensions.width > 0 && dimensions.height > 0 && containerRef.current) {
@@ -137,6 +140,79 @@ export default function EditorCanvas() {
       }, 100);
     }
   }, [dimensions, containerRef]);
+
+  // Zoom and gesture handling
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    let lastPinchDistance = 0;
+
+    // Handle mouse wheel zoom (Cmd+scroll)
+    const handleWheel = (e: WheelEvent) => {
+      if (e.metaKey || e.ctrlKey) { // Cmd on Mac, Ctrl on Windows/Linux
+        e.preventDefault();
+        
+        const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1; // Scroll down = zoom out, scroll up = zoom in
+        const newZoom = Math.min(Math.max(canvasZoom * zoomFactor, 0.1), 5); // Clamp between 0.1x and 5x
+        
+        setCanvasZoom(newZoom);
+      }
+    };
+
+    // Handle trackpad pinch gestures
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        lastPinchDistance = Math.sqrt(
+          Math.pow(touch2.clientX - touch1.clientX, 2) + 
+          Math.pow(touch2.clientY - touch1.clientY, 2)
+        );
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        e.preventDefault(); // Prevent default pinch behavior
+        
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const currentDistance = Math.sqrt(
+          Math.pow(touch2.clientX - touch1.clientX, 2) + 
+          Math.pow(touch2.clientY - touch1.clientY, 2)
+        );
+
+        if (lastPinchDistance > 0) {
+          const pinchScale = currentDistance / lastPinchDistance;
+          const newZoom = Math.min(Math.max(canvasZoom * pinchScale, 0.1), 5);
+          setCanvasZoom(newZoom);
+        }
+
+        lastPinchDistance = currentDistance;
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) {
+        lastPinchDistance = 0;
+      }
+    };
+
+    // Add event listeners
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    container.addEventListener('touchstart', handleTouchStart, { passive: false });
+    container.addEventListener('touchmove', handleTouchMove, { passive: false });
+    container.addEventListener('touchend', handleTouchEnd, { passive: false });
+
+    // Cleanup
+    return () => {
+      container.removeEventListener('wheel', handleWheel);
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchmove', handleTouchMove);
+      container.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [canvasZoom, containerRef]);
 
   // Handle keyboard shortcuts
   const handleDeleteElement = useCallback((elementId: string) => {
@@ -817,15 +893,26 @@ export default function EditorCanvas() {
         <div className="flex gap-2 items-center">
           <button className="btn">Export ▼</button>
           <div className="flex gap-1 items-center border-r pr-2 mr-2">
-            <button className="btn" onClick={() => canvasRef.current?.zoomOut()}>−</button>
+            <button 
+              className="btn" 
+              onClick={() => setCanvasZoom(prev => Math.max(prev * 0.9, 0.1))}
+            >
+              −
+            </button>
             <span className="text-xs text-gray-600 min-w-[40px] text-center">
-              {Math.round((canvasRef.current?.getCurrentZoom() || 1) * 100)}%
+              {Math.round(canvasZoom * 100)}%
             </span>
-            <button className="btn" onClick={() => canvasRef.current?.zoomIn()}>+</button>
+            <button 
+              className="btn" 
+              onClick={() => setCanvasZoom(prev => Math.min(prev * 1.1, 5))}
+            >
+              +
+            </button>
             <button 
               className="btn ml-1" 
               onClick={() => {
-                // Simple scroll to center
+                // Reset zoom and scroll to center
+                setCanvasZoom(1);
                 if (containerRef.current) {
                   const container = containerRef.current;
                   const centerX = (container.scrollWidth - container.clientWidth) / 2;
@@ -864,12 +951,14 @@ export default function EditorCanvas() {
         >
                     {/* Full canvas area - clean infinite canvas */}
           <div 
-            className="relative bg-white"
+            className="relative bg-white origin-center transition-transform duration-200"
             style={{ 
               width: '300vw', // 3x viewport width for more space
               height: '300vh', // 3x viewport height for more space
               minWidth: '4000px', // Larger minimum size
-              minHeight: '4000px'
+              minHeight: '4000px',
+              transform: `scale(${canvasZoom})`,
+              transformOrigin: 'center center'
             }}
           >
               {isPathMode && (
