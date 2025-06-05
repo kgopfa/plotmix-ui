@@ -125,19 +125,13 @@ export default function EditorCanvas() {
   // Auto-center the scroll view when dimensions are ready
   useEffect(() => {
     if (dimensions.width > 0 && dimensions.height > 0 && containerRef.current) {
-      // Small delay to ensure DOM is ready
-      setTimeout(() => {
-        const container = containerRef.current;
-        if (container) {
-          const centerX = (container.scrollWidth - container.clientWidth) / 2;
-          const centerY = (container.scrollHeight - container.clientHeight) / 2;
-          container.scrollTo({
-            left: centerX,
-            top: centerY,
-            behavior: 'smooth'
-          });
-        }
-      }, 100);
+      const container = containerRef.current;
+      if (container) {
+        const centerX = (container.scrollWidth - container.clientWidth) / 2;
+        const centerY = (container.scrollHeight - container.clientHeight) / 2;
+        // Set initial position immediately without animation to avoid visible scroll
+        container.scrollTo(centerX, centerY);
+      }
     }
   }, [dimensions, containerRef]);
 
