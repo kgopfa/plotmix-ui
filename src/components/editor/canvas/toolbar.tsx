@@ -43,7 +43,7 @@ export function Toolbar({
 
   // Vertical toolbar used for both regular and path mode
   const renderVerticalToolbar = () => (
-    <div className="absolute left-2 top-1/2 -translate-y-1/2 bg-white shadow rounded flex flex-col gap-2 p-2 z-10">
+    <div className="bg-white shadow-lg rounded-lg flex flex-col gap-2 p-2">
       <button
         className={`flex flex-col items-center justify-center p-2 ${currentTool === 'rectangle' ? (isPathMode ? 'bg-blue-100' : 'bg-gray-100') : 'hover:bg-gray-100'}`}
         onClick={() => onToolChange('rectangle')}
@@ -119,12 +119,12 @@ export function Toolbar({
 
   if (isPathMode) {
     return (
-      <>
+      <div className="flex flex-col gap-4">
         {/* Path mode header */}
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-blue-500 text-white shadow rounded flex gap-2 p-2 z-10">
+        <div className="bg-blue-500 text-white shadow-lg rounded-lg flex gap-2 p-3 items-center justify-between">
           <span className="font-medium">Drawing Animation Path</span>
           <button
-            className="ml-4 bg-white text-blue-500 px-2 rounded hover:bg-gray-100"
+            className="bg-white text-blue-500 px-3 py-1 rounded hover:bg-gray-100 text-sm font-medium"
             onClick={onExitPathMode}
           >
             Cancel
@@ -133,7 +133,7 @@ export function Toolbar({
         
         {/* Vertical toolbar */}
         {renderVerticalToolbar()}
-      </>
+      </div>
     );
   }
   

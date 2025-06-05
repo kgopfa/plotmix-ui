@@ -47,6 +47,8 @@ export default function EditorCanvas() {
   // Panel state management
   const [leftPanelWidth, setLeftPanelWidth] = useState(320); // Default 320px (w-80)
   const [rightPanelWidth, setRightPanelWidth] = useState(320); // Default 320px (w-80)
+  const [leftPanelVisible, setLeftPanelVisible] = useState(true);
+  const [rightPanelVisible, setRightPanelVisible] = useState(true);
   const [isResizing, setIsResizing] = useState<'left' | 'right' | null>(null);
 
   const MASK_OFFSET_X = 0;
@@ -116,6 +118,25 @@ export default function EditorCanvas() {
 
   // Use the canvas dimensions hook
   const { dimensions, containerRef } = useCanvasDimensions();
+
+  // Auto-center the scroll view when dimensions are ready
+  useEffect(() => {
+    if (dimensions.width > 0 && dimensions.height > 0 && containerRef.current) {
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        const container = containerRef.current;
+        if (container) {
+          const centerX = (container.scrollWidth - container.clientWidth) / 2;
+          const centerY = (container.scrollHeight - container.clientHeight) / 2;
+          container.scrollTo({
+            left: centerX,
+            top: centerY,
+            behavior: 'smooth'
+          });
+        }
+      }, 100);
+    }
+  }, [dimensions, containerRef]);
 
   // Handle keyboard shortcuts
   const handleDeleteElement = useCallback((elementId: string) => {
@@ -776,35 +797,60 @@ export default function EditorCanvas() {
           <button className="btn">New Scene</button>
           <button className="btn">Save</button>
           <button className="btn">Revert</button>
+          <div className="flex gap-1 ml-2 border-l pl-2">
+            <button 
+              className={`btn ${leftPanelVisible ? 'bg-blue-100' : ''}`}
+              onClick={() => setLeftPanelVisible(!leftPanelVisible)}
+              title="Toggle Scene Explorer"
+            >
+              📋
+            </button>
+            <button 
+              className={`btn ${rightPanelVisible ? 'bg-blue-100' : ''}`}
+              onClick={() => setRightPanelVisible(!rightPanelVisible)}
+              title="Toggle Inspector"
+            >
+              🔧
+            </button>
+          </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           <button className="btn">Export ▼</button>
-          <button className="btn" onClick={() => canvasRef.current?.zoomIn()}>Zoom In</button>
-          <button className="btn" onClick={() => canvasRef.current?.zoomOut()}>Zoom Out</button>
+          <div className="flex gap-1 items-center border-r pr-2 mr-2">
+            <button className="btn" onClick={() => canvasRef.current?.zoomOut()}>−</button>
+            <span className="text-xs text-gray-600 min-w-[40px] text-center">
+              {Math.round((canvasRef.current?.getCurrentZoom() || 1) * 100)}%
+            </span>
+            <button className="btn" onClick={() => canvasRef.current?.zoomIn()}>+</button>
+            <button 
+              className="btn ml-1" 
+              onClick={() => {
+                // Simple scroll to center
+                if (containerRef.current) {
+                  const container = containerRef.current;
+                  const centerX = (container.scrollWidth - container.clientWidth) / 2;
+                  const centerY = (container.scrollHeight - container.clientHeight) / 2;
+                  container.scrollTo({
+                    left: centerX,
+                    top: centerY,
+                    behavior: 'smooth'
+                  });
+                }
+              }}
+              title="Center View"
+            >
+              ⌂
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Main Body */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left Panel - Scene Explorer */}
-        <>
-          <div
-            className="bg-gray-50 border-r border-gray-200 overflow-y-auto flex-shrink-0"
-            style={{ width: `${leftPanelWidth}px` }}
-          >
-            <SceneExplorer elements={elements} selectionManager={selectionManager} />
-          </div>
-          {/* Left Resize Handle */}
-          <div
-            className="border-r border-gray-300 hover:bg-blue-500 cursor-col-resize flex-shrink-0 transition-colors"
-            onMouseDown={handleMouseDown('left')}
-          />
-        </>
-
-        {/* Canvas + Element Toolbar */}
+      {/* Main Body - Full width canvas with floating panels */}
+      <div className="flex-1 relative overflow-hidden">
+        {/* Scrollable Canvas Container */}
         <main
           ref={containerRef}
-          className="flex-1 relative bg-white overflow-hidden"
+          className="absolute inset-0 bg-gray-100 overflow-auto"
           onMouseMove={e => {
             if (tool !== 'select') {
               const rect = e.currentTarget.getBoundingClientRect();
@@ -816,45 +862,66 @@ export default function EditorCanvas() {
           }}
           onMouseLeave={() => setMaskPos(null)}
         >
-          {isPathMode && (
-            <div className="absolute top-0 left-0 w-full py-2 px-4 bg-blue-100 text-blue-800 z-10 flex justify-between items-center">
-              <span>
-                <strong>Path Drawing Mode:</strong> Select a tool and draw a path that your element will follow.
-              </span>
-              <button
-                className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-                onClick={() => {
-                  setIsPathMode(false);
-                  setAnimationTarget(null);
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          )}
-
-          <Toolbar
-            currentTool={tool}
-            onToolChange={handleToolChange}
-            isPathMode={isPathMode}
-            onExitPathMode={() => {
-              setIsPathMode(false);
-              setAnimationTarget(null);
+          {/* Large scrollable canvas area */}
+          <div 
+            className="relative bg-white border-2 border-dashed border-gray-300"
+            style={{ 
+              width: '200vw', // 2x viewport width
+              height: '200vh', // 2x viewport height
+              minWidth: '2000px', // Minimum size
+              minHeight: '2000px'
             }}
-            onSvgImport={handleSvgImport}
-          />
+          >
+            {/* Grid pattern to show scrollable area */}
+            <div 
+              className="absolute inset-0 opacity-10"
+              style={{
+                backgroundImage: `
+                  linear-gradient(#000 1px, transparent 1px),
+                  linear-gradient(90deg, #000 1px, transparent 1px)
+                `,
+                backgroundSize: '50px 50px'
+              }}
+            />
+            
+            {/* Center marker */}
+            <div 
+              className="absolute w-4 h-4 bg-red-500 rounded-full"
+              style={{
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)'
+              }}
+            />
+            
+                        {/* Canvas content container */}
+            <div className="absolute inset-0">
+              {isPathMode && (
+                <div className="absolute top-0 left-0 w-full py-2 px-4 bg-blue-100 text-blue-800 z-10 flex justify-between items-center">
+                  <span>
+                    <strong>Path Drawing Mode:</strong> Select a tool and draw a path that your element will follow.
+                  </span>
+                  <button
+                    className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                    onClick={() => {
+                      setIsPathMode(false);
+                      setAnimationTarget(null);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
 
-          <MaskOverlay
-            tool={tool}
-            maskPos={maskPos}
-            maskOffsetX={MASK_OFFSET_X}
-            maskOffsetY={MASK_OFFSET_Y}
-            lineStartPoint={lineStartPoint}
-          />
+          
 
-          {/* Only show path visibility toggle if paths exist */}
-          {elements.some(el => el.isAnimationPath) && (
-            <div className="absolute bottom-4 right-4 z-10 flex flex-col gap-2">
+          {/* Navigation and Path Controls */}
+          <div 
+            className="absolute bottom-4 z-20 flex flex-col gap-2 transition-all duration-300"
+            style={{ right: `${rightPanelVisible ? rightPanelWidth + 16 : 16}px` }} // Adjust position based on panel visibility
+          >
+            {/* Path visibility toggle - only show if paths exist */}
+            {elements.some(el => el.isAnimationPath) && (
               <button
                 className={`px-3 py-1.5 rounded shadow flex items-center ${showPaths ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'}`}
                 onClick={() => setShowPaths(!showPaths)}
@@ -868,45 +935,110 @@ export default function EditorCanvas() {
                 </svg>
                 {showPaths ? 'Paths Visible' : 'Paths Hidden'}
               </button>
+            )}
+            
+            {/* Navigation Help */}
+            <div className="bg-black/75 text-white text-xs rounded p-2 max-w-[200px]">
+              <div className="font-semibold mb-1">Navigation:</div>
+              <div>• Drag to pan</div>
+              <div>• Wheel to scroll up/down</div>
+              <div>• Shift+Wheel for left/right</div>
+              <div>• Ctrl+Wheel to zoom</div>
+              <div>• Arrow keys to navigate</div>
+              <div>• Spacebar to center</div>
             </div>
-          )}
+          </div>
 
-          {dimensions.width > 0 && dimensions.height > 0 && (
-            <Canvas
-              ref={canvasRef}
-              dimensions={dimensions}
-              elements={showPaths ? elements : elements.filter(el => !el.isAnimationPath)}
-              selectedId={selectedElement?.id || null}
-              onElementSelect={handleSelectElement}
-              onElementDragEnd={handleElementDragEnd}
-              onCanvasClick={canvasClickHandler}
-              onLineEndpointDrag={handleLineEndpointDrag}
-              tool={tool}
-              onAddElement={handleAddElement}
-              isPathMode={isPathMode}
-              onElementRotate={handleElementRotate}
-              onTextChange={handleTextChange}
-            />
-          )}
+            {dimensions.width > 0 && dimensions.height > 0 && (
+              <Canvas
+                ref={canvasRef}
+                dimensions={{
+                  width: Math.max(dimensions.width * 2, 2000), // Make canvas larger for scrolling
+                  height: Math.max(dimensions.height * 2, 2000)
+                }}
+                elements={showPaths ? elements : elements.filter(el => !el.isAnimationPath)}
+                selectedId={selectedElement?.id || null}
+                onElementSelect={handleSelectElement}
+                onElementDragEnd={handleElementDragEnd}
+                onCanvasClick={canvasClickHandler}
+                onLineEndpointDrag={handleLineEndpointDrag}
+                tool={tool}
+                onAddElement={handleAddElement}
+                isPathMode={isPathMode}
+                onElementRotate={handleElementRotate}
+                onTextChange={handleTextChange}
+              />
+            )}
+            </div>
+          </div>
         </main>
 
-        {/* Right Panel - Inspector */}
-        <>
-          {/* Right Resize Handle */}
-          <div
-            className="border-l border-gray-300 hover:bg-blue-500 cursor-col-resize flex-shrink-0 transition-colors"
-            onMouseDown={handleMouseDown('right')}
+        {/* Floating Toolbar - Fixed position outside scrollable area */}
+        <div 
+          className="absolute top-1/2 -translate-y-1/2 z-50 transition-all duration-300"
+          style={{ left: `${leftPanelVisible ? leftPanelWidth + 16 : 16}px` }}
+        >
+          <Toolbar
+            currentTool={tool}
+            onToolChange={handleToolChange}
+            isPathMode={isPathMode}
+            onExitPathMode={() => {
+              setIsPathMode(false);
+              setAnimationTarget(null);
+            }}
+            onSvgImport={handleSvgImport}
           />
-          <div
-            className="bg-gray-50 border-l border-gray-200 overflow-y-auto flex-shrink-0"
-            style={{ width: `${rightPanelWidth}px` }}
-          >
-            <Inspector
-              selectedElement={selectedElement}
-              onInspectorChange={handleInspectorChange}
+        </div>
+
+        {/* Mask Overlay - Fixed position relative to viewport */}
+        <MaskOverlay
+          tool={tool}
+          maskPos={maskPos}
+          maskOffsetX={MASK_OFFSET_X}
+          maskOffsetY={MASK_OFFSET_Y}
+          lineStartPoint={lineStartPoint}
+        />
+
+        {/* Floating Left Panel - Scene Explorer */}
+        {leftPanelVisible && (
+          <>
+            <div
+              className="absolute top-0 left-0 h-full bg-gray-50/95 backdrop-blur-sm border-r border-gray-200 overflow-y-auto z-30 shadow-lg transition-transform duration-300"
+              style={{ width: `${leftPanelWidth}px` }}
+            >
+              <SceneExplorer elements={elements} selectionManager={selectionManager} />
+            </div>
+            
+            {/* Left Resize Handle */}
+            <div
+              className="absolute top-0 h-full w-1 border-r border-gray-300 hover:bg-blue-500 cursor-col-resize z-40 transition-colors"
+              style={{ left: `${leftPanelWidth}px` }}
+              onMouseDown={handleMouseDown('left')}
             />
-          </div>
-        </>
+          </>
+        )}
+
+        {/* Floating Right Panel - Inspector */}
+        {rightPanelVisible && (
+          <>
+            <div
+              className="absolute top-0 right-0 h-full bg-gray-50/95 backdrop-blur-sm border-l border-gray-200 overflow-y-auto z-30 shadow-lg transition-transform duration-300"
+              style={{ width: `${rightPanelWidth}px` }}
+            >
+              <Inspector
+                selectedElement={selectedElement}
+                onInspectorChange={handleInspectorChange}
+              />
+            </div>
+            
+            {/* Right Resize Handle */}
+            <div
+              className="absolute top-0 h-full w-1 border-l border-gray-300 hover:bg-blue-500 cursor-col-resize z-40 transition-colors"
+              style={{ right: `${rightPanelWidth}px` }}
+              onMouseDown={handleMouseDown('right')}
+            />
+          </>
+        )}
       </div>
 
       {/* Timeline - positioned absolutely when collapsed to float on top */}
