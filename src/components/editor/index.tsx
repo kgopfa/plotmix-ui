@@ -150,7 +150,12 @@ export default function EditorCanvas() {
         const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1; // Scroll down = zoom out, scroll up = zoom in
         const newZoom = Math.min(Math.max(canvasZoom * zoomFactor, 0.1), 5); // Clamp between 0.1x and 5x
         
-        setCanvasZoom(newZoom);
+        // Use the canvas's center-based zoom instead of just setting state
+        if (canvasRef.current) {
+          canvasRef.current.setZoom(newZoom);
+        } else {
+          setCanvasZoom(newZoom);
+        }
       }
     };
 
@@ -180,7 +185,13 @@ export default function EditorCanvas() {
         if (lastPinchDistance > 0) {
           const pinchScale = currentDistance / lastPinchDistance;
           const newZoom = Math.min(Math.max(canvasZoom * pinchScale, 0.1), 5);
-          setCanvasZoom(newZoom);
+          
+          // Use the canvas's center-based zoom instead of just setting state
+          if (canvasRef.current) {
+            canvasRef.current.setZoom(newZoom);
+          } else {
+            setCanvasZoom(newZoom);
+          }
         }
 
         lastPinchDistance = currentDistance;
@@ -889,7 +900,13 @@ export default function EditorCanvas() {
           <div className="flex gap-1 items-center border-r pr-2 mr-2">
             <button 
               className="btn" 
-              onClick={() => setCanvasZoom(prev => Math.max(prev * 0.9, 0.1))}
+              onClick={() => {
+                if (canvasRef.current) {
+                  canvasRef.current.zoomOut();
+                } else {
+                  setCanvasZoom(prev => Math.max(prev * 0.9, 0.1));
+                }
+              }}
             >
               −
             </button>
@@ -898,29 +915,27 @@ export default function EditorCanvas() {
             </span>
             <button 
               className="btn" 
-              onClick={() => setCanvasZoom(prev => Math.min(prev * 1.1, 5))}
+              onClick={() => {
+                if (canvasRef.current) {
+                  canvasRef.current.zoomIn();
+                } else {
+                  setCanvasZoom(prev => Math.min(prev * 1.1, 5));
+                }
+              }}
             >
               +
             </button>
             <button 
               className="btn ml-1" 
               onClick={() => {
-                // Reset zoom and scroll to center
-                setCanvasZoom(1);
-                if (containerRef.current) {
-                  const container = containerRef.current;
-                  const centerX = (container.scrollWidth - container.clientWidth) / 2;
-                  const centerY = (container.scrollHeight - container.clientHeight) / 2;
-                  container.scrollTo({
-                    left: centerX,
-                    top: centerY,
-                    behavior: 'smooth'
-                  });
+                // Reset zoom to 100% while maintaining view position
+                if (canvasRef.current) {
+                  canvasRef.current.resetZoomToOneHundredPercent();
                 }
               }}
-              title="Center View"
+              title="Reset to 100%"
             >
-              ⌂
+              100%
             </button>
           </div>
         </div>

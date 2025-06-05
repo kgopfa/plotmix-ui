@@ -48,6 +48,7 @@ export interface CanvasRef {
   setZoom: (scale: number) => void;
   getViewportCenter: () => { x: number; y: number };
   resetToCenter: () => void;
+  resetZoomToOneHundredPercent: () => void;
 }
 
 // Define resize handle positions
@@ -109,60 +110,48 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     zoomIn: () => {
       const viewport = viewportRef.current;
       if (!viewport) return;
-      const newScale = Math.min(viewport.scale.x * 1.1, 8); // maxScale updated for large canvas
+      const newScale = Math.min(viewport.scale.x * 1.1, 5); // Limit to 5x max zoom
       
-      // Zoom from the center of the current view
-      const centerX = viewport.center.x;
-      const centerY = viewport.center.y;
+      // Get the current center point of the viewport
+      const currentCenter = viewport.center;
       
-      viewport.animate({ 
-        scale: newScale, 
-        position: {
-          x: viewport.screenWidth / 2 - centerX * newScale,
-          y: viewport.screenHeight / 2 - centerY * newScale
-        },
-        time: 200 
-      });
+      // Use PIXI viewport's built-in center-based zoom
+      viewport.setZoom(newScale, true);
+      viewport.moveCenter(currentCenter);
+      
       setCurrentZoom(newScale);
+      if (onZoomChange) onZoomChange(newScale);
     },
     zoomOut: () => {
       const viewport = viewportRef.current;
       if (!viewport) return;
-      const newScale = Math.max(viewport.scale.x * 0.9, 0.1); // minScale updated for large canvas
+      const newScale = Math.max(viewport.scale.x * 0.9, 0.1); // Limit to 0.1x min zoom
       
-      // Zoom from the center of the current view
-      const centerX = viewport.center.x;
-      const centerY = viewport.center.y;
+      // Get the current center point of the viewport
+      const currentCenter = viewport.center;
       
-      viewport.animate({ 
-        scale: newScale, 
-        position: {
-          x: viewport.screenWidth / 2 - centerX * newScale,
-          y: viewport.screenHeight / 2 - centerY * newScale
-        },
-        time: 200 
-      });
+      // Use PIXI viewport's built-in center-based zoom
+      viewport.setZoom(newScale, true);
+      viewport.moveCenter(currentCenter);
+      
       setCurrentZoom(newScale);
+      if (onZoomChange) onZoomChange(newScale);
     },
     getCurrentZoom: () => currentZoom,
     setZoom: (scale: number) => {
       const viewport = viewportRef.current;
       if (!viewport) return;
-      const clampedScale = Math.min(Math.max(scale, 0.1), 8); // Updated min/max scale for large canvas
+      const clampedScale = Math.min(Math.max(scale, 0.1), 5); // Limit between 0.1x and 5x
       
-      // Zoom from the center of the current view
-      const centerX = viewport.center.x;
-      const centerY = viewport.center.y;
+      // Get the current center point of the viewport
+      const currentCenter = viewport.center;
       
-      viewport.animate({ 
-        scale: clampedScale, 
-        position: {
-          x: viewport.screenWidth / 2 - centerX * clampedScale,
-          y: viewport.screenHeight / 2 - centerY * clampedScale
-        },
-        time: 200 
-      });
+      // Use PIXI viewport's built-in center-based zoom
+      viewport.setZoom(clampedScale, true);
+      viewport.moveCenter(currentCenter);
+      
       setCurrentZoom(clampedScale);
+      if (onZoomChange) onZoomChange(clampedScale);
     },
     getViewport: () => viewportRef.current,
     centerOnElement: (id?: string) => {
@@ -238,6 +227,21 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         time: 400
       });
       setCurrentZoom(1);
+      if (onZoomChange) onZoomChange(1);
+    },
+    resetZoomToOneHundredPercent: () => {
+      const viewport = viewportRef.current;
+      if (!viewport) return;
+      
+      // Get the current center point of the viewport to maintain position
+      const currentCenter = viewport.center;
+      
+      // Set zoom to exactly 1.0 (100%) while maintaining center
+      viewport.setZoom(1, true);
+      viewport.moveCenter(currentCenter);
+      
+      setCurrentZoom(1);
+      if (onZoomChange) onZoomChange(1);
     }
   }));
 
