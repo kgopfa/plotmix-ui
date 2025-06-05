@@ -862,40 +862,16 @@ export default function EditorCanvas() {
           }}
           onMouseLeave={() => setMaskPos(null)}
         >
-          {/* Large scrollable canvas area */}
+                    {/* Full canvas area - clean infinite canvas */}
           <div 
-            className="relative bg-white border-2 border-dashed border-gray-300"
+            className="relative bg-white"
             style={{ 
-              width: '200vw', // 2x viewport width
-              height: '200vh', // 2x viewport height
-              minWidth: '2000px', // Minimum size
-              minHeight: '2000px'
+              width: '300vw', // 3x viewport width for more space
+              height: '300vh', // 3x viewport height for more space
+              minWidth: '4000px', // Larger minimum size
+              minHeight: '4000px'
             }}
           >
-            {/* Grid pattern to show scrollable area */}
-            <div 
-              className="absolute inset-0 opacity-10"
-              style={{
-                backgroundImage: `
-                  linear-gradient(#000 1px, transparent 1px),
-                  linear-gradient(90deg, #000 1px, transparent 1px)
-                `,
-                backgroundSize: '50px 50px'
-              }}
-            />
-            
-            {/* Center marker */}
-            <div 
-              className="absolute w-4 h-4 bg-red-500 rounded-full"
-              style={{
-                left: '50%',
-                top: '50%',
-                transform: 'translate(-50%, -50%)'
-              }}
-            />
-            
-                        {/* Canvas content container */}
-            <div className="absolute inset-0">
               {isPathMode && (
                 <div className="absolute top-0 left-0 w-full py-2 px-4 bg-blue-100 text-blue-800 z-10 flex justify-between items-center">
                   <span>
@@ -949,28 +925,27 @@ export default function EditorCanvas() {
             </div>
           </div>
 
-            {dimensions.width > 0 && dimensions.height > 0 && (
-              <Canvas
-                ref={canvasRef}
-                dimensions={{
-                  width: Math.max(dimensions.width * 2, 2000), // Make canvas larger for scrolling
-                  height: Math.max(dimensions.height * 2, 2000)
-                }}
-                elements={showPaths ? elements : elements.filter(el => !el.isAnimationPath)}
-                selectedId={selectedElement?.id || null}
-                onElementSelect={handleSelectElement}
-                onElementDragEnd={handleElementDragEnd}
-                onCanvasClick={canvasClickHandler}
-                onLineEndpointDrag={handleLineEndpointDrag}
-                tool={tool}
-                onAddElement={handleAddElement}
-                isPathMode={isPathMode}
-                onElementRotate={handleElementRotate}
-                onTextChange={handleTextChange}
-              />
-            )}
+                          {dimensions.width > 0 && dimensions.height > 0 && (
+                <Canvas
+                  ref={canvasRef}
+                  dimensions={{
+                    width: Math.max(dimensions.width * 3, 4000), // Canvas fills entire scrollable area
+                    height: Math.max(dimensions.height * 3, 4000)
+                  }}
+                  elements={showPaths ? elements : elements.filter(el => !el.isAnimationPath)}
+                  selectedId={selectedElement?.id || null}
+                  onElementSelect={handleSelectElement}
+                  onElementDragEnd={handleElementDragEnd}
+                  onCanvasClick={canvasClickHandler}
+                  onLineEndpointDrag={handleLineEndpointDrag}
+                  tool={tool}
+                  onAddElement={handleAddElement}
+                  isPathMode={isPathMode}
+                  onElementRotate={handleElementRotate}
+                  onTextChange={handleTextChange}
+                />
+              )}
             </div>
-          </div>
         </main>
 
         {/* Floating Toolbar - Fixed position outside scrollable area */}
