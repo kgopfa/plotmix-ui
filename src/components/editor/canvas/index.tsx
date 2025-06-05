@@ -40,6 +40,12 @@ export interface CanvasRef {
   zoomIn: () => void;
   zoomOut: () => void;
   getViewport: () => Viewport | null;
+  centerOnElement: (id?: string) => void;
+  zoomToFitElement: (id?: string) => void;
+  getCurrentZoom: () => number;
+  setZoom: (scale: number) => void;
+  getViewportCenter: () => { x: number; y: number };
+  resetToCenter: () => void;
 }
 
 // Define resize handle positions
@@ -88,14 +94,111 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   // Add hover state
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
+  // Optional: Track zoom state for external components (like zoom indicators)
+  const [currentZoom, setCurrentZoom] = useState(1);
+
   // Calculate the canvas scale factor based on device pixel ratio and any additional scaling
   const canvasScaleFactor = useRef(window.devicePixelRatio || 1);
 
   useImperativeHandle(ref, () => ({
     getShapeRefs: () => shapeRefs.current,
-    zoomIn: () => viewportRef.current?.zoomPercent(1.1, true),
-    zoomOut: () => viewportRef.current?.zoomPercent(0.9, true),
+    zoomIn: () => {
+      const viewport = viewportRef.current;
+      if (!viewport) return;
+      const newScale = Math.min(viewport.scale.x * 1.1, 8); // maxScale updated for large canvas
+      viewport.animate({ scale: newScale, time: 200 });
+      setCurrentZoom(newScale);
+    },
+    zoomOut: () => {
+      const viewport = viewportRef.current;
+      if (!viewport) return;
+      const newScale = Math.max(viewport.scale.x * 0.9, 0.1); // minScale updated for large canvas
+      viewport.animate({ scale: newScale, time: 200 });
+      setCurrentZoom(newScale);
+    },
+    getCurrentZoom: () => currentZoom,
+    setZoom: (scale: number) => {
+      const viewport = viewportRef.current;
+      if (!viewport) return;
+      const clampedScale = Math.min(Math.max(scale, 0.1), 8); // Updated min/max scale for large canvas
+      viewport.animate({ scale: clampedScale, time: 200 });
+      setCurrentZoom(clampedScale);
+    },
     getViewport: () => viewportRef.current,
+    centerOnElement: (id?: string) => {
+      const targetId = id || selectedId;
+      if (!targetId) return;
+      
+      const shape = shapeRefs.current[targetId];
+      const viewport = viewportRef.current;
+      if (!shape || !viewport) return;
+  
+      const bounds = shape.getBounds();
+      viewport.animate({ 
+        position: { 
+          x: viewport.worldScreenWidth / 2 - (bounds.x + bounds.width / 2),
+          y: viewport.worldScreenHeight / 2 - (bounds.y + bounds.height / 2)
+        },
+        time: 300
+      });
+    },
+    zoomToFitElement: (id?: string) => {
+      const targetId = id || selectedId;
+      if (!targetId) return;
+      
+      const shape = shapeRefs.current[targetId];
+      const viewport = viewportRef.current;
+      if (!shape || !viewport) return;
+  
+      const bounds = shape.getBounds();
+      
+      // Handle edge cases where bounds might be 0
+      if (bounds.width <= 0 || bounds.height <= 0) {
+        console.warn('Element has invalid bounds for zoom to fit');
+        return;
+      }
+      
+      const margin = 40;
+      const availableWidth = viewport.screenWidth - margin * 2;
+      const availableHeight = viewport.screenHeight - margin * 2;
+      
+      // Ensure we don't divide by zero
+      const scaleX = availableWidth > 0 ? availableWidth / bounds.width : 1;
+      const scaleY = availableHeight > 0 ? availableHeight / bounds.height : 1;
+      const scale = Math.min(Math.min(scaleX, scaleY), 8); // Respect maxScale updated for large canvas
+      const clampedScale = Math.max(scale, 0.1); // Respect minScale updated for large canvas
+  
+      viewport.animate({
+        scale: clampedScale,
+        position: {
+          x: viewport.screenWidth / 2 - (bounds.x + bounds.width / 2) * clampedScale,
+          y: viewport.screenHeight / 2 - (bounds.y + bounds.height / 2) * clampedScale
+        },
+        time: 400
+      });
+      setCurrentZoom(clampedScale);
+    },
+    getViewportCenter: () => {
+      const viewport = viewportRef.current;
+      if (!viewport) return { x: 50000, y: 50000 }; // Default to world center
+      
+      // Get the center point of what's currently visible
+      const centerX = viewport.center.x;
+      const centerY = viewport.center.y;
+      return { x: centerX, y: centerY };
+    },
+    resetToCenter: () => {
+      const viewport = viewportRef.current;
+      if (!viewport) return;
+      
+      // Reset to center of the world with default zoom
+      viewport.animate({
+        position: { x: 0, y: 0 }, // This centers the viewport on world center
+        scale: 1,
+        time: 400
+      });
+      setCurrentZoom(1);
+    }
   }));
 
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -126,6 +229,24 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       document.body.style.cursor = '';
     };
   }, []);
+
+  // Sync zoom state with viewport's actual scale
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+
+    const handleZoomChange = () => {
+      const currentScale = viewport.scale.x;
+      setCurrentZoom(currentScale);
+    };
+
+    // Listen for zoom changes from user interactions (wheel, pinch, etc.)
+    viewport.on('zoomed', handleZoomChange);
+
+    return () => {
+      viewport.off('zoomed', handleZoomChange);
+    };
+  }, [viewportRef.current]);
 
   // Add this useEffect in your Canvas component
   useEffect(() => {

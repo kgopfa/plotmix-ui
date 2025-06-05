@@ -21,19 +21,28 @@ export const CanvasContent = forwardRef<Viewport | null, { children: React.React
       .pinch()
       .wheel()
       .decelerate()
-      .clampZoom({ minScale: 0.5, maxScale: 4 });
+      .clampZoom({ minScale: 0.1, maxScale: 8 }); // Wider zoom range for large canvas
+
+    // Center the viewport to the middle of the world on initial load
+    const worldCenterX = 50000; // Half of world width
+    const worldCenterY = 50000; // Half of world height
+    viewport.moveCenter(worldCenterX, worldCenterY);
 
   }, [app]);
 
   if (!app?.renderer?.events) return null;
+
+  // Figma-like large canvas dimensions
+  const WORLD_WIDTH = 100000;  // 100k pixels wide
+  const WORLD_HEIGHT = 100000; // 100k pixels tall
 
   return (
     <viewport
       ref={viewportRef}
       screenWidth={app.renderer.width}
       screenHeight={app.renderer.height}
-      worldWidth={2000}
-      worldHeight={2000}
+      worldWidth={WORLD_WIDTH}
+      worldHeight={WORLD_HEIGHT}
       events={app.renderer.events}
       interactive={true}
     >
