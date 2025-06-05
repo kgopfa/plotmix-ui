@@ -110,14 +110,38 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       const viewport = viewportRef.current;
       if (!viewport) return;
       const newScale = Math.min(viewport.scale.x * 1.1, 8); // maxScale updated for large canvas
-      viewport.animate({ scale: newScale, time: 200 });
+      
+      // Zoom from the center of the current view
+      const centerX = viewport.center.x;
+      const centerY = viewport.center.y;
+      
+      viewport.animate({ 
+        scale: newScale, 
+        position: {
+          x: viewport.screenWidth / 2 - centerX * newScale,
+          y: viewport.screenHeight / 2 - centerY * newScale
+        },
+        time: 200 
+      });
       setCurrentZoom(newScale);
     },
     zoomOut: () => {
       const viewport = viewportRef.current;
       if (!viewport) return;
       const newScale = Math.max(viewport.scale.x * 0.9, 0.1); // minScale updated for large canvas
-      viewport.animate({ scale: newScale, time: 200 });
+      
+      // Zoom from the center of the current view
+      const centerX = viewport.center.x;
+      const centerY = viewport.center.y;
+      
+      viewport.animate({ 
+        scale: newScale, 
+        position: {
+          x: viewport.screenWidth / 2 - centerX * newScale,
+          y: viewport.screenHeight / 2 - centerY * newScale
+        },
+        time: 200 
+      });
       setCurrentZoom(newScale);
     },
     getCurrentZoom: () => currentZoom,
@@ -125,7 +149,19 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       const viewport = viewportRef.current;
       if (!viewport) return;
       const clampedScale = Math.min(Math.max(scale, 0.1), 8); // Updated min/max scale for large canvas
-      viewport.animate({ scale: clampedScale, time: 200 });
+      
+      // Zoom from the center of the current view
+      const centerX = viewport.center.x;
+      const centerY = viewport.center.y;
+      
+      viewport.animate({ 
+        scale: clampedScale, 
+        position: {
+          x: viewport.screenWidth / 2 - centerX * clampedScale,
+          y: viewport.screenHeight / 2 - centerY * clampedScale
+        },
+        time: 200 
+      });
       setCurrentZoom(clampedScale);
     },
     getViewport: () => viewportRef.current,
