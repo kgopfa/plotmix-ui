@@ -1,50 +1,20 @@
 import { ToolType } from '@/types/editor';
-import { useRef } from 'react';
 
 interface ToolbarProps {
   currentTool: ToolType;
   onToolChange: (tool: ToolType) => void;
   isPathMode?: boolean;
   onExitPathMode?: () => void;
-  onSvgImport?: (file: File) => void;
 }
 
 export function Toolbar({ 
   currentTool, 
   onToolChange, 
   isPathMode, 
-  onExitPathMode,
-  onSvgImport 
+  onExitPathMode
 }: ToolbarProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSvgClick = () => {
-    // Only open file dialog if we're not already in SVG mode
-    if (currentTool !== 'svg') {
-      if (fileInputRef.current) {
-        fileInputRef.current.click();
-      }
-    } else {
-      // If already in SVG mode, switch back to select
-      onToolChange('select');
-    }
-  };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      const file = files[0];
-      if (file.type === 'image/svg+xml') {
-        if (onSvgImport) {
-          onSvgImport(file);
-        }
-      } else {
-        alert('Please select an SVG file');
-      }
-      // Reset the input
-      e.target.value = '';
-    }
-  };
 
   // Vertical toolbar used for both regular and path mode
   const renderVerticalToolbar = () => (
@@ -91,18 +61,7 @@ export function Toolbar({
       >
         <span className="text-xl">T</span>
       </button>
-      <button
-        className={`flex flex-col items-center justify-center p-2 ${currentTool === 'svg' ? 'bg-gray-100' : 'hover:bg-gray-100'}`}
-        onClick={handleSvgClick}
-        title="Import SVG"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-          <polyline points="17 8 12 3 7 8"></polyline>
-          <line x1="12" y1="3" x2="12" y2="15"></line>
-        </svg>
-        <span className="text-xs mt-1 text-gray-700">SVG</span>
-      </button>
+
       <button
         className={`flex flex-col items-center justify-center p-2 ${currentTool === 'select' ? 'bg-gray-100' : 'hover:bg-gray-100'}`}
         onClick={() => onToolChange('select')}
@@ -111,14 +70,7 @@ export function Toolbar({
         <span className="text-xl">👆</span>
       </button>
       
-      {/* Hidden file input for SVG upload */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".svg,image/svg+xml"
-        style={{ display: 'none' }}
-        onChange={handleFileChange}
-      />
+
     </div>
   );
 

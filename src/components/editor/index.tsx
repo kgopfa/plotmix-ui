@@ -42,7 +42,7 @@ export default function EditorCanvas() {
     animationId: string;
     elementId: string;
   } | null>(null);
-  const [showPaths, setShowPaths] = useState(true);
+    const [showPaths, setShowPaths] = useState(true);
   
   // SVG import state
   const [pendingSvgData, setPendingSvgData] = useState<string | null>(null);
@@ -58,6 +58,7 @@ export default function EditorCanvas() {
   const MASK_OFFSET_Y = 0;
 
   const canvasRef = useRef<CanvasRef | null>(null);
+  const svgFileInputRef = useRef<HTMLInputElement>(null);
 
   // Panel resize handlers
   const handleMouseDown = useCallback((panel: 'left' | 'right') => (e: React.MouseEvent) => {
@@ -876,6 +877,20 @@ export default function EditorCanvas() {
     }
   }, []);
 
+  const handleSvgFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      if (file.type === 'image/svg+xml') {
+        handleSvgImport(file);
+      } else {
+        alert('Please select an SVG file');
+      }
+      // Reset the input
+      e.target.value = '';
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen w-screen">
       {/* Options Bar */}
@@ -884,6 +899,17 @@ export default function EditorCanvas() {
           <button className="btn">New Scene</button>
           <button className="btn">Save</button>
           <button className="btn">Revert</button>
+          <button 
+            className="btn"
+            onClick={() => {
+              if (svgFileInputRef.current) {
+                svgFileInputRef.current.click();
+              }
+            }}
+            title="Import SVG"
+          >
+            Import SVG
+          </button>
           <div className="flex gap-1 ml-2 border-l pl-2">
             <button 
               className={`btn ${leftPanelVisible ? 'bg-blue-100' : ''}`}
@@ -1057,16 +1083,15 @@ export default function EditorCanvas() {
           className="absolute top-1/2 -translate-y-1/2 z-50 transition-all duration-300"
           style={{ left: `${leftPanelVisible ? leftPanelWidth + 16 : 16}px` }}
         >
-          <Toolbar
-            currentTool={tool}
-            onToolChange={handleToolChange}
-            isPathMode={isPathMode}
-            onExitPathMode={() => {
-              setIsPathMode(false);
-              setAnimationTarget(null);
-            }}
-            onSvgImport={handleSvgImport}
-          />
+                  <Toolbar
+          currentTool={tool}
+          onToolChange={handleToolChange}
+          isPathMode={isPathMode}
+          onExitPathMode={() => {
+            setIsPathMode(false);
+            setAnimationTarget(null);
+          }}
+        />
         </div>
 
         {/* Mask Overlay - Fixed position relative to viewport */}
@@ -1132,6 +1157,15 @@ export default function EditorCanvas() {
           selectionManager={selectionManager}
         />
       </div>
+      
+      {/* Hidden file input for SVG upload */}
+      <input
+        ref={svgFileInputRef}
+        type="file"
+        accept=".svg,image/svg+xml"
+        style={{ display: 'none' }}
+        onChange={handleSvgFileChange}
+      />
     </div>
   );
 }
