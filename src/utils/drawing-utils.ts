@@ -2,6 +2,19 @@ import { Graphics, Texture, Text, TextStyle, TextStyleFontWeight, TextStyleFontS
 import { AnimationPath } from '@/utils/animation-path';
 import type { AnimatedCanvasElement } from '@/types/canvas';
 
+// Cache for loaded image textures to prevent reloading during drag operations
+const imageTextureCache = new Map<string, Texture>();
+
+// Function to clear texture cache (useful for memory management)
+export function clearImageTextureCache() {
+  imageTextureCache.forEach(texture => {
+    if (texture && !texture.destroyed) {
+      texture.destroy();
+    }
+  });
+  imageTextureCache.clear();
+}
+
 export const parseColor = (color: string | number | undefined): number => {
   if (!color) return 0x000000;
   if (typeof color === 'number') return color;
@@ -319,12 +332,27 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasElement) {
         dataUrl = `data:image/svg+xml;base64,${base64}`;
       }
       
-      // Create a visible placeholder first
+      // Create a cache key that includes image data and dimensions
+      const cacheKey = `${dataUrl}_${shape.width}_${shape.height}`;
+      
+      // Check if we already have this texture cached
+      const cachedTexture = imageTextureCache.get(cacheKey);
+      if (cachedTexture && !cachedTexture.destroyed) {
+        // Use cached texture immediately - no flashing!
+        graphics.rect(-shape.width/2, -shape.height/2, shape.width, shape.height);
+        graphics.fill({
+          texture: cachedTexture,
+          alpha: shape.opacity ?? 1
+        });
+        return;
+      }
+      
+      // Show placeholder only on first load
       graphics.rect(-shape.width/2, -shape.height/2, shape.width, shape.height);
       graphics.fill({ color: 0xF0F0F0, alpha: 0.8 }); // Light gray placeholder
       graphics.stroke({ color: 0xCCCCCC, width: 2 }); // Gray border
       
-      // Try async loading for image texture
+      // Load image asynchronously only if not cached
       const img = new Image();
       img.onload = () => {
         try {
@@ -354,6 +382,9 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasElement) {
             // Enable anti-aliasing and smooth scaling on the texture
             texture.source.scaleMode = 'linear'; // Use linear filtering for smoother scaling
             texture.source.antialias = true; // Enable anti-aliasing
+            
+            // Cache the texture for future use
+            imageTextureCache.set(cacheKey, texture);
             
             graphics.clear();
             graphics.rect(-shape.width/2, -shape.height/2, shape.width, shape.height);
