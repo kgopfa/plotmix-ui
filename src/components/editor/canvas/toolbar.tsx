@@ -19,10 +19,15 @@ export function Toolbar({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSvgClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
+    // Only open file dialog if we're not already in SVG mode
+    if (currentTool !== 'svg') {
+      if (fileInputRef.current) {
+        fileInputRef.current.click();
+      }
+    } else {
+      // If already in SVG mode, switch back to select
+      onToolChange('select');
     }
-    onToolChange('svg');
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

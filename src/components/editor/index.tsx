@@ -43,6 +43,9 @@ export default function EditorCanvas() {
     elementId: string;
   } | null>(null);
   const [showPaths, setShowPaths] = useState(true);
+  
+  // SVG import state
+  const [pendingSvgData, setPendingSvgData] = useState<string | null>(null);
 
   // Panel state management
   const [leftPanelWidth, setLeftPanelWidth] = useState(320); // Default 320px (w-80)
@@ -230,6 +233,11 @@ export default function EditorCanvas() {
   const handleToolChange = useCallback((newTool: ToolType) => {
     setTool(newTool);
     setMaskPos(null);
+    
+    // Clear pending SVG data if switching away from SVG tool
+    if (newTool !== 'svg') {
+      setPendingSvgData(null);
+    }
   }, []);
 
   useKeyboardShortcuts({
@@ -264,7 +272,9 @@ export default function EditorCanvas() {
   }, [timeManager, gsapManager]);
 
   const canvasClickHandler = (e: FederatedPointerEvent) => {
+    console.log('Canvas click handler triggered. Tool:', tool, 'PendingSvgData:', !!pendingSvgData);
     const isEmptyClick = !(e.target && (e.target as Container).label === 'shape');
+    console.log('Is empty click:', isEmptyClick);
 
     if (isEmptyClick) {
       if (tool === 'line') {
@@ -296,6 +306,44 @@ export default function EditorCanvas() {
             setIsPathMode(false);
             setAnimationTarget(null);
           }
+        }
+      } else if (tool === 'svg' && pendingSvgData) {
+        console.log('Placing SVG at position:', e.global.x, e.global.y);
+        console.log('SVG data available:', !!pendingSvgData);
+        
+        // Create SVG element at click position
+        const svgWidth = 100;
+        const svgHeight = 100;
+        
+        try {
+          const svgElement = createNewElement(
+            'svg',
+            e.global.x,
+            e.global.y,
+            elements,
+            undefined,
+            isPathMode,
+            pendingSvgData,
+            svgWidth,
+            svgHeight
+          );
+
+          console.log('Created SVG element:', svgElement);
+          
+          setElements(prev => [...prev, svgElement]);
+          selectionManager.select(svgElement);
+          setTool('select');
+          setMaskPos(null);
+          setPendingSvgData(null); // Clear pending SVG data
+
+          // If in path mode, exit after creating the path
+          if (isPathMode) {
+            addPathToAnimation(svgElement);
+            setIsPathMode(false);
+            setAnimationTarget(null);
+          }
+        } catch (error) {
+          console.error('Error creating SVG element:', error);
         }
       } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle') {
         const newElement = createNewElement(tool, e.global.x, e.global.y, elements, undefined, isPathMode);
@@ -811,57 +859,22 @@ export default function EditorCanvas() {
 
       console.log("Importing SVG:", file.name);
 
-      // Create a placeholder first while we wait for the image to load
-      const placeholderElement = createNewElement(
-        'rectangle',
-        dimensions.width / 2 - 50,  // Center horizontally - half of default width (100px)
-        dimensions.height / 2 - 50, // Center vertically - half of default height (100px)
-        elements,
-        undefined,
-        false
-      );
-      placeholderElement.fill = '#e0e0e0';
-      placeholderElement.name = "SVG Loading...";
-
-      setElements(prev => [...prev, placeholderElement]);
-      selectionManager.select(placeholderElement);
-
-      // Load the SVG to get its aspects/dimensions
+      // Validate SVG by loading it
       const imgUrl = URL.createObjectURL(new Blob([svgData], { type: 'image/svg+xml' }));
       const img = new Image();
 
-      // Wait for image to load
+      // Wait for image to load to validate
       await new Promise<void>((resolve, reject) => {
         img.onload = () => resolve();
         img.onerror = () => reject(new Error("Failed to load SVG"));
         img.src = imgUrl;
       });
 
-      // Use default dimensions of 100x100 (same as rectangle)
-      const svgWidth = 100;
-      const svgHeight = 100;
-
-      // Create SVG element with standard size
-      const svgElement = createNewElement(
-        'svg',
-        dimensions.width / 2 - svgWidth / 2,    // Center horizontally
-        dimensions.height / 2 - svgHeight / 2,  // Center vertically
-        elements,
-        undefined,
-        false,
-        svgData,
-        svgWidth,   // Fixed size of 100px width
-        svgHeight   // Fixed size of 100px height
-      );
-
-      // Replace the placeholder with the SVG
-      setElements(prev => {
-        const filtered = prev.filter(el => el.id !== placeholderElement.id);
-        return [...filtered, svgElement];
-      });
-
-      selectionManager.select(svgElement);
-      setTool('select');
+      // Store SVG data and switch to placement mode
+      console.log('Setting pending SVG data and switching to svg tool');
+      setPendingSvgData(svgData);
+      setTool('svg');
+      console.log('Tool set to svg, pendingSvgData set');
 
       // Clean up
       URL.revokeObjectURL(imgUrl);
@@ -870,7 +883,7 @@ export default function EditorCanvas() {
       console.error("Error importing SVG:", error);
       alert("Failed to import SVG. Please try another file.");
     }
-  }, [dimensions.width, dimensions.height, elements, selectionManager]);
+  }, []);
 
   return (
     <div className="flex flex-col h-screen w-screen">

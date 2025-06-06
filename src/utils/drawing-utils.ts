@@ -158,15 +158,6 @@ function drawShapePath(graphics: Graphics, shape: AnimatedCanvasElement) {
         }
       }
       break;
-      
-    case 'svg':
-      graphics.roundRect(
-        -shape.width / 2,
-        -shape.height / 2,
-        shape.width,
-        shape.height
-      );
-      break;
   }
 }
 
@@ -257,7 +248,8 @@ export function createShapeGraphics(shape: AnimatedCanvasElement, color?: string
       shape.width,
       shape.height
     );
-    graphics.fill({ color: 0xFFFFFF, alpha: 0 });
+    // Make it slightly visible for selection/hover but mostly transparent
+    graphics.fill({ color: 0xFFFFFF, alpha: 0.01 });
     
     return graphics;
   }
@@ -282,82 +274,83 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasElement) {
 
   if (shape.type === 'svg' && shape.svgData) {
     try {
-      // Create an image from the SVG
-      const img = new Image();
+      let svgContent = shape.svgData;
       
+      // Set explicit dimensions for the SVG
+      if (!svgContent.includes('width=') || !svgContent.includes('height=')) {
+        const svgTagMatch = svgContent.match(/<svg[^>]*>/);
+        if (svgTagMatch) {
+          const svgTag = svgTagMatch[0];
+          const newSvgTag = svgTag.replace('<svg', 
+            `<svg width="${shape.width}" height="${shape.height}"`);
+          svgContent = svgContent.replace(svgTag, newSvgTag);
+        }
+      }
+      
+      // Add viewBox for better scaling
+      if (!svgContent.includes('viewBox=')) {
+        const svgTagMatch = svgContent.match(/<svg[^>]*>/);
+        if (svgTagMatch) {
+          const svgTag = svgTagMatch[0];
+          const newSvgTag = svgTag.replace('<svg', 
+            `<svg viewBox="0 0 ${shape.width} ${shape.height}"`);
+          svgContent = svgContent.replace(svgTag, newSvgTag);
+        }
+      }
+
+      // Create base64 data URL
+      const base64 = window.btoa(unescape(encodeURIComponent(svgContent)));
+      const dataUrl = `data:image/svg+xml;base64,${base64}`;
+      
+      // Create a visible placeholder first
+      graphics.rect(-shape.width/2, -shape.height/2, shape.width, shape.height);
+      graphics.fill({ color: 0xF0F0F0, alpha: 0.8 }); // Light gray placeholder
+      graphics.stroke({ color: 0xCCCCCC, width: 2 }); // Gray border
+      
+      // Try async loading for SVG texture
+      const img = new Image();
       img.onload = () => {
         try {
-          // Create a texture from the image
+          // Check if the graphics object is still valid
+          if (!graphics || graphics.destroyed) {
+            console.warn("Graphics object no longer valid");
+            return;
+          }
+          
           const texture = Texture.from(img);
           
-          // Clear and recreate the graphics with the texture
-          graphics.clear();
-          
-          // Draw a rectangle with the SVG texture
-          graphics.rect(-shape.width/2, -shape.height/2, shape.width, shape.height);
-          graphics.fill({
-            texture: texture,
-            alpha: shape.opacity ?? 1
-          });
-        } catch (textureError) {
-          console.error("Error creating texture from SVG:", textureError);
-          // Fallback to drawing a simple rectangle
-          graphics.clear();
-          graphics.rect(-shape.width/2, -shape.height/2, shape.width, shape.height);
-          graphics.fill({ color: 0xFFDDDD, alpha: 0.5 });
-          graphics.stroke({ color: 0xFF0000, width: 1 });
+          // Verify texture was created successfully
+          if (texture && texture.source && texture.source.resource) {
+            graphics.clear();
+            graphics.rect(-shape.width/2, -shape.height/2, shape.width, shape.height);
+            graphics.fill({
+              texture: texture,
+              alpha: shape.opacity ?? 1
+            });
+          } else {
+            console.warn("Texture creation failed - invalid texture object");
+          }
+        } catch (asyncError) {
+          console.error("Async SVG texture creation failed:", asyncError);
+          // Keep the placeholder visible on error
         }
       };
       
       img.onerror = (error) => {
-        console.error("Error loading SVG image:", error);
-        // Fallback to drawing a simple rectangle
-        graphics.clear();
-        graphics.rect(-shape.width/2, -shape.height/2, shape.width, shape.height);
-        graphics.fill({ color: 0xFFDDDD, alpha: 0.5 });
-        graphics.stroke({ color: 0xFF0000, width: 1 });
+        console.error("Failed to load SVG image:", error);
+        // Keep the placeholder visible on error
       };
       
-      if (shape.svgData) {
-        let svgContent = shape.svgData;
-        
-        // Set explicit dimensions for the SVG
-        if (!svgContent.includes('width=') || !svgContent.includes('height=')) {
-          // Extract SVG tag
-          const svgTagMatch = svgContent.match(/<svg[^>]*>/);
-          if (svgTagMatch) {
-            const svgTag = svgTagMatch[0];
-            // Create new tag with dimensions
-            const newSvgTag = svgTag.replace('<svg', 
-              `<svg width="${shape.width}" height="${shape.height}"`);
-            // Replace in content
-            svgContent = svgContent.replace(svgTag, newSvgTag);
-          }
-        }
-        
-        // Add viewBox for better scaling
-        if (!svgContent.includes('viewBox=')) {
-          // Extract SVG tag
-          const svgTagMatch = svgContent.match(/<svg[^>]*>/);
-          if (svgTagMatch) {
-            const svgTag = svgTagMatch[0];
-            // Create new tag with viewBox
-            const newSvgTag = svgTag.replace('<svg', 
-              `<svg viewBox="0 0 ${shape.width} ${shape.height}"`);
-            // Replace in content
-            svgContent = svgContent.replace(svgTag, newSvgTag);
-          }
-        }
-
-        const base64 = window.btoa(unescape(encodeURIComponent(svgContent)));
-        img.src = `data:image/svg+xml;base64,${base64}`;
-      }
+      img.src = dataUrl;
     } catch (error) {
       console.error("Error in SVG rendering setup:", error);
-      // Fallback to drawing a simple rectangle
+      // Enhanced fallback with better visual indication
       graphics.rect(-shape.width/2, -shape.height/2, shape.width, shape.height);
-      graphics.fill({ color: 0xFFDDDD, alpha: 0.5 });
-      graphics.stroke({ color: 0xFF0000, width: 1 });
+      graphics.fill({ color: 0xFFEEEE, alpha: 0.8 });
+      graphics.stroke({ color: 0xFF6666, width: 2 });
+      
+      // Add "SVG" text indicator (basic fallback)
+      // Note: This is a simple fallback - in a real app you might want to show more info
     }
     return;
   }
