@@ -241,7 +241,7 @@ export function createShapeGraphics(shape: AnimatedCanvasElement, color?: string
 
   const fillColor = color ?? shape.fill;
   
-  if (shape.type === 'svg' && shape.svgData) {
+  if (shape.type === 'image' && shape.imageData) {
     graphics.rect(
       -shape.width / 2,
       -shape.height / 2,
@@ -272,51 +272,59 @@ export function createShapeGraphics(shape: AnimatedCanvasElement, color?: string
 export function drawShape(graphics: Graphics, shape: AnimatedCanvasElement) {
   graphics.clear();
 
-  if (shape.type === 'svg' && shape.svgData) {
+  if (shape.type === 'image' && shape.imageData) {
     try {
-      let svgContent = shape.svgData;
+      // Check if it's an SVG by looking for SVG content
+      const isSVG = shape.imageData.includes('<svg') || shape.imageData.startsWith('data:image/svg+xml');
       
-      // Prepare SVG for high-quality rendering while maintaining correct dimensions
-      const svgTagMatch = svgContent.match(/<svg[^>]*>/);
-      if (svgTagMatch) {
-        let svgTag = svgTagMatch[0];
+      let dataUrl = shape.imageData;
+      
+      if (isSVG && !shape.imageData.startsWith('data:')) {
+        // Handle SVG content that needs to be converted to data URL
+        let svgContent = shape.imageData;
         
-        // Add high-quality rendering attributes without changing dimensions
-        if (!svgTag.includes('shape-rendering=')) {
-          svgTag = svgTag.replace('<svg', '<svg shape-rendering="geometricPrecision"');
+        // Prepare SVG for high-quality rendering while maintaining correct dimensions
+        const svgTagMatch = svgContent.match(/<svg[^>]*>/);
+        if (svgTagMatch) {
+          let svgTag = svgTagMatch[0];
+          
+          // Add high-quality rendering attributes without changing dimensions
+          if (!svgTag.includes('shape-rendering=')) {
+            svgTag = svgTag.replace('<svg', '<svg shape-rendering="geometricPrecision"');
+          }
+          if (!svgTag.includes('text-rendering=')) {
+            svgTag = svgTag.replace('<svg', '<svg text-rendering="geometricPrecision"');
+          }
+          if (!svgTag.includes('image-rendering=')) {
+            svgTag = svgTag.replace('<svg', '<svg image-rendering="optimizeQuality"');
+          }
+          
+          // Set explicit dimensions for the SVG
+          if (!svgContent.includes('width=') || !svgContent.includes('height=')) {
+            svgTag = svgTag.replace('<svg', 
+              `<svg width="${shape.width}" height="${shape.height}"`);
+          }
+          
+          // Add viewBox for better scaling
+          if (!svgContent.includes('viewBox=')) {
+            svgTag = svgTag.replace('<svg', 
+              `<svg viewBox="0 0 ${shape.width} ${shape.height}"`);
+          }
+          
+          svgContent = svgContent.replace(svgTagMatch[0], svgTag);
         }
-        if (!svgTag.includes('text-rendering=')) {
-          svgTag = svgTag.replace('<svg', '<svg text-rendering="geometricPrecision"');
-        }
-        if (!svgTag.includes('image-rendering=')) {
-          svgTag = svgTag.replace('<svg', '<svg image-rendering="optimizeQuality"');
-        }
-        
-        // Set explicit dimensions for the SVG
-        if (!svgContent.includes('width=') || !svgContent.includes('height=')) {
-          svgTag = svgTag.replace('<svg', 
-            `<svg width="${shape.width}" height="${shape.height}"`);
-        }
-        
-        // Add viewBox for better scaling
-        if (!svgContent.includes('viewBox=')) {
-          svgTag = svgTag.replace('<svg', 
-            `<svg viewBox="0 0 ${shape.width} ${shape.height}"`);
-        }
-        
-        svgContent = svgContent.replace(svgTagMatch[0], svgTag);
-      }
 
-      // Create base64 data URL
-      const base64 = window.btoa(unescape(encodeURIComponent(svgContent)));
-      const dataUrl = `data:image/svg+xml;base64,${base64}`;
+        // Create base64 data URL for SVG
+        const base64 = window.btoa(unescape(encodeURIComponent(svgContent)));
+        dataUrl = `data:image/svg+xml;base64,${base64}`;
+      }
       
       // Create a visible placeholder first
       graphics.rect(-shape.width/2, -shape.height/2, shape.width, shape.height);
       graphics.fill({ color: 0xF0F0F0, alpha: 0.8 }); // Light gray placeholder
       graphics.stroke({ color: 0xCCCCCC, width: 2 }); // Gray border
       
-      // Try async loading for SVG texture
+      // Try async loading for image texture
       const img = new Image();
       img.onload = () => {
         try {
@@ -335,7 +343,7 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasElement) {
           canvas.width = shape.width;
           canvas.height = shape.height;
           
-          // Draw the SVG image to canvas
+          // Draw the image to canvas
           ctx.drawImage(img, 0, 0, shape.width, shape.height);
           
           // Create texture from canvas instead of image
@@ -357,25 +365,25 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasElement) {
             console.warn("Texture creation failed - invalid texture object");
           }
         } catch (asyncError) {
-          console.error("Async SVG texture creation failed:", asyncError);
+          console.error("Async image texture creation failed:", asyncError);
           // Keep the placeholder visible on error
         }
       };
       
       img.onerror = (error) => {
-        console.error("Failed to load SVG image:", error);
+        console.error("Failed to load image:", error);
         // Keep the placeholder visible on error
       };
       
       img.src = dataUrl;
     } catch (error) {
-      console.error("Error in SVG rendering setup:", error);
+      console.error("Error in image rendering setup:", error);
       // Enhanced fallback with better visual indication
       graphics.rect(-shape.width/2, -shape.height/2, shape.width, shape.height);
       graphics.fill({ color: 0xFFEEEE, alpha: 0.8 });
       graphics.stroke({ color: 0xFF6666, width: 2 });
       
-      // Add "SVG" text indicator (basic fallback)
+      // Add "IMG" text indicator (basic fallback)
       // Note: This is a simple fallback - in a real app you might want to show more info
     }
     return;

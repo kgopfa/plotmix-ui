@@ -1,6 +1,6 @@
 import type { AnimatedCanvasElement, ElementAnimation } from '@/types/canvas';
 
-type ShapeType = 'rectangle' | 'circle' | 'triangle' | 'line' | 'path' | 'svg' | 'text';
+type ShapeType = 'rectangle' | 'circle' | 'triangle' | 'line' | 'path' | 'image' | 'text';
 
 interface BaseElementProps {
   x: number;
@@ -8,7 +8,7 @@ interface BaseElementProps {
   elements: AnimatedCanvasElement[];
   pathPoints?: Array<{x: number, y: number}>;
   isPath?: boolean;
-  svgData?: string;
+  imageData?: string;
   width?: number;
   height?: number;
   text?: string;
@@ -173,22 +173,22 @@ function createPath(props: BaseElementProps): AnimatedCanvasElement {
   };
 }
 
-function createSvg(props: BaseElementProps): AnimatedCanvasElement {
-  if (!props.svgData) {
-    throw new Error('SVG data is required');
+function createImage(props: BaseElementProps): AnimatedCanvasElement {
+  if (!props.imageData) {
+    throw new Error('Image data is required');
   }
 
   const width = props.width || 100;
   const height = props.height || 100;
 
   return {
-    ...generateCommonAttributes('svg', props),
-    type: 'svg',
+    ...generateCommonAttributes('image', props),
+    type: 'image',
     width,
     height,
     x: props.x,
     y: props.y,
-    svgData: props.svgData,
+    imageData: props.imageData,
     lineOptions: undefined,
     pivotX: width / 2,
     pivotY: height / 2,
@@ -233,12 +233,12 @@ export function createNewElement(
   elements: AnimatedCanvasElement[],
   pathPoints?: Array<{x: number, y: number}>,
   isPath?: boolean,
-  svgData?: string,
+  imageData?: string,
   width?: number,
   height?: number,
   text?: string
 ): AnimatedCanvasElement {
-  const props: BaseElementProps = { x, y, elements, pathPoints, isPath, svgData, width, height, text };
+  const props: BaseElementProps = { x, y, elements, pathPoints, isPath, imageData, width, height, text };
   
   switch (type) {
     case 'rectangle':
@@ -251,8 +251,8 @@ export function createNewElement(
       return createLine(props);
     case 'path':
       return createPath(props);
-    case 'svg':
-      return createSvg(props);
+    case 'image':
+      return createImage(props);
     case 'text':
       return createText(props);
   }

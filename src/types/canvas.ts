@@ -80,7 +80,7 @@ export interface BaseAnimationConfig {
 export interface AnimatedCanvasElement {
   id: string;
   name: string;
-  type: 'rectangle' | 'circle' | 'triangle' | 'line' | 'path' | 'svg' | 'text';
+  type: 'rectangle' | 'circle' | 'triangle' | 'line' | 'path' | 'image' | 'text';
   x: number;
   y: number;
   width: number;
@@ -106,7 +106,7 @@ export interface AnimatedCanvasElement {
     dotted: boolean;
   };
   pathPoints?: Array<{x: number, y: number}>;
-  svgData?: string;
+  imageData?: string;
   animations: ElementAnimation[];
   isAnimationPath?: boolean;
   // Text-specific properties

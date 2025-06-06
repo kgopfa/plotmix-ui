@@ -71,7 +71,7 @@ export function MaskOverlay({
     );
   }
 
-  if (tool === 'svg') {
+  if (tool === 'image') {
     return (
       <div style={{
         ...style,
@@ -84,7 +84,7 @@ export function MaskOverlay({
         color: '#888',
         backgroundColor: 'rgba(255, 255, 255, 0.9)'
       }}>
-        SVG
+        IMG
       </div>
     );
   }

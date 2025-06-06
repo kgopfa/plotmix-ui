@@ -44,8 +44,8 @@ export default function EditorCanvas() {
   } | null>(null);
     const [showPaths, setShowPaths] = useState(true);
   
-  // SVG import state
-  const [pendingSvgData, setPendingSvgData] = useState<string | null>(null);
+  // Image import state
+  const [pendingImageData, setPendingImageData] = useState<string | null>(null);
 
   // Panel state management
   const [leftPanelWidth, setLeftPanelWidth] = useState(320); // Default 320px (w-80)
@@ -58,7 +58,7 @@ export default function EditorCanvas() {
   const MASK_OFFSET_Y = 0;
 
   const canvasRef = useRef<CanvasRef | null>(null);
-  const svgFileInputRef = useRef<HTMLInputElement>(null);
+  const imageFileInputRef = useRef<HTMLInputElement>(null);
 
   // Panel resize handlers
   const handleMouseDown = useCallback((panel: 'left' | 'right') => (e: React.MouseEvent) => {
@@ -235,9 +235,9 @@ export default function EditorCanvas() {
     setTool(newTool);
     setMaskPos(null);
     
-    // Clear pending SVG data if switching away from SVG tool
-    if (newTool !== 'svg') {
-      setPendingSvgData(null);
+    // Clear pending image data if switching away from image tool
+    if (newTool !== 'image') {
+      setPendingImageData(null);
     }
   }, []);
 
@@ -306,38 +306,38 @@ export default function EditorCanvas() {
             setAnimationTarget(null);
           }
         }
-      } else if (tool === 'svg' && pendingSvgData) {
-        // Create SVG element at click position
-        const svgWidth = 100;
-        const svgHeight = 100;
+      } else if (tool === 'image' && pendingImageData) {
+        // Create image element at click position
+        const imageWidth = 100;
+        const imageHeight = 100;
         
         try {
-          const svgElement = createNewElement(
-            'svg',
+          const imageElement = createNewElement(
+            'image',
             e.global.x,
             e.global.y,
             elements,
             undefined,
             isPathMode,
-            pendingSvgData,
-            svgWidth,
-            svgHeight
+            pendingImageData,
+            imageWidth,
+            imageHeight
           );
           
-          setElements(prev => [...prev, svgElement]);
-          selectionManager.select(svgElement);
+          setElements(prev => [...prev, imageElement]);
+          selectionManager.select(imageElement);
           setTool('select');
           setMaskPos(null);
-          setPendingSvgData(null); // Clear pending SVG data
+          setPendingImageData(null); // Clear pending image data
 
           // If in path mode, exit after creating the path
           if (isPathMode) {
-            addPathToAnimation(svgElement);
+            addPathToAnimation(imageElement);
             setIsPathMode(false);
             setAnimationTarget(null);
           }
         } catch (error) {
-          console.error('Error creating SVG element:', error);
+          console.error('Error creating image element:', error);
         }
       } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle') {
         const newElement = createNewElement(tool, e.global.x, e.global.y, elements, undefined, isPathMode);
@@ -846,45 +846,76 @@ export default function EditorCanvas() {
     }
   }, [selectionManager, isPathMode, addPathToAnimation, setIsPathMode, setAnimationTarget]);
 
-  const handleSvgImport = useCallback(async (file: File) => {
+  const handleImageImport = useCallback(async (file: File) => {
     try {
-      // Read the file contents
-      const svgData = await file.text();
+      console.log("Importing image:", file.name, file.type);
 
-      console.log("Importing SVG:", file.name);
+      // Check if it's an SVG file and needs text content
+      if (file.type === 'image/svg+xml') {
+        // Read SVG as text to preserve the XML content
+        const svgData = await file.text();
 
-      // Validate SVG by loading it
-      const imgUrl = URL.createObjectURL(new Blob([svgData], { type: 'image/svg+xml' }));
-      const img = new Image();
+        // Validate SVG by loading it
+        const imgUrl = URL.createObjectURL(new Blob([svgData], { type: 'image/svg+xml' }));
+        const img = new Image();
 
-      // Wait for image to load to validate
-      await new Promise<void>((resolve, reject) => {
-        img.onload = () => resolve();
-        img.onerror = () => reject(new Error("Failed to load SVG"));
-        img.src = imgUrl;
-      });
+        // Wait for image to load to validate
+        await new Promise<void>((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = () => reject(new Error("Failed to load SVG"));
+          img.src = imgUrl;
+        });
 
-      // Store SVG data and switch to placement mode
-      setPendingSvgData(svgData);
-      setTool('svg');
+        // Store SVG content and switch to placement mode
+        setPendingImageData(svgData);
+        setTool('image');
 
-      // Clean up
-      URL.revokeObjectURL(imgUrl);
-
+        // Clean up
+        URL.revokeObjectURL(imgUrl);
+      } else {
+        // For other image types (PNG, JPG, etc.), create a data URL
+        const reader = new FileReader();
+        
+        await new Promise<void>((resolve, reject) => {
+          reader.onload = (e) => {
+            if (e.target?.result) {
+              const dataUrl = e.target.result as string;
+              
+              // Validate the image by loading it
+              const img = new Image();
+              img.onload = () => {
+                // Store image data URL and switch to placement mode
+                setPendingImageData(dataUrl);
+                setTool('image');
+                resolve();
+              };
+              img.onerror = () => reject(new Error("Failed to load image"));
+              img.src = dataUrl;
+            } else {
+              reject(new Error("Failed to read file"));
+            }
+          };
+          reader.onerror = () => reject(new Error("Failed to read file"));
+          reader.readAsDataURL(file);
+        });
+      }
     } catch (error) {
-      console.error("Error importing SVG:", error);
-      alert("Failed to import SVG. Please try another file.");
+      console.error("Error importing image:", error);
+      alert("Failed to import image. Please try another file.");
     }
   }, []);
 
-  const handleSvgFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
       const file = files[0];
-      if (file.type === 'image/svg+xml') {
-        handleSvgImport(file);
+      // Accept common image formats
+      const validTypes = ['image/svg+xml', 'image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp', 'image/bmp'];
+      
+      if (validTypes.includes(file.type)) {
+        handleImageImport(file);
       } else {
-        alert('Please select an SVG file');
+        alert('Please select a valid image file (SVG, PNG, JPG, GIF, WebP, BMP)');
       }
       // Reset the input
       e.target.value = '';
@@ -902,13 +933,13 @@ export default function EditorCanvas() {
           <button 
             className="btn"
             onClick={() => {
-              if (svgFileInputRef.current) {
-                svgFileInputRef.current.click();
+              if (imageFileInputRef.current) {
+                imageFileInputRef.current.click();
               }
             }}
-            title="Import SVG"
+            title="Import Image"
           >
-            Import SVG
+            Import Image
           </button>
           <div className="flex gap-1 ml-2 border-l pl-2">
             <button 
@@ -1158,13 +1189,13 @@ export default function EditorCanvas() {
         />
       </div>
       
-      {/* Hidden file input for SVG upload */}
+      {/* Hidden file input for image upload */}
       <input
-        ref={svgFileInputRef}
+        ref={imageFileInputRef}
         type="file"
-        accept=".svg,image/svg+xml"
+        accept="image/*"
         style={{ display: 'none' }}
-        onChange={handleSvgFileChange}
+        onChange={handleImageFileChange}
       />
     </div>
   );

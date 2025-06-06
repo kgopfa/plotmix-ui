@@ -865,7 +865,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                 pivot={{ x: 0, y: 0 }}
                 interactive={true}
                 eventMode="dynamic"
-                hitArea={(el.type === 'path' || el.type === 'line' || el.type === 'svg')
+                hitArea={(el.type === 'path' || el.type === 'line' || el.type === 'image')
                   ? new Rectangle(-el.width / 2, -el.height / 2, el.width, el.height)
                   : undefined
                 }

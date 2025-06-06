@@ -5,5 +5,5 @@ export type ToolType =
   | 'triangle' 
   | 'line' 
   | 'draw' 
-  | 'svg'
+  | 'image'
   | 'text'; 
