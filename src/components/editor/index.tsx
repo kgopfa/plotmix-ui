@@ -272,9 +272,7 @@ export default function EditorCanvas() {
   }, [timeManager, gsapManager]);
 
   const canvasClickHandler = (e: FederatedPointerEvent) => {
-    console.log('Canvas click handler triggered. Tool:', tool, 'PendingSvgData:', !!pendingSvgData);
     const isEmptyClick = !(e.target && (e.target as Container).label === 'shape');
-    console.log('Is empty click:', isEmptyClick);
 
     if (isEmptyClick) {
       if (tool === 'line') {
@@ -308,9 +306,6 @@ export default function EditorCanvas() {
           }
         }
       } else if (tool === 'svg' && pendingSvgData) {
-        console.log('Placing SVG at position:', e.global.x, e.global.y);
-        console.log('SVG data available:', !!pendingSvgData);
-        
         // Create SVG element at click position
         const svgWidth = 100;
         const svgHeight = 100;
@@ -327,8 +322,6 @@ export default function EditorCanvas() {
             svgWidth,
             svgHeight
           );
-
-          console.log('Created SVG element:', svgElement);
           
           setElements(prev => [...prev, svgElement]);
           selectionManager.select(svgElement);
@@ -871,10 +864,8 @@ export default function EditorCanvas() {
       });
 
       // Store SVG data and switch to placement mode
-      console.log('Setting pending SVG data and switching to svg tool');
       setPendingSvgData(svgData);
       setTool('svg');
-      console.log('Tool set to svg, pendingSvgData set');
 
       // Clean up
       URL.revokeObjectURL(imgUrl);
