@@ -276,26 +276,35 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasElement) {
     try {
       let svgContent = shape.svgData;
       
-      // Set explicit dimensions for the SVG
-      if (!svgContent.includes('width=') || !svgContent.includes('height=')) {
-        const svgTagMatch = svgContent.match(/<svg[^>]*>/);
-        if (svgTagMatch) {
-          const svgTag = svgTagMatch[0];
-          const newSvgTag = svgTag.replace('<svg', 
+      // Prepare SVG for high-quality rendering while maintaining correct dimensions
+      const svgTagMatch = svgContent.match(/<svg[^>]*>/);
+      if (svgTagMatch) {
+        let svgTag = svgTagMatch[0];
+        
+        // Add high-quality rendering attributes without changing dimensions
+        if (!svgTag.includes('shape-rendering=')) {
+          svgTag = svgTag.replace('<svg', '<svg shape-rendering="geometricPrecision"');
+        }
+        if (!svgTag.includes('text-rendering=')) {
+          svgTag = svgTag.replace('<svg', '<svg text-rendering="geometricPrecision"');
+        }
+        if (!svgTag.includes('image-rendering=')) {
+          svgTag = svgTag.replace('<svg', '<svg image-rendering="optimizeQuality"');
+        }
+        
+        // Set explicit dimensions for the SVG
+        if (!svgContent.includes('width=') || !svgContent.includes('height=')) {
+          svgTag = svgTag.replace('<svg', 
             `<svg width="${shape.width}" height="${shape.height}"`);
-          svgContent = svgContent.replace(svgTag, newSvgTag);
         }
-      }
-      
-      // Add viewBox for better scaling
-      if (!svgContent.includes('viewBox=')) {
-        const svgTagMatch = svgContent.match(/<svg[^>]*>/);
-        if (svgTagMatch) {
-          const svgTag = svgTagMatch[0];
-          const newSvgTag = svgTag.replace('<svg', 
+        
+        // Add viewBox for better scaling
+        if (!svgContent.includes('viewBox=')) {
+          svgTag = svgTag.replace('<svg', 
             `<svg viewBox="0 0 ${shape.width} ${shape.height}"`);
-          svgContent = svgContent.replace(svgTag, newSvgTag);
         }
+        
+        svgContent = svgContent.replace(svgTagMatch[0], svgTag);
       }
 
       // Create base64 data URL
@@ -317,10 +326,27 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasElement) {
             return;
           }
           
-          const texture = Texture.from(img);
+          // Convert image to canvas to avoid PixiJS warning and improve compatibility
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return;
+          
+          // Set canvas size to match the shape dimensions
+          canvas.width = shape.width;
+          canvas.height = shape.height;
+          
+          // Draw the SVG image to canvas
+          ctx.drawImage(img, 0, 0, shape.width, shape.height);
+          
+          // Create texture from canvas instead of image
+          const texture = Texture.from(canvas);
           
           // Verify texture was created successfully
-          if (texture && texture.source && texture.source.resource) {
+          if (texture && texture.source) {
+            // Enable anti-aliasing and smooth scaling on the texture
+            texture.source.scaleMode = 'linear'; // Use linear filtering for smoother scaling
+            texture.source.antialias = true; // Enable anti-aliasing
+            
             graphics.clear();
             graphics.rect(-shape.width/2, -shape.height/2, shape.width, shape.height);
             graphics.fill({
