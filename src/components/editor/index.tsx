@@ -183,7 +183,9 @@ export default function EditorCanvas() {
         );
 
         if (lastPinchDistance > 0) {
-          const pinchScale = currentDistance / lastPinchDistance;
+          const rawPinchScale = currentDistance / lastPinchDistance;
+          // Dampen the pinch sensitivity - only apply 30% of the raw scale change
+          const pinchScale = 1 + (rawPinchScale - 1) * 0.1;
           const newZoom = Math.min(Math.max(canvasZoom * pinchScale, 0.1), 5);
           
           // Use the canvas's center-based zoom instead of just setting state
