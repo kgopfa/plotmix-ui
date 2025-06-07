@@ -226,11 +226,11 @@ function createText(props: BaseObjectProps): AnimatedCanvasObject {
   };
 }
 
-export function createNewElement(
+export function createNewObject(
   type: ShapeType,
   x: number,
   y: number,
-  elements: AnimatedCanvasObject[],
+  canvasObjects: AnimatedCanvasObject[],
   pathPoints?: Array<{x: number, y: number}>,
   isPath?: boolean,
   imageData?: string,
@@ -238,7 +238,7 @@ export function createNewElement(
   height?: number,
   text?: string
 ): AnimatedCanvasObject {
-  const props: BaseObjectProps = { x, y, elements, pathPoints, isPath, imageData, width, height, text };
+  const props: BaseObjectProps = { x, y, elements: canvasObjects, pathPoints, isPath, imageData, width, height, text };
   
   switch (type) {
     case 'rectangle':

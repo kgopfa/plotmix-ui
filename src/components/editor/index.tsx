@@ -16,15 +16,15 @@ import { AnimatedCanvasObject, ElementAnimation } from '@/types/canvas';
 import { Canvas } from './canvas';
 import { FederatedPointerEvent, Container } from 'pixi.js';
 import type { CanvasRef } from './canvas';
-import { createNewElement } from '@/lib/canvas-object-factory';
+import { createNewObject } from '@/lib/canvas-object-factory';
 import { useCanvasDimensions } from '@/hooks/use-canvas-dimensions';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { ToolType } from '@/types/editor';
 
 
 export default function EditorCanvas() {
-  const [elements, setElements] = useState<AnimatedCanvasObject[]>([]);
-  const [selectedElement, setSelectedElement] = useState<AnimatedCanvasObject | null>(null);
+  const [canvasObjects, setCanvasObjects] = useState<AnimatedCanvasObject[]>([]);
+  const [selectedObject, setSelectedObject] = useState<AnimatedCanvasObject | null>(null);
   const [tool, setTool] = useState<ToolType>('select');
   const [maskPos, setMaskPos] = useState<{ x: number, y: number } | null>(null);
   const [lineStartPoint, setLineStartPoint] = useState<{ x: number, y: number } | null>(null);
@@ -83,7 +83,7 @@ export default function EditorCanvas() {
   }, []);
 
   const handleElementRotate = (id: string, rotation: number) => {
-    setElements(prev => prev.map(el =>
+    setCanvasObjects(prev => prev.map(el =>
       el.id === id
         ? { ...el, rotation }
         : el
@@ -91,7 +91,7 @@ export default function EditorCanvas() {
   };
 
   const handleTextChange = (id: string, text: string) => {
-    setElements(prev => prev.map(el =>
+    setCanvasObjects(prev => prev.map(el =>
       el.id === id
         ? { ...el, text }
         : el
@@ -227,8 +227,8 @@ export default function EditorCanvas() {
 
   // Handle keyboard shortcuts
   const handleDeleteElement = useCallback((elementId: string) => {
-    setElements(elements => elements.filter(el => el.id !== elementId));
-    setSelectedElement(null);
+    setCanvasObjects(elements => elements.filter(el => el.id !== elementId));
+    setSelectedObject(null);
   }, []);
 
   const handleToolChange = useCallback((newTool: ToolType) => {
@@ -242,7 +242,7 @@ export default function EditorCanvas() {
   }, []);
 
   useKeyboardShortcuts({
-    selectedElement,
+    selectedElement: selectedObject,
     onDeleteElement: handleDeleteElement,
     onToolChange: handleToolChange
   });
@@ -257,13 +257,13 @@ export default function EditorCanvas() {
   }, [gsapManager]);
 
   useEffect(() => {
-    if (dimensions.width > 0 && elements.length > 0 && gsapManager) {
+    if (dimensions.width > 0 && canvasObjects.length > 0 && gsapManager) {
       // Small delay to ensure canvas refs are ready
       setTimeout(() => {
-        gsapManager.buildAnimationTimeline(elements);
+        gsapManager.buildAnimationTimeline(canvasObjects);
       }, 10);
     }
-  }, [elements, dimensions, gsapManager]);
+  }, [canvasObjects, dimensions, gsapManager]);
 
   useEffect(() => {
     return timeManager.subscribe(({ isPlaying, elapsedTime }) => {
@@ -282,7 +282,7 @@ export default function EditorCanvas() {
           setLineStartPoint({ x: e.global.x, y: e.global.y });
         } else {
           // Second click - create line and reset
-          const newElement = createNewElement('line', lineStartPoint.x, lineStartPoint.y, elements, undefined, isPathMode);
+          const newElement = createNewObject('line', lineStartPoint.x, lineStartPoint.y, canvasObjects, undefined, isPathMode);
           // Update line end point
           newElement.lineOptions = {
             points: {
@@ -293,7 +293,7 @@ export default function EditorCanvas() {
             dotted: false
           };
 
-          setElements(prev => [...prev, newElement]);
+          setCanvasObjects(prev => [...prev, newElement]);
           selectionManager.select(newElement);
           setTool('select');
           setLineStartPoint(null);
@@ -312,11 +312,11 @@ export default function EditorCanvas() {
         const imageHeight = 100;
         
         try {
-          const imageElement = createNewElement(
+          const imageElement = createNewObject(
             'image',
             e.global.x,
             e.global.y,
-            elements,
+            canvasObjects,
             undefined,
             isPathMode,
             pendingImageData,
@@ -324,7 +324,7 @@ export default function EditorCanvas() {
             imageHeight
           );
           
-          setElements(prev => [...prev, imageElement]);
+          setCanvasObjects(prev => [...prev, imageElement]);
           selectionManager.select(imageElement);
           setTool('select');
           setMaskPos(null);
@@ -340,8 +340,8 @@ export default function EditorCanvas() {
           console.error('Error creating image element:', error);
         }
       } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle') {
-        const newElement = createNewElement(tool, e.global.x, e.global.y, elements, undefined, isPathMode);
-        setElements(prev => [...prev, newElement]);
+        const newElement = createNewObject(tool, e.global.x, e.global.y, canvasObjects, undefined, isPathMode);
+        setCanvasObjects(prev => [...prev, newElement]);
         selectionManager.select(newElement);
         setTool('select');
         setMaskPos(null);
@@ -353,8 +353,8 @@ export default function EditorCanvas() {
           setAnimationTarget(null);
         }
       } else if (tool === 'text') {
-        const newElement = createNewElement('text', e.global.x, e.global.y, elements, undefined, isPathMode);
-        setElements(prev => [...prev, newElement]);
+        const newElement = createNewObject('text', e.global.x, e.global.y, canvasObjects, undefined, isPathMode);
+        setCanvasObjects(prev => [...prev, newElement]);
         selectionManager.select(newElement);
         setTool('select');
         setMaskPos(null);
@@ -378,7 +378,7 @@ export default function EditorCanvas() {
 
     const { elementId, animationId } = target;
 
-    setElements(prev =>
+    setCanvasObjects(prev =>
       prev.map(el => {
         if (el.id !== elementId) return el;
 
@@ -398,7 +398,7 @@ export default function EditorCanvas() {
         };
       })
     );
-  }, [animationTarget, setElements]);
+  }, [animationTarget, setCanvasObjects]);
 
   // Update animations when their path element is modified
   const updateAnimationsForPathElement = useCallback((elements: AnimatedCanvasObject[], pathElement: AnimatedCanvasObject) => {
@@ -438,7 +438,7 @@ export default function EditorCanvas() {
   }, []);
 
   const handleElementDragEnd = (id: string, x: number, y: number) => {
-    setElements(prevElements => {
+    setCanvasObjects(prevElements => {
       const updatedElements = prevElements.map((el) => {
         if (el.id !== id) return el;
 
@@ -484,7 +484,7 @@ export default function EditorCanvas() {
 
     // Rebuild timeline for regular element moves - use the updated elements
     setTimeout(() => {
-      setElements(currentElements => {
+      setCanvasObjects(currentElements => {
         gsapManager.buildAnimationTimeline(currentElements);
         return currentElements;
       });
@@ -496,7 +496,7 @@ export default function EditorCanvas() {
     animationId: string,
     update: Partial<ElementAnimation>
   ) => {
-    setElements(prev =>
+    setCanvasObjects(prev =>
       prev.map(el => {
         if (el.id !== elementId) return el;
         return {
@@ -517,7 +517,7 @@ export default function EditorCanvas() {
     );
     // Use the updated elements for timeline rebuild
     setTimeout(() => {
-      setElements(currentElements => {
+      setCanvasObjects(currentElements => {
         gsapManager.buildAnimationTimeline(currentElements);
         return currentElements;
       });
@@ -539,13 +539,13 @@ export default function EditorCanvas() {
       return;
     }
 
-    if (selectedElement) {
+    if (selectedObject) {
       let updatedElement: AnimatedCanvasObject | null = null;
 
       if (prop === 'animations') {
-        setElements(prevElements => {
+        setCanvasObjects(prevElements => {
           const newElements = prevElements.map(el => {
-            if (el.id === selectedElement.id) {
+            if (el.id === selectedObject.id) {
               updatedElement = { ...el, animations: value as ElementAnimation[] };
               return updatedElement;
             }
@@ -565,9 +565,9 @@ export default function EditorCanvas() {
           selectionManager.select(updatedElement);
         }
       } else if (prop === 'lineOptions') {
-        setElements(prevElements => {
+        setCanvasObjects(prevElements => {
           const newElements = prevElements.map(el => {
-            if (el.id === selectedElement.id) {
+            if (el.id === selectedObject.id) {
               updatedElement = {
                 ...el,
                 lineOptions: value as NonNullable<AnimatedCanvasObject['lineOptions']>
@@ -591,9 +591,9 @@ export default function EditorCanvas() {
         }
       } else {
         // For regular property changes (width, height, colors, etc.)
-        setElements(prevElements => {
+        setCanvasObjects(prevElements => {
           const newElements = prevElements.map(el => {
-            if (el.id === selectedElement.id) {
+            if (el.id === selectedObject.id) {
               updatedElement = { ...el, [prop]: value };
               return updatedElement;
             }
@@ -627,17 +627,17 @@ export default function EditorCanvas() {
 
   // Update tracks whenever elements change
   useEffect(() => {
-    timelineManager.setTracks(elements);
-  }, [elements, timelineManager]);
+    timelineManager.setTracks(canvasObjects);
+  }, [canvasObjects, timelineManager]);
 
   // Subscribe to selection updates
   useEffect(() => {
-    return selectionManager.subscribe(setSelectedElement);
+    return selectionManager.subscribe(setSelectedObject);
   }, [selectionManager]);
 
   // Use a ref to access current elements to avoid dependency issues
-  const elementsRef = useRef(elements);
-  elementsRef.current = elements;
+  const elementsRef = useRef(canvasObjects);
+  elementsRef.current = canvasObjects;
 
   // Listen for resize events from the Canvas component
   useEffect(() => {
@@ -645,7 +645,7 @@ export default function EditorCanvas() {
       const { id, width, height, handle } = e.detail;
       console.log('Resize event:', { id, width, height, handle });
 
-      setElements(() => {
+      setCanvasObjects(() => {
         // Use the ref to get current elements to avoid stale closure
         const currentElements = elementsRef.current;
         const updatedElements = currentElements.map((el) => {
@@ -724,7 +724,7 @@ export default function EditorCanvas() {
     const handleBorderRadiusChange = (e: CustomEvent) => {
       const { id, cornerRadius } = e.detail;
 
-      setElements(prevElements =>
+      setCanvasObjects(prevElements =>
         prevElements.map(el =>
           el.id === id
             ? { ...el, cornerRadius }
@@ -765,7 +765,7 @@ export default function EditorCanvas() {
       const { pathElement } = e.detail;
       console.log('Animation path updated from ShapeSelect:', pathElement.name, 'new dimensions:', pathElement.width, 'x', pathElement.height);
 
-      setElements(prevElements => {
+      setCanvasObjects(prevElements => {
         const elementsWithUpdatedAnimations = updateAnimationsForPathElement(prevElements, pathElement);
 
         // Rebuild timeline after animation path update
@@ -787,9 +787,9 @@ export default function EditorCanvas() {
 
   // Memoize the handleSelectElement function
   const handleSelectElement = useCallback((id: string | null) => {
-    const element = id ? elements.find(e => e.id === id) || null : null;
+    const element = id ? canvasObjects.find(e => e.id === id) || null : null;
     selectionManager.select(element);
-  }, [elements, selectionManager]);
+  }, [canvasObjects, selectionManager]);
 
   // Memoize the handlePlayPause function
   const handlePlayPause = useCallback(() => {
@@ -806,7 +806,7 @@ export default function EditorCanvas() {
   }, [timeManager]);
 
   const handleLineEndpointDrag = (id: string, endpoint: 'start' | 'end', x: number, y: number) => {
-    setElements(prevElements => {
+    setCanvasObjects(prevElements => {
       const updatedElements = prevElements.map((el) => {
         if (el.id !== id || el.type !== 'line' || !el.lineOptions?.points) return el;
 
@@ -836,7 +836,7 @@ export default function EditorCanvas() {
   };
 
   const handleAddElement = useCallback((element: AnimatedCanvasObject) => {
-    setElements(prev => [...prev, element]);
+    setCanvasObjects(prev => [...prev, element]);
     selectionManager.select(element);
 
     if (isPathMode && element.type === 'path' && element.isAnimationPath) {
@@ -1056,7 +1056,7 @@ export default function EditorCanvas() {
             style={{ right: `${rightPanelVisible ? rightPanelWidth + 16 : 16}px` }} // Adjust position based on panel visibility
           >
             {/* Path visibility toggle - only show if paths exist */}
-            {elements.some(el => el.isAnimationPath) && (
+            {canvasObjects.some(el => el.isAnimationPath) && (
               <button
                 className={`px-3 py-1.5 rounded shadow flex items-center ${showPaths ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'}`}
                 onClick={() => setShowPaths(!showPaths)}
@@ -1091,8 +1091,8 @@ export default function EditorCanvas() {
                     width: Math.max(dimensions.width * 3, 4000), // Canvas fills entire scrollable area
                     height: Math.max(dimensions.height * 3, 4000)
                   }}
-                  elements={showPaths ? elements : elements.filter(el => !el.isAnimationPath)}
-                  selectedId={selectedElement?.id || null}
+                  elements={showPaths ? canvasObjects : canvasObjects.filter(el => !el.isAnimationPath)}
+                  selectedId={selectedObject?.id || null}
                   onElementSelect={handleSelectElement}
                   onElementDragEnd={handleElementDragEnd}
                   onCanvasClick={canvasClickHandler}
@@ -1141,7 +1141,7 @@ export default function EditorCanvas() {
               className="absolute top-0 left-0 h-full bg-gray-50/95 backdrop-blur-sm border-r border-gray-200 overflow-y-auto z-30 shadow-lg transition-transform duration-300"
               style={{ width: `${leftPanelWidth}px` }}
             >
-              <SceneExplorer elements={elements} selectionManager={selectionManager} />
+              <SceneExplorer elements={canvasObjects} selectionManager={selectionManager} />
             </div>
             
             {/* Left Resize Handle */}
@@ -1161,7 +1161,7 @@ export default function EditorCanvas() {
               style={{ width: `${rightPanelWidth}px` }}
             >
               <Inspector
-                selectedElement={selectedElement}
+                selectedElement={selectedObject}
                 onInspectorChange={handleInspectorChange}
               />
             </div>
@@ -1179,7 +1179,7 @@ export default function EditorCanvas() {
       {/* Timeline - positioned absolutely when collapsed to float on top */}
       <div className="relative">
         <Timeline
-          elements={elements.filter(el => !el.isAnimationPath)}
+          elements={canvasObjects.filter(el => !el.isAnimationPath)}
           timelineState={timelineState}
           timeState={timeState}
           onPlayPause={handlePlayPause}

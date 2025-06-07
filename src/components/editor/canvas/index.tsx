@@ -6,7 +6,7 @@ import type { FederatedPointerEvent } from 'pixi.js';
 import type { AnimatedCanvasObject } from '@/types/canvas';
 import { useImperativeHandle, forwardRef, useState, useRef, useEffect } from 'react';
 import { drawShape } from '@/utils/drawing-utils';
-import { createNewElement } from '@/lib/canvas-object-factory';
+import { createNewObject } from '@/lib/canvas-object-factory';
 import ObjectSelect from './object-select';
 import HoverOutline from './hover-outline';
 import RotationHandles from './rotation-handles';
@@ -496,7 +496,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         if (tool === 'draw') {
           // Create a new path element
           // Pass 0,0 as position since the element factory now calculates the correct center position
-          const newElement = createNewElement('path', 0, 0, elements, currentPath);
+          const newElement = createNewObject('path', 0, 0, elements, currentPath);
 
           // If in path mode, mark it as a path
           if (isPathMode) {
