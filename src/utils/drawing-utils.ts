@@ -285,6 +285,159 @@ export function createShapeGraphics(shape: AnimatedCanvasElement, color?: string
 export function drawShape(graphics: Graphics, shape: AnimatedCanvasElement) {
   graphics.clear();
 
+  processImage(graphics, shape);
+  
+  if (shape.isAnimationPath) {
+    // For path elements, use a gray dotted line style
+    const grayColor = 0x888888; // Light gray color
+    
+    if (shape.type === 'line') {
+      // For line paths, use the dotted line directly
+      if (shape.lineOptions?.points) {
+        const { start, end } = shape.lineOptions.points;
+        const startPoint = {
+          x: start.x - shape.x,
+          y: start.y - shape.y
+        };
+        
+        const endPoint = {
+          x: end.x - shape.x,
+          y: end.y - shape.y
+        };
+        
+        // Draw as dotted line with gray color - don't clear graphics first since we already did
+        drawDottedLine(
+          graphics, 
+          startPoint, 
+          endPoint, 
+          grayColor, 
+          2, 
+          0.7, // Slightly transparent
+          [5, 3], // Smaller dash pattern for path elements
+          false // Don't clear graphics since we already cleared at the start
+        );
+        
+        // Don't add regular stroke - it overwrites the dotted line
+      }
+    } else if (shape.type === 'path') {
+      // For free-drawn paths, use dotted line dash pattern
+      if (shape.pathPoints && shape.pathPoints.length > 1) {
+        const dashLine = new AnimationPath(graphics, { 
+          dash: [5, 3], 
+          width: 2, 
+          color: grayColor, 
+          alpha: 0.7 
+        });
+        
+        dashLine.moveTo(shape.pathPoints[0].x, shape.pathPoints[0].y);
+        for (let i = 1; i < shape.pathPoints.length; i++) {
+          dashLine.lineTo(shape.pathPoints[i].x, shape.pathPoints[i].y);
+        }
+      }
+    } else {
+      // For other shapes (rectangle, circle, triangle), use dotted stroke and semi-transparent fill
+      drawShapePath(graphics, shape);
+      graphics.fill({ 
+        color: shape.fill, 
+        alpha: 0.15 // Very transparent fill
+      });
+      
+      // Add dotted stroke with gray color
+      const dashLine = new AnimationPath(graphics, { 
+        dash: [5, 3], 
+        width: 2, 
+        color: grayColor, 
+        alpha: 0.7
+      });
+      
+      // Re-draw the shape outline as dotted
+      switch (shape.type) {
+        case 'rectangle':
+          dashLine.drawRect(
+            -shape.width / 2, 
+            -shape.height / 2,
+            shape.width,
+            shape.height
+          );
+          break;
+          
+        case 'circle':
+          dashLine.drawCircle(
+            0, 
+            0, 
+            shape.height / 2
+          );
+          break;
+          
+        case 'triangle':
+          const height = shape.height;
+          const sideLength = (2 * height) / Math.sqrt(3);
+          const halfWidth = sideLength / 2;
+          
+          dashLine.moveTo(0, -height/2)
+            .lineTo(halfWidth, height/2)
+            .lineTo(-halfWidth, height/2)
+            .closePath();
+          break;
+      }
+    }
+  } else {
+    if (shape.type === 'line') {
+      drawLine(graphics, shape);
+    } else {
+      const width = shape.type === 'path' ? 2 : 1;
+      drawShapePath(graphics, shape);
+
+      if (shape.type !== 'path') {
+        graphics.fill({ color: shape.fill, alpha: shape.opacity });
+      }
+
+      graphics.stroke({ 
+        color: parseColor(shape.stroke || shape.fill), 
+        width: shape.strokeWidth || width, 
+        alpha: shape.opacity ?? 1 
+      });
+    }
+  }
+}
+
+export function calculateLineLength(points: { start: { x: number, y: number }, end: { x: number, y: number } }): number {
+  const dx = points.end.x - points.start.x;
+  const dy = points.end.y - points.start.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+export function calculateLineAngle(points: { start: { x: number, y: number }, end: { x: number, y: number } }): number {
+  return Math.atan2(points.end.y - points.start.y, points.end.x - points.start.x);
+}
+
+export function updateLineEndPoint(
+  startPoint: { x: number, y: number },
+  length: number,
+  angle: number
+): { x: number, y: number } {
+  return {
+    x: startPoint.x + length * Math.cos(angle),
+    y: startPoint.y + length * Math.sin(angle)
+  };
+}
+
+export function calculateNorthAngle(points: { start: { x: number, y: number }, end: { x: number, y: number } }): number {
+  const mathAngle = calculateLineAngle(points);
+  const northAngle = (450 - (mathAngle * 180 / Math.PI)) % 360;
+  return northAngle;
+}
+
+export function updateLineFromLengthAndNorthAngle(
+  startPoint: { x: number, y: number },
+  length: number,
+  northAngleDegrees: number
+): { x: number, y: number } {
+  const mathAngle = ((450 - northAngleDegrees) % 360) * Math.PI / 180;
+  return updateLineEndPoint(startPoint, length, mathAngle);
+}
+
+function processImage(graphics: Graphics, shape: AnimatedCanvasElement) {
   if (shape.type === 'image' && shape.imageData) {
     try {
       // Check if it's an SVG by looking for SVG content
@@ -419,156 +572,4 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasElement) {
     }
     return;
   }
-  
-  if (shape.isAnimationPath) {
-    // For path elements, use a gray dotted line style
-    const grayColor = 0x888888; // Light gray color
-    
-    if (shape.type === 'line') {
-      // For line paths, use the dotted line directly
-      if (shape.lineOptions?.points) {
-        const { start, end } = shape.lineOptions.points;
-        const startPoint = {
-          x: start.x - shape.x,
-          y: start.y - shape.y
-        };
-        
-        const endPoint = {
-          x: end.x - shape.x,
-          y: end.y - shape.y
-        };
-        
-        // Draw as dotted line with gray color - don't clear graphics first since we already did
-        drawDottedLine(
-          graphics, 
-          startPoint, 
-          endPoint, 
-          grayColor, 
-          2, 
-          0.7, // Slightly transparent
-          [5, 3], // Smaller dash pattern for path elements
-          false // Don't clear graphics since we already cleared at the start
-        );
-        
-        // Don't add regular stroke - it overwrites the dotted line
-      }
-    } else if (shape.type === 'path') {
-      // For free-drawn paths, use dotted line dash pattern
-      if (shape.pathPoints && shape.pathPoints.length > 1) {
-        const dashLine = new AnimationPath(graphics, { 
-          dash: [5, 3], 
-          width: 2, 
-          color: grayColor, 
-          alpha: 0.7 
-        });
-        
-        dashLine.moveTo(shape.pathPoints[0].x, shape.pathPoints[0].y);
-        for (let i = 1; i < shape.pathPoints.length; i++) {
-          dashLine.lineTo(shape.pathPoints[i].x, shape.pathPoints[i].y);
-        }
-      }
-    } else {
-      // For other shapes (rectangle, circle, triangle), use dotted stroke and semi-transparent fill
-      drawShapePath(graphics, shape);
-      graphics.fill({ 
-        color: shape.fill, 
-        alpha: 0.15 // Very transparent fill
-      });
-      
-      // Add dotted stroke with gray color
-      const dashLine = new AnimationPath(graphics, { 
-        dash: [5, 3], 
-        width: 2, 
-        color: grayColor, 
-        alpha: 0.7
-      });
-      
-      // Re-draw the shape outline as dotted
-      switch (shape.type) {
-        case 'rectangle':
-          dashLine.drawRect(
-            -shape.width / 2, 
-            -shape.height / 2,
-            shape.width,
-            shape.height
-          );
-          break;
-          
-        case 'circle':
-          dashLine.drawCircle(
-            0, 
-            0, 
-            shape.height / 2
-          );
-          break;
-          
-        case 'triangle':
-          const height = shape.height;
-          const sideLength = (2 * height) / Math.sqrt(3);
-          const halfWidth = sideLength / 2;
-          
-          dashLine.moveTo(0, -height/2)
-            .lineTo(halfWidth, height/2)
-            .lineTo(-halfWidth, height/2)
-            .closePath();
-          break;
-      }
-    }
-  } else {
-    // Regular drawing for non-path elements
-    if (shape.type === 'line') {
-      drawLine(graphics, shape);
-    } else if (shape.type === 'path') {
-      drawShapePath(graphics, shape);
-      graphics.stroke({ 
-        color: parseColor(shape.stroke || shape.fill), 
-        width: shape.strokeWidth || 2, 
-        alpha: shape.opacity ?? 1 
-      });
-    } else {
-      drawShapePath(graphics, shape);
-      graphics.fill({ color: shape.fill, alpha: shape.opacity });
-      graphics.stroke({ 
-        color: parseColor(shape.stroke || shape.fill), 
-        width: shape.strokeWidth || 1, 
-        alpha: shape.opacity ?? 1 
-      });
-    }
-  }
-}
-
-export function calculateLineLength(points: { start: { x: number, y: number }, end: { x: number, y: number } }): number {
-  const dx = points.end.x - points.start.x;
-  const dy = points.end.y - points.start.y;
-  return Math.sqrt(dx * dx + dy * dy);
-}
-
-export function calculateLineAngle(points: { start: { x: number, y: number }, end: { x: number, y: number } }): number {
-  return Math.atan2(points.end.y - points.start.y, points.end.x - points.start.x);
-}
-
-export function updateLineEndPoint(
-  startPoint: { x: number, y: number },
-  length: number,
-  angle: number
-): { x: number, y: number } {
-  return {
-    x: startPoint.x + length * Math.cos(angle),
-    y: startPoint.y + length * Math.sin(angle)
-  };
-}
-
-export function calculateNorthAngle(points: { start: { x: number, y: number }, end: { x: number, y: number } }): number {
-  const mathAngle = calculateLineAngle(points);
-  const northAngle = (450 - (mathAngle * 180 / Math.PI)) % 360;
-  return northAngle;
-}
-
-export function updateLineFromLengthAndNorthAngle(
-  startPoint: { x: number, y: number },
-  length: number,
-  northAngleDegrees: number
-): { x: number, y: number } {
-  const mathAngle = ((450 - northAngleDegrees) % 360) * Math.PI / 180;
-  return updateLineEndPoint(startPoint, length, mathAngle);
 }
