@@ -1,11 +1,11 @@
-import type { AnimatedCanvasElement, ElementAnimation } from '@/types/canvas';
+import type { AnimatedCanvasObject, ElementAnimation } from '@/types/canvas';
 
 type ShapeType = 'rectangle' | 'circle' | 'triangle' | 'line' | 'path' | 'image' | 'text';
 
-interface BaseElementProps {
+interface BaseObjectProps {
   x: number;
   y: number;
-  elements: AnimatedCanvasElement[];
+  elements: AnimatedCanvasObject[];
   pathPoints?: Array<{x: number, y: number}>;
   isPath?: boolean;
   imageData?: string;
@@ -14,7 +14,7 @@ interface BaseElementProps {
   text?: string;
 }
 
-interface CommonElementAttributes {
+interface CommonObjectAttributes {
   id: string;
   name: string;
   x: number;
@@ -34,8 +34,8 @@ interface CommonElementAttributes {
 
 function generateCommonAttributes(
   type: ShapeType,
-  { x, y, elements }: BaseElementProps
-): CommonElementAttributes {
+  { x, y, elements }: BaseObjectProps
+): CommonObjectAttributes {
   const newId = `${type}-${elements.length + 1}`;
   const existingCount = elements.filter(el => el.type === type).length;
   const name = existingCount === 0
@@ -61,7 +61,7 @@ function generateCommonAttributes(
   };
 }
 
-function createRectangle(props: BaseElementProps): AnimatedCanvasElement {
+function createRectangle(props: BaseObjectProps): AnimatedCanvasObject {
   const width = 100;
   const height = 100;
   return {
@@ -79,7 +79,7 @@ function createRectangle(props: BaseElementProps): AnimatedCanvasElement {
   };
 }
 
-function createCircle(props: BaseElementProps): AnimatedCanvasElement {
+function createCircle(props: BaseObjectProps): AnimatedCanvasObject {
   const width = 100;
   const height = 100;
   const radius = 50;
@@ -99,7 +99,7 @@ function createCircle(props: BaseElementProps): AnimatedCanvasElement {
   };
 }
 
-function createTriangle(props: BaseElementProps): AnimatedCanvasElement {
+function createTriangle(props: BaseObjectProps): AnimatedCanvasObject {
   const width = 100;
   const height = 100;
   const radius = 50;
@@ -119,7 +119,7 @@ function createTriangle(props: BaseElementProps): AnimatedCanvasElement {
   };
 }
 
-function createLine(props: BaseElementProps): AnimatedCanvasElement {
+function createLine(props: BaseObjectProps): AnimatedCanvasObject {
   return {
     ...generateCommonAttributes('line', props),
     type: 'line',
@@ -135,7 +135,7 @@ function createLine(props: BaseElementProps): AnimatedCanvasElement {
   };
 }
 
-function createPath(props: BaseElementProps): AnimatedCanvasElement {
+function createPath(props: BaseObjectProps): AnimatedCanvasObject {
   if (!props.pathPoints || props.pathPoints.length < 2) {
     throw new Error('Path must have at least 2 points');
   }
@@ -173,7 +173,7 @@ function createPath(props: BaseElementProps): AnimatedCanvasElement {
   };
 }
 
-function createImage(props: BaseElementProps): AnimatedCanvasElement {
+function createImage(props: BaseObjectProps): AnimatedCanvasObject {
   if (!props.imageData) {
     throw new Error('Image data is required');
   }
@@ -197,7 +197,7 @@ function createImage(props: BaseElementProps): AnimatedCanvasElement {
   };
 }
 
-function createText(props: BaseElementProps): AnimatedCanvasElement {
+function createText(props: BaseObjectProps): AnimatedCanvasObject {
   const width = props.width || 200;
   const height = props.height || 40;
   
@@ -230,15 +230,15 @@ export function createNewElement(
   type: ShapeType,
   x: number,
   y: number,
-  elements: AnimatedCanvasElement[],
+  elements: AnimatedCanvasObject[],
   pathPoints?: Array<{x: number, y: number}>,
   isPath?: boolean,
   imageData?: string,
   width?: number,
   height?: number,
   text?: string
-): AnimatedCanvasElement {
-  const props: BaseElementProps = { x, y, elements, pathPoints, isPath, imageData, width, height, text };
+): AnimatedCanvasObject {
+  const props: BaseObjectProps = { x, y, elements, pathPoints, isPath, imageData, width, height, text };
   
   switch (type) {
     case 'rectangle':

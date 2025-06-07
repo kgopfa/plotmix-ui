@@ -1,5 +1,5 @@
 import { gsap } from 'gsap';
-import type { AnimatedCanvasElement } from '@/types/canvas';
+import type { AnimatedCanvasObject } from '@/types/canvas';
 import type { CanvasRef } from '@/components/editor/canvas';
 import { PixiPlugin } from "gsap/PixiPlugin";
 import { MotionPathPlugin } from 'gsap/MotionPathPlugin';
@@ -25,7 +25,7 @@ export class GSAPTimelineManager {
     this.canvasRef = ref;
   }
 
-  buildAnimationTimeline(elements: AnimatedCanvasElement[]) {
+  buildAnimationTimeline(elements: AnimatedCanvasObject[]) {
     const shapeRefs = this.canvasRef?.current?.getShapeRefs();
     if (!shapeRefs) {
       console.warn('No shape refs available, skipping timeline build');

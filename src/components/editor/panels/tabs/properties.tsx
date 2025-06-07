@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { 
-  AnimatedCanvasElement,
+  AnimatedCanvasObject,
   ElementAnimation
 } from '@/types/canvas';
 import { 
@@ -9,10 +9,10 @@ import {
 } from '@/utils/drawing-utils';
 
 interface PropertiesTabProps {
-  selectedElement: AnimatedCanvasElement;
+  selectedElement: AnimatedCanvasObject;
   onInspectorChange: (
     prop: string,
-    value: string | number | boolean | ElementAnimation[] | NonNullable<AnimatedCanvasElement['lineOptions']> | {
+    value: string | number | boolean | ElementAnimation[] | NonNullable<AnimatedCanvasObject['lineOptions']> | {
       animationId: string;
       elementId: string;
     }
@@ -20,7 +20,7 @@ interface PropertiesTabProps {
 }
 
 export function PropertiesTab({ selectedElement, onInspectorChange }: PropertiesTabProps) {
-  const [localElement, setLocalElement] = useState<AnimatedCanvasElement>(selectedElement);
+  const [localElement, setLocalElement] = useState<AnimatedCanvasObject>(selectedElement);
   const [isDirty, setIsDirty] = useState<Record<string, boolean>>({});
   
   // Sync with parent component when selected element changes
@@ -45,10 +45,10 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
         } 
         // Regular property updates
         else if (key in localElement) {
-          const value = localElement[key as keyof AnimatedCanvasElement];
+          const value = localElement[key as keyof AnimatedCanvasObject];
           // Ensure value is of the expected type before passing to onInspectorChange
           if (value !== undefined) {
-            onInspectorChange(key, value as string | number | boolean | ElementAnimation[] | NonNullable<AnimatedCanvasElement['lineOptions']> | {
+            onInspectorChange(key, value as string | number | boolean | ElementAnimation[] | NonNullable<AnimatedCanvasObject['lineOptions']> | {
               animationId: string;
               elementId: string;
             });
@@ -62,16 +62,16 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
   }, [isDirty, localElement, selectedElement, onInspectorChange]);
   
   // Update local state and mark property as dirty
-  const updateLocalProperty = <K extends keyof AnimatedCanvasElement>(
+  const updateLocalProperty = <K extends keyof AnimatedCanvasObject>(
     key: K, 
-    value: AnimatedCanvasElement[K]
+    value: AnimatedCanvasObject[K]
   ) => {
     setLocalElement(prev => ({ ...prev, [key]: value }));
     setIsDirty(prev => ({ ...prev, [key]: true }));
   };
   
   // Helper for line options updates
-  const updateLineOptions = (updates: Partial<NonNullable<AnimatedCanvasElement['lineOptions']>>) => {
+  const updateLineOptions = (updates: Partial<NonNullable<AnimatedCanvasObject['lineOptions']>>) => {
     setLocalElement(prev => ({
       ...prev,
       lineOptions: { ...prev.lineOptions!, ...updates }
@@ -83,7 +83,7 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
   const updateLineGeometry = (
     width: number, 
     height: number, 
-    lineOptions: NonNullable<AnimatedCanvasElement['lineOptions']>
+    lineOptions: NonNullable<AnimatedCanvasObject['lineOptions']>
   ) => {
     setLocalElement(prev => ({
       ...prev,

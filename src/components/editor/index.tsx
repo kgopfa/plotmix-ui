@@ -12,19 +12,19 @@ import { Inspector } from './panels/inspector';
 import { Timeline } from './timeline';
 import { Toolbar } from './canvas/toolbar';
 import { MaskOverlay } from './canvas/mask-overlay';
-import { AnimatedCanvasElement, ElementAnimation } from '@/types/canvas';
+import { AnimatedCanvasObject, ElementAnimation } from '@/types/canvas';
 import { Canvas } from './canvas';
 import { FederatedPointerEvent, Container } from 'pixi.js';
 import type { CanvasRef } from './canvas';
-import { createNewElement } from '@/lib/element-factory';
+import { createNewElement } from '@/lib/canvas-object-factory';
 import { useCanvasDimensions } from '@/hooks/use-canvas-dimensions';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { ToolType } from '@/types/editor';
 
 
 export default function EditorCanvas() {
-  const [elements, setElements] = useState<AnimatedCanvasElement[]>([]);
-  const [selectedElement, setSelectedElement] = useState<AnimatedCanvasElement | null>(null);
+  const [elements, setElements] = useState<AnimatedCanvasObject[]>([]);
+  const [selectedElement, setSelectedElement] = useState<AnimatedCanvasObject | null>(null);
   const [tool, setTool] = useState<ToolType>('select');
   const [maskPos, setMaskPos] = useState<{ x: number, y: number } | null>(null);
   const [lineStartPoint, setLineStartPoint] = useState<{ x: number, y: number } | null>(null);
@@ -372,7 +372,7 @@ export default function EditorCanvas() {
   };
 
   // Helper function to add path shape to animation
-  const addPathToAnimation = useCallback((pathShape: AnimatedCanvasElement) => {
+  const addPathToAnimation = useCallback((pathShape: AnimatedCanvasObject) => {
     const target = animationTarget;
     if (!target) return;
 
@@ -401,7 +401,7 @@ export default function EditorCanvas() {
   }, [animationTarget, setElements]);
 
   // Update animations when their path element is modified
-  const updateAnimationsForPathElement = useCallback((elements: AnimatedCanvasElement[], pathElement: AnimatedCanvasElement) => {
+  const updateAnimationsForPathElement = useCallback((elements: AnimatedCanvasObject[], pathElement: AnimatedCanvasObject) => {
     let animationsUpdated = 0;
 
     const updatedElements = elements.map(element => {
@@ -526,7 +526,7 @@ export default function EditorCanvas() {
 
   const handleInspectorChange = (
     prop: string,
-    value: string | number | boolean | ElementAnimation[] | NonNullable<AnimatedCanvasElement['lineOptions']> | {
+    value: string | number | boolean | ElementAnimation[] | NonNullable<AnimatedCanvasObject['lineOptions']> | {
       animationId: string;
       elementId: string;
     }
@@ -540,7 +540,7 @@ export default function EditorCanvas() {
     }
 
     if (selectedElement) {
-      let updatedElement: AnimatedCanvasElement | null = null;
+      let updatedElement: AnimatedCanvasObject | null = null;
 
       if (prop === 'animations') {
         setElements(prevElements => {
@@ -570,7 +570,7 @@ export default function EditorCanvas() {
             if (el.id === selectedElement.id) {
               updatedElement = {
                 ...el,
-                lineOptions: value as NonNullable<AnimatedCanvasElement['lineOptions']>
+                lineOptions: value as NonNullable<AnimatedCanvasObject['lineOptions']>
               };
               return updatedElement;
             }
@@ -835,7 +835,7 @@ export default function EditorCanvas() {
     });
   };
 
-  const handleAddElement = useCallback((element: AnimatedCanvasElement) => {
+  const handleAddElement = useCallback((element: AnimatedCanvasObject) => {
     setElements(prev => [...prev, element]);
     selectionManager.select(element);
 

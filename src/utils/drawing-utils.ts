@@ -1,6 +1,6 @@
 import { Graphics, Texture } from 'pixi.js';
 import { AnimationPath } from '@/utils/animation-path';
-import type { AnimatedCanvasElement } from '@/types/canvas';
+import type { AnimatedCanvasObject } from '@/types/canvas';
 
 // Cache for loaded image textures to prevent reloading during drag operations
 const imageTextureCache = new Map<string, Texture>();
@@ -83,7 +83,7 @@ export const drawDottedLine = (
 
 export const drawLine = (
   graphics: Graphics,
-  shape: AnimatedCanvasElement & {
+  shape: AnimatedCanvasObject & {
     stroke?: string | number;
     strokeWidth?: number;
     lineOptions?: {
@@ -120,7 +120,7 @@ export const drawLine = (
   }
 };
 
-function drawShapePath(graphics: Graphics, shape: AnimatedCanvasElement) {
+function drawShapePath(graphics: Graphics, shape: AnimatedCanvasObject) {
   switch (shape.type) {
     case 'rectangle':
       // Draw rectangle centered around origin
@@ -174,7 +174,7 @@ function drawShapePath(graphics: Graphics, shape: AnimatedCanvasElement) {
   }
 }
 
-function drawShapeAsPath(graphics: Graphics, shape: AnimatedCanvasElement) {
+function drawShapeAsPath(graphics: Graphics, shape: AnimatedCanvasObject) {
   const grayColor = 0xD3D3D3;
   
   if (shape.type === 'line' || shape.type === 'path') {
@@ -244,7 +244,7 @@ function drawShapeAsPath(graphics: Graphics, shape: AnimatedCanvasElement) {
   }
 }
 
-export function createShapeGraphics(shape: AnimatedCanvasElement, color?: string | number): Graphics {
+export function createShapeGraphics(shape: AnimatedCanvasObject, color?: string | number): Graphics {
   const graphics = new Graphics();
 
   if (shape.isAnimationPath) {
@@ -282,7 +282,7 @@ export function createShapeGraphics(shape: AnimatedCanvasElement, color?: string
   return graphics;
 }
 
-export function drawShape(graphics: Graphics, shape: AnimatedCanvasElement) {
+export function drawShape(graphics: Graphics, shape: AnimatedCanvasObject) {
   graphics.clear();
 
   processImage(graphics, shape);
@@ -437,7 +437,7 @@ export function updateLineFromLengthAndNorthAngle(
   return updateLineEndPoint(startPoint, length, mathAngle);
 }
 
-function processImage(graphics: Graphics, shape: AnimatedCanvasElement) {
+function processImage(graphics: Graphics, shape: AnimatedCanvasObject) {
   if (shape.type === 'image' && shape.imageData) {
     try {
       // Check if it's an SVG by looking for SVG content

@@ -1,7 +1,7 @@
 import type { Container } from 'pixi.js';
 import { Graphics } from 'pixi.js';
 import type {
-  AnimatedCanvasElement,
+  AnimatedCanvasObject,
   ElementAnimation,
   AnimatableProperties,
   BaseAnimationConfig,
@@ -17,8 +17,8 @@ export interface ColorAnimationConfig extends BaseAnimationConfig {
 
 export interface PathAnimationConfig extends BaseAnimationConfig {
   type: 'path';
-  pathElement: AnimatedCanvasElement;
-  targetElement: AnimatedCanvasElement;
+  pathElement: AnimatedCanvasObject;
+  targetElement: AnimatedCanvasObject;
   pathTopLeftX: number;
   pathTopLeftY: number;
   attachDelay: number;
@@ -34,7 +34,7 @@ export function isPathAnimationConfig(config: BaseAnimationConfig): config is Pa
 
 function generateAnimationProperties(
   animation: ElementAnimation,
-  element: AnimatedCanvasElement
+  element: AnimatedCanvasObject
 ): AnimatableProperties {
   const animeProps = { ...animation.properties };
 
@@ -74,7 +74,7 @@ function generateAnimationProperties(
 }
 
 export function generateAnimationConfig(
-  element: AnimatedCanvasElement,
+  element: AnimatedCanvasObject,
   animation: ElementAnimation,
   target: Container
 ): BaseAnimationConfig | ColorAnimationConfig | PathAnimationConfig {
@@ -116,7 +116,7 @@ export function generateAnimationConfig(
   }
 
   if (animation.type === 'path') {
-    const pathElement = (animation.properties as Record<string, unknown>)['pathElement'] as AnimatedCanvasElement;
+    const pathElement = (animation.properties as Record<string, unknown>)['pathElement'] as AnimatedCanvasObject;
     if (pathElement) {
       console.log(`generateAnimationConfig: pathElement width=${pathElement.width}, height=${pathElement.height} for element ${element.name}`);
       const pathTopLeftX = pathElement.x - pathElement.width / 2;

@@ -2,16 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { extend } from '@pixi/react';
 import { Container, Graphics } from 'pixi.js';
 import * as PIXI from 'pixi.js';
-import type { AnimatedCanvasElement } from '@/types/canvas';
+import type { AnimatedCanvasObject } from '@/types/canvas';
 
 extend({ Container, Graphics });
 
-interface ShapeSelectProps {
-  element: AnimatedCanvasElement;
+interface ObjectSelectProps {
+  element: AnimatedCanvasObject;
   scaleFactor?: number;
 }
 
-const ShapeSelect: React.FC<ShapeSelectProps> = ({
+const ObjectSelect: React.FC<ObjectSelectProps> = ({
   element,
 }) => {
   // State for tracking resize dimensions
@@ -109,4 +109,4 @@ const ShapeSelect: React.FC<ShapeSelectProps> = ({
   );
 };
 
-export default ShapeSelect;
+export default ObjectSelect;

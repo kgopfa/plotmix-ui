@@ -1,4 +1,4 @@
-import { AnimatedCanvasElement } from '@/types/canvas';
+import { AnimatedCanvasObject } from '@/types/canvas';
 import { TimelineState } from '../types/timeline';
 
 type TimelineUpdateListener = (state: TimelineState) => void;
@@ -47,7 +47,7 @@ export class TimelineManager {
     this.listeners.forEach(listener => listener(this.state));
   }
 
-  addTrack(track: AnimatedCanvasElement): void {
+  addTrack(track: AnimatedCanvasObject): void {
     if (track.isAnimationPath) return;
     
     this.state.tracks.push(track);
@@ -99,7 +99,7 @@ export class TimelineManager {
     }
   }
 
-  setTracks(tracks: AnimatedCanvasElement[]): void {
+  setTracks(tracks: AnimatedCanvasObject[]): void {
     this.state.tracks = tracks.filter(track => !track.isAnimationPath);
     this.updateDuration();
     this.notifyListeners();

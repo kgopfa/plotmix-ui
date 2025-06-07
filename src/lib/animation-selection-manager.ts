@@ -1,10 +1,10 @@
-import { AnimatedCanvasElement, ElementAnimation } from '@/types/canvas';
+import { AnimatedCanvasObject, ElementAnimation } from '@/types/canvas';
 
 export interface AnimationSelection {
   type: 'animation';
   elementId: string;
   animationId: string;
-  element: AnimatedCanvasElement;
+  element: AnimatedCanvasObject;
   animation: ElementAnimation;
 }
 
@@ -12,9 +12,9 @@ export interface PathShapeSelection {
   type: 'pathShape';
   elementId: string;
   animationId: string;
-  element: AnimatedCanvasElement;
+  element: AnimatedCanvasObject;
   animation: ElementAnimation;
-  pathElement: AnimatedCanvasElement;
+  pathElement: AnimatedCanvasObject;
 }
 
 export type Selection = AnimationSelection | PathShapeSelection | null;
@@ -46,7 +46,7 @@ export class AnimationSelectionManager {
   }
 
   selectAnimation(
-    element: AnimatedCanvasElement, 
+    element: AnimatedCanvasObject, 
     animation: ElementAnimation
   ): void {
     this.selectedAnimation = {
@@ -60,9 +60,9 @@ export class AnimationSelectionManager {
   }
 
   selectPathShape(
-    element: AnimatedCanvasElement,
+    element: AnimatedCanvasObject,
     animation: ElementAnimation,
-    pathElement: AnimatedCanvasElement
+    pathElement: AnimatedCanvasObject
   ): void {
     this.selectedAnimation = {
       type: 'pathShape',

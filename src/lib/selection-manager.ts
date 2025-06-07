@@ -1,10 +1,10 @@
-import { AnimatedCanvasElement } from '@/types/canvas';
+import { AnimatedCanvasObject } from '@/types/canvas';
 
-type SelectionListener = (selectedElement: AnimatedCanvasElement | null) => void;
+type SelectionListener = (selectedElement: AnimatedCanvasObject | null) => void;
 
 export class SelectionManager {
   private static instance: SelectionManager;
-  private selectedElement: AnimatedCanvasElement | null = null;
+  private selectedElement: AnimatedCanvasObject | null = null;
   private listeners: Set<SelectionListener> = new Set();
 
   private constructor() {}
@@ -26,16 +26,16 @@ export class SelectionManager {
     this.listeners.forEach(listener => listener(this.selectedElement));
   }
 
-  select(element: AnimatedCanvasElement | null): void {
+  select(element: AnimatedCanvasObject | null): void {
     this.selectedElement = element;
     this.notifyListeners();
   }
 
-  getSelected(): AnimatedCanvasElement | null {
+  getSelected(): AnimatedCanvasObject | null {
     return this.selectedElement;
   }
 
-  isSelected(element: AnimatedCanvasElement): boolean {
+  isSelected(element: AnimatedCanvasObject): boolean {
     return this.selectedElement?.id === element.id;
   }
 } 

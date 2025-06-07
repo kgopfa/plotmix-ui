@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
-import { AnimatedCanvasElement } from '@/types/canvas';
+import { AnimatedCanvasObject } from '@/types/canvas';
 import { ToolType } from '@/types/editor';
 
 interface UseKeyboardShortcutsProps {
-  selectedElement: AnimatedCanvasElement | null;
+  selectedElement: AnimatedCanvasObject | null;
   onDeleteElement: (elementId: string) => void;
   onToolChange?: (tool: ToolType) => void;
 }

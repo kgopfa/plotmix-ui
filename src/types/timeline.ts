@@ -1,4 +1,4 @@
-import { AnimatedCanvasElement } from '@/types/canvas';
+import { AnimatedCanvasObject } from '@/types/canvas';
 
 export type AnimationProperty = number | string | boolean;
 
@@ -16,7 +16,7 @@ export interface TimelineAnimation {
 }
 
 export interface TimelineState {
-  tracks: AnimatedCanvasElement[];
+  tracks: AnimatedCanvasObject[];
   duration: number;  // total timeline duration in seconds
   scale: number;     // pixels per second
 } 

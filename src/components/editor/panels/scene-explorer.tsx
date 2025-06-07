@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { AnimatedCanvasElement } from '@/types/canvas';
+import { AnimatedCanvasObject } from '@/types/canvas';
 import { SelectionManager } from '@/lib/selection-manager';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
 
 interface SceneExplorerProps {
-  elements: AnimatedCanvasElement[];
+  elements: AnimatedCanvasObject[];
   selectionManager: SelectionManager;
 }
 

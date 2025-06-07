@@ -1,18 +1,18 @@
 import { useRef, useState } from 'react';
 import { TimelineTrack } from '@/components/editor/timeline/timeline-track';
-import { AnimatedCanvasElement } from '@/types/canvas';
+import { AnimatedCanvasObject } from '@/types/canvas';
 import { TimelineState } from '@/types/timeline';
 import { TimeManagerState } from '@/lib/time-manager';
 
 
 interface TimelineProps {
-  elements: AnimatedCanvasElement[];
+  elements: AnimatedCanvasObject[];
   timelineState: TimelineState;
   timeState: TimeManagerState;
   onPlayPause: () => void;
   onStop: () => void;
   onAnimationChange: (elementId: string, animationId: string, update: { startTime: number; duration: number }) => void;
-  selectionManager: { isSelected: (element: AnimatedCanvasElement) => boolean };
+  selectionManager: { isSelected: (element: AnimatedCanvasObject) => boolean };
 }
 
 export function Timeline({

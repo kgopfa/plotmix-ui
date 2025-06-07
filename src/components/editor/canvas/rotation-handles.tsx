@@ -2,12 +2,12 @@ import React from 'react';
 import { extend } from '@pixi/react';
 import { Graphics } from 'pixi.js';
 import * as PIXI from 'pixi.js';
-import type { AnimatedCanvasElement } from '@/types/canvas';
+import type { AnimatedCanvasObject } from '@/types/canvas';
 
 extend({ Graphics });
 
 interface RotationHandlesProps {
-  element: AnimatedCanvasElement;
+  element: AnimatedCanvasObject;
   onRotate: (rotation: number) => void;
   onRotationStart?: () => void;
   onRotationEnd?: () => void;

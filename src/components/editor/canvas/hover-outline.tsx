@@ -2,12 +2,12 @@ import React from 'react';
 import { extend } from '@pixi/react';
 import { Container, Graphics } from 'pixi.js';
 import * as PIXI from 'pixi.js';
-import type { AnimatedCanvasElement } from '@/types/canvas';
+import type { AnimatedCanvasObject } from '@/types/canvas';
 
 extend({ Container, Graphics });
 
 interface HoverOutlineProps {
-  element: AnimatedCanvasElement;
+  element: AnimatedCanvasObject;
 }
 
 const HoverOutline: React.FC<HoverOutlineProps> = ({ element }) => {

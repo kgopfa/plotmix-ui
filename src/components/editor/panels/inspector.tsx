@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  AnimatedCanvasElement,
+  AnimatedCanvasObject,
   ElementAnimation
 } from '@/types/canvas';
 import { PropertiesTab } from './tabs/properties';
@@ -9,10 +9,10 @@ import { useAnimationHandlers } from '../../../hooks/use-animation-handlers';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
 
 interface InspectorProps {
-  selectedElement: AnimatedCanvasElement | null;
+  selectedElement: AnimatedCanvasObject | null;
   onInspectorChange: (
     prop: string,
-    value: string | number | boolean | ElementAnimation[] | NonNullable<AnimatedCanvasElement['lineOptions']> | {
+    value: string | number | boolean | ElementAnimation[] | NonNullable<AnimatedCanvasObject['lineOptions']> | {
       animationId: string;
       elementId: string;
     }

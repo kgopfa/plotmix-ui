@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { 
-  AnimatedCanvasElement, 
+  AnimatedCanvasObject, 
   GsapEase, 
   ElementAnimation, 
   AnimationType, 
@@ -9,14 +9,14 @@ import {
 
 type InspectorChangeHandler = (
   prop: string,
-  value: string | number | boolean | ElementAnimation[] | NonNullable<AnimatedCanvasElement['lineOptions']> | {
+  value: string | number | boolean | ElementAnimation[] | NonNullable<AnimatedCanvasObject['lineOptions']> | {
     animationId: string;
     elementId: string;
   }
 ) => void;
 
 export function useAnimationHandlers(
-  selectedElement: AnimatedCanvasElement | null,
+  selectedElement: AnimatedCanvasObject | null,
   onInspectorChange: InspectorChangeHandler
 ) {
   const [localAnimations, setLocalAnimations] = useState<ElementAnimation[]>(
@@ -75,6 +75,13 @@ export function useAnimationHandlers(
             pathDirection: 'clockwise' as 'clockwise' | 'counterclockwise',
             yoyo: false,
             attachDelay: 0.5
+          },
+          typewriter: {
+            text: selectedElement!.text || ''
+          },
+          textScale: {
+            scaleX: 1,
+            scaleY: 1
           }
         };
         return { 
@@ -135,6 +142,13 @@ export function useAnimationHandlers(
         pathDirection: 'clockwise' as 'clockwise' | 'counterclockwise',
         yoyo: false,
         attachDelay: 0.5
+      },
+      typewriter: {
+        text: selectedElement.text || ''
+      },
+      textScale: {
+        scaleX: 1,
+        scaleY: 1
       }
     };
 

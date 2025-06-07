@@ -1,5 +1,5 @@
 import { 
-  AnimatedCanvasElement, 
+  AnimatedCanvasObject, 
   ElementAnimation
 } from '@/types/canvas';
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -7,7 +7,7 @@ import debounce from 'lodash/debounce';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
 
 interface AnimationsTabProps {
-  selectedElement: AnimatedCanvasElement;
+  selectedElement: AnimatedCanvasObject;
   localAnimations: ElementAnimation[];
   onAddAnimation: () => void;
   onDeleteAnimation: (id: string) => void;

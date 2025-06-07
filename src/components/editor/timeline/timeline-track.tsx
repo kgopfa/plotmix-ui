@@ -1,4 +1,4 @@
-import { AnimatedCanvasElement } from '@/types/canvas';
+import { AnimatedCanvasObject } from '@/types/canvas';
 import { SelectionManager } from '@/lib/selection-manager';
 import { AnimationBlock } from './animation-block';
 
@@ -7,11 +7,11 @@ const PIXELS_PER_SECOND = 100;
 const TIMELINE_WIDTH = MAX_DURATION_SECONDS * PIXELS_PER_SECOND;
 
 interface TimelineTrackProps {
-  element: AnimatedCanvasElement;
+  element: AnimatedCanvasObject;
   scale: number;
   currentTime: number;
   isSelected: boolean;
-  onAnimationClick?: (animation: AnimatedCanvasElement['animations'][0]) => void;
+  onAnimationClick?: (animation: AnimatedCanvasObject['animations'][0]) => void;
   onAnimationChange: (
     elementId: string,
     animationId: string,

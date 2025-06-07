@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { AnimatedCanvasElement } from '@/types/canvas';
+import { AnimatedCanvasObject } from '@/types/canvas';
 
 interface TextEditorProps {
-  element: AnimatedCanvasElement;
+  element: AnimatedCanvasObject;
   onTextChange: (id: string, text: string) => void;
   onTextEnd: () => void;
   canvasElement?: HTMLCanvasElement | null;

@@ -3,11 +3,11 @@
 import { Application, extend } from '@pixi/react';
 import { Container, Graphics, Rectangle, Text } from 'pixi.js';
 import type { FederatedPointerEvent } from 'pixi.js';
-import type { AnimatedCanvasElement } from '@/types/canvas';
+import type { AnimatedCanvasObject } from '@/types/canvas';
 import { useImperativeHandle, forwardRef, useState, useRef, useEffect } from 'react';
 import { drawShape } from '@/utils/drawing-utils';
-import { createNewElement } from '@/lib/element-factory';
-import ShapeSelect from './shape-select';
+import { createNewElement } from '@/lib/canvas-object-factory';
+import ObjectSelect from './object-select';
 import HoverOutline from './hover-outline';
 import RotationHandles from './rotation-handles';
 import ResizeHandle from './resize-handle';
@@ -20,7 +20,7 @@ extend({ Container, Graphics, Text });
 
 interface CanvasProps {
   dimensions: { width: number; height: number };
-  elements: AnimatedCanvasElement[];
+  elements: AnimatedCanvasObject[];
   selectedId: string | null;
   onElementSelect: (id: string | null) => void;
   onElementDragEnd: (id: string, x: number, y: number) => void;
@@ -28,7 +28,7 @@ interface CanvasProps {
   onLineEndpointDrag?: (id: string, endpoint: 'start' | 'end', x: number, y: number) => void;
   onElementResize?: (id: string, width: number, height: number) => void;
   tool: string;
-  onAddElement?: (element: AnimatedCanvasElement) => void;
+  onAddElement?: (element: AnimatedCanvasObject) => void;
   isPathMode?: boolean;
   onElementRotate?: (id: string, rotation: number) => void;
   onElementRadiusChange?: (id: string, cornerRadius: number) => void;
@@ -326,7 +326,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   }, [onElementResize]);
 
   // Check if a point is within a resize handle
-  const getResizeHandleAtPoint = (element: AnimatedCanvasElement, x: number, y: number): ResizeHandle => {
+  const getResizeHandleAtPoint = (element: AnimatedCanvasObject, x: number, y: number): ResizeHandle => {
     if (!element) return null;
 
     const halfWidth = element.width / 2;
@@ -910,7 +910,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                 )}
 
                 {el.id === selectedId && (
-                  <ShapeSelect
+                  <ObjectSelect
                     element={el}
                     scaleFactor={canvasScaleFactor.current}
                   />

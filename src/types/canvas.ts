@@ -50,7 +50,7 @@ export type AnimatableProperties = {
   pathPoints?: Array<{x: number, y: number}>;
   pathDirection?: 'clockwise' | 'counterclockwise';
   yoyo?: boolean;
-  pathElement?: AnimatedCanvasElement;
+  pathElement?: AnimatedCanvasObject;
   attachDelay?: number; // Time to move to the starting corner of the path
   // Text animation properties
   text?: string;
@@ -77,7 +77,7 @@ export interface BaseAnimationConfig {
   ease: string;
 }
 
-export interface AnimatedCanvasElement {
+export interface AnimatedCanvasObject {
   id: string;
   name: string;
   type: 'rectangle' | 'circle' | 'triangle' | 'line' | 'path' | 'image' | 'text';
