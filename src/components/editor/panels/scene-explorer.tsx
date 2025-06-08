@@ -12,6 +12,7 @@ export function SceneExplorer({ elements, selectionManager }: SceneExplorerProps
   const shapes = elements.filter(element => !element.isAnimationPath);
   const animationSelectionManager = AnimationSelectionManager.getInstance();
   const [expandedShapes, setExpandedShapes] = useState<Set<string>>(new Set());
+  const [selectedObjects, setSelectedObjects] = useState<AnimatedCanvasObject[]>([]);
 
   const getAnimationIcon = (animationType: string) => {
     const iconMap: Record<string, string> = {
@@ -49,6 +50,13 @@ export function SceneExplorer({ elements, selectionManager }: SceneExplorerProps
     });
   };
 
+  // Subscribe to selection changes
+  useEffect(() => {
+    return selectionManager.subscribe((selectionState) => {
+      setSelectedObjects(selectionState.selectedObjects);
+    });
+  }, [selectionManager]);
+
   // Auto-expand shapes when their animations are selected from other parts of the UI
   useEffect(() => {
     return animationSelectionManager.subscribe((selection) => {
@@ -62,6 +70,20 @@ export function SceneExplorer({ elements, selectionManager }: SceneExplorerProps
     });
   }, [animationSelectionManager]);
 
+  const handleShapeClick = (element: AnimatedCanvasObject, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (e.ctrlKey || e.metaKey) {
+      // Multi-selection with Ctrl/Cmd
+      selectionManager.toggleSelection(element);
+    } else {
+      // Single selection
+      selectionManager.select(element);
+    }
+    
+    animationSelectionManager.clearSelection();
+  };
+
   const handleEmptySpaceClick = (e: React.MouseEvent) => {
     // Only deselect if clicking directly on the aside element (empty space)
     if (e.target === e.currentTarget) {
@@ -70,12 +92,31 @@ export function SceneExplorer({ elements, selectionManager }: SceneExplorerProps
     }
   };
 
+  const selectionCount = selectedObjects.length;
+  const hasMultipleSelection = selectionCount > 1;
+
   return (
     <div 
       className="h-full p-2 text-gray-800"
       onClick={handleEmptySpaceClick}
     >
-      <h3 className="font-semibold mb-2">Scenes</h3>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="font-semibold">Scenes</h3>
+        {selectionCount > 0 && (
+          <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+            {selectionCount} selected
+          </div>
+        )}
+      </div>
+
+      {/* Multi-selection instructions */}
+      {hasMultipleSelection && (
+        <div className="mb-2 p-2 bg-blue-50 text-blue-700 text-xs rounded">
+          <div className="font-medium mb-1">Multi-selection active</div>
+          <div>Hold Ctrl/Cmd to add/remove objects</div>
+        </div>
+      )}
+
       <ul>
         <li>
           <details open>
@@ -84,6 +125,7 @@ export function SceneExplorer({ elements, selectionManager }: SceneExplorerProps
               {shapes.map(element => {
                 const hasAnimations = element.animations.length > 0;
                 const isExpanded = expandedShapes.has(element.id);
+                const isSelected = selectionManager.isSelected(element);
                 
                 return (
                   <li key={element.id}>
@@ -111,18 +153,17 @@ export function SceneExplorer({ elements, selectionManager }: SceneExplorerProps
                       {/* Shape Content */}
                       <div
                         className={`flex-1 px-2 py-1 rounded cursor-pointer hover:bg-gray-200 hover:text-blue-600 flex items-center gap-2 ${
-                          selectionManager.isSelected(element) ? 'bg-blue-100 text-blue-600' : ''
+                          isSelected ? 'bg-blue-100 text-blue-600 ring-1 ring-blue-200' : ''
                         }`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          selectionManager.select(element);
-                          animationSelectionManager.clearSelection();
-                        }}
+                        onClick={(e) => handleShapeClick(element, e)}
                       >
                         <span className="text-sm">{getShapeIcon(element.type)}</span>
                         <span className="flex-1">{element.name}</span>
                         {hasAnimations && (
                           <span className="text-xs text-gray-500">({element.animations.length} anim)</span>
+                        )}
+                        {isSelected && hasMultipleSelection && (
+                          <span className="text-xs bg-blue-200 text-blue-800 px-1 rounded">✓</span>
                         )}
                       </div>
                     </div>

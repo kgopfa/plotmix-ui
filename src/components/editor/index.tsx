@@ -25,6 +25,7 @@ import { ToolType } from '@/types/editor';
 export default function EditorCanvas() {
   const [canvasObjects, setCanvasObjects] = useState<AnimatedCanvasObject[]>([]);
   const [selectedObject, setSelectedObject] = useState<AnimatedCanvasObject | null>(null);
+  const [selectedObjects, setSelectedObjects] = useState<AnimatedCanvasObject[]>([]);
   const [tool, setTool] = useState<ToolType>('select');
   const [maskPos, setMaskPos] = useState<{ x: number, y: number } | null>(null);
   const [lineStartPoint, setLineStartPoint] = useState<{ x: number, y: number } | null>(null);
@@ -402,15 +403,10 @@ export default function EditorCanvas() {
 
   // Update animations when their path element is modified
   const updateAnimationsForPathElement = useCallback((elements: AnimatedCanvasObject[], pathElement: AnimatedCanvasObject) => {
-    let animationsUpdated = 0;
-
     const updatedElements = elements.map(element => {
       // Find animations that reference this path element
       const updatedAnimations = element.animations.map(animation => {
         if (animation.properties.pathElement?.id === pathElement.id) {
-          animationsUpdated++;
-          console.log(`Updating animation for element ${element.name}: old pathElement width=${animation.properties.pathElement.width}, new width=${pathElement.width}`);
-          // Update the animation with the new path element data
           return {
             ...animation,
             properties: {
@@ -429,10 +425,6 @@ export default function EditorCanvas() {
 
       return element;
     });
-
-    if (animationsUpdated > 0) {
-      console.log(`Updated ${animationsUpdated} animation(s) for path element ${pathElement.name || pathElement.id}`);
-    }
 
     return updatedElements;
   }, []);
@@ -632,7 +624,10 @@ export default function EditorCanvas() {
 
   // Subscribe to selection updates
   useEffect(() => {
-    return selectionManager.subscribe(setSelectedObject);
+    return selectionManager.subscribe((selectionState) => {
+      setSelectedObject(selectionState.primarySelection);
+      setSelectedObjects(selectionState.selectedObjects);
+    });
   }, [selectionManager]);
 
   // Use a ref to access current elements to avoid dependency issues
@@ -643,7 +638,6 @@ export default function EditorCanvas() {
   useEffect(() => {
     const handleElementResize = (e: CustomEvent) => {
       const { id, width, height, handle } = e.detail;
-      console.log('Resize event:', { id, width, height, handle });
 
       setCanvasObjects(() => {
         // Use the ref to get current elements to avoid stale closure
@@ -702,15 +696,11 @@ export default function EditorCanvas() {
 
         // If this is an animation path element, update related animations
         const resizedElement = updatedElements.find(el => el.id === id);
-        console.log('Resized element:', resizedElement?.name, 'isAnimationPath:', resizedElement?.isAnimationPath);
-
         if (resizedElement?.isAnimationPath) {
-          console.log('Updating animations for resized path element');
           const elementsWithUpdatedAnimations = updateAnimationsForPathElement(updatedElements, resizedElement);
 
           // Force a state update first, then rebuild timeline
           setTimeout(() => {
-            console.log('Rebuilding timeline with updated path element:', resizedElement.name, 'new width:', resizedElement.width);
             gsapManager.buildAnimationTimeline(elementsWithUpdatedAnimations);
           }, 10); // Small delay to ensure state is updated
 
@@ -763,14 +753,12 @@ export default function EditorCanvas() {
   useEffect(() => {
     const handleAnimationPathUpdate = (e: CustomEvent) => {
       const { pathElement } = e.detail;
-      console.log('Animation path updated from ShapeSelect:', pathElement.name, 'new dimensions:', pathElement.width, 'x', pathElement.height);
-
+      
       setCanvasObjects(prevElements => {
         const elementsWithUpdatedAnimations = updateAnimationsForPathElement(prevElements, pathElement);
 
         // Rebuild timeline after animation path update
         setTimeout(() => {
-          console.log('Rebuilding timeline after path element resize via ShapeSelect');
           gsapManager.buildAnimationTimeline(elementsWithUpdatedAnimations);
         }, 10);
 
@@ -848,8 +836,6 @@ export default function EditorCanvas() {
 
   const handleImageImport = useCallback(async (file: File) => {
     try {
-      console.log("Importing image:", file.name, file.type);
-
       // Check if it's an SVG file and needs text content
       if (file.type === 'image/svg+xml') {
         // Read SVG as text to preserve the XML content
@@ -1091,8 +1077,8 @@ export default function EditorCanvas() {
                     width: Math.max(dimensions.width * 3, 4000), // Canvas fills entire scrollable area
                     height: Math.max(dimensions.height * 3, 4000)
                   }}
-                  elements={showPaths ? canvasObjects : canvasObjects.filter(el => !el.isAnimationPath)}
-                  selectedId={selectedObject?.id || null}
+                                      elements={showPaths ? canvasObjects : canvasObjects.filter(el => !el.isAnimationPath)}
+                    selectedIds={selectedObjects.map(obj => obj.id)}
                   onElementSelect={handleSelectElement}
                   onElementDragEnd={handleElementDragEnd}
                   onCanvasClick={canvasClickHandler}

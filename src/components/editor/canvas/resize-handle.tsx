@@ -164,10 +164,6 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({
     const newCenterX = initialState.x + (centerOffsetX * cos - centerOffsetY * sin);
     const newCenterY = initialState.y + (centerOffsetX * sin + centerOffsetY * cos);
     
-    console.log(`${corner} handle drag:`, { deltaX, deltaY, localDeltaX, localDeltaY });
-    console.log(`New dimensions:`, { width: finalWidth, height: finalHeight });
-    console.log(`New center:`, { x: newCenterX, y: newCenterY });
-    
     // Use a ref to prevent infinite loops
     if (!resizeInProgressRef.current) {
       resizeInProgressRef.current = true;
@@ -207,7 +203,6 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({
   };
 
   const handlePointerDown = (e: PIXI.FederatedPointerEvent) => {
-    console.log(`Starting drag on ${corner} handle`);
     isDraggingRef.current = true;
     
     // Capture the initial element state when dragging starts
@@ -260,7 +255,6 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({
   const handleGlobalPointerUp = () => {
     if (!isDraggingRef.current) return;
     
-    console.log(`Finished dragging ${corner} handle`);
     isDraggingRef.current = false;
     
     // Remove global listeners

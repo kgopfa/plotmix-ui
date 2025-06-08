@@ -21,7 +21,7 @@ extend({ Container, Graphics, Text });
 interface CanvasProps {
   dimensions: { width: number; height: number };
   elements: AnimatedCanvasObject[];
-  selectedId: string | null;
+  selectedIds: string[];
   onElementSelect: (id: string | null) => void;
   onElementDragEnd: (id: string, x: number, y: number) => void;
   onCanvasClick: (e: FederatedPointerEvent) => void;
@@ -70,7 +70,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   {
     dimensions,
     elements,
-    selectedId,
+    selectedIds,
     onElementSelect,
     onElementDragEnd,
     onCanvasClick,
@@ -101,6 +101,12 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
   // Optional: Track zoom state for external components (like zoom indicators)
   const [currentZoom, setCurrentZoom] = useState(1);
+  
+  // Helper function to check if an element is selected
+  const isSelected = (id: string) => selectedIds.includes(id);
+  
+  // Get primary selected ID for backward compatibility
+  const selectedId = selectedIds[0] || null;
 
   // Calculate the canvas scale factor based on device pixel ratio and any additional scaling
   const canvasScaleFactor = useRef(window.devicePixelRatio || 1);
@@ -263,11 +269,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     const canvas = document.querySelector('canvas');
     if (canvas) {
       canvasRef.current = canvas;
-      console.log('Canvas element found and set to canvasRef');
-    } else {
-      console.log('Canvas element not found');
-    }
-
+    } 
     // Reset to default cursor when component unmounts
     return () => {
       document.body.style.cursor = '';
@@ -686,11 +688,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     setEditingTextId(null);
   };
 
-  // Debug effect to track editingTextId changes
-  useEffect(() => {
-    console.log('editingTextId changed to:', editingTextId);
-  }, [editingTextId]);
-
   useEffect(() => {
     const handleElementRadiusChange = (e: CustomEvent) => {
       const { id, cornerRadius } = e.detail;
@@ -905,11 +902,11 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                 )}
 
                 {/* Show hover outline when hovered but not selected */}
-                {hoveredId === el.id && selectedId !== el.id && (
+                {hoveredId === el.id && !isSelected(el.id) && (
                   <HoverOutline element={el} />
                 )}
 
-                {el.id === selectedId && (
+                {isSelected(el.id) && (
                   <ObjectSelect
                     element={el}
                     scaleFactor={canvasScaleFactor.current}

@@ -51,8 +51,7 @@ export type AnimatableProperties = {
   pathDirection?: 'clockwise' | 'counterclockwise';
   yoyo?: boolean;
   pathElement?: AnimatedCanvasObject;
-  attachDelay?: number; // Time to move to the starting corner of the path
-  // Text animation properties
+  attachDelay?: number;
   text?: string;
   fontSize?: number;
   letterSpacing?: number;
