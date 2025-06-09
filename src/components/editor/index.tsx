@@ -20,6 +20,7 @@ import { createNewObject } from '@/lib/canvas-object-factory';
 import { useCanvasDimensions } from '@/hooks/use-canvas-dimensions';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { ToolType } from '@/types/editor';
+import { GroupManager } from '@/lib/group-manager';
 
 
 export default function EditorCanvas() {
@@ -59,6 +60,9 @@ export default function EditorCanvas() {
 
   const canvasRef = useRef<CanvasRef | null>(null);
   const imageFileInputRef = useRef<HTMLInputElement>(null);
+
+  const selectionManager = SelectionManager.getInstance();
+  const groupManager = GroupManager.getInstance();
 
   // Panel resize handlers
   const handleMouseDown = useCallback((panel: 'left' | 'right') => (e: React.MouseEvent) => {
@@ -118,7 +122,6 @@ export default function EditorCanvas() {
   // Memoize the time manager instance
   const timeManager = useMemo(() => TimeManager.getInstance(), []);
   const timelineManager = useMemo(() => TimelineManager.getInstance(), []);
-  const selectionManager = useMemo(() => SelectionManager.getInstance(), []);
 
   // Use the canvas dimensions hook
   const { dimensions, containerRef } = useCanvasDimensions();
@@ -640,7 +643,9 @@ export default function EditorCanvas() {
 
   // Subscribe to selection updates
   useEffect(() => {
-    return selectionManager.subscribe(setSelectedObjects);
+    return selectionManager.subscribe((selectedElements) => {
+      setSelectedObjects(selectedElements);
+    });
   }, [selectionManager]);
 
   // Use a ref to access current elements to avoid dependency issues
@@ -930,6 +935,46 @@ export default function EditorCanvas() {
     }
   };
 
+  // Initialize groups for existing elements (migration) - only run when canvasObjects change
+  useEffect(() => {
+    if (canvasObjects.length > 0) {
+      // Ensure all elements have groups created in the manager
+      groupManager.initializeGroupsForElements(canvasObjects);
+    }
+  }, [canvasObjects, groupManager]);
+
+  // Group/Ungroup handlers
+  const handleGroupElements = useCallback(() => {
+    const newGroup = selectionManager.groupSelectedElements(canvasObjects);
+    if (newGroup) {
+      // Update canvas objects with new group IDs
+      setCanvasObjects(prev => 
+        prev.map(el => {
+          if (selectedObjects.some(selected => selected.id === el.id)) {
+            return { ...el, groupId: newGroup.id };
+          }
+          return el;
+        })
+      );
+    }
+  }, [selectionManager, canvasObjects, selectedObjects]);
+
+  const handleUngroupElements = useCallback(() => {
+    const newGroups = selectionManager.ungroupSelectedElements(canvasObjects);
+    if (newGroups.length > 0) {
+      // Update canvas objects with new group IDs
+      setCanvasObjects(prev => 
+        prev.map(el => {
+          const elementGroup = newGroups.find(g => g.elementIds.includes(el.id));
+          if (elementGroup) {
+            return { ...el, groupId: elementGroup.id };
+          }
+          return el;
+        })
+      );
+    }
+  }, [selectionManager, canvasObjects]);
+
   return (
     <div className="flex flex-col h-screen w-screen">
       {/* Options Bar */}
@@ -965,7 +1010,7 @@ export default function EditorCanvas() {
               🔧
             </button>
           </div>
-          {/* Multi-select indicator */}
+          {/* Multi-select indicator and grouping controls */}
           {selectedObjects.length > 0 && (
             <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-200 rounded text-sm">
               <span className="text-blue-600 font-medium">
@@ -976,6 +1021,28 @@ export default function EditorCanvas() {
                   Multi-select active
                 </span>
               )}
+              
+              {/* Grouping buttons */}
+              <div className="flex gap-1 ml-2 border-l pl-2">
+                {selectionManager.canGroup() && (
+                  <button
+                    className="btn-sm bg-green-500 text-white hover:bg-green-600"
+                    onClick={handleGroupElements}
+                    title="Group selected elements"
+                  >
+                    📦 Group
+                  </button>
+                )}
+                {selectionManager.canUngroup() && (
+                  <button
+                    className="btn-sm bg-orange-500 text-white hover:bg-orange-600"
+                    onClick={handleUngroupElements}
+                    title="Ungroup selected elements"
+                  >
+                    📤 Ungroup
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </div>

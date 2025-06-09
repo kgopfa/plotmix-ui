@@ -117,6 +117,17 @@ export interface AnimatedCanvasObject {
   fontStyle?: string;
   textAlign?: string;
   lineHeight?: number;
+  groupId?: string; // Every object belongs to a group
+}
+
+export interface CanvasGroup {
+  id: string;
+  name: string;
+  elementIds: string[]; // IDs of objects in this group
+  x: number; // Group position (center)
+  y: number;
+  rotation?: number; // Group rotation
+  isDefaultGroup: boolean; // True for auto-created single-object groups
 }
 
 export const EASING_OPTIONS: GsapEase[] = [

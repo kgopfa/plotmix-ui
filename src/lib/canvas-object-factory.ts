@@ -1,5 +1,13 @@
 import type { AnimatedCanvasObject, ElementAnimation } from '@/types/canvas';
 
+// Simple ID generator
+const generateId = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return Date.now().toString(36) + Math.random().toString(36).substring(2);
+};
+
 type ShapeType = 'rectangle' | 'circle' | 'triangle' | 'line' | 'path' | 'image' | 'text';
 
 interface BaseObjectProps {
@@ -30,20 +38,31 @@ interface CommonObjectAttributes {
   shadowOffsetY: number;
   shadowOpacity: number;
   animations: ElementAnimation[];
+  groupId: string;
 }
 
 function generateCommonAttributes(
   type: ShapeType,
   { x, y, elements }: BaseObjectProps
 ): CommonObjectAttributes {
-  const newId = `${type}-${elements.length + 1}`;
+  const id = generateId();
+  const typeCountMap: { [key: string]: string } = {
+    rectangle: 'Rectangle',
+    circle: 'Circle',
+    triangle: 'Triangle',
+    line: 'Line',
+    path: 'Path',
+    image: 'Image',
+    text: 'Text'
+  };
+
+  // Count existing elements of the same type to generate name
   const existingCount = elements.filter(el => el.type === type).length;
-  const name = existingCount === 0
-    ? type.charAt(0).toUpperCase() + type.slice(1)
-    : `${type.charAt(0).toUpperCase() + type.slice(1)} (${existingCount})`;
+  const baseName = typeCountMap[type] || 'Shape';
+  const name = `${baseName} ${existingCount + 1}`;
 
   return {
-    id: newId,
+    id,
     name,
     x: x,
     y: y,
@@ -58,6 +77,7 @@ function generateCommonAttributes(
     shadowOffsetY: 10,
     shadowOpacity: 0.5,
     animations: [],
+    groupId: generateId(), // Each object gets its own default group
   };
 }
 
