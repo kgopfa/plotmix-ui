@@ -3,15 +3,17 @@ import { AnimatedCanvasObject } from '@/types/canvas';
 import { ToolType } from '@/types/editor';
 
 interface UseKeyboardShortcutsProps {
-  selectedElement: AnimatedCanvasObject | null;
+  selectedElements: AnimatedCanvasObject[];
   onDeleteElement: (elementId: string) => void;
   onToolChange?: (tool: ToolType) => void;
+  onSelectAll?: () => void;
 }
 
 export function useKeyboardShortcuts({ 
-  selectedElement, 
+  selectedElements, 
   onDeleteElement,
-  onToolChange 
+  onToolChange,
+  onSelectAll
 }: UseKeyboardShortcutsProps) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -20,10 +22,19 @@ export function useKeyboardShortcuts({
         return;
       }
 
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedElement) {
-        onDeleteElement(selectedElement.id);
+      // Select All (Ctrl+A / Cmd+A)
+      if ((e.metaKey || e.ctrlKey) && e.key === 'a' && onSelectAll) {
+        e.preventDefault();
+        onSelectAll();
+        return;
       }
 
+      // Delete selected elements
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedElements.length > 0) {
+        selectedElements.forEach(element => onDeleteElement(element.id));
+      }
+
+      // Escape to switch to select tool
       if (e.key === 'Escape' && onToolChange) {
         onToolChange('select');
       }
@@ -31,5 +42,5 @@ export function useKeyboardShortcuts({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [selectedElement, onDeleteElement, onToolChange]);
+  }, [selectedElements, onDeleteElement, onToolChange, onSelectAll]);
 } 

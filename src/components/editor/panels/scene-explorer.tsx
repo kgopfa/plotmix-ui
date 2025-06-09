@@ -115,7 +115,8 @@ export function SceneExplorer({ elements, selectionManager }: SceneExplorerProps
                         }`}
                         onClick={(e) => {
                           e.stopPropagation();
-                          selectionManager.select(element);
+                          const isMultiSelect = e.metaKey || e.ctrlKey; // Cmd on Mac, Ctrl on Windows/Linux
+                          selectionManager.select(element, isMultiSelect);
                           animationSelectionManager.clearSelection();
                         }}
                       >

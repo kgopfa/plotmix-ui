@@ -24,7 +24,7 @@ import { ToolType } from '@/types/editor';
 
 export default function EditorCanvas() {
   const [canvasObjects, setCanvasObjects] = useState<AnimatedCanvasObject[]>([]);
-  const [selectedObject, setSelectedObject] = useState<AnimatedCanvasObject | null>(null);
+  const [selectedObjects, setSelectedObjects] = useState<AnimatedCanvasObject[]>([]);
   const [tool, setTool] = useState<ToolType>('select');
   const [maskPos, setMaskPos] = useState<{ x: number, y: number } | null>(null);
   const [lineStartPoint, setLineStartPoint] = useState<{ x: number, y: number } | null>(null);
@@ -228,8 +228,8 @@ export default function EditorCanvas() {
   // Handle keyboard shortcuts
   const handleDeleteElement = useCallback((elementId: string) => {
     setCanvasObjects(elements => elements.filter(el => el.id !== elementId));
-    setSelectedObject(null);
-  }, []);
+    selectionManager.select(null);
+  }, [selectionManager]);
 
   const handleToolChange = useCallback((newTool: ToolType) => {
     setTool(newTool);
@@ -241,10 +241,17 @@ export default function EditorCanvas() {
     }
   }, []);
 
+  // Handle select all
+  const handleSelectAll = useCallback(() => {
+    const selectableElements = canvasObjects.filter(el => !el.isAnimationPath);
+    selectionManager.selectAll(selectableElements);
+  }, [canvasObjects, selectionManager]);
+
   useKeyboardShortcuts({
-    selectedElement: selectedObject,
+    selectedElements: selectedObjects,
     onDeleteElement: handleDeleteElement,
-    onToolChange: handleToolChange
+    onToolChange: handleToolChange,
+    onSelectAll: handleSelectAll
   });
 
   useEffect(() => {
@@ -539,6 +546,7 @@ export default function EditorCanvas() {
       return;
     }
 
+    const selectedObject = selectedObjects[0]; // Use first selected for inspector
     if (selectedObject) {
       let updatedElement: AnimatedCanvasObject | null = null;
 
@@ -632,7 +640,7 @@ export default function EditorCanvas() {
 
   // Subscribe to selection updates
   useEffect(() => {
-    return selectionManager.subscribe(setSelectedObject);
+    return selectionManager.subscribe(setSelectedObjects);
   }, [selectionManager]);
 
   // Use a ref to access current elements to avoid dependency issues
@@ -786,9 +794,9 @@ export default function EditorCanvas() {
   }, [updateAnimationsForPathElement, gsapManager]);
 
   // Memoize the handleSelectElement function
-  const handleSelectElement = useCallback((id: string | null) => {
+  const handleSelectElement = useCallback((id: string | null, isMultiSelect = false) => {
     const element = id ? canvasObjects.find(e => e.id === id) || null : null;
-    selectionManager.select(element);
+    selectionManager.select(element, isMultiSelect);
   }, [canvasObjects, selectionManager]);
 
   // Memoize the handlePlayPause function
@@ -957,6 +965,19 @@ export default function EditorCanvas() {
               🔧
             </button>
           </div>
+          {/* Multi-select indicator */}
+          {selectedObjects.length > 0 && (
+            <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-200 rounded text-sm">
+              <span className="text-blue-600 font-medium">
+                {selectedObjects.length} object{selectedObjects.length !== 1 ? 's' : ''} selected
+              </span>
+              {selectedObjects.length > 1 && (
+                <span className="text-blue-500 text-xs">
+                  Multi-select active
+                </span>
+              )}
+            </div>
+          )}
         </div>
         <div className="flex gap-2 items-center">
           <button className="btn">Export ▼</button>
@@ -1092,7 +1113,7 @@ export default function EditorCanvas() {
                     height: Math.max(dimensions.height * 3, 4000)
                   }}
                   elements={showPaths ? canvasObjects : canvasObjects.filter(el => !el.isAnimationPath)}
-                  selectedId={selectedObject?.id || null}
+                  selectedIds={selectedObjects.map(obj => obj.id)}
                   onElementSelect={handleSelectElement}
                   onElementDragEnd={handleElementDragEnd}
                   onCanvasClick={canvasClickHandler}
@@ -1161,7 +1182,7 @@ export default function EditorCanvas() {
               style={{ width: `${rightPanelWidth}px` }}
             >
               <Inspector
-                selectedElement={selectedObject}
+                selectedElement={selectedObjects[0] || null}
                 onInspectorChange={handleInspectorChange}
               />
             </div>
