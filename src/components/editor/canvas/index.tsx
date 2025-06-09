@@ -15,6 +15,7 @@ import ResizeHandle from './resize-handle';
 import RadiusHandle from './radius-handle';
 import { TextEditor } from './text-editor';
 import { CanvasContent } from './canvas-content';
+import { GroupSelection } from './group-selection';
 import { Viewport } from 'pixi-viewport';
 
 extend({ Container, Graphics, Text });
@@ -916,6 +917,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                   <HoverOutline element={el} />
                 )}
 
+                {/* Show selection outline for all selected elements */}
                 {selectedIds.includes(el.id) && (
                   <ObjectSelect
                     element={el}
@@ -943,8 +945,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
             />
           )}
 
-          {/* Draggable corner squares - for all selected elements */}
-          {selectedIds.map(selectedId => {
+          {/* Draggable corner squares - only for single selection */}
+          {selectedIds.length === 1 && selectedIds.map(selectedId => {
             const selectedElement = elements.find(el => el.id === selectedId);
             
             if (!selectedElement || selectedElement.type === 'line' || selectedElement.type === 'path') {
@@ -1112,8 +1114,14 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
             );
           })}
 
-          {/* Rotation handles OUTSIDE the rotating containers */}
-          {selectedIds.length > 0 && (() => {
+          {/* Multi-selection rectangle for multiple selected elements */}
+          <GroupSelection
+            selectedElements={elements.filter(el => selectedIds.includes(el.id))}
+            scaleFactor={canvasScaleFactor.current}
+          />
+
+          {/* Rotation handles OUTSIDE the rotating containers (only for single selection) */}
+          {selectedIds.length === 1 && (() => {
             const firstSelectedId = selectedIds[0];
             const selectedElement = elements.find(el => el.id === firstSelectedId);
             

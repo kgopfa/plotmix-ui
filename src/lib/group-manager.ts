@@ -46,9 +46,12 @@ export class GroupManager {
     const centerX = bounds.x + bounds.width / 2;
     const centerY = bounds.y + bounds.height / 2;
 
+    // Count only non-default groups for numbering
+    const nonDefaultGroupCount = Array.from(this.groups.values()).filter(g => !g.isDefaultGroup).length;
+
     const group: CanvasGroup = {
       id: groupId,
-      name: name || `Group ${this.groups.size + 1}`,
+      name: name || `Group ${nonDefaultGroupCount + 1}`,
       elementIds: elements.map(el => el.id),
       x: centerX,
       y: centerY,
@@ -148,10 +151,44 @@ export class GroupManager {
   public initializeGroupsForElements(elements: AnimatedCanvasObject[]): void {
     this.clear();
     
+    // Group elements by groupId to determine if they should be default groups
+    const elementsByGroup = new Map<string, AnimatedCanvasObject[]>();
+    
     for (const element of elements) {
-      // All elements should have groupId by now, just create the groups
-      if (element.groupId && !this.groups.has(element.groupId)) {
-        this.createDefaultGroup(element);
+      if (!element.groupId) continue;
+      
+      if (!elementsByGroup.has(element.groupId)) {
+        elementsByGroup.set(element.groupId, []);
+      }
+      elementsByGroup.get(element.groupId)!.push(element);
+    }
+    
+    // Create appropriate groups based on element count
+    for (const [groupId, groupElements] of elementsByGroup) {
+      if (!this.groups.has(groupId)) {
+        if (groupElements.length === 1) {
+          // Single element - create default group
+          this.createDefaultGroup(groupElements[0]);
+        } else {
+          // Multiple elements - create proper group
+          const bounds = this.calculateBounds(groupElements);
+          const centerX = bounds.x + bounds.width / 2;
+          const centerY = bounds.y + bounds.height / 2;
+          
+          const nonDefaultGroupCount = Array.from(this.groups.values()).filter(g => !g.isDefaultGroup).length;
+          
+          const group: CanvasGroup = {
+            id: groupId,
+            name: `Group ${nonDefaultGroupCount + 1}`,
+            elementIds: groupElements.map(el => el.id),
+            x: centerX,
+            y: centerY,
+            rotation: 0,
+            isDefaultGroup: false
+          };
+          
+          this.groups.set(groupId, group);
+        }
       }
     }
   }

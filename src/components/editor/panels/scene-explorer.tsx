@@ -248,7 +248,7 @@ export function SceneExplorer({ elements, selectionManager }: SceneExplorerProps
                         }}
                       >
                         <span className="text-sm">📦</span>
-                        <span className="flex-1">{group?.name || `Group ${groupId.slice(0, 8)}`}</span>
+                        <span className="flex-1">{group?.name || `Unknown Group`}</span>
                         <span className="text-xs text-gray-500">({groupElements.length} items)</span>
                       </div>
                     </div>

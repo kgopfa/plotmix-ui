@@ -945,7 +945,7 @@ export default function EditorCanvas() {
 
   // Group/Ungroup handlers
   const handleGroupElements = useCallback(() => {
-    const newGroup = selectionManager.groupSelectedElements(canvasObjects);
+    const newGroup = selectionManager.groupSelectedElements();
     if (newGroup) {
       // Update canvas objects with new group IDs
       setCanvasObjects(prev => 
