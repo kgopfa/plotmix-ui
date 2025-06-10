@@ -37,6 +37,8 @@ interface CanvasProps {
   onTextChange?: (id: string, text: string) => void;
   zoom?: number; // External zoom control
   onZoomChange?: (zoom: number) => void; // Callback when zoom changes
+  // Add group drag handler
+  onGroupDrag?: (elementPositions: Array<{ id: string; x: number; y: number }>) => void;
 }
 
 export interface CanvasRef {
@@ -86,6 +88,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     onTextChange,
     zoom = 1,
     onZoomChange,
+    onGroupDrag,
   },
   ref
 ) {
@@ -254,6 +257,9 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   const [resizingHandle, setResizingHandle] = useState<ResizeHandle>(null);
   const [initialSize, setInitialSize] = useState<{ width: number; height: number } | null>(null);
   const [initialMouse, setInitialMouse] = useState<{ x: number; y: number } | null>(null);
+  // Add state for group dragging
+  const [isDraggingGroup, setIsDraggingGroup] = useState<boolean>(false);
+  const [groupDragOffsets, setGroupDragOffsets] = useState<Array<{ id: string; offsetX: number; offsetY: number }>>([]);
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
 
   // After importing useEffect, also add:
@@ -473,10 +479,30 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       }
     }
 
-    // Regular shape drag (same as before)
-    setDraggingId(id);
-    onElementSelect(id, isMultiSelect);
-    setDragOffset({ x: pos.x - shapeX, y: pos.y - shapeY });
+    // Regular shape drag - check if multiple elements are selected for group dragging
+    if (selectedIds.length > 1 && selectedIds.includes(id)) {
+      // Group dragging: calculate offsets for all selected elements
+      const offsets = selectedIds.map(selectedId => {
+        const selectedElement = elements.find(el => el.id === selectedId);
+        if (!selectedElement) return { id: selectedId, offsetX: 0, offsetY: 0 };
+        return {
+          id: selectedId,
+          offsetX: pos.x - selectedElement.x,
+          offsetY: pos.y - selectedElement.y
+        };
+      });
+      
+      setGroupDragOffsets(offsets);
+      setIsDraggingGroup(true);
+      setDraggingId(id); // Still track the primary dragged element
+      onElementSelect(id, isMultiSelect);
+    } else {
+      // Single element drag
+      setDraggingId(id);
+      onElementSelect(id, isMultiSelect);
+      setDragOffset({ x: pos.x - shapeX, y: pos.y - shapeY });
+      setIsDraggingGroup(false);
+    }
   };
 
   // Update the handlePointerUp function
@@ -486,6 +512,13 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       setDraggingId(null);
       setDragOffset(null);
       setDraggingEndpoint(null);
+      // Reset group dragging state
+      setIsDraggingGroup(false);
+      setGroupDragOffsets([]);
+      
+      // Reset the dragging flag for performance optimization
+      const resetDragEvent = new CustomEvent('group-drag-end');
+      window.dispatchEvent(resetDragEvent);
 
       // Reset cursor style based on current tool
       if (tool === 'draw') {
@@ -532,9 +565,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   const handleGlobalPointerMove = (e: PointerEvent) => {
     if (!draggingId) return;
 
-    const element = elements.find(el => el.id === draggingId);
-    if (!element) return;
-
     // Get the canvas element to calculate proper coordinates
     const canvasElement = document.querySelector('canvas');
     if (!canvasElement) return;
@@ -542,6 +572,24 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     const rect = canvasElement.getBoundingClientRect();
     const canvasX = e.clientX - rect.left;
     const canvasY = e.clientY - rect.top;
+
+    // Handle virtual group dragging first
+    if (draggingId === 'virtual-group') {
+      if (isDraggingGroup && groupDragOffsets.length > 0 && onGroupDrag) {
+        // Handle group dragging: calculate new positions for all selected elements
+        const newPositions = groupDragOffsets.map(offset => ({
+          id: offset.id,
+          x: canvasX - offset.offsetX,
+          y: canvasY - offset.offsetY
+        }));
+        onGroupDrag(newPositions);
+      }
+      return;
+    }
+
+    // For individual element dragging, find the element
+    const element = elements.find(el => el.id === draggingId);
+    if (!element) return;
 
     // Handle resizing - only if mouse button is pressed (buttons property > 0)
     if (resizingHandle && initialSize && initialMouse && e.buttons > 0) {
@@ -694,6 +742,24 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     setEditingTextId(null);
   };
 
+  // Handle drag start from the group selection area
+  const handleGroupSelectionDragStart = (virtualElement: AnimatedCanvasObject, mouseX: number, mouseY: number) => {
+    // Set up group dragging when user drags the group selection outline
+    const offsets = selectedIds.map(selectedId => {
+      const selectedElement = elements.find(el => el.id === selectedId);
+      if (!selectedElement) return { id: selectedId, offsetX: 0, offsetY: 0 };
+      return {
+        id: selectedId,
+        offsetX: mouseX - selectedElement.x,
+        offsetY: mouseY - selectedElement.y
+      };
+    });
+    
+    setGroupDragOffsets(offsets);
+    setIsDraggingGroup(true);
+    setDraggingId('virtual-group'); // Use virtual group ID to distinguish from individual element drags
+  };
+
   // Debug effect to track editingTextId changes
   useEffect(() => {
     console.log('editingTextId changed to:', editingTextId);
@@ -747,6 +813,13 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         setDraggingId(null);
         setDragOffset(null);
         setDraggingEndpoint(null);
+        // Reset group dragging state
+        setIsDraggingGroup(false);
+        setGroupDragOffsets([]);
+        
+        // Reset the dragging flag for performance optimization
+        const resetDragEvent = new CustomEvent('group-drag-end');
+        window.dispatchEvent(resetDragEvent);
 
         // Reset cursor style based on current tool
         if (tool === 'draw') {
@@ -770,7 +843,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       document.removeEventListener('pointerup', handleGlobalPointerUp);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draggingId, resizingHandle, initialSize, initialMouse, dragOffset, draggingEndpoint, elements, onElementDragEnd, onLineEndpointDrag, tool]);
+  }, [draggingId, resizingHandle, initialSize, initialMouse, dragOffset, draggingEndpoint, isDraggingGroup, groupDragOffsets, elements, onElementDragEnd, onGroupDrag, onLineEndpointDrag, tool]);
 
   useEffect(() => {
     if (tool === 'draw') {
@@ -1118,6 +1191,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           <GroupSelection
             selectedElements={elements.filter(el => selectedIds.includes(el.id))}
             scaleFactor={canvasScaleFactor.current}
+            onGroupDragStart={handleGroupSelectionDragStart}
           />
 
           {/* Rotation handles OUTSIDE the rotating containers (only for single selection) */}

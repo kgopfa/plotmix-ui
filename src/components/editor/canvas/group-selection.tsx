@@ -1,16 +1,19 @@
 import React from 'react';
 import type { AnimatedCanvasObject } from '@/types/canvas';
+import type { FederatedPointerEvent } from 'pixi.js';
 import ObjectSelect from './object-select';
 import ResizeHandle from './resize-handle';
 
 interface GroupSelectionProps {
   selectedElements: AnimatedCanvasObject[];
   scaleFactor: number;
+  onGroupDragStart?: (virtualElement: AnimatedCanvasObject, mouseX: number, mouseY: number) => void;
 }
 
 export const GroupSelection: React.FC<GroupSelectionProps> = ({ 
   selectedElements, 
-  scaleFactor 
+  scaleFactor,
+  onGroupDragStart
 }) => {
   if (selectedElements.length <= 1) return null;
 
@@ -80,6 +83,14 @@ export const GroupSelection: React.FC<GroupSelectionProps> = ({
 
   const virtualGroupElement = createVirtualGroupElement(selectedElements);
 
+  // Handle drag start on the group selection area
+  const handleGroupDragStart = (e: FederatedPointerEvent) => {
+    e.stopPropagation();
+    if (onGroupDragStart) {
+      onGroupDragStart(virtualGroupElement, e.global.x, e.global.y);
+    }
+  };
+
   return (
     <React.Fragment key="group-selection">
       {/* Selection outline */}
@@ -88,6 +99,24 @@ export const GroupSelection: React.FC<GroupSelectionProps> = ({
         y={virtualGroupElement.y}
         rotation={virtualGroupElement.rotation || 0}
       >
+        {/* Transparent interactive area to capture clicks inside the rectangle */}
+        <pixiGraphics
+          draw={(g) => {
+            g.clear();
+            g.rect(
+              -virtualGroupElement.width / 2,
+              -virtualGroupElement.height / 2,
+              virtualGroupElement.width,
+              virtualGroupElement.height
+            );
+            g.fill({ color: 0x000000, alpha: 0.01 }); // Nearly transparent fill to capture events
+          }}
+          interactive={true}
+          eventMode="static"
+          cursor="move"
+          onPointerDown={handleGroupDragStart}
+        />
+        
         <ObjectSelect
           element={virtualGroupElement}
           scaleFactor={scaleFactor}

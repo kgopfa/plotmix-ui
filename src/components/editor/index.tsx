@@ -501,6 +501,87 @@ export default function EditorCanvas() {
     }, 0);
   };
 
+  // Use a ref to track if we're currently dragging to avoid expensive operations
+  const isGroupDraggingRef = useRef(false);
+  const groupDragTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleGroupDrag = (elementPositions: Array<{ id: string; x: number; y: number }>) => {
+    isGroupDraggingRef.current = true;
+    
+    // Clear any existing timeout
+    if (groupDragTimeoutRef.current) {
+      clearTimeout(groupDragTimeoutRef.current);
+    }
+
+    // Update positions immediately for responsive UI
+    setCanvasObjects(prevElements => {
+      return prevElements.map((el) => {
+        const newPosition = elementPositions.find(pos => pos.id === el.id);
+        if (!newPosition) return el;
+
+        // For lines, we need to update both position and points
+        if (el.type === 'line' && el.lineOptions?.points) {
+          const dx = newPosition.x - el.x;
+          const dy = newPosition.y - el.y;
+          return {
+            ...el,
+            x: newPosition.x,
+            y: newPosition.y,
+            lineOptions: {
+              ...el.lineOptions,
+              points: {
+                start: {
+                  x: el.lineOptions.points.start.x + dx,
+                  y: el.lineOptions.points.start.y + dy
+                },
+                end: {
+                  x: el.lineOptions.points.end.x + dx,
+                  y: el.lineOptions.points.end.y + dy
+                }
+              }
+            }
+          };
+        }
+
+        // For other shapes, just update position
+        return { ...el, x: newPosition.x, y: newPosition.y };
+      });
+    });
+
+    // Delay expensive operations (animation updates) until drag ends
+    groupDragTimeoutRef.current = setTimeout(() => {
+      if (!isGroupDraggingRef.current) return;
+      
+      setCanvasObjects(currentElements => {
+        // Check if any moved elements are animation paths and update related animations
+        const hasAnimationPaths = elementPositions.some(pos => {
+          const element = currentElements.find(el => el.id === pos.id);
+          return element?.isAnimationPath;
+        });
+
+        if (hasAnimationPaths) {
+          let elementsWithUpdatedAnimations = currentElements;
+          elementPositions.forEach(pos => {
+            const element = currentElements.find(el => el.id === pos.id);
+            if (element?.isAnimationPath) {
+              elementsWithUpdatedAnimations = updateAnimationsForPathElement(elementsWithUpdatedAnimations, element);
+            }
+          });
+          // Rebuild timeline after animation path updates
+          gsapManager.buildAnimationTimeline(elementsWithUpdatedAnimations);
+          return elementsWithUpdatedAnimations;
+        } else {
+          // Rebuild timeline for group moves
+          gsapManager.buildAnimationTimeline(currentElements);
+        }
+
+        return currentElements;
+      });
+      
+      isGroupDraggingRef.current = false;
+    }, 100); // Debounce expensive operations by 100ms
+  };
+
   const handleAnimationChange = (
     elementId: string,
     animationId: string,
@@ -793,8 +874,21 @@ export default function EditorCanvas() {
 
     window.addEventListener('animation-path-updated', handleAnimationPathUpdate as EventListener);
 
+    const handleGroupDragEndEvent = () => {
+      if (isGroupDraggingRef.current) {
+        isGroupDraggingRef.current = false;
+        if (groupDragTimeoutRef.current) {
+          clearTimeout(groupDragTimeoutRef.current);
+          groupDragTimeoutRef.current = null;
+        }
+      }
+    };
+
+    window.addEventListener('group-drag-end', handleGroupDragEndEvent);
+
     return () => {
       window.removeEventListener('animation-path-updated', handleAnimationPathUpdate as EventListener);
+      window.removeEventListener('group-drag-end', handleGroupDragEndEvent);
     };
   }, [updateAnimationsForPathElement, gsapManager]);
 
@@ -1194,6 +1288,7 @@ export default function EditorCanvas() {
                   selectedIds={selectedObjects.map(obj => obj.id)}
                   onElementSelect={handleSelectElement}
                   onElementDragEnd={handleElementDragEnd}
+                  onGroupDrag={handleGroupDrag}
                   onCanvasClick={canvasClickHandler}
                   onLineEndpointDrag={handleLineEndpointDrag}
                   tool={tool}
