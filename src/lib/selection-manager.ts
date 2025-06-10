@@ -109,18 +109,10 @@ export class SelectionManager {
   }
 
   // Group selected elements
-  groupSelectedElements(allElements: AnimatedCanvasObject[]): CanvasGroup | null {
+  groupSelectedElements(): CanvasGroup | null {
     if (!this.canGroup()) return null;
 
     const group = this.groupManager.createGroup(this.selectedElements);
-    
-    // Update elements to use new group ID
-    const updatedElements = allElements.map(el => {
-      if (this.selectedElements.some(selected => selected.id === el.id)) {
-        return { ...el, groupId: group.id };
-      }
-      return el;
-    });
 
     // Update selected elements with new group ID
     this.selectedElements = this.selectedElements.map(el => ({
@@ -141,15 +133,6 @@ export class SelectionManager {
     const group = this.selectedGroups[0];
     const elementsInGroup = this.groupManager.getElementsInGroup(group.id, allElements);
     const newGroups = this.groupManager.ungroupElements(group.id, elementsInGroup);
-
-    // Update elements with new group IDs
-    const updatedElements = allElements.map(el => {
-      const elementGroup = newGroups.find(g => g.elementIds.includes(el.id));
-      if (elementGroup) {
-        return { ...el, groupId: elementGroup.id };
-      }
-      return el;
-    });
 
     // Update selected elements with new group IDs
     this.selectedElements = this.selectedElements.map(el => {

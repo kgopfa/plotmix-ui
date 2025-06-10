@@ -945,6 +945,11 @@ export default function EditorCanvas() {
 
   // Group/Ungroup handlers
   const handleGroupElements = useCallback(() => {
+    if (!canvasObjects || canvasObjects.length === 0) {
+      console.warn('Cannot group elements: no canvas objects available');
+      return;
+    }
+    
     const newGroup = selectionManager.groupSelectedElements();
     if (newGroup) {
       // Update canvas objects with new group IDs
@@ -957,9 +962,15 @@ export default function EditorCanvas() {
         })
       );
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectionManager, canvasObjects, selectedObjects]);
 
   const handleUngroupElements = useCallback(() => {
+    if (!canvasObjects || canvasObjects.length === 0) {
+      console.warn('Cannot ungroup elements: no canvas objects available');
+      return;
+    }
+    
     const newGroups = selectionManager.ungroupSelectedElements(canvasObjects);
     if (newGroups.length > 0) {
       // Update canvas objects with new group IDs
