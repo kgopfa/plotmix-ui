@@ -24,6 +24,12 @@ export const parseColor = (color: string | number | undefined): number => {
   return parseInt(color, 16);
 };
 
+// Helper function to round coordinates to nearest pixel for crisp rendering
+export const roundToPixel = (value: number): number => {
+  const devicePixelRatio = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
+  return Math.round(value * devicePixelRatio) / devicePixelRatio;
+};
+
 export const drawArrowhead = (
   graphics: Graphics,
   tipPoint: { x: number; y: number },
@@ -56,11 +62,16 @@ export const drawSmoothLine = (
   width: number,
   alpha: number
 ) => {
+  const startX = roundToPixel(start.x);
+  const startY = roundToPixel(start.y);
+  const endX = roundToPixel(end.x);
+  const endY = roundToPixel(end.y);
+  
   graphics
     .clear()
-    .moveTo(start.x, start.y)
-    .lineTo(end.x, end.y)
-    .stroke({ color, width, alpha });
+    .moveTo(startX, startY)
+    .lineTo(endX, endY)
+    .stroke({ color, width, alpha, alignment: 0.5 });
 };
 
 export const drawDottedLine = (
@@ -100,13 +111,13 @@ export const drawLine = (
   const alpha = shape.opacity ?? 1;
   
   const start = {
-    x: shape.lineOptions.points.start.x - shape.x,
-    y: shape.lineOptions.points.start.y - shape.y
+    x: roundToPixel(shape.lineOptions.points.start.x - shape.x),
+    y: roundToPixel(shape.lineOptions.points.start.y - shape.y)
   };
   
   const end = {
-    x: shape.lineOptions.points.end.x - shape.x,
-    y: shape.lineOptions.points.end.y - shape.y
+    x: roundToPixel(shape.lineOptions.points.end.x - shape.x),
+    y: roundToPixel(shape.lineOptions.points.end.y - shape.y)
   };
 
   if (shape.lineOptions.dotted) {
@@ -123,33 +134,37 @@ export const drawLine = (
 function drawShapePath(graphics: Graphics, shape: AnimatedCanvasObject) {
   switch (shape.type) {
     case 'rectangle':
-      // Draw rectangle centered around origin
+      // Draw rectangle centered around origin with pixel-aligned coordinates
+      const rectX = roundToPixel(-shape.width / 2);
+      const rectY = roundToPixel(-shape.height / 2);
+      const rectW = roundToPixel(shape.width);
+      const rectH = roundToPixel(shape.height);
       graphics.roundRect(
-        -shape.width / 2,
-        -shape.height / 2,
-        shape.width,
-        shape.height,
+        rectX,
+        rectY,
+        rectW,
+        rectH,
         shape.cornerRadius
       );
       break;
       
     case 'circle':
-      // Draw circle with radius = rectangle height / 2
-      const radius = shape.height / 2;
+      // Draw circle with radius = rectangle height / 2, pixel-aligned
+      const radius = roundToPixel(shape.height / 2);
       graphics.ellipse(0, 0, radius, radius);
       break;
       
     case 'triangle':
-      // Draw equilateral triangle with height matching rectangle height
-      const height = shape.height;
+      // Draw equilateral triangle with height matching rectangle height, pixel-aligned
+      const height = roundToPixel(shape.height);
       // For an equilateral triangle, if h is height, then side length = 2h/√3
       const sideLength = (2 * height) / Math.sqrt(3);
       // Calculate the points for an equilateral triangle centered at origin
-      const halfWidth = sideLength / 2;
+      const halfWidth = roundToPixel(sideLength / 2);
       const points = [
-        { x: 0, y: -height/2 },                    // top point
-        { x: -halfWidth, y: height/2 },            // bottom left
-        { x: halfWidth, y: height/2 }              // bottom right
+        { x: 0, y: roundToPixel(-height/2) },                    // top point
+        { x: -halfWidth, y: roundToPixel(height/2) },            // bottom left
+        { x: halfWidth, y: roundToPixel(height/2) }              // bottom right
       ];
       graphics.poly(points);
       break;
@@ -157,17 +172,23 @@ function drawShapePath(graphics: Graphics, shape: AnimatedCanvasObject) {
     case 'line':
       if (shape.lineOptions?.points) {
         const { start, end } = shape.lineOptions.points;
+        const startX = roundToPixel(start.x - shape.x);
+        const startY = roundToPixel(start.y - shape.y);
+        const endX = roundToPixel(end.x - shape.x);
+        const endY = roundToPixel(end.y - shape.y);
         graphics
-          .moveTo(start.x - shape.x, start.y - shape.y)
-          .lineTo(end.x - shape.x, end.y - shape.y);
+          .moveTo(startX, startY)
+          .lineTo(endX, endY);
       }
       break;
 
     case 'path':
       if (shape.pathPoints && shape.pathPoints.length > 1) {
-        graphics.moveTo(shape.pathPoints[0].x, shape.pathPoints[0].y);
+        const firstPoint = shape.pathPoints[0];
+        graphics.moveTo(roundToPixel(firstPoint.x), roundToPixel(firstPoint.y));
         for (let i = 1; i < shape.pathPoints.length; i++) {
-          graphics.lineTo(shape.pathPoints[i].x, shape.pathPoints[i].y);
+          const point = shape.pathPoints[i];
+          graphics.lineTo(roundToPixel(point.x), roundToPixel(point.y));
         }
       }
       break;
@@ -255,12 +276,11 @@ export function createShapeGraphics(shape: AnimatedCanvasObject, color?: string 
   const fillColor = color ?? shape.fill;
   
   if (shape.type === 'image' && shape.imageData) {
-    graphics.rect(
-      -shape.width / 2,
-      -shape.height / 2,
-      shape.width,
-      shape.height
-    );
+    const imgX = roundToPixel(-shape.width / 2);
+    const imgY = roundToPixel(-shape.height / 2);
+    const imgW = roundToPixel(shape.width);
+    const imgH = roundToPixel(shape.height);
+    graphics.rect(imgX, imgY, imgW, imgH);
     // Make it slightly visible for selection/hover but mostly transparent
     graphics.fill({ color: 0xFFFFFF, alpha: 0.01 });
     
@@ -272,7 +292,8 @@ export function createShapeGraphics(shape: AnimatedCanvasObject, color?: string 
     graphics.stroke({ 
       color: fillColor, 
       width: shape.strokeWidth || 2, 
-      alpha: shape.opacity ?? 1 
+      alpha: shape.opacity ?? 1,
+      alignment: 0.5 // Center the stroke on the path for consistent appearance
     });
   } else {
     drawShapePath(graphics, shape);
@@ -395,7 +416,8 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasObject) {
       graphics.stroke({ 
         color: parseColor(shape.stroke || shape.fill), 
         width: shape.strokeWidth || width, 
-        alpha: shape.opacity ?? 1 
+        alpha: shape.opacity ?? 1,
+        alignment: 0.5 // Center the stroke on the path for consistent appearance
       });
     }
   }
@@ -491,8 +513,12 @@ function processImage(graphics: Graphics, shape: AnimatedCanvasObject) {
       // Check if we already have this texture cached
       const cachedTexture = imageTextureCache.get(cacheKey);
       if (cachedTexture && !cachedTexture.destroyed) {
-        // Use cached texture immediately - no flashing!
-        graphics.rect(-shape.width/2, -shape.height/2, shape.width, shape.height);
+        // Use cached texture immediately - no flashing! (pixel-aligned)
+        const cachedImgX = roundToPixel(-shape.width/2);
+        const cachedImgY = roundToPixel(-shape.height/2);
+        const cachedImgW = roundToPixel(shape.width);
+        const cachedImgH = roundToPixel(shape.height);
+        graphics.rect(cachedImgX, cachedImgY, cachedImgW, cachedImgH);
         graphics.fill({
           texture: cachedTexture,
           alpha: shape.opacity ?? 1
@@ -500,10 +526,14 @@ function processImage(graphics: Graphics, shape: AnimatedCanvasObject) {
         return;
       }
       
-      // Show placeholder only on first load
-      graphics.rect(-shape.width/2, -shape.height/2, shape.width, shape.height);
+      // Show placeholder only on first load with pixel-aligned coordinates
+      const imgX = roundToPixel(-shape.width/2);
+      const imgY = roundToPixel(-shape.height/2);
+      const imgW = roundToPixel(shape.width);
+      const imgH = roundToPixel(shape.height);
+      graphics.rect(imgX, imgY, imgW, imgH);
       graphics.fill({ color: 0xF0F0F0, alpha: 0.8 }); // Light gray placeholder
-      graphics.stroke({ color: 0xCCCCCC, width: 2 }); // Gray border
+      graphics.stroke({ color: 0xCCCCCC, width: 2, alignment: 0.5 }); // Gray border
       
       // Load image asynchronously only if not cached
       const img = new Image();
@@ -540,7 +570,11 @@ function processImage(graphics: Graphics, shape: AnimatedCanvasObject) {
             imageTextureCache.set(cacheKey, texture);
             
             graphics.clear();
-            graphics.rect(-shape.width/2, -shape.height/2, shape.width, shape.height);
+            const loadedImgX = roundToPixel(-shape.width/2);
+            const loadedImgY = roundToPixel(-shape.height/2);
+            const loadedImgW = roundToPixel(shape.width);
+            const loadedImgH = roundToPixel(shape.height);
+            graphics.rect(loadedImgX, loadedImgY, loadedImgW, loadedImgH);
             graphics.fill({
               texture: texture,
               alpha: shape.opacity ?? 1
@@ -562,10 +596,14 @@ function processImage(graphics: Graphics, shape: AnimatedCanvasObject) {
       img.src = dataUrl;
     } catch (error) {
       console.error("Error in image rendering setup:", error);
-      // Enhanced fallback with better visual indication
-      graphics.rect(-shape.width/2, -shape.height/2, shape.width, shape.height);
+      // Enhanced fallback with better visual indication (pixel-aligned)
+      const fallbackImgX = roundToPixel(-shape.width/2);
+      const fallbackImgY = roundToPixel(-shape.height/2);
+      const fallbackImgW = roundToPixel(shape.width);
+      const fallbackImgH = roundToPixel(shape.height);
+      graphics.rect(fallbackImgX, fallbackImgY, fallbackImgW, fallbackImgH);
       graphics.fill({ color: 0xFFEEEE, alpha: 0.8 });
-      graphics.stroke({ color: 0xFF6666, width: 2 });
+      graphics.stroke({ color: 0xFF6666, width: 2, alignment: 0.5 });
       
       // Add "IMG" text indicator (basic fallback)
       // Note: This is a simple fallback - in a real app you might want to show more info
