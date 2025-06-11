@@ -10,6 +10,8 @@ export interface ElementSnappingConfig {
   enabled: boolean;
   snapThreshold: number;
   showGuides: boolean;
+  enableSpacing: boolean;
+  enableDistribution: boolean;
 }
 
 export interface UseElementSnappingReturn {
@@ -17,6 +19,8 @@ export interface UseElementSnappingReturn {
   setConfig: (config: Partial<ElementSnappingConfig>) => void;
   toggleEnabled: () => void;
   toggleGuides: () => void;
+  toggleSpacing: () => void;
+  toggleDistribution: () => void;
   snapElement: (
     element: AnimatedCanvasObject, 
     allElements: AnimatedCanvasObject[],
@@ -31,7 +35,9 @@ export interface UseElementSnappingReturn {
 const DEFAULT_CONFIG: ElementSnappingConfig = {
   enabled: true,
   snapThreshold: 10,
-  showGuides: true
+  showGuides: true,
+  enableSpacing: true,
+  enableDistribution: true
 };
 
 export const useElementSnapping = (
@@ -80,6 +86,14 @@ export const useElementSnapping = (
     setConfigState(prev => ({ ...prev, showGuides: !prev.showGuides }));
   }, []);
 
+  const toggleSpacing = useCallback(() => {
+    setConfigState(prev => ({ ...prev, enableSpacing: !prev.enableSpacing }));
+  }, []);
+
+  const toggleDistribution = useCallback(() => {
+    setConfigState(prev => ({ ...prev, enableDistribution: !prev.enableDistribution }));
+  }, []);
+
   const clearGuides = useCallback(() => {
     setCurrentGuides([]);
   }, []);
@@ -94,7 +108,7 @@ export const useElementSnapping = (
       return { x: element.x, y: element.y, guides: [] };
     }
 
-    const result = applyElementSnapping(element, allElements, config.snapThreshold, gridConfig);
+    const result = applyElementSnapping(element, allElements, config.snapThreshold, gridConfig, config.enableSpacing, config.enableDistribution);
     
     // Update guides if showing guides is enabled
     if (config.showGuides) {
@@ -111,6 +125,8 @@ export const useElementSnapping = (
     setConfig,
     toggleEnabled,
     toggleGuides,
+    toggleSpacing,
+    toggleDistribution,
     snapElement,
     currentGuides,
     setCurrentGuides,

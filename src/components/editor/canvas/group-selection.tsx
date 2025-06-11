@@ -3,17 +3,28 @@ import type { AnimatedCanvasObject } from '@/types/canvas';
 import type { FederatedPointerEvent } from 'pixi.js';
 import ObjectSelect from './object-select';
 import ResizeHandle from './resize-handle';
+import type { GridConfig } from '@/utils/grid-utils';
 
 interface GroupSelectionProps {
   selectedElements: AnimatedCanvasObject[];
   scaleFactor: number;
-  onGroupDragStart?: (virtualElement: AnimatedCanvasObject, mouseX: number, mouseY: number) => void;
+  onGroupDragStart?: (
+    virtualElement: AnimatedCanvasObject, 
+    mouseX: number, 
+    mouseY: number,
+    allElements?: AnimatedCanvasObject[],
+    gridConfig?: GridConfig
+  ) => void;
+  allElements?: AnimatedCanvasObject[];
+  gridConfig?: GridConfig;
 }
 
 export const GroupSelection: React.FC<GroupSelectionProps> = ({ 
   selectedElements, 
   scaleFactor,
-  onGroupDragStart
+  onGroupDragStart,
+  allElements,
+  gridConfig
 }) => {
   if (selectedElements.length <= 1) return null;
 
@@ -87,7 +98,7 @@ export const GroupSelection: React.FC<GroupSelectionProps> = ({
   const handleGroupDragStart = (e: FederatedPointerEvent) => {
     e.stopPropagation();
     if (onGroupDragStart) {
-      onGroupDragStart(virtualGroupElement, e.global.x, e.global.y);
+      onGroupDragStart(virtualGroupElement, e.global.x, e.global.y, allElements, gridConfig);
     }
   };
 

@@ -20,12 +20,28 @@ export const SnapGuides: React.FC<SnapGuidesProps> = ({
     
     for (const guide of guides) {
       // Different colors for different snap types
-      const isGridCenter = guide.sourceElementId === 'grid-center';
-      const lineColor = isGridCenter ? 0x00BB88 : 0xFF3366; // Green for grid centers, pink for elements
-      const lineWidth = isGridCenter ? 2 : 1; // Thicker lines for grid centers
+      let lineColor: number;
+      let lineWidth: number;
       const lineAlpha = 0.8;
       
-      if (guide.type === 'vertical') {
+      if (guide.sourceElementId === 'grid-center') {
+        lineColor = 0x00BB88; // Green for grid centers
+        lineWidth = 2;
+      } else if (guide.type === 'spacing') {
+        // Different colors for spacing vs distribution
+        if (guide.alignmentType.includes('distribution')) {
+          lineColor = 0xFF9500; // Orange for distribution
+          lineWidth = 2;
+        } else {
+          lineColor = 0x9500FF; // Purple for equal spacing
+          lineWidth = 2;
+        }
+      } else {
+        lineColor = 0xFF3366; // Pink for regular element alignment
+        lineWidth = 1;
+      }
+      
+      if (guide.type === 'vertical' || (guide.type === 'spacing' && guide.spacingInfo?.direction === 'horizontal')) {
         // Draw vertical line
         graphics
           .moveTo(guide.position, 0)

@@ -25,6 +25,7 @@ import { useGridSnapping } from '@/hooks/useGridSnapping';
 import { GridControls } from './canvas/grid-controls';
 import { useElementSnapping } from '@/hooks/useElementSnapping';
 import { ElementSnapControls } from './canvas/element-snap-controls';
+import { applyElementSnapping } from '@/utils/element-snapping';
 
 
 export default function EditorCanvas() {
@@ -90,14 +91,19 @@ export default function EditorCanvas() {
     setConfig: setElementSnapConfig,
     toggleEnabled: toggleElementSnap,
     toggleGuides: toggleElementSnapGuides,
+    toggleSpacing: toggleElementSpacing,
+    toggleDistribution: toggleElementDistribution,
     snapElement,
     currentGuides: elementSnapGuides,
+    setCurrentGuides: setElementSnapGuides,
     clearGuides: clearElementSnapGuides,
     isSnapTemporarilyDisabled: isElementSnapDisabled
   } = useElementSnapping({
     enabled: true,
     snapThreshold: 10,
-    showGuides: true
+    showGuides: true,
+    enableSpacing: true,
+    enableDistribution: true
   });
 
   // Panel resize handlers
@@ -568,10 +574,90 @@ export default function EditorCanvas() {
       clearTimeout(groupDragTimeoutRef.current);
     }
 
-    // Update positions immediately for responsive UI
+    // Apply snapping to the group movement
+    let snappedPositions = elementPositions;
+    
+    if (elementPositions.length > 0) {
+      // Create a virtual group element from the new positions for snapping calculation
+      const selectedElements = canvasObjects.filter(el => 
+        elementPositions.some(pos => pos.id === el.id)
+      );
+      
+      if (selectedElements.length > 0) {
+        // Calculate the new group center from the drag positions
+        const positions = elementPositions.map(pos => ({ x: pos.x, y: pos.y }));
+        const minX = Math.min(...positions.map(p => p.x));
+        const maxX = Math.max(...positions.map(p => p.x));
+        const minY = Math.min(...positions.map(p => p.y));
+        const maxY = Math.max(...positions.map(p => p.y));
+        const groupCenterX = (minX + maxX) / 2;
+        const groupCenterY = (minY + maxY) / 2;
+        
+        // Note: We use the current dragged positions for snapping, not the original positions
+        
+        // Create a virtual group element for snapping
+        const virtualGroupElement = {
+          id: 'virtual-group-drag',
+          type: 'rectangle' as const,
+          name: 'Group Drag',
+          x: groupCenterX,
+          y: groupCenterY,
+          width: maxX - minX,
+          height: maxY - minY,
+          rotation: 0,
+          fill: 'transparent',
+          stroke: '#2196F3',
+          strokeWidth: 2,
+          opacity: 1,
+          groupId: 'virtual-group-drag',
+          animations: [],
+          cornerRadius: 0
+        };
+        
+        // Apply element snapping to the virtual group using the lower-level function for more control
+        const { x: snappedX, y: snappedY, guides } = applyElementSnapping(
+          virtualGroupElement, 
+          canvasObjects, 
+          elementSnapConfig.snapThreshold,
+          gridConfig,
+          elementSnapConfig.enableSpacing,
+          elementSnapConfig.enableDistribution
+        );
+        const snappedGroupPos = snapPoint({ x: snappedX, y: snappedY });
+        
+        // Update the guides if show guides is enabled and we have guides to show
+        if (elementSnapConfig.showGuides && guides.length > 0) {
+          setElementSnapGuides(guides);
+        } else {
+          clearElementSnapGuides();
+        }
+        
+        // Calculate the offset from the original group center to the snapped position
+        const offsetX = snappedGroupPos.x - groupCenterX;
+        const offsetY = snappedGroupPos.y - groupCenterY;
+        
+        // Check if any actual snapping occurred
+        const actuallySnapped = Math.abs(offsetX) > 0.5 || Math.abs(offsetY) > 0.5;
+        
+        if (actuallySnapped) {
+          // Apply the offset to all element positions
+          snappedPositions = elementPositions.map(pos => ({
+            id: pos.id,
+            x: pos.x + offsetX,
+            y: pos.y + offsetY
+          }));
+        } else {
+          // No snapping occurred, clear any existing guides
+          clearElementSnapGuides();
+          snappedPositions = elementPositions; // Use original positions
+        }
+      }
+    }
+
+    // Update positions immediately for responsive UI using snapped positions
     setCanvasObjects(prevElements => {
       return prevElements.map((el) => {
-        const newPosition = elementPositions.find(pos => pos.id === el.id);
+        const newPosition = snappedPositions.find(pos => pos.id === el.id);
         if (!newPosition) return el;
 
         // For lines, we need to update both position and points
@@ -936,6 +1022,8 @@ export default function EditorCanvas() {
           clearTimeout(groupDragTimeoutRef.current);
           groupDragTimeoutRef.current = null;
         }
+        // Clear snap guides when group dragging ends
+        clearElementSnapGuides();
       }
     };
 
@@ -1389,6 +1477,8 @@ export default function EditorCanvas() {
             config={elementSnapConfig}
             onToggleEnabled={toggleElementSnap}
             onToggleGuides={toggleElementSnapGuides}
+            onToggleSpacing={toggleElementSpacing}
+            onToggleDistribution={toggleElementDistribution}
             onThresholdChange={(threshold) => setElementSnapConfig({ snapThreshold: threshold })}
             isSnapTemporarilyDisabled={isElementSnapDisabled}
           />

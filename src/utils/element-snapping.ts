@@ -4,17 +4,26 @@ import { GridConfig } from './grid-utils';
 export interface SnapPoint {
   x?: number;
   y?: number;
-  type: 'left' | 'right' | 'top' | 'bottom' | 'centerX' | 'centerY';
+  type: 'left' | 'right' | 'top' | 'bottom' | 'centerX' | 'centerY' | 'spacingX' | 'spacingY' | 'distributionX' | 'distributionY';
   sourceElementId: string;
   distance: number;
+  spacingInfo?: {
+    spacing: number;
+    referenceElements: string[];
+  };
 }
 
 export interface SnapGuide {
-  type: 'vertical' | 'horizontal';
+  type: 'vertical' | 'horizontal' | 'spacing';
   position: number;
   sourceElementId: string;
   targetElementId: string;
-  alignmentType: 'left' | 'right' | 'top' | 'bottom' | 'centerX' | 'centerY';
+  alignmentType: 'left' | 'right' | 'top' | 'bottom' | 'centerX' | 'centerY' | 'spacingX' | 'spacingY' | 'distributionX' | 'distributionY';
+  spacingInfo?: {
+    spacing: number;
+    referenceElements: string[];
+    direction: 'horizontal' | 'vertical';
+  };
 }
 
 export interface ElementBounds {
@@ -125,7 +134,9 @@ export const findNearbySnapPoints = (
   draggedElement: AnimatedCanvasObject,
   allElements: AnimatedCanvasObject[],
   snapThreshold: number = 10,
-  gridConfig?: GridConfig
+  gridConfig?: GridConfig,
+  enableSpacing: boolean = true,
+  enableDistribution: boolean = true
 ): SnapPoint[] => {
   const snapPoints: SnapPoint[] = [];
   const draggedBounds = getElementBounds(draggedElement);
@@ -134,6 +145,17 @@ export const findNearbySnapPoints = (
   if (gridConfig) {
     const gridSnapPoints = generateGridCenterSnapPoints(draggedBounds, gridConfig, snapThreshold);
     snapPoints.push(...gridSnapPoints);
+  }
+  
+  // Add spacing and distribution snap points
+  if (enableSpacing) {
+    const spacingSnapPoints = findEqualSpacingSnapPoints(draggedElement, allElements, snapThreshold);
+    snapPoints.push(...spacingSnapPoints);
+  }
+  
+  if (enableDistribution) {
+    const distributionSnapPoints = findDistributionSnapPoints(draggedElement, allElements, snapThreshold);
+    snapPoints.push(...distributionSnapPoints);
   }
   
   // Get other elements (excluding the one being dragged)
@@ -220,9 +242,11 @@ export const applyElementSnapping = (
   element: AnimatedCanvasObject,
   allElements: AnimatedCanvasObject[],
   snapThreshold: number = 10,
-  gridConfig?: GridConfig
+  gridConfig?: GridConfig,
+  enableSpacing: boolean = true,
+  enableDistribution: boolean = true
 ): { x: number; y: number; guides: SnapGuide[] } => {
-  const snapPoints = findNearbySnapPoints(element, allElements, snapThreshold, gridConfig);
+  const snapPoints = findNearbySnapPoints(element, allElements, snapThreshold, gridConfig, enableSpacing, enableDistribution);
   const { x: bestX, y: bestY } = getBestSnapPoints(snapPoints);
   
   let newX = element.x;
@@ -233,13 +257,18 @@ export const applyElementSnapping = (
   if (bestX && bestX.x !== undefined) {
     newX = bestX.x;
     
-    // Create vertical guide (for element snapping or grid center snapping)
+    // Create appropriate guide based on snap type
+    const guideType = bestX.type.includes('spacing') || bestX.type.includes('distribution') ? 'spacing' : 'vertical';
     guides.push({
-      type: 'vertical',
+      type: guideType,
       position: bestX.x,
       sourceElementId: bestX.sourceElementId,
       targetElementId: element.id,
-      alignmentType: bestX.type
+      alignmentType: bestX.type,
+      spacingInfo: bestX.spacingInfo ? {
+        ...bestX.spacingInfo,
+        direction: 'horizontal'
+      } : undefined
     });
   }
   
@@ -247,13 +276,18 @@ export const applyElementSnapping = (
   if (bestY && bestY.y !== undefined) {
     newY = bestY.y;
     
-    // Create horizontal guide (for element snapping or grid center snapping)
+    // Create appropriate guide based on snap type
+    const guideType = bestY.type.includes('spacing') || bestY.type.includes('distribution') ? 'spacing' : 'horizontal';
     guides.push({
-      type: 'horizontal',
+      type: guideType,
       position: bestY.y,
       sourceElementId: bestY.sourceElementId,
       targetElementId: element.id,
-      alignmentType: bestY.type
+      alignmentType: bestY.type,
+      spacingInfo: bestY.spacingInfo ? {
+        ...bestY.spacingInfo,
+        direction: 'vertical'
+      } : undefined
     });
   }
   
@@ -311,4 +345,234 @@ export const generateSnapGuides = (
   }
   
   return guides;
+};
+
+/**
+ * Find equal spacing snap points - maintains consistent distances between elements
+ */
+export const findEqualSpacingSnapPoints = (
+  draggedElement: AnimatedCanvasObject,
+  allElements: AnimatedCanvasObject[],
+  snapThreshold: number = 10
+): SnapPoint[] => {
+  const snapPoints: SnapPoint[] = [];
+  const draggedBounds = getElementBounds(draggedElement);
+  
+  // Get other elements (excluding the one being dragged)
+  const otherElements = allElements.filter(el => 
+    el.id !== draggedElement.id && !el.isAnimationPath
+  );
+  
+  if (otherElements.length < 2) return snapPoints; // Need at least 2 other elements for spacing
+  
+  const otherBounds = otherElements.map(getElementBounds);
+  
+  // Look for horizontal spacing patterns
+  for (let i = 0; i < otherBounds.length; i++) {
+    for (let j = i + 1; j < otherBounds.length; j++) {
+      const elem1 = otherBounds[i];
+      const elem2 = otherBounds[j];
+      
+      // Check if elements are roughly aligned vertically (same Y center)
+      if (Math.abs(elem1.centerY - elem2.centerY) <= snapThreshold) {
+        const spacing = Math.abs(elem2.centerX - elem1.centerX);
+        const leftElement = elem1.centerX < elem2.centerX ? elem1 : elem2;
+        const rightElement = elem1.centerX < elem2.centerX ? elem2 : elem1;
+        
+        // Try snapping to maintain equal spacing on the left
+        const targetXLeft = leftElement.centerX - spacing;
+        const distanceLeft = Math.abs(draggedBounds.centerX - targetXLeft);
+        if (distanceLeft <= snapThreshold) {
+          snapPoints.push({
+            type: 'spacingX',
+            sourceElementId: `spacing-${elem1.id}-${elem2.id}`,
+            distance: distanceLeft,
+            x: targetXLeft,
+            spacingInfo: {
+              spacing,
+              referenceElements: [elem1.id, elem2.id]
+            }
+          });
+        }
+        
+        // Try snapping to maintain equal spacing on the right
+        const targetXRight = rightElement.centerX + spacing;
+        const distanceRight = Math.abs(draggedBounds.centerX - targetXRight);
+        if (distanceRight <= snapThreshold) {
+          snapPoints.push({
+            type: 'spacingX',
+            sourceElementId: `spacing-${elem1.id}-${elem2.id}`,
+            distance: distanceRight,
+            x: targetXRight,
+            spacingInfo: {
+              spacing,
+              referenceElements: [elem1.id, elem2.id]
+            }
+          });
+        }
+        
+        // Try snapping to position between elements (equal spacing)
+        const targetXBetween = (leftElement.centerX + rightElement.centerX) / 2;
+        const distanceBetween = Math.abs(draggedBounds.centerX - targetXBetween);
+        if (distanceBetween <= snapThreshold) {
+          snapPoints.push({
+            type: 'spacingX',
+            sourceElementId: `spacing-${elem1.id}-${elem2.id}`,
+            distance: distanceBetween,
+            x: targetXBetween,
+            spacingInfo: {
+              spacing: spacing / 2,
+              referenceElements: [elem1.id, elem2.id]
+            }
+          });
+        }
+      }
+    }
+  }
+  
+  // Look for vertical spacing patterns  
+  for (let i = 0; i < otherBounds.length; i++) {
+    for (let j = i + 1; j < otherBounds.length; j++) {
+      const elem1 = otherBounds[i];
+      const elem2 = otherBounds[j];
+      
+      // Check if elements are roughly aligned horizontally (same X center)
+      if (Math.abs(elem1.centerX - elem2.centerX) <= snapThreshold) {
+        const spacing = Math.abs(elem2.centerY - elem1.centerY);
+        const topElement = elem1.centerY < elem2.centerY ? elem1 : elem2;
+        const bottomElement = elem1.centerY < elem2.centerY ? elem2 : elem1;
+        
+        // Try snapping to maintain equal spacing above
+        const targetYTop = topElement.centerY - spacing;
+        const distanceTop = Math.abs(draggedBounds.centerY - targetYTop);
+        if (distanceTop <= snapThreshold) {
+          snapPoints.push({
+            type: 'spacingY',
+            sourceElementId: `spacing-${elem1.id}-${elem2.id}`,
+            distance: distanceTop,
+            y: targetYTop,
+            spacingInfo: {
+              spacing,
+              referenceElements: [elem1.id, elem2.id]
+            }
+          });
+        }
+        
+        // Try snapping to maintain equal spacing below
+        const targetYBottom = bottomElement.centerY + spacing;
+        const distanceBottom = Math.abs(draggedBounds.centerY - targetYBottom);
+        if (distanceBottom <= snapThreshold) {
+          snapPoints.push({
+            type: 'spacingY',
+            sourceElementId: `spacing-${elem1.id}-${elem2.id}`,
+            distance: distanceBottom,
+            y: targetYBottom,
+            spacingInfo: {
+              spacing,
+              referenceElements: [elem1.id, elem2.id]
+            }
+          });
+        }
+        
+        // Try snapping to position between elements (equal spacing)
+        const targetYBetween = (topElement.centerY + bottomElement.centerY) / 2;
+        const distanceBetween = Math.abs(draggedBounds.centerY - targetYBetween);
+        if (distanceBetween <= snapThreshold) {
+          snapPoints.push({
+            type: 'spacingY',
+            sourceElementId: `spacing-${elem1.id}-${elem2.id}`,
+            distance: distanceBetween,
+            y: targetYBetween,
+            spacingInfo: {
+              spacing: spacing / 2,
+              referenceElements: [elem1.id, elem2.id]
+            }
+          });
+        }
+      }
+    }
+  }
+  
+  return snapPoints;
+};
+
+/**
+ * Find distribution snap points - evenly distribute elements across space
+ */
+export const findDistributionSnapPoints = (
+  draggedElement: AnimatedCanvasObject,
+  allElements: AnimatedCanvasObject[],
+  snapThreshold: number = 10
+): SnapPoint[] => {
+  const snapPoints: SnapPoint[] = [];
+  const draggedBounds = getElementBounds(draggedElement);
+  
+  // Get other elements (excluding the one being dragged)
+  const otherElements = allElements.filter(el => 
+    el.id !== draggedElement.id && !el.isAnimationPath
+  );
+  
+  if (otherElements.length < 2) return snapPoints; // Need at least 2 other elements for distribution
+  
+  const otherBounds = otherElements.map(getElementBounds);
+  
+  // Horizontal distribution
+  const horizontallySorted = [...otherBounds].sort((a, b) => a.centerX - b.centerX);
+  if (horizontallySorted.length >= 2) {
+    const leftMost = horizontallySorted[0];
+    const rightMost = horizontallySorted[horizontallySorted.length - 1];
+    const totalWidth = rightMost.centerX - leftMost.centerX;
+    const segments = horizontallySorted.length + 1; // +1 for the dragged element
+    const segmentWidth = totalWidth / segments;
+    
+    // Try each possible position in the distribution
+    for (let i = 1; i < segments; i++) {
+      const targetX = leftMost.centerX + (segmentWidth * i);
+      const distance = Math.abs(draggedBounds.centerX - targetX);
+      
+      if (distance <= snapThreshold) {
+        snapPoints.push({
+          type: 'distributionX',
+          sourceElementId: `distribution-${leftMost.id}-${rightMost.id}`,
+          distance,
+          x: targetX,
+          spacingInfo: {
+            spacing: segmentWidth,
+            referenceElements: [leftMost.id, rightMost.id]
+          }
+        });
+      }
+    }
+  }
+  
+  // Vertical distribution
+  const verticallySorted = [...otherBounds].sort((a, b) => a.centerY - b.centerY);
+  if (verticallySorted.length >= 2) {
+    const topMost = verticallySorted[0];
+    const bottomMost = verticallySorted[verticallySorted.length - 1];
+    const totalHeight = bottomMost.centerY - topMost.centerY;
+    const segments = verticallySorted.length + 1; // +1 for the dragged element
+    const segmentHeight = totalHeight / segments;
+    
+    // Try each possible position in the distribution
+    for (let i = 1; i < segments; i++) {
+      const targetY = topMost.centerY + (segmentHeight * i);
+      const distance = Math.abs(draggedBounds.centerY - targetY);
+      
+      if (distance <= snapThreshold) {
+        snapPoints.push({
+          type: 'distributionY',
+          sourceElementId: `distribution-${topMost.id}-${bottomMost.id}`,
+          distance,
+          y: targetY,
+          spacingInfo: {
+            spacing: segmentHeight,
+            referenceElements: [topMost.id, bottomMost.id]
+          }
+        });
+      }
+    }
+  }
+  
+  return snapPoints;
 }; 

@@ -5,6 +5,8 @@ interface ElementSnapControlsProps {
   config: ElementSnappingConfig;
   onToggleEnabled: () => void;
   onToggleGuides: () => void;
+  onToggleSpacing: () => void;
+  onToggleDistribution: () => void;
   onThresholdChange: (threshold: number) => void;
   isSnapTemporarilyDisabled?: boolean;
 }
@@ -13,6 +15,8 @@ export const ElementSnapControls: React.FC<ElementSnapControlsProps> = ({
   config,
   onToggleEnabled,
   onToggleGuides,
+  onToggleSpacing,
+  onToggleDistribution,
   onThresholdChange,
   isSnapTemporarilyDisabled = false
 }) => {
@@ -63,6 +67,42 @@ export const ElementSnapControls: React.FC<ElementSnapControlsProps> = ({
         </button>
       </div>
 
+      {/* Equal Spacing Toggle */}
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-gray-600">Equal Spacing</span>
+        <button
+          onClick={onToggleSpacing}
+          className={`w-10 h-6 rounded-full flex items-center transition-colors ${
+            config.enableSpacing ? 'bg-purple-500' : 'bg-gray-300'
+          }`}
+          title="Snap to maintain equal spacing between elements"
+        >
+          <div
+            className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${
+              config.enableSpacing ? 'translate-x-5' : 'translate-x-1'
+            }`}
+          />
+        </button>
+      </div>
+
+      {/* Distribution Toggle */}
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-gray-600">Distribution</span>
+        <button
+          onClick={onToggleDistribution}
+          className={`w-10 h-6 rounded-full flex items-center transition-colors ${
+            config.enableDistribution ? 'bg-orange-500' : 'bg-gray-300'
+          }`}
+          title="Snap to evenly distribute elements"
+        >
+          <div
+            className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${
+              config.enableDistribution ? 'translate-x-5' : 'translate-x-1'
+            }`}
+          />
+        </button>
+      </div>
+
       {/* Snap Threshold */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -99,6 +139,10 @@ export const ElementSnapControls: React.FC<ElementSnapControlsProps> = ({
           <span className="inline-block w-2 h-2 bg-pink-400 rounded mr-1"></span>Element alignment
           <br />
           <span className="inline-block w-2 h-2 bg-green-400 rounded mr-1"></span>Grid center alignment
+          <br />
+          <span className="inline-block w-2 h-2 bg-purple-400 rounded mr-1"></span>Equal spacing
+          <br />
+          <span className="inline-block w-2 h-2 bg-orange-400 rounded mr-1"></span>Distribution
         </div>
       </div>
 

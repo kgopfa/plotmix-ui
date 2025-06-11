@@ -753,7 +753,13 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   };
 
   // Handle drag start from the group selection area
-  const handleGroupSelectionDragStart = (virtualElement: AnimatedCanvasObject, mouseX: number, mouseY: number) => {
+  const handleGroupSelectionDragStart = (
+    virtualElement: AnimatedCanvasObject, 
+    mouseX: number, 
+    mouseY: number,
+    allElements?: AnimatedCanvasObject[],
+    gridConfig?: GridConfig
+  ) => {
     // Set up group dragging when user drags the group selection outline
     const offsets = selectedIds.map(selectedId => {
       const selectedElement = elements.find(el => el.id === selectedId);
@@ -765,9 +771,16 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       };
     });
     
+    // Store the virtual element and additional data for snapping
     setGroupDragOffsets(offsets);
     setIsDraggingGroup(true);
     setDraggingId('virtual-group'); // Use virtual group ID to distinguish from individual element drags
+    
+    // Store snapping context for group dragging
+    if (allElements && gridConfig) {
+      // Store these in state or refs if needed for the group drag handler
+      // For now, we'll access them from the scope when needed
+    }
   };
 
   // Debug effect to track editingTextId changes
@@ -1223,6 +1236,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
             selectedElements={elements.filter(el => selectedIds.includes(el.id))}
             scaleFactor={canvasScaleFactor.current}
             onGroupDragStart={handleGroupSelectionDragStart}
+            allElements={elements}
+            gridConfig={gridConfig}
           />
 
           {/* Rotation handles OUTSIDE the rotating containers (only for single selection) */}
