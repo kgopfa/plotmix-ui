@@ -23,6 +23,8 @@ import { ToolType } from '@/types/editor';
 import { GroupManager } from '@/lib/group-manager';
 import { useGridSnapping } from '@/hooks/useGridSnapping';
 import { GridControls } from './canvas/grid-controls';
+import { useElementSnapping } from '@/hooks/useElementSnapping';
+import { ElementSnapControls } from './canvas/element-snap-controls';
 
 
 export default function EditorCanvas() {
@@ -73,7 +75,6 @@ export default function EditorCanvas() {
     toggleGrid, 
     toggleSnapEnabled, 
     snapPoint, 
-    snapRectangle, 
     snapLine,
     isSnapTemporarilyDisabled 
   } = useGridSnapping({
@@ -81,6 +82,22 @@ export default function EditorCanvas() {
     enabled: true,
     visible: false,
     snapThreshold: 8
+  });
+
+  // Element snapping functionality
+  const {
+    config: elementSnapConfig,
+    setConfig: setElementSnapConfig,
+    toggleEnabled: toggleElementSnap,
+    toggleGuides: toggleElementSnapGuides,
+    snapElement,
+    currentGuides: elementSnapGuides,
+    clearGuides: clearElementSnapGuides,
+    isSnapTemporarilyDisabled: isElementSnapDisabled
+  } = useElementSnapping({
+    enabled: true,
+    snapThreshold: 10,
+    showGuides: true
   });
 
   // Panel resize handlers
@@ -301,6 +318,11 @@ export default function EditorCanvas() {
     });
   }, [timeManager, gsapManager]);
 
+  // Clear snap guides when element selection changes or drag ends
+  useEffect(() => {
+    clearElementSnapGuides();
+  }, [selectedObjects, clearElementSnapGuides]);
+
   const canvasClickHandler = (e: FederatedPointerEvent) => {
     const isEmptyClick = !(e.target && (e.target as Container).label === 'shape');
 
@@ -478,8 +500,12 @@ export default function EditorCanvas() {
       const updatedElements = prevElements.map((el) => {
         if (el.id !== id) return el;
 
-        // Apply grid snapping to the new position
-        const snappedPos = snapPoint({ x, y });
+        // Create a temporary element with the new position for snapping calculation
+        const tempElement = { ...el, x, y };
+        
+        // Apply element snapping first (including grid centers), then grid snapping as fallback
+        const elementSnapResult = snapElement(tempElement, prevElements, gridConfig);
+        const snappedPos = snapPoint({ x: elementSnapResult.x, y: elementSnapResult.y });
 
         // For lines, we need to update both position and points
         if (el.type === 'line' && el.lineOptions?.points) {
@@ -1328,6 +1354,7 @@ export default function EditorCanvas() {
                   zoom={canvasZoom}
                   onZoomChange={setCanvasZoom}
                   gridConfig={gridConfig}
+                  snapGuides={elementSnapGuides}
                 />
               )}
             </div>
@@ -1355,6 +1382,15 @@ export default function EditorCanvas() {
             onToggleSnap={toggleSnapEnabled}
             onGridSizeChange={(size) => setGridConfig({ size })}
             isSnapTemporarilyDisabled={isSnapTemporarilyDisabled}
+          />
+          
+          {/* Element Snap Controls */}
+          <ElementSnapControls
+            config={elementSnapConfig}
+            onToggleEnabled={toggleElementSnap}
+            onToggleGuides={toggleElementSnapGuides}
+            onThresholdChange={(threshold) => setElementSnapConfig({ snapThreshold: threshold })}
+            isSnapTemporarilyDisabled={isElementSnapDisabled}
           />
         </div>
 

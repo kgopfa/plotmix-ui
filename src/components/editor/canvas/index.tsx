@@ -19,6 +19,8 @@ import { GroupSelection } from './group-selection';
 import { Viewport } from 'pixi-viewport';
 import { GridOverlay } from './grid-overlay';
 import { GridConfig } from '../../../utils/grid-utils';
+import { SnapGuides } from './snap-guides';
+import { SnapGuide } from '../../../utils/element-snapping';
 
 extend({ Container, Graphics, Text });
 
@@ -43,6 +45,8 @@ interface CanvasProps {
   onGroupDrag?: (elementPositions: Array<{ id: string; x: number; y: number }>) => void;
   // Add grid configuration
   gridConfig?: GridConfig;
+  // Add snap guides
+  snapGuides?: SnapGuide[];
 }
 
 export interface CanvasRef {
@@ -94,6 +98,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     onZoomChange,
     onGroupDrag,
     gridConfig,
+    snapGuides = [],
   },
   ref
 ) {
@@ -932,6 +937,13 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
               zoom={zoom}
             />
           )}
+          
+          {/* Snap guides */}
+          <SnapGuides
+            guides={snapGuides}
+            canvasWidth={dimensions.width}
+            canvasHeight={dimensions.height}
+          />
           
           {/* Full-size transparent interactive layer to capture background clicks */}
           <pixiGraphics

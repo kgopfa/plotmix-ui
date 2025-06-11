@@ -1,0 +1,111 @@
+import React from 'react';
+import { ElementSnappingConfig } from '../../../hooks/useElementSnapping';
+
+interface ElementSnapControlsProps {
+  config: ElementSnappingConfig;
+  onToggleEnabled: () => void;
+  onToggleGuides: () => void;
+  onThresholdChange: (threshold: number) => void;
+  isSnapTemporarilyDisabled?: boolean;
+}
+
+export const ElementSnapControls: React.FC<ElementSnapControlsProps> = ({
+  config,
+  onToggleEnabled,
+  onToggleGuides,
+  onThresholdChange,
+  isSnapTemporarilyDisabled = false
+}) => {
+  const thresholdOptions = [5, 8, 10, 15, 20];
+
+  return (
+    <div className="bg-white shadow-lg rounded-lg p-3 space-y-3">
+      <div className="text-sm font-medium text-gray-700 mb-2">Element Snapping</div>
+      
+      {/* Snap to Elements Toggle */}
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-gray-600">
+          Snap to Elements
+          {isSnapTemporarilyDisabled && (
+            <span className="text-orange-500 ml-1">(⇧ disabled)</span>
+          )}
+        </span>
+        <button
+          onClick={onToggleEnabled}
+          className={`w-10 h-6 rounded-full flex items-center transition-colors ${
+            config.enabled && !isSnapTemporarilyDisabled ? 'bg-blue-500' : 'bg-gray-300'
+          }`}
+          title="Toggle snapping to other elements"
+        >
+          <div
+            className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${
+              config.enabled && !isSnapTemporarilyDisabled ? 'translate-x-5' : 'translate-x-1'
+            }`}
+          />
+        </button>
+      </div>
+
+      {/* Show Snap Guides Toggle */}
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-gray-600">Show Guides</span>
+        <button
+          onClick={onToggleGuides}
+          className={`w-10 h-6 rounded-full flex items-center transition-colors ${
+            config.showGuides ? 'bg-green-500' : 'bg-gray-300'
+          }`}
+          title="Show alignment guides when snapping"
+        >
+          <div
+            className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${
+              config.showGuides ? 'translate-x-5' : 'translate-x-1'
+            }`}
+          />
+        </button>
+      </div>
+
+      {/* Snap Threshold */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-gray-600">Snap Distance</span>
+          <span className="text-xs font-mono text-gray-800">{config.snapThreshold}px</span>
+        </div>
+        <div className="grid grid-cols-5 gap-1">
+          {thresholdOptions.map((threshold) => (
+            <button
+              key={threshold}
+              onClick={() => onThresholdChange(threshold)}
+              className={`px-2 py-1 text-xs rounded transition-colors ${
+                config.snapThreshold === threshold
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {threshold}px
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Alignment Types Info */}
+      <div className="space-y-1 pt-1 border-t border-gray-200">
+        <div className="text-xs font-medium text-gray-600">Snap Points:</div>
+        <div className="grid grid-cols-1 gap-1 text-xs text-gray-500">
+          <div>• Left/Right edges</div>
+          <div>• Top/Bottom edges</div>
+          <div>• Horizontal/Vertical centers</div>
+          <div>• Grid centers</div>
+        </div>
+        <div className="text-xs text-gray-400 mt-1">
+          <span className="inline-block w-2 h-2 bg-pink-400 rounded mr-1"></span>Element alignment
+          <br />
+          <span className="inline-block w-2 h-2 bg-green-400 rounded mr-1"></span>Grid center alignment
+        </div>
+      </div>
+
+      {/* Info */}
+      <div className="text-xs text-gray-500 pt-1 border-t border-gray-200">
+        💡 Hold Shift to temporarily disable snapping
+      </div>
+    </div>
+  );
+}; 
