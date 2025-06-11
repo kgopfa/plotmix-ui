@@ -22,10 +22,9 @@ import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { ToolType } from '@/types/editor';
 import { GroupManager } from '@/lib/group-manager';
 import { useGridSnapping } from '@/hooks/useGridSnapping';
-import { GridControls } from './canvas/grid-controls';
 import { useElementSnapping } from '@/hooks/useElementSnapping';
-import { ElementSnapControls } from './canvas/element-snap-controls';
 import { applyElementSnapping } from '@/utils/element-snapping';
+import { OptionsBar } from './options-bar';
 
 
 export default function EditorCanvas() {
@@ -1033,6 +1032,7 @@ export default function EditorCanvas() {
       window.removeEventListener('animation-path-updated', handleAnimationPathUpdate as EventListener);
       window.removeEventListener('group-drag-end', handleGroupDragEndEvent);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [updateAnimationsForPathElement, gsapManager]);
 
   // Memoize the handleSelectElement function
@@ -1199,7 +1199,6 @@ export default function EditorCanvas() {
         })
       );
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectionManager, canvasObjects, selectedObjects]);
 
   const handleUngroupElements = useCallback(() => {
@@ -1226,119 +1225,53 @@ export default function EditorCanvas() {
   return (
     <div className="flex flex-col h-screen w-screen">
       {/* Options Bar */}
-      <div className="h-12 bg-white border-b flex items-center justify-between px-4 shadow z-20">
-        <div className="flex gap-2">
-          <button className="btn">New Scene</button>
-          <button className="btn">Save</button>
-          <button className="btn">Revert</button>
-          <button 
-            className="btn"
-            onClick={() => {
-              if (imageFileInputRef.current) {
-                imageFileInputRef.current.click();
-              }
-            }}
-            title="Import Image"
-          >
-            Import Image
-          </button>
-          <div className="flex gap-1 ml-2 border-l pl-2">
-            <button 
-              className={`btn ${leftPanelVisible ? 'bg-blue-100' : ''}`}
-              onClick={() => setLeftPanelVisible(!leftPanelVisible)}
-              title="Toggle Scene Explorer"
-            >
-              📋
-            </button>
-            <button 
-              className={`btn ${rightPanelVisible ? 'bg-blue-100' : ''}`}
-              onClick={() => setRightPanelVisible(!rightPanelVisible)}
-              title="Toggle Inspector"
-            >
-              🔧
-            </button>
-          </div>
-          {/* Multi-select indicator and grouping controls */}
-          {selectedObjects.length > 0 && (
-            <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-200 rounded text-sm">
-              <span className="text-blue-600 font-medium">
-                {selectedObjects.length} object{selectedObjects.length !== 1 ? 's' : ''} selected
-              </span>
-              {selectedObjects.length > 1 && (
-                <span className="text-blue-500 text-xs">
-                  Multi-select active
-                </span>
-              )}
-              
-              {/* Grouping buttons */}
-              <div className="flex gap-1 ml-2 border-l pl-2">
-                {selectionManager.canGroup() && (
-                  <button
-                    className="btn-sm bg-green-500 text-white hover:bg-green-600"
-                    onClick={handleGroupElements}
-                    title="Group selected elements"
-                  >
-                    📦 Group
-                  </button>
-                )}
-                {selectionManager.canUngroup() && (
-                  <button
-                    className="btn-sm bg-orange-500 text-white hover:bg-orange-600"
-                    onClick={handleUngroupElements}
-                    title="Ungroup selected elements"
-                  >
-                    📤 Ungroup
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-        <div className="flex gap-2 items-center">
-          <button className="btn">Export ▼</button>
-          <div className="flex gap-1 items-center border-r pr-2 mr-2">
-            <button 
-              className="btn" 
-              onClick={() => {
-                if (canvasRef.current) {
-                  canvasRef.current.zoomOut();
-                } else {
-                  setCanvasZoom(prev => Math.max(prev * 0.9, 0.1));
-                }
-              }}
-            >
-              −
-            </button>
-            <span className="text-xs text-gray-600 min-w-[40px] text-center">
-              {Math.round(canvasZoom * 100)}%
-            </span>
-            <button 
-              className="btn" 
-              onClick={() => {
-                if (canvasRef.current) {
-                  canvasRef.current.zoomIn();
-                } else {
-                  setCanvasZoom(prev => Math.min(prev * 1.1, 5));
-                }
-              }}
-            >
-              +
-            </button>
-            <button 
-              className="btn ml-1" 
-              onClick={() => {
-                // Reset zoom to 100% while maintaining view position
-                if (canvasRef.current) {
-                  canvasRef.current.resetZoomToOneHundredPercent();
-                }
-              }}
-              title="Reset to 100%"
-            >
-              100%
-            </button>
-          </div>
-        </div>
-      </div>
+      <OptionsBar
+        selectedObjects={selectedObjects}
+        selectionManager={selectionManager}
+        canvasZoom={canvasZoom}
+        leftPanelVisible={leftPanelVisible}
+        rightPanelVisible={rightPanelVisible}
+        onToggleLeftPanel={() => setLeftPanelVisible(!leftPanelVisible)}
+        onToggleRightPanel={() => setRightPanelVisible(!rightPanelVisible)}
+        onImageImport={() => {
+          if (imageFileInputRef.current) {
+            imageFileInputRef.current.click();
+          }
+        }}
+        onZoomIn={() => {
+          if (canvasRef.current) {
+            canvasRef.current.zoomIn();
+          } else {
+            setCanvasZoom(prev => Math.min(prev * 1.1, 5));
+          }
+        }}
+        onZoomOut={() => {
+          if (canvasRef.current) {
+            canvasRef.current.zoomOut();
+          } else {
+            setCanvasZoom(prev => Math.max(prev * 0.9, 0.1));
+          }
+        }}
+        onResetZoom={() => {
+          if (canvasRef.current) {
+            canvasRef.current.resetZoomToOneHundredPercent();
+          }
+        }}
+        onGroupElements={handleGroupElements}
+        onUngroupElements={handleUngroupElements}
+        gridConfig={gridConfig}
+        onToggleGrid={toggleGrid}
+        onToggleGridSnap={toggleSnapEnabled}
+        onGridSizeChange={(size: number) => setGridConfig({ size })}
+        elementSnapConfig={elementSnapConfig}
+        onToggleElementSnap={toggleElementSnap}
+        onToggleGuides={toggleElementSnapGuides}
+        onToggleSpacing={toggleElementSpacing}
+        onToggleDistribution={toggleElementDistribution}
+        onSnapThresholdChange={(threshold: number) => setElementSnapConfig({ snapThreshold: threshold })}
+        isGridSnapTemporarilyDisabled={isSnapTemporarilyDisabled}
+        isElementSnapTemporarilyDisabled={isElementSnapDisabled}
+      />
 
       {/* Main Body - Full width canvas with floating panels */}
       <div className="flex-1 relative overflow-hidden">
@@ -1450,7 +1383,7 @@ export default function EditorCanvas() {
 
         {/* Floating Toolbar - Fixed position outside scrollable area */}
         <div 
-          className="absolute top-1/2 -translate-y-1/2 z-50 transition-all duration-300 space-y-4"
+          className="absolute top-1/2 -translate-y-1/2 z-50 transition-all duration-300"
           style={{ left: `${leftPanelVisible ? leftPanelWidth + 16 : 16}px` }}
         >
           <Toolbar
@@ -1461,26 +1394,6 @@ export default function EditorCanvas() {
               setIsPathMode(false);
               setAnimationTarget(null);
             }}
-          />
-          
-          {/* Grid Controls */}
-          <GridControls
-            gridConfig={gridConfig}
-            onToggleGrid={toggleGrid}
-            onToggleSnap={toggleSnapEnabled}
-            onGridSizeChange={(size) => setGridConfig({ size })}
-            isSnapTemporarilyDisabled={isSnapTemporarilyDisabled}
-          />
-          
-          {/* Element Snap Controls */}
-          <ElementSnapControls
-            config={elementSnapConfig}
-            onToggleEnabled={toggleElementSnap}
-            onToggleGuides={toggleElementSnapGuides}
-            onToggleSpacing={toggleElementSpacing}
-            onToggleDistribution={toggleElementDistribution}
-            onThresholdChange={(threshold) => setElementSnapConfig({ snapThreshold: threshold })}
-            isSnapTemporarilyDisabled={isElementSnapDisabled}
           />
         </div>
 
