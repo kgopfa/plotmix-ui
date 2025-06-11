@@ -21,6 +21,8 @@ import { useCanvasDimensions } from '@/hooks/use-canvas-dimensions';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { ToolType } from '@/types/editor';
 import { GroupManager } from '@/lib/group-manager';
+import { useGridSnapping } from '@/hooks/useGridSnapping';
+import { GridControls } from './canvas/grid-controls';
 
 
 export default function EditorCanvas() {
@@ -63,6 +65,23 @@ export default function EditorCanvas() {
 
   const selectionManager = SelectionManager.getInstance();
   const groupManager = GroupManager.getInstance();
+  
+  // Grid snapping functionality
+  const { 
+    gridConfig, 
+    setGridConfig, 
+    toggleGrid, 
+    toggleSnapEnabled, 
+    snapPoint, 
+    snapRectangle, 
+    snapLine,
+    isSnapTemporarilyDisabled 
+  } = useGridSnapping({
+    size: 10,
+    enabled: true,
+    visible: false,
+    snapThreshold: 8
+  });
 
   // Panel resize handlers
   const handleMouseDown = useCallback((panel: 'left' | 'right') => (e: React.MouseEvent) => {
@@ -288,16 +307,20 @@ export default function EditorCanvas() {
     if (isEmptyClick) {
       if (tool === 'line') {
         if (!lineStartPoint) {
-          // First click - set start point
-          setLineStartPoint({ x: e.global.x, y: e.global.y });
+          // First click - set start point with snapping
+          const snappedStart = snapPoint({ x: e.global.x, y: e.global.y }, e);
+          setLineStartPoint(snappedStart);
         } else {
-          // Second click - create line and reset
-          const newElement = createNewObject('line', lineStartPoint.x, lineStartPoint.y, canvasObjects, undefined, isPathMode);
+          // Second click - create line and reset with snapping
+          const snappedEnd = snapPoint({ x: e.global.x, y: e.global.y }, e);
+          const { start: finalStart, end: finalEnd } = snapLine(lineStartPoint, snappedEnd, e);
+          
+          const newElement = createNewObject('line', finalStart.x, finalStart.y, canvasObjects, undefined, isPathMode);
           // Update line end point
           newElement.lineOptions = {
             points: {
-              start: { x: lineStartPoint.x, y: lineStartPoint.y },
-              end: { x: e.global.x, y: e.global.y }
+              start: finalStart,
+              end: finalEnd
             },
             arrow: false,
             dotted: false
@@ -322,10 +345,11 @@ export default function EditorCanvas() {
         const imageHeight = 100;
         
         try {
+          const snappedPos = snapPoint({ x: e.global.x, y: e.global.y }, e);
           const imageElement = createNewObject(
             'image',
-            e.global.x,
-            e.global.y,
+            snappedPos.x,
+            snappedPos.y,
             canvasObjects,
             undefined,
             isPathMode,
@@ -350,7 +374,8 @@ export default function EditorCanvas() {
           console.error('Error creating image element:', error);
         }
       } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle') {
-        const newElement = createNewObject(tool, e.global.x, e.global.y, canvasObjects, undefined, isPathMode);
+        const snappedPos = snapPoint({ x: e.global.x, y: e.global.y }, e);
+        const newElement = createNewObject(tool, snappedPos.x, snappedPos.y, canvasObjects, undefined, isPathMode);
         setCanvasObjects(prev => [...prev, newElement]);
         selectionManager.select(newElement);
         setTool('select');
@@ -363,7 +388,8 @@ export default function EditorCanvas() {
           setAnimationTarget(null);
         }
       } else if (tool === 'text') {
-        const newElement = createNewObject('text', e.global.x, e.global.y, canvasObjects, undefined, isPathMode);
+        const snappedPos = snapPoint({ x: e.global.x, y: e.global.y }, e);
+        const newElement = createNewObject('text', snappedPos.x, snappedPos.y, canvasObjects, undefined, isPathMode);
         setCanvasObjects(prev => [...prev, newElement]);
         selectionManager.select(newElement);
         setTool('select');
@@ -452,14 +478,17 @@ export default function EditorCanvas() {
       const updatedElements = prevElements.map((el) => {
         if (el.id !== id) return el;
 
+        // Apply grid snapping to the new position
+        const snappedPos = snapPoint({ x, y });
+
         // For lines, we need to update both position and points
         if (el.type === 'line' && el.lineOptions?.points) {
-          const dx = x - el.x;
-          const dy = y - el.y;
+          const dx = snappedPos.x - el.x;
+          const dy = snappedPos.y - el.y;
           return {
             ...el,
-            x,
-            y,
+            x: snappedPos.x,
+            y: snappedPos.y,
             lineOptions: {
               ...el.lineOptions,
               points: {
@@ -477,7 +506,7 @@ export default function EditorCanvas() {
         }
 
         // For other shapes, just update position
-        return { ...el, x, y };
+        return { ...el, x: snappedPos.x, y: snappedPos.y };
       });
 
       // If this is an animation path element, update related animations
@@ -1298,6 +1327,7 @@ export default function EditorCanvas() {
                   onTextChange={handleTextChange}
                   zoom={canvasZoom}
                   onZoomChange={setCanvasZoom}
+                  gridConfig={gridConfig}
                 />
               )}
             </div>
@@ -1305,18 +1335,27 @@ export default function EditorCanvas() {
 
         {/* Floating Toolbar - Fixed position outside scrollable area */}
         <div 
-          className="absolute top-1/2 -translate-y-1/2 z-50 transition-all duration-300"
+          className="absolute top-1/2 -translate-y-1/2 z-50 transition-all duration-300 space-y-4"
           style={{ left: `${leftPanelVisible ? leftPanelWidth + 16 : 16}px` }}
         >
-                  <Toolbar
-          currentTool={tool}
-          onToolChange={handleToolChange}
-          isPathMode={isPathMode}
-          onExitPathMode={() => {
-            setIsPathMode(false);
-            setAnimationTarget(null);
-          }}
-        />
+          <Toolbar
+            currentTool={tool}
+            onToolChange={handleToolChange}
+            isPathMode={isPathMode}
+            onExitPathMode={() => {
+              setIsPathMode(false);
+              setAnimationTarget(null);
+            }}
+          />
+          
+          {/* Grid Controls */}
+          <GridControls
+            gridConfig={gridConfig}
+            onToggleGrid={toggleGrid}
+            onToggleSnap={toggleSnapEnabled}
+            onGridSizeChange={(size) => setGridConfig({ size })}
+            isSnapTemporarilyDisabled={isSnapTemporarilyDisabled}
+          />
         </div>
 
         {/* Mask Overlay - Fixed position relative to viewport */}

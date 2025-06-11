@@ -17,6 +17,8 @@ import { TextEditor } from './text-editor';
 import { CanvasContent } from './canvas-content';
 import { GroupSelection } from './group-selection';
 import { Viewport } from 'pixi-viewport';
+import { GridOverlay } from './grid-overlay';
+import { GridConfig } from '../../../utils/grid-utils';
 
 extend({ Container, Graphics, Text });
 
@@ -39,6 +41,8 @@ interface CanvasProps {
   onZoomChange?: (zoom: number) => void; // Callback when zoom changes
   // Add group drag handler
   onGroupDrag?: (elementPositions: Array<{ id: string; x: number; y: number }>) => void;
+  // Add grid configuration
+  gridConfig?: GridConfig;
 }
 
 export interface CanvasRef {
@@ -89,6 +93,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     zoom = 1,
     onZoomChange,
     onGroupDrag,
+    gridConfig,
   },
   ref
 ) {
@@ -914,6 +919,20 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         autoDensity={true}
       >
         <CanvasContent ref={viewportRef}>
+          {/* Grid overlay */}
+          {gridConfig && (
+            <GridOverlay
+              gridConfig={gridConfig}
+              viewportBounds={{
+                x: 0,
+                y: 0,
+                width: dimensions.width,
+                height: dimensions.height
+              }}
+              zoom={zoom}
+            />
+          )}
+          
           {/* Full-size transparent interactive layer to capture background clicks */}
           <pixiGraphics
             draw={(g) => {
