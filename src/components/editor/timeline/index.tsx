@@ -34,6 +34,7 @@ export function Timeline({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [scrollLeft, setScrollLeft] = useState(0);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   const handleScroll = () => {
     if (scrollContainerRef.current) {
@@ -48,27 +49,99 @@ export function Timeline({
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
   };
 
-  // Create combined track data for unified display
-  const allTracks = [
-    ...elements.map(element => ({
-      id: element.id,
-      type: 'element' as const,
-      name: element.name,
-      item: element,
-      animations: element.animations,
-      isSelected: selectionManager.isSelected(element)
-    })),
-    ...groups
-      .filter(group => !group.isDefaultGroup) // Only show non-default groups
-      .map(group => ({
-        id: group.id,
-        type: 'group' as const,
-        name: group.name,
-        item: group,
-        animations: group.animations,
-        isSelected: selectionManager.getSelectedGroups().some(g => g.id === group.id)
-      }))
-  ];
+  const toggleGroupExpansion = (groupId: string) => {
+    setExpandedGroups(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(groupId)) {
+        newSet.delete(groupId);
+      } else {
+        newSet.add(groupId);
+      }
+      return newSet;
+    });
+  };
+
+  // Create hierarchical track structure
+  const createHierarchicalTracks = () => {
+    const tracks: Array<{
+      id: string;
+      type: 'element' | 'group';
+      name: string;
+      item: AnimatedCanvasObject | CanvasGroup;
+      animations: Array<{
+        id: string;
+        type: string;
+        startTime: number;
+        duration: number;
+        properties: Record<string, unknown>;
+        easing?: string;
+      }>;
+      isSelected: boolean;
+      isGroup?: boolean;
+      isExpanded?: boolean;
+      isChild?: boolean;
+      parentGroupId?: string;
+      depth: number;
+    }> = [];
+
+    // Add groups first
+    groups
+      .filter(group => !group.isDefaultGroup)
+      .forEach(group => {
+        const groupElements = elements.filter(el => el.groupId === group.id);
+        
+        tracks.push({
+          id: group.id,
+          type: 'group',
+          name: group.name,
+          item: group,
+          animations: group.animations,
+          isSelected: selectionManager.getSelectedGroups().some(g => g.id === group.id),
+          isGroup: true,
+          isExpanded: expandedGroups.has(group.id),
+          depth: 0
+        });
+
+        // Add group children if expanded
+        if (expandedGroups.has(group.id)) {
+          groupElements.forEach(element => {
+            tracks.push({
+              id: element.id,
+              type: 'element',
+              name: element.name,
+              item: element,
+              animations: element.animations,
+              isSelected: selectionManager.isSelected(element),
+              isChild: true,
+              parentGroupId: group.id,
+              depth: 1
+            });
+          });
+        }
+      });
+
+    // Add individual elements (not in custom groups)
+    elements
+      .filter(el => {
+        const group = groups.find(g => g.id === el.groupId);
+        return !group || group.isDefaultGroup;
+      })
+      .forEach(element => {
+        tracks.push({
+          id: element.id,
+          type: 'element',
+          name: element.name,
+          item: element,
+          animations: element.animations,
+          isSelected: selectionManager.isSelected(element),
+          depth: 0
+        });
+      });
+
+    return tracks;
+  };
+
+  const hierarchicalTracks = createHierarchicalTracks();
 
   return (
     <footer className={`border-t border-gray-200 bg-white transition-all duration-200 ${
@@ -140,8 +213,8 @@ export function Timeline({
               </div>
             </div>
 
-            {/* Tracks - unified display for elements and groups */}
-            {allTracks.map((track) => (
+            {/* Hierarchical Tracks */}
+            {hierarchicalTracks.map((track) => (
               <TimelineTrack
                 key={track.id}
                 element={track.item}
@@ -153,10 +226,15 @@ export function Timeline({
                   ? onGroupAnimationChange 
                   : onAnimationChange
                 }
+                isGroup={track.isGroup}
+                isExpanded={track.isExpanded}
+                isChild={track.isChild}
+                depth={track.depth}
+                onToggleExpansion={track.isGroup ? () => toggleGroupExpansion(track.id) : undefined}
               />
             ))}
             
-            {allTracks.length === 0 && (
+            {hierarchicalTracks.length === 0 && (
               <div className="p-8 text-center text-gray-500">
                 No elements or groups with animations to display
               </div>

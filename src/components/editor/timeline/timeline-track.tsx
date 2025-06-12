@@ -20,6 +20,12 @@ interface TimelineTrackProps {
     animationId: string,
     update: { startTime: number; duration: number }
   ) => void;
+  // Hierarchical props
+  isGroup?: boolean;
+  isExpanded?: boolean;
+  isChild?: boolean;
+  depth?: number;
+  onToggleExpansion?: () => void;
 }
 
 export function TimelineTrack({
@@ -30,9 +36,14 @@ export function TimelineTrack({
   isSelected,
   onAnimationClick,
   onAnimationChange,
+  isGroup: isGroupProp,
+  isExpanded,
+  isChild,
+  depth = 0,
+  onToggleExpansion,
 }: TimelineTrackProps) {
   // Determine if this is a group track
-  const isGroup = trackType === 'group' || ('elementIds' in element);
+  const isGroup = isGroupProp ?? (trackType === 'group' || ('elementIds' in element));
   
   // Get the appropriate properties
   const name = element.name;
@@ -48,22 +59,38 @@ export function TimelineTrack({
     }
   };
 
+  const handleExpandToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onToggleExpansion) {
+      onToggleExpansion();
+    }
+  };
+
   return (
     <div
       className={`h-8 flex items-center border-b border-gray-200 text-gray-700 cursor-pointer ${
         isSelected ? 'bg-blue-50' : ''
-      }`}
+      } ${isChild ? 'bg-gray-50' : ''}`}
     >
       {/* Track Label */}
       <div
-        className={`w-32 px-2 text-sm font-medium truncate flex items-center gap-1 ${
+        className={`w-32 text-sm font-medium truncate flex items-center gap-1 ${
           isSelected ? 'text-blue-600' : ''
-        }`}
+        } ${isChild ? 'text-gray-600' : ''}`}
+        style={{ paddingLeft: `${8 + depth * 16}px` }}
         onClick={handleTrackClick}
       >
+        {isGroup && (
+          <button
+            onClick={handleExpandToggle}
+            className="w-4 h-4 flex items-center justify-center hover:bg-gray-200 rounded text-xs"
+          >
+            {isExpanded ? '▼' : '▶'}
+          </button>
+        )}
         {isGroup && <span className="text-xs">📦</span>}
-        {!isGroup && <span className="text-xs">🔵</span>}
-        {name}
+        {!isGroup && <span className="text-xs">{isChild ? '└' : '🔵'}</span>}
+        <span className="truncate">{name}</span>
       </div>
 
       {/* Track Content */}
