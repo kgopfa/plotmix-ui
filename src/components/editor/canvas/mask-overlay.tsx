@@ -6,15 +6,13 @@ interface MaskOverlayProps {
   maskPos: { x: number; y: number } | null;
   maskOffsetX?: number;
   maskOffsetY?: number;
-  lineStartPoint?: { x: number; y: number } | null;
 }
 
 export function MaskOverlay({ 
   tool, 
   maskPos, 
   maskOffsetX = 0, 
-  maskOffsetY = 0, 
-  lineStartPoint 
+  maskOffsetY = 0
 }: MaskOverlayProps) {
   if (tool === 'select' || !maskPos) return null;
 
@@ -89,54 +87,6 @@ export function MaskOverlay({
     );
   }
 
-  if (tool === 'line') {
-    if (!lineStartPoint) {
-      // Show the cursor for the first point
-      return (
-        <svg
-          style={{
-            position: 'absolute',
-            left: maskPos.x + maskOffsetX - 5,
-            top: maskPos.y + maskOffsetY - 5,
-            width: 10,
-            height: 10,
-            pointerEvents: 'none',
-            opacity: 0.5,
-            zIndex: 20,
-          }}
-        >
-          <circle cx="5" cy="5" r="4" fill="white" stroke="#888" strokeWidth={1} />
-        </svg>
-      );
-    }
-
-    // Show the preview line from start point to current mouse position
-    return (
-      <svg
-        style={{
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          width: '100%',
-          height: '100%',
-          pointerEvents: 'none',
-          opacity: 0.5,
-          zIndex: 20,
-        }}
-      >
-        <line
-          x1={lineStartPoint.x}
-          y1={lineStartPoint.y}
-          x2={maskPos.x + maskOffsetX}
-          y2={maskPos.y + maskOffsetY}
-          stroke="#888"
-          strokeWidth={2}
-          strokeDasharray="4,3"
-        />
-      </svg>
-    );
-  }
-
   if (tool === 'text') {
     return (
       <div style={{
@@ -153,6 +103,11 @@ export function MaskOverlay({
         T
       </div>
     );
+  }
+
+  if (tool === 'line') {
+    // Line preview is now handled directly on the PIXI canvas
+    return null;
   }
 
   return null;

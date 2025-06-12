@@ -48,6 +48,8 @@ interface CanvasProps {
   gridConfig?: GridConfig;
   // Add snap guides
   snapGuides?: SnapGuide[];
+  // Add line preview
+  lineStartPoint?: { x: number; y: number } | null;
 }
 
 export interface CanvasRef {
@@ -102,6 +104,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     onGroupDrag,
     gridConfig,
     snapGuides = [],
+    lineStartPoint,
   },
   ref
 ) {
@@ -117,6 +120,9 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
   // Add hover state
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+  // Add mouse position for line preview
+  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
 
   // Optional: Track zoom state for external components (like zoom indicators)
   const [currentZoom, setCurrentZoom] = useState(1);
@@ -696,6 +702,9 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   };
 
   const handleCanvasPointerMove = (e: FederatedPointerEvent) => {
+    // Update mouse position for line preview
+    setMousePos({ x: e.global.x, y: e.global.y });
+
     if (isDrawing && tool === 'draw') {
       const newPoint = { x: e.global.x, y: e.global.y };
       setCurrentPath(prev => [...prev, newPoint]);
@@ -1162,6 +1171,59 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                   });
                   g.stroke({ width: 2, color: 0x000000, alpha: 1 });
                 }
+              }}
+            />
+          )}
+
+          {/* Line preview layer */}
+          {tool === 'line' && lineStartPoint && mousePos && (
+            <pixiGraphics
+              eventMode="none"
+              draw={(g) => {
+                g.clear();
+                g.moveTo(lineStartPoint.x, lineStartPoint.y);
+                g.lineTo(mousePos.x, mousePos.y);
+                g.stroke({ 
+                  width: 2, 
+                  color: 0x888888, 
+                  alpha: 0.7,
+                  cap: 'round',
+                  // Create dotted pattern
+                  alignment: 0.5
+                });
+                
+                // Manually draw dotted line for better control
+                g.clear();
+                const dx = mousePos.x - lineStartPoint.x;
+                const dy = mousePos.y - lineStartPoint.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const dashLength = 8;
+                const gapLength = 4;
+                const totalDashLength = dashLength + gapLength;
+                const numDashes = Math.floor(distance / totalDashLength);
+                
+                for (let i = 0; i <= numDashes; i++) {
+                  const startRatio = (i * totalDashLength) / distance;
+                  const endRatio = Math.min((i * totalDashLength + dashLength) / distance, 1);
+                  
+                  const startX = lineStartPoint.x + dx * startRatio;
+                  const startY = lineStartPoint.y + dy * startRatio;
+                  const endX = lineStartPoint.x + dx * endRatio;
+                  const endY = lineStartPoint.y + dy * endRatio;
+                  
+                  g.moveTo(startX, startY);
+                  g.lineTo(endX, endY);
+                  g.stroke({ 
+                    width: 2, 
+                    color: 0x888888, 
+                    alpha: 0.7,
+                    cap: 'round'
+                  });
+                }
+                
+                // Draw start point indicator
+                g.circle(lineStartPoint.x, lineStartPoint.y, 4);
+                g.fill({ color: 0x888888, alpha: 0.7 });
               }}
             />
           )}

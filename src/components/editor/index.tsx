@@ -1355,9 +1355,11 @@ export default function EditorCanvas() {
           onMouseMove={e => {
             if (tool !== 'select') {
               const rect = e.currentTarget.getBoundingClientRect();
+              const scrollLeft = e.currentTarget.scrollLeft;
+              const scrollTop = e.currentTarget.scrollTop;
               setMaskPos({
-                x: e.clientX - rect.left,
-                y: e.clientY - rect.top,
+                x: e.clientX - rect.left + scrollLeft,
+                y: e.clientY - rect.top + scrollTop,
               });
             }
           }}
@@ -1450,6 +1452,7 @@ export default function EditorCanvas() {
                   onZoomChange={setCanvasZoom}
                   gridConfig={gridConfig}
                   snapGuides={elementSnapGuides}
+                  lineStartPoint={lineStartPoint}
                 />
               )}
             </div>
@@ -1477,7 +1480,6 @@ export default function EditorCanvas() {
           maskPos={maskPos}
           maskOffsetX={MASK_OFFSET_X}
           maskOffsetY={MASK_OFFSET_Y}
-          lineStartPoint={lineStartPoint}
         />
 
         {/* Floating Left Panel - Scene Explorer */}
