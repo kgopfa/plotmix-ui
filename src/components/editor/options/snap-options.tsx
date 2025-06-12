@@ -1,6 +1,6 @@
 import React from 'react';
 import { GridConfig } from '../../../utils/grid-utils';
-import { ElementSnappingConfig } from '../../../hooks/useElementSnapping';
+import { ElementSnappingConfig } from '../../../hooks/use-element-snapping';
 
 interface SnappingOptionsProps {
   // Grid configuration

@@ -118,6 +118,7 @@ export const useElementSnapping = (
     }
     
     return result;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config.enabled, config.snapThreshold, config.showGuides, isSnapTemporarilyDisabled]);
 
   return {

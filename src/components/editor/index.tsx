@@ -21,10 +21,10 @@ import { useCanvasDimensions } from '@/hooks/use-canvas-dimensions';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { ToolType } from '@/types/editor';
 import { GroupManager } from '@/lib/group-manager';
-import { useGridSnapping } from '@/hooks/useGridSnapping';
-import { useElementSnapping } from '@/hooks/useElementSnapping';
+import { useGridSnapping } from '@/hooks/use-grid-snapping';
+import { useElementSnapping } from '@/hooks/use-element-snapping';
 import { applyElementSnapping } from '@/utils/element-snapping';
-import { OptionsBar } from './options-bar';
+import { OptionsBar } from './options';
 
 
 export default function EditorCanvas() {

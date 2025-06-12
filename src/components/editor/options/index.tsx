@@ -1,9 +1,9 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { AnimatedCanvasObject } from '@/types/canvas';
 import { SelectionManager } from '@/lib/selection-manager';
-import { SnappingOptions } from './canvas/snapping-options';
+import { SnappingOptions } from './snap-options';
 import { GridConfig } from '@/utils/grid-utils';
-import { ElementSnappingConfig } from '@/hooks/useElementSnapping';
+import { ElementSnappingConfig } from '@/hooks/use-element-snapping';
 
 interface OptionsBarProps {
   selectedObjects: AnimatedCanvasObject[];
