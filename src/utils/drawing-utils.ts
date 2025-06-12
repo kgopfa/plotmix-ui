@@ -30,6 +30,13 @@ export const roundToPixel = (value: number): number => {
   return Math.round(value * devicePixelRatio) / devicePixelRatio;
 };
 
+// Helper function for smooth line positioning - allows sub-pixel positioning for anti-aliasing
+export const smoothLinePosition = (value: number): number => {
+  // For smooth lines, we want to allow sub-pixel positioning to enable anti-aliasing
+  // Only apply minimal rounding to avoid floating point precision issues
+  return Math.round(value * 100) / 100;
+};
+
 export const drawArrowhead = (
   graphics: Graphics,
   tipPoint: { x: number; y: number },
@@ -62,16 +69,24 @@ export const drawSmoothLine = (
   width: number,
   alpha: number
 ) => {
-  const startX = roundToPixel(start.x);
-  const startY = roundToPixel(start.y);
-  const endX = roundToPixel(end.x);
-  const endY = roundToPixel(end.y);
+  // Use smooth positioning to allow sub-pixel rendering for anti-aliasing
+  const startX = smoothLinePosition(start.x);
+  const startY = smoothLinePosition(start.y);
+  const endX = smoothLinePosition(end.x);
+  const endY = smoothLinePosition(end.y);
   
   graphics
     .clear()
     .moveTo(startX, startY)
     .lineTo(endX, endY)
-    .stroke({ color, width, alpha, alignment: 0.5 });
+    .stroke({ 
+      color, 
+      width, 
+      alpha, 
+      alignment: 0.5,
+      cap: 'round',      // Smooth rounded line caps
+      join: 'round'      // Smooth rounded line joins
+    });
 };
 
 export const drawDottedLine = (
@@ -111,13 +126,13 @@ export const drawLine = (
   const alpha = shape.opacity ?? 1;
   
   const start = {
-    x: roundToPixel(shape.lineOptions.points.start.x - shape.x),
-    y: roundToPixel(shape.lineOptions.points.start.y - shape.y)
+    x: smoothLinePosition(shape.lineOptions.points.start.x - shape.x),
+    y: smoothLinePosition(shape.lineOptions.points.start.y - shape.y)
   };
   
   const end = {
-    x: roundToPixel(shape.lineOptions.points.end.x - shape.x),
-    y: roundToPixel(shape.lineOptions.points.end.y - shape.y)
+    x: smoothLinePosition(shape.lineOptions.points.end.x - shape.x),
+    y: smoothLinePosition(shape.lineOptions.points.end.y - shape.y)
   };
 
   if (shape.lineOptions.dotted) {
@@ -172,10 +187,10 @@ function drawShapePath(graphics: Graphics, shape: AnimatedCanvasObject) {
     case 'line':
       if (shape.lineOptions?.points) {
         const { start, end } = shape.lineOptions.points;
-        const startX = roundToPixel(start.x - shape.x);
-        const startY = roundToPixel(start.y - shape.y);
-        const endX = roundToPixel(end.x - shape.x);
-        const endY = roundToPixel(end.y - shape.y);
+        const startX = smoothLinePosition(start.x - shape.x);
+        const startY = smoothLinePosition(start.y - shape.y);
+        const endX = smoothLinePosition(end.x - shape.x);
+        const endY = smoothLinePosition(end.y - shape.y);
         graphics
           .moveTo(startX, startY)
           .lineTo(endX, endY);
@@ -293,7 +308,9 @@ export function createShapeGraphics(shape: AnimatedCanvasObject, color?: string 
       color: fillColor, 
       width: shape.strokeWidth || 2, 
       alpha: shape.opacity ?? 1,
-      alignment: 0.5 // Center the stroke on the path for consistent appearance
+      alignment: 0.5, // Center the stroke on the path for consistent appearance
+      cap: 'round',    // Smooth rounded line caps
+      join: 'round'    // Smooth rounded line joins
     });
   } else {
     drawShapePath(graphics, shape);
@@ -417,7 +434,9 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasObject) {
         color: parseColor(shape.stroke || shape.fill), 
         width: shape.strokeWidth || width, 
         alpha: shape.opacity ?? 1,
-        alignment: 0.5 // Center the stroke on the path for consistent appearance
+        alignment: 0.5, // Center the stroke on the path for consistent appearance
+        cap: 'round',    // Smooth rounded line caps
+        join: 'round'    // Smooth rounded line joins
       });
     }
   }
