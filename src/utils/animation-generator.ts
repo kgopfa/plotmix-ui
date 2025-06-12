@@ -5,6 +5,8 @@ import type {
   ElementAnimation,
   AnimatableProperties,
   BaseAnimationConfig,
+  CanvasGroup,
+  GroupAnimatableProperties,
 } from '@/types/canvas';
 import { createShapeGraphics } from '@/utils/drawing-utils';
 
@@ -24,12 +26,22 @@ export interface PathAnimationConfig extends BaseAnimationConfig {
   attachDelay: number;
 }
 
+export interface GroupAnimationConfig extends BaseAnimationConfig {
+  type: 'group';
+  group: CanvasGroup;
+  elementTargets: Container[];
+}
+
 export function isColorAnimationConfig(config: BaseAnimationConfig): config is ColorAnimationConfig {
   return 'type' in config && config.type === 'color';
 }
 
 export function isPathAnimationConfig(config: BaseAnimationConfig): config is PathAnimationConfig {
   return 'type' in config && config.type === 'path';
+}
+
+export function isGroupAnimationConfig(config: BaseAnimationConfig): config is GroupAnimationConfig {
+  return 'type' in config && config.type === 'group';
 }
 
 function generateAnimationProperties(
@@ -66,6 +78,40 @@ function generateAnimationProperties(
     case 'color':
       return {
         fillColor: animeProps.fillColor ?? element.fill
+      };
+
+    default:
+      return {};
+  }
+}
+
+function generateGroupAnimationProperties(
+  animation: ElementAnimation,
+  group: CanvasGroup
+): GroupAnimatableProperties {
+  const animeProps = { ...animation.properties };
+
+  switch (animation.type) {
+    case 'move':
+      return {
+        x: group.x + (Number(animeProps.x) ?? 0),
+        y: group.y + (Number(animeProps.y) ?? 0)
+      };
+
+    case 'scale':
+      return {
+        scaleX: Number(animeProps.scaleX) ?? 1,
+        scaleY: Number(animeProps.scaleY) ?? 1
+      };
+
+    case 'rotate':
+      return {
+        rotation: (group.rotation ?? 0) + (Number(animeProps.rotation) ?? 0)
+      };
+
+    case 'fade':
+      return {
+        alpha: animeProps.alpha ?? 1
       };
 
     default:
@@ -145,6 +191,25 @@ export function generateAnimationConfig(
 
   return {
     ...baseConfig,
+    properties: animationProps
+  };
+}
+
+export function generateGroupAnimationConfig(
+  group: CanvasGroup,
+  animation: ElementAnimation,
+  elementTargets: Container[]
+): GroupAnimationConfig {
+  const animationProps = generateGroupAnimationProperties(animation, group);
+  
+  return {
+    type: 'group',
+    target: elementTargets[0], // We'll apply to all targets in the timeline manager
+    elementTargets,
+    group,
+    duration: animation.duration,
+    startTime: animation.startTime,
+    ease: animation.easing ?? 'power1.out',
     properties: animationProps
   };
 } 

@@ -1,0 +1,124 @@
+import { useState, useEffect } from 'react';
+import type { 
+  CanvasGroup, 
+  ElementAnimation, 
+  AnimationType, 
+  GsapEase
+} from '@/types/canvas';
+
+type GroupInspectorChangeHandler = (
+  groupId: string,
+  prop: string,
+  value: string | number | boolean | ElementAnimation[]
+) => void;
+
+export function useGroupAnimationHandlers(
+  selectedGroup: CanvasGroup | null,
+  onGroupInspectorChange?: GroupInspectorChangeHandler
+) {
+  const [localGroupAnimations, setLocalGroupAnimations] = useState<ElementAnimation[]>(
+    selectedGroup?.animations ?? []
+  );
+
+  // Sync local animations when selected group changes
+  useEffect(() => {
+    if (selectedGroup) {
+      setLocalGroupAnimations(selectedGroup.animations);
+    } else {
+      setLocalGroupAnimations([]);
+    }
+  }, [selectedGroup]);
+
+  const handleGroupAnimationChange = (
+    animationId: string,
+    field: string,
+    value: string | number | boolean
+  ) => {
+    const updatedAnimations = localGroupAnimations.map(anim => {
+      if (anim.id !== animationId) return anim;
+
+      if (field === 'easing') {
+        return { ...anim, easing: value as GsapEase };
+      } else if (field === 'type') {
+        const newType = value as AnimationType;
+        let defaultProperties = {};
+        if (newType === 'rotate') {
+          defaultProperties = { rotation: 0 };
+        } else if (newType === 'scale') {
+          defaultProperties = { scaleX: 1, scaleY: 1 };
+        } else if (newType === 'move') {
+          defaultProperties = { x: 0, y: 0 };
+        } else if (newType === 'fade') {
+          defaultProperties = { alpha: 1 };
+        }
+        
+        return { 
+          ...anim, 
+          type: newType,
+          id: `${newType}-${animationId.split('-')[1]}`,
+          properties: defaultProperties
+        };
+      } else if (field.includes('.')) {
+        // Handle nested properties (e.g., 'properties.x')
+        const [parent, child] = field.split('.');
+        const parentKey = parent as keyof ElementAnimation;
+        const parentValue = anim[parentKey];
+        
+        if (typeof parentValue === 'object' && parentValue !== null) {
+          return {
+            ...anim,
+            [parent]: {
+              ...parentValue,
+              [child]: value
+            }
+          };
+        }
+        return anim;
+      } else {
+        return {
+          ...anim,
+          [field]: value
+        };
+      }
+    });
+
+    setLocalGroupAnimations(updatedAnimations);
+    if (onGroupInspectorChange && selectedGroup) {
+      onGroupInspectorChange(selectedGroup.id, 'animations', updatedAnimations);
+    }
+  };
+
+  const handleAddGroupAnimation = () => {
+    if (!selectedGroup || !onGroupInspectorChange) return;
+    
+    const type = 'rotate' as AnimationType;
+    
+    const newAnimation = {
+      id: `${type}-${localGroupAnimations.length + 1}`,
+      type,
+      startTime: 0,
+      duration: 2,
+      properties: { rotation: 0 },
+      easing: 'power1.inOut' as GsapEase
+    };
+
+    const updatedAnimations = [...localGroupAnimations, newAnimation];
+    setLocalGroupAnimations(updatedAnimations);
+    onGroupInspectorChange(selectedGroup.id, 'animations', updatedAnimations);
+  };
+
+  const handleDeleteGroupAnimation = (animationId: string) => {
+    if (!selectedGroup || !onGroupInspectorChange) return;
+    
+    const updatedAnimations = localGroupAnimations.filter(anim => anim.id !== animationId);
+    setLocalGroupAnimations(updatedAnimations);
+    onGroupInspectorChange(selectedGroup.id, 'animations', updatedAnimations);
+  };
+
+  return {
+    localGroupAnimations,
+    handleGroupAnimationChange,
+    handleAddGroupAnimation,
+    handleDeleteGroupAnimation
+  };
+} 

@@ -12,7 +12,7 @@ import { Inspector } from './panels/inspector';
 import { Timeline } from './timeline';
 import { Toolbar } from './canvas/toolbar';
 import { MaskOverlay } from './canvas/mask-overlay';
-import { AnimatedCanvasObject, ElementAnimation } from '@/types/canvas';
+import { AnimatedCanvasObject, ElementAnimation, CanvasGroup } from '@/types/canvas';
 import { Canvas } from './canvas';
 import { FederatedPointerEvent, Container } from 'pixi.js';
 import type { CanvasRef } from './canvas';
@@ -30,6 +30,7 @@ import { OptionsBar } from './options';
 export default function EditorCanvas() {
   const [canvasObjects, setCanvasObjects] = useState<AnimatedCanvasObject[]>([]);
   const [selectedObjects, setSelectedObjects] = useState<AnimatedCanvasObject[]>([]);
+  const [selectedGroups, setSelectedGroups] = useState<CanvasGroup[]>([]);
   const [tool, setTool] = useState<ToolType>('select');
   const [maskPos, setMaskPos] = useState<{ x: number, y: number } | null>(null);
   const [lineStartPoint, setLineStartPoint] = useState<{ x: number, y: number } | null>(null);
@@ -311,10 +312,11 @@ export default function EditorCanvas() {
     if (dimensions.width > 0 && canvasObjects.length > 0 && gsapManager) {
       // Small delay to ensure canvas refs are ready
       setTimeout(() => {
-        gsapManager.buildAnimationTimeline(canvasObjects);
+        const allGroups = groupManager.getAllGroups();
+        gsapManager.buildAnimationTimeline(canvasObjects, allGroups);
       }, 10);
     }
-  }, [canvasObjects, dimensions, gsapManager]);
+  }, [canvasObjects, dimensions, gsapManager, groupManager]);
 
   useEffect(() => {
     return timeManager.subscribe(({ isPlaying, elapsedTime }) => {
@@ -864,10 +866,50 @@ export default function EditorCanvas() {
 
   // Subscribe to selection updates
   useEffect(() => {
-    return selectionManager.subscribe((selectedElements) => {
+    return selectionManager.subscribe((selectedElements, selectedGroups) => {
       setSelectedObjects(selectedElements);
+      setSelectedGroups(selectedGroups);
     });
   }, [selectionManager]);
+
+  const handleGroupInspectorChange = (
+    groupId: string,
+    prop: string,
+    value: string | number | boolean | ElementAnimation[]
+  ) => {
+    if (prop === 'animations') {
+      // Update group animations
+      const group = groupManager.getGroup(groupId);
+      if (group) {
+        group.animations = value as ElementAnimation[];
+        
+        // Get all groups for the timeline rebuild
+        const allGroups = groupManager.getAllGroups();
+        
+        // Rebuild timeline after group animation changes
+        setTimeout(() => {
+          gsapManager.buildAnimationTimeline(canvasObjects, allGroups);
+        }, 0);
+      }
+    } else {
+      // Handle other group property changes
+      if (prop === 'name') {
+        const group = groupManager.getGroup(groupId);
+        if (group) {
+          group.name = value as string;
+        }
+      } else if (prop === 'x' || prop === 'y' || prop === 'rotation') {
+        if (prop === 'x' || prop === 'y') {
+          groupManager.updateGroupPosition(groupId, 
+            prop === 'x' ? value as number : groupManager.getGroup(groupId)?.x || 0,
+            prop === 'y' ? value as number : groupManager.getGroup(groupId)?.y || 0
+          );
+        } else if (prop === 'rotation') {
+          groupManager.updateGroupRotation(groupId, value as number);
+        }
+      }
+    }
+  };
 
   // Use a ref to access current elements to avoid dependency issues
   const elementsRef = useRef(canvasObjects);
@@ -1434,7 +1476,9 @@ export default function EditorCanvas() {
             >
               <Inspector
                 selectedElement={selectedObjects[0] || null}
+                selectedGroup={selectedGroups.length === 1 ? selectedGroups[0] : null}
                 onInspectorChange={handleInspectorChange}
+                onGroupInspectorChange={handleGroupInspectorChange}
               />
             </div>
             

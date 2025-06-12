@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { 
   AnimatedCanvasObject,
-  ElementAnimation
+  ElementAnimation,
+  CanvasGroup
 } from '@/types/canvas';
 import { PropertiesTab } from './tabs/properties';
 import { AnimationsTab } from './tabs/animations';
+import { GroupPropertiesTab } from './tabs/group-properties';
+import { GroupAnimationsTab } from './tabs/group-animations';
 import { useAnimationHandlers } from '../../../hooks/use-animation-handlers';
+import { useGroupAnimationHandlers } from '../../../hooks/use-group-animation-handlers';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
 
 interface InspectorProps {
   selectedElement: AnimatedCanvasObject | null;
+  selectedGroup: CanvasGroup | null;
   onInspectorChange: (
     prop: string,
     value: string | number | boolean | ElementAnimation[] | NonNullable<AnimatedCanvasObject['lineOptions']> | {
@@ -17,12 +22,22 @@ interface InspectorProps {
       elementId: string;
     }
   ) => void;
+  onGroupInspectorChange?: (
+    groupId: string,
+    prop: string,
+    value: string | number | boolean | ElementAnimation[]
+  ) => void;
 }
 
 // Main Inspector Component
 type Tab = 'properties' | 'animations';
 
-export function Inspector({ selectedElement, onInspectorChange }: InspectorProps) {
+export function Inspector({ 
+  selectedElement, 
+  selectedGroup, 
+  onInspectorChange, 
+  onGroupInspectorChange 
+}: InspectorProps) {
   const [activeTab, setActiveTab] = useState<Tab>('properties');
   const animationSelectionManager = AnimationSelectionManager.getInstance();
   
@@ -33,6 +48,13 @@ export function Inspector({ selectedElement, onInspectorChange }: InspectorProps
     handleAddAnimation,
     handleDeleteAnimation
   } = useAnimationHandlers(selectedElement, onInspectorChange);
+
+  const {
+    localGroupAnimations,
+    handleGroupAnimationChange,
+    handleAddGroupAnimation,
+    handleDeleteGroupAnimation
+  } = useGroupAnimationHandlers(selectedGroup, onGroupInspectorChange);
 
   // Listen for animation selections and auto-switch to animations tab
   useEffect(() => {
@@ -46,12 +68,15 @@ export function Inspector({ selectedElement, onInspectorChange }: InspectorProps
   // Clear animation selection when element changes
   useEffect(() => {
     animationSelectionManager.clearSelection();
-  }, [selectedElement?.id, animationSelectionManager]);
+  }, [selectedElement?.id, selectedGroup?.id, animationSelectionManager]);
 
-  if (!selectedElement) {
+  const isGroupSelected = selectedGroup && !selectedGroup.isDefaultGroup;
+  const hasSelection = selectedElement || isGroupSelected;
+
+  if (!hasSelection) {
     return (
       <div className="h-full p-2 text-gray-800">
-        <p>Select an element to edit properties</p>
+        <p>Select an element or group to edit properties</p>
       </div>
     );
   }
@@ -74,19 +99,36 @@ export function Inspector({ selectedElement, onInspectorChange }: InspectorProps
       </div>
 
       {activeTab === 'properties' ? (
-        <PropertiesTab
-          selectedElement={selectedElement}
-          onInspectorChange={onInspectorChange}
-        />
+        isGroupSelected ? (
+          <GroupPropertiesTab
+            selectedGroup={selectedGroup}
+            onGroupInspectorChange={onGroupInspectorChange!}
+          />
+        ) : (
+          <PropertiesTab
+            selectedElement={selectedElement!}
+            onInspectorChange={onInspectorChange}
+          />
+        )
       ) : (
-        <AnimationsTab
-          selectedElement={selectedElement}
-          localAnimations={localAnimations}
-          onAddAnimation={handleAddAnimation}
-          onDeleteAnimation={handleDeleteAnimation}
-          onAnimationChange={handleAnimationChange}
-          onEnterPathMode={handleEnterPathMode}
-        />
+        isGroupSelected ? (
+          <GroupAnimationsTab
+            selectedGroup={selectedGroup}
+            localAnimations={localGroupAnimations}
+            onAddAnimation={handleAddGroupAnimation}
+            onDeleteAnimation={handleDeleteGroupAnimation}
+            onAnimationChange={handleGroupAnimationChange}
+          />
+        ) : (
+          <AnimationsTab
+            selectedElement={selectedElement!}
+            localAnimations={localAnimations}
+            onAddAnimation={handleAddAnimation}
+            onDeleteAnimation={handleDeleteAnimation}
+            onAnimationChange={handleAnimationChange}
+            onEnterPathMode={handleEnterPathMode}
+          />
+        )
       )}
     </div>
   );

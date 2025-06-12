@@ -128,6 +128,18 @@ export interface CanvasGroup {
   y: number;
   rotation?: number; // Group rotation
   isDefaultGroup: boolean; // True for auto-created single-object groups
+  animations: ElementAnimation[]; // Group animations
+}
+
+export type ElementAnimationTarget = 'element' | 'group';
+
+export interface GroupAnimatableProperties {
+  x?: number;
+  y?: number;
+  rotation?: number;
+  scaleX?: number;
+  scaleY?: number;
+  alpha?: number;
 }
 
 export const EASING_OPTIONS: GsapEase[] = [

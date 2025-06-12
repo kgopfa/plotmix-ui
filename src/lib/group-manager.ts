@@ -1,4 +1,4 @@
-import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
+import type { AnimatedCanvasObject, CanvasGroup, ElementAnimation } from '@/types/canvas';
 
 // Simple ID generator
 const generateId = () => {
@@ -30,7 +30,8 @@ export class GroupManager {
       x: element.x,
       y: element.y,
       rotation: element.rotation || 0,
-      isDefaultGroup: true
+      isDefaultGroup: true,
+      animations: []
     };
 
     this.groups.set(group.id, group);
@@ -56,7 +57,8 @@ export class GroupManager {
       x: centerX,
       y: centerY,
       rotation: 0,
-      isDefaultGroup: false
+      isDefaultGroup: false,
+      animations: []
     };
 
     this.groups.set(group.id, group);
@@ -184,12 +186,37 @@ export class GroupManager {
             x: centerX,
             y: centerY,
             rotation: 0,
-            isDefaultGroup: false
+            isDefaultGroup: false,
+            animations: []
           };
           
           this.groups.set(groupId, group);
         }
       }
+    }
+  }
+
+  // Add group animation methods
+  public addGroupAnimation(groupId: string, animation: ElementAnimation): void {
+    const group = this.groups.get(groupId);
+    if (group) {
+      group.animations.push(animation);
+    }
+  }
+
+  public updateGroupAnimation(groupId: string, animationId: string, updates: Partial<ElementAnimation>): void {
+    const group = this.groups.get(groupId);
+    if (group) {
+      group.animations = group.animations.map(anim => 
+        anim.id === animationId ? { ...anim, ...updates } : anim
+      );
+    }
+  }
+
+  public removeGroupAnimation(groupId: string, animationId: string): void {
+    const group = this.groups.get(groupId);
+    if (group) {
+      group.animations = group.animations.filter(anim => anim.id !== animationId);
     }
   }
 } 

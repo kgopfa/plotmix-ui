@@ -1,14 +1,17 @@
 import { gsap } from 'gsap';
-import type { AnimatedCanvasObject } from '@/types/canvas';
+import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import type { CanvasRef } from '@/components/editor/canvas';
 import { PixiPlugin } from "gsap/PixiPlugin";
 import { MotionPathPlugin } from 'gsap/MotionPathPlugin';
 import * as PIXI from 'pixi.js';
 import { 
   generateAnimationConfig, 
+  generateGroupAnimationConfig,
   isColorAnimationConfig, 
-  isPathAnimationConfig 
+  isPathAnimationConfig,
+  isGroupAnimationConfig
 } from '@/utils/animation-generator';
+import { GroupManager } from '@/lib/group-manager';
 
 gsap.registerPlugin(PixiPlugin, MotionPathPlugin);
 PixiPlugin.registerPIXI(PIXI);
@@ -16,16 +19,18 @@ PixiPlugin.registerPIXI(PIXI);
 export class GSAPTimelineManager {
   private timeline: gsap.core.Timeline;
   private canvasRef: React.RefObject<CanvasRef | null> | null = null;
+  private groupManager: GroupManager;
 
   constructor() {
     this.timeline = gsap.timeline({ paused: true });
+    this.groupManager = GroupManager.getInstance();
   }
 
   setCanvasRef(ref: React.RefObject<CanvasRef | null>) {
     this.canvasRef = ref;
   }
 
-  buildAnimationTimeline(elements: AnimatedCanvasObject[]) {
+  buildAnimationTimeline(elements: AnimatedCanvasObject[], groups?: CanvasGroup[]) {
     const shapeRefs = this.canvasRef?.current?.getShapeRefs();
     if (!shapeRefs) {
       console.warn('No shape refs available, skipping timeline build');
@@ -39,6 +44,7 @@ export class GSAPTimelineManager {
     this.timeline.clear();
     this.timeline = gsap.timeline({ paused: true });
 
+    // Process element animations
     elements.forEach((element) => {
       if (element.isAnimationPath) return;
 
@@ -308,6 +314,79 @@ export class GSAPTimelineManager {
         }
       });
     });
+
+    // Process group animations
+    if (groups) {
+      groups.forEach((group) => {
+        if (group.isDefaultGroup || group.animations.length === 0) return;
+
+        group.animations.forEach((animation) => {
+          // Get all element targets in this group
+          const groupElements = this.groupManager.getElementsInGroup(group.id, elements);
+          const elementTargets = groupElements
+            .map(el => shapeRefs[el.id])
+            .filter(target => target && !target.destroyed && target.parent);
+
+          if (elementTargets.length === 0) return;
+
+          const config = generateGroupAnimationConfig(group, animation, elementTargets);
+
+          if (isGroupAnimationConfig(config)) {
+            // Apply animation to all elements in the group
+            config.elementTargets.forEach((target) => {
+              if (animation.type === 'move') {
+                // For move animations, calculate relative offset from group center
+                const element = groupElements.find(el => shapeRefs[el.id] === target);
+                if (element) {
+                  const offsetX = element.x - group.x;
+                  const offsetY = element.y - group.y;
+                  const newX = (config.properties.x || group.x) + offsetX;
+                  const newY = (config.properties.y || group.y) + offsetY;
+                  
+                  this.timeline.to(
+                    target,
+                    {
+                      pixi: { x: newX, y: newY },
+                      duration: config.duration,
+                      ease: config.ease,
+                    },
+                    config.startTime
+                  );
+                }
+              } else if (animation.type === 'rotate') {
+                // For rotate animations, rotate around group center
+                const element = groupElements.find(el => shapeRefs[el.id] === target);
+                if (element) {
+                  this.timeline.to(
+                    target,
+                    {
+                      pixi: { 
+                        rotation: config.properties.rotation || 0,
+                        transformOrigin: `${group.x}px ${group.y}px`
+                      },
+                      duration: config.duration,
+                      ease: config.ease,
+                    },
+                    config.startTime
+                  );
+                }
+              } else {
+                // For scale and fade, apply directly
+                this.timeline.to(
+                  target,
+                  {
+                    pixi: config.properties,
+                    duration: config.duration,
+                    ease: config.ease,
+                  },
+                  config.startTime
+                );
+              }
+            });
+          }
+        });
+      });
+    }
 
     this.timeline.pause(0);
   }
