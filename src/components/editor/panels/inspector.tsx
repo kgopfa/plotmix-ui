@@ -8,8 +8,8 @@ import { PropertiesTab } from './tabs/properties';
 import { AnimationsTab } from './tabs/animations';
 import { GroupPropertiesTab } from './tabs/group-properties';
 import { GroupAnimationsTab } from './tabs/group-animations';
-import { useAnimationHandlers } from '../../../hooks/use-animation-handlers';
-import { useGroupAnimationHandlers } from '../../../hooks/use-group-animation-handlers';
+import { useAnimationHandlers } from '@/hooks/use-animation-handlers';
+import { useGroupAnimationHandlers } from '@/hooks/use-group-animation-handlers';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
 
 interface InspectorProps {
