@@ -315,74 +315,78 @@ export class GSAPTimelineManager {
       });
     });
 
-    // Process group animations
-    if (groups) {
+    // Process group animations using group containers
+    const groupContainers = this.canvasRef?.current?.getGroupContainers();
+    if (groups && groupContainers) {
       groups.forEach((group) => {
         if (group.isDefaultGroup || group.animations.length === 0) return;
 
+        const groupContainer = groupContainers[group.id];
+        if (!groupContainer) return;
+
         group.animations.forEach((animation) => {
-          // Get all element targets in this group
-          const groupElements = this.groupManager.getElementsInGroup(group.id, elements);
-          const elementTargets = groupElements
-            .map(el => shapeRefs[el.id])
-            .filter(target => target && !target.destroyed && target.parent);
-
-          if (elementTargets.length === 0) return;
-
-          const config = generateGroupAnimationConfig(group, animation, elementTargets);
+          const config = generateGroupAnimationConfig(group, animation, [groupContainer]);
 
           if (isGroupAnimationConfig(config)) {
-            // Apply animation to all elements in the group
-            config.elementTargets.forEach((target) => {
-              if (animation.type === 'move') {
-                // For move animations, calculate relative offset from group center
-                const element = groupElements.find(el => shapeRefs[el.id] === target);
-                if (element) {
-                  const offsetX = element.x - group.x;
-                  const offsetY = element.y - group.y;
-                  const newX = (config.properties.x || group.x) + offsetX;
-                  const newY = (config.properties.y || group.y) + offsetY;
-                  
-                  this.timeline.to(
-                    target,
-                    {
-                      pixi: { x: newX, y: newY },
-                      duration: config.duration,
-                      ease: config.ease,
-                    },
-                    config.startTime
-                  );
-                }
-              } else if (animation.type === 'rotate') {
-                // For rotate animations, rotate around group center
-                const element = groupElements.find(el => shapeRefs[el.id] === target);
-                if (element) {
-                  this.timeline.to(
-                    target,
-                    {
-                      pixi: { 
-                        rotation: config.properties.rotation || 0,
-                        transformOrigin: `${group.x}px ${group.y}px`
-                      },
-                      duration: config.duration,
-                      ease: config.ease,
-                    },
-                    config.startTime
-                  );
-                }
-              } else {
-                // For scale and fade, apply directly
-                this.timeline.to(
-                  target,
-                  {
-                    pixi: config.properties,
-                    duration: config.duration,
-                    ease: config.ease,
+            const baseConfig = {
+              duration: config.duration,
+              ease: config.ease,
+            };
+
+            if (animation.type === 'move') {
+              // Animate the container position directly
+              const targetX = config.properties.x || group.x;
+              const targetY = config.properties.y || group.y;
+              
+              this.timeline.to(
+                groupContainer,
+                {
+                  pixi: { x: targetX, y: targetY },
+                  ...baseConfig,
+                },
+                config.startTime
+              );
+            } else if (animation.type === 'rotate') {
+              // Animate container rotation - use degrees directly (same as individual elements)
+              const targetRotation = config.properties.rotation || 0;
+              
+              this.timeline.to(
+                groupContainer,
+                {
+                  pixi: { rotation: targetRotation },
+                  ...baseConfig,
+                },
+                config.startTime
+              );
+            } else if (animation.type === 'scale') {
+              // Animate container scale
+              const targetScaleX = config.properties.scaleX || 1;
+              const targetScaleY = config.properties.scaleY || 1;
+              
+              this.timeline.to(
+                groupContainer,
+                {
+                  pixi: { 
+                    scaleX: targetScaleX, 
+                    scaleY: targetScaleY 
                   },
-                  config.startTime
-                );
-              }
-            });
+                  ...baseConfig,
+                },
+                config.startTime
+              );
+            } else if (animation.type === 'fade') {
+              // Animate container alpha
+              const targetAlpha = config.properties.alpha || 1;
+              
+              this.timeline.to(
+                groupContainer,
+                {
+                  pixi: { alpha: targetAlpha },
+                  ...baseConfig,
+                },
+                config.startTime
+              );
+            }
           }
         });
       });

@@ -40,6 +40,7 @@ export default function EditorCanvas() {
   });
   const [timelineState, setTimelineState] = useState<TimelineState>({
     tracks: [],
+    trackData: [],
     duration: 10,
     scale: 100
   });
@@ -324,6 +325,12 @@ export default function EditorCanvas() {
       gsapManager.handlePlayback(isPlaying, () => gsapManager.updateTime(timeManager.getState().elapsedTime));
     });
   }, [timeManager, gsapManager]);
+
+  // Update timeline track data when elements or groups change
+  useEffect(() => {
+    const allGroups = groupManager.getAllGroups();
+    timelineManager.setTrackData(canvasObjects, allGroups);
+  }, [canvasObjects, timelineManager, groupManager]);
 
   // Clear snap guides when element selection changes or drag ends
   useEffect(() => {
@@ -757,6 +764,27 @@ export default function EditorCanvas() {
     }, 0);
   };
 
+  const handleGroupAnimationChange = (
+    groupId: string,
+    animationId: string,
+    update: { startTime: number; duration: number }
+  ) => {
+    const group = groupManager.getGroup(groupId);
+    if (group) {
+      group.animations = group.animations.map(anim =>
+        anim.id === animationId
+          ? { ...anim, startTime: update.startTime, duration: update.duration }
+          : anim
+      );
+      
+      // Update timeline with groups
+      const allGroups = groupManager.getAllGroups();
+      setTimeout(() => {
+        gsapManager.buildAnimationTimeline(canvasObjects, allGroups);
+      }, 0);
+    }
+  };
+
   const handleInspectorChange = (
     prop: string,
     value: string | number | boolean | ElementAnimation[] | NonNullable<AnimatedCanvasObject['lineOptions']> | {
@@ -885,6 +913,9 @@ export default function EditorCanvas() {
         
         // Get all groups for the timeline rebuild
         const allGroups = groupManager.getAllGroups();
+        
+        // Update timeline track data
+        timelineManager.setTrackData(canvasObjects, allGroups);
         
         // Rebuild timeline after group animation changes
         setTimeout(() => {
@@ -1403,6 +1434,7 @@ export default function EditorCanvas() {
                     height: Math.max(dimensions.height * 3, 4000)
                   }}
                   elements={showPaths ? canvasObjects : canvasObjects.filter(el => !el.isAnimationPath)}
+                  groups={groupManager.getAllGroups()}
                   selectedIds={selectedObjects.map(obj => obj.id)}
                   onElementSelect={handleSelectElement}
                   onElementDragEnd={handleElementDragEnd}
@@ -1496,11 +1528,13 @@ export default function EditorCanvas() {
       <div className="relative">
         <Timeline
           elements={canvasObjects.filter(el => !el.isAnimationPath)}
+          groups={groupManager.getAllGroups()}
           timelineState={timelineState}
           timeState={timeState}
           onPlayPause={handlePlayPause}
           onStop={handleStop}
           onAnimationChange={handleAnimationChange}
+          onGroupAnimationChange={handleGroupAnimationChange}
           selectionManager={selectionManager}
         />
       </div>

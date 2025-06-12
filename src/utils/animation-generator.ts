@@ -106,7 +106,7 @@ function generateGroupAnimationProperties(
 
     case 'rotate':
       return {
-        rotation: (group.rotation ?? 0) + (Number(animeProps.rotation) ?? 0)
+        rotation: Number(animeProps.rotation) ?? 0
       };
 
     case 'fade':

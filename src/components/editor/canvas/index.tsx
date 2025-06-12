@@ -4,7 +4,7 @@ import React from 'react';
 import { Application, extend } from '@pixi/react';
 import { Container, Graphics, Rectangle, Text } from 'pixi.js';
 import type { FederatedPointerEvent } from 'pixi.js';
-import type { AnimatedCanvasObject } from '@/types/canvas';
+import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { useImperativeHandle, forwardRef, useState, useRef, useEffect } from 'react';
 import { drawShape } from '@/utils/drawing-utils';
 import { createNewObject } from '@/lib/canvas-object-factory';
@@ -27,6 +27,7 @@ extend({ Container, Graphics, Text });
 interface CanvasProps {
   dimensions: { width: number; height: number };
   elements: AnimatedCanvasObject[];
+  groups?: CanvasGroup[];
   selectedIds: string[];
   onElementSelect: (id: string | null, isMultiSelect?: boolean) => void;
   onElementDragEnd: (id: string, x: number, y: number) => void;
@@ -51,6 +52,7 @@ interface CanvasProps {
 
 export interface CanvasRef {
   getShapeRefs: () => Record<string, Container>;
+  getGroupContainers: () => Record<string, Container>;
   zoomIn: () => void;
   zoomOut: () => void;
   getViewport: () => Viewport | null;
@@ -82,6 +84,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   {
     dimensions,
     elements,
+    groups = [],
     selectedIds,
     onElementSelect,
     onElementDragEnd,
@@ -103,6 +106,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   ref
 ) {
   const shapeRefs = useRef<Record<string, Container>>({});
+  const groupContainers = useRef<Record<string, Container>>({});
   const viewportRef = useRef<Viewport | null>(null);
   const HANDLE_SIZE = 10;
   const drawingRef = useRef<Graphics | null>(null);
@@ -120,8 +124,19 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   // Calculate the canvas scale factor based on device pixel ratio and any additional scaling
   const canvasScaleFactor = useRef(window.devicePixelRatio || 1);
 
+  // Clean up group containers when groups are removed
+  useEffect(() => {
+    const currentGroupIds = new Set(groups.map(g => g.id));
+    Object.keys(groupContainers.current).forEach(groupId => {
+      if (!currentGroupIds.has(groupId)) {
+        delete groupContainers.current[groupId];
+      }
+    });
+  }, [groups]);
+
   useImperativeHandle(ref, () => ({
     getShapeRefs: () => shapeRefs.current,
+    getGroupContainers: () => groupContainers.current,
     zoomIn: () => {
       const viewport = viewportRef.current;
       if (!viewport) return;
@@ -980,7 +995,96 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
             onPointerUpOutside={handlePointerUp}
           />
 
-          {elements.map((el) => {
+          {/* Render group containers first */}
+          {groups.filter(group => !group.isDefaultGroup).map((group) => {
+            const groupElements = elements.filter(el => el.groupId === group.id);
+            
+            return (
+              <pixiContainer
+                key={`group-${group.id}`}
+                x={group.x}
+                y={group.y}
+                rotation={(group.rotation || 0) * Math.PI / 180}
+                ref={(node) => {
+                  if (node) groupContainers.current[group.id] = node;
+                }}
+              >
+                {/* Render elements as children of the group container */}
+                {groupElements.map((el) => {
+                  // Calculate element position relative to group center
+                  const relativeX = el.x - group.x;
+                  const relativeY = el.y - group.y;
+                  
+                  return (
+                    <pixiContainer
+                      key={el.id}
+                      x={relativeX}
+                      y={relativeY}
+                      pivot={{ x: 0, y: 0 }}
+                      interactive={true}
+                      eventMode="dynamic"
+                      hitArea={(el.type === 'path' || el.type === 'line' || el.type === 'image')
+                        ? new Rectangle(-el.width / 2, -el.height / 2, el.width, el.height)
+                        : undefined
+                      }
+                      rotation={el.rotation || 0}
+                      onPointerDown={handlePointerDown(el.id, el.x, el.y)}
+                      onPointerUp={handlePointerUp}
+                      onPointerUpOutside={handlePointerUp}
+                      onPointerOver={handleElementMouseMove(el.id)}
+                      onPointerOut={handleElementMouseLeave(el.id)}
+                      ref={(node) => {
+                        if (node) shapeRefs.current[el.id] = node;
+                      }}
+                    >
+                      <pixiGraphics draw={(g) => drawShape(g, el)} />
+
+                      {/* Render text separately for text elements */}
+                      {el.type === 'text' && editingTextId !== el.id && (
+                        <pixiText
+                          text={el.text || 'Text'}
+                          anchor={{ x: 0, y: 0 }}
+                          x={-el.width / 2 + 8}
+                          y={-el.height / 2 + 8}
+                          alpha={el.opacity ?? 1}
+                          style={{
+                            fontFamily: el.fontFamily || 'Arial, sans-serif',
+                            fontSize: el.fontSize || 16,
+                            fontWeight: (el.fontWeight as 'normal' | 'bold' | 'bolder' | 'lighter' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900') || 'normal',
+                            fontStyle: (el.fontStyle as 'normal' | 'italic' | 'oblique') || 'normal',
+                            fill: el.fill || '#000000',
+                            align: (el.textAlign as 'left' | 'center' | 'right') || 'left',
+                            lineHeight: el.lineHeight || 1.2,
+                            wordWrap: true,
+                            wordWrapWidth: el.width - 16,
+                          }}
+                        />
+                      )}
+
+                      {/* Show hover outline when hovered but not selected */}
+                      {hoveredId === el.id && !selectedIds.includes(el.id) && (
+                        <HoverOutline element={el} />
+                      )}
+
+                      {/* Show selection outline for all selected elements */}
+                      {selectedIds.includes(el.id) && (
+                        <ObjectSelect
+                          element={el}
+                          scaleFactor={canvasScaleFactor.current}
+                        />
+                      )}
+                    </pixiContainer>
+                  );
+                })}
+              </pixiContainer>
+            );
+          })}
+
+          {/* Render elements that are not in custom groups */}
+          {elements.filter(el => {
+            const group = groups.find(g => g.id === el.groupId);
+            return !group || group.isDefaultGroup;
+          }).map((el) => {
             // Handle all element types consistently, including SVGs
             return (
               <pixiContainer

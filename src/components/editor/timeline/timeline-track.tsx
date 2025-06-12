@@ -1,4 +1,4 @@
-import { AnimatedCanvasObject } from '@/types/canvas';
+import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { SelectionManager } from '@/lib/selection-manager';
 import { AnimationBlock } from './animation-block';
 
@@ -6,12 +6,15 @@ const MAX_DURATION_SECONDS = 120;
 const PIXELS_PER_SECOND = 100;
 const TIMELINE_WIDTH = MAX_DURATION_SECONDS * PIXELS_PER_SECOND;
 
+type TimelineItem = AnimatedCanvasObject | CanvasGroup;
+
 interface TimelineTrackProps {
-  element: AnimatedCanvasObject;
+  element: TimelineItem;
+  trackType?: 'element' | 'group';
   scale: number;
   currentTime: number;
   isSelected: boolean;
-  onAnimationClick?: (animation: AnimatedCanvasObject['animations'][0]) => void;
+  onAnimationClick?: (animation: { id: string; type: string; startTime: number; duration: number }) => void;
   onAnimationChange: (
     elementId: string,
     animationId: string,
@@ -21,26 +24,46 @@ interface TimelineTrackProps {
 
 export function TimelineTrack({
   element,
+  trackType,
   scale,
   currentTime,
   isSelected,
   onAnimationClick,
   onAnimationChange,
 }: TimelineTrackProps) {
+  // Determine if this is a group track
+  const isGroup = trackType === 'group' || ('elementIds' in element);
+  
+  // Get the appropriate properties
+  const name = element.name;
+  const animations = element.animations || [];
+  const id = element.id;
+
   const handleTrackClick = () => {
-    SelectionManager.getInstance().select(element);
+    if (isGroup) {
+      // For groups, we'll handle group selection in the main timeline component
+      // This is a placeholder for now
+    } else {
+      SelectionManager.getInstance().select(element as AnimatedCanvasObject);
+    }
   };
 
   return (
     <div
-      className={`h-8 flex items-center border-b border-gray-200 text-gray-700 cursor-pointer`}
+      className={`h-8 flex items-center border-b border-gray-200 text-gray-700 cursor-pointer ${
+        isSelected ? 'bg-blue-50' : ''
+      }`}
     >
       {/* Track Label */}
       <div
-        className={`w-32 px-2 text-sm font-medium truncate`}
+        className={`w-32 px-2 text-sm font-medium truncate flex items-center gap-1 ${
+          isSelected ? 'text-blue-600' : ''
+        }`}
         onClick={handleTrackClick}
       >
-        {element.name}
+        {isGroup && <span className="text-xs">📦</span>}
+        {!isGroup && <span className="text-xs">🔵</span>}
+        {name}
       </div>
 
       {/* Track Content */}
@@ -65,14 +88,14 @@ export function TimelineTrack({
         </div>
 
         {/* Animations */}
-        {element.animations.map((animation) => (
+        {animations.map((animation) => (
           <AnimationBlock
             key={animation.id}
             animation={animation}
             scale={scale}
             isSelected={isSelected}
             onClick={() => onAnimationClick?.(animation)}
-            onChange={(update) => onAnimationChange(element.id, animation.id, update)}
+            onChange={(update) => onAnimationChange(id, animation.id, update)}
           />
         ))}
 

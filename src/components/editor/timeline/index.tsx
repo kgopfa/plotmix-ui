@@ -1,27 +1,34 @@
 import { useRef, useState } from 'react';
 import { TimelineTrack } from '@/components/editor/timeline/timeline-track';
-import { AnimatedCanvasObject } from '@/types/canvas';
+import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { TimelineState } from '@/types/timeline';
 import { TimeManagerState } from '@/lib/time-manager';
 
 
 interface TimelineProps {
   elements: AnimatedCanvasObject[];
+  groups?: CanvasGroup[];
   timelineState: TimelineState;
   timeState: TimeManagerState;
   onPlayPause: () => void;
   onStop: () => void;
   onAnimationChange: (elementId: string, animationId: string, update: { startTime: number; duration: number }) => void;
-  selectionManager: { isSelected: (element: AnimatedCanvasObject) => boolean };
+  onGroupAnimationChange?: (groupId: string, animationId: string, update: { startTime: number; duration: number }) => void;
+  selectionManager: { 
+    isSelected: (element: AnimatedCanvasObject) => boolean;
+    getSelectedGroups: () => CanvasGroup[];
+  };
 }
 
 export function Timeline({
   elements,
+  groups = [],
   timelineState,
   timeState,
   onPlayPause,
   onStop,
   onAnimationChange,
+  onGroupAnimationChange,
   selectionManager,
 }: TimelineProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -40,6 +47,28 @@ export function Timeline({
     const milliseconds = Math.floor((time % 1) * 1000);
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
   };
+
+  // Create combined track data for unified display
+  const allTracks = [
+    ...elements.map(element => ({
+      id: element.id,
+      type: 'element' as const,
+      name: element.name,
+      item: element,
+      animations: element.animations,
+      isSelected: selectionManager.isSelected(element)
+    })),
+    ...groups
+      .filter(group => !group.isDefaultGroup) // Only show non-default groups
+      .map(group => ({
+        id: group.id,
+        type: 'group' as const,
+        name: group.name,
+        item: group,
+        animations: group.animations,
+        isSelected: selectionManager.getSelectedGroups().some(g => g.id === group.id)
+      }))
+  ];
 
   return (
     <footer className={`border-t border-gray-200 bg-white transition-all duration-200 ${
@@ -111,17 +140,27 @@ export function Timeline({
               </div>
             </div>
 
-            {/* Tracks */}
-            {elements.map((element) => (
+            {/* Tracks - unified display for elements and groups */}
+            {allTracks.map((track) => (
               <TimelineTrack
-                key={element.id}
-                element={element}
+                key={track.id}
+                element={track.item}
+                trackType={track.type}
                 scale={timelineState.scale}
                 currentTime={timeState.elapsedTime}
-                isSelected={selectionManager.isSelected(element)}
-                onAnimationChange={onAnimationChange}
+                isSelected={track.isSelected}
+                onAnimationChange={track.type === 'group' && onGroupAnimationChange 
+                  ? onGroupAnimationChange 
+                  : onAnimationChange
+                }
               />
             ))}
+            
+            {allTracks.length === 0 && (
+              <div className="p-8 text-center text-gray-500">
+                No elements or groups with animations to display
+              </div>
+            )}
           </div>
         </div>
       )}
