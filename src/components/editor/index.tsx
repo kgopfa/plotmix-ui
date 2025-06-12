@@ -1509,6 +1509,7 @@ export default function EditorCanvas() {
               <Inspector
                 selectedElement={selectedObjects[0] || null}
                 selectedGroup={selectedGroups.length === 1 ? selectedGroups[0] : null}
+                selectedElementsCount={selectedObjects.length}
                 onInspectorChange={handleInspectorChange}
                 onGroupInspectorChange={handleGroupInspectorChange}
               />
