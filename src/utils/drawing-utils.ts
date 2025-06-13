@@ -82,10 +82,7 @@ export const drawSmoothLine = (
     .stroke({ 
       color, 
       width, 
-      alpha, 
-      alignment: 0.5,
-      cap: 'round',      // Smooth rounded line caps
-      join: 'round'      // Smooth rounded line joins
+      alpha
     });
 };
 
