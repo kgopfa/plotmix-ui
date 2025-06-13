@@ -7,16 +7,13 @@ interface ToolbarProps {
   onExitPathMode?: () => void;
 }
 
-export function Toolbar({ 
-  currentTool, 
-  onToolChange, 
-  isPathMode, 
+export function Toolbar({
+  currentTool,
+  onToolChange,
+  isPathMode,
   onExitPathMode
 }: ToolbarProps) {
-
-
-
-  // Vertical toolbar used for both regular and path mode
+  
   const renderVerticalToolbar = () => (
     <div className="bg-white shadow-lg rounded-lg flex flex-col gap-2 p-2">
       <button
@@ -69,7 +66,7 @@ export function Toolbar({
       >
         <span className="text-xl">👆</span>
       </button>
-      
+
 
     </div>
   );
@@ -87,12 +84,12 @@ export function Toolbar({
             Cancel
           </button>
         </div>
-        
+
         {/* Vertical toolbar */}
         {renderVerticalToolbar()}
       </div>
     );
   }
-  
+
   return renderVerticalToolbar();
 }

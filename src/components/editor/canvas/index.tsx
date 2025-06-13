@@ -78,6 +78,8 @@ const DRAW_CURSOR = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/20
 
 const TEXT_CURSOR = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'20\' height=\'20\' viewBox=\'0 0 24 24\'%3E%3Cpath d=\'M12 20c-4.418 0-8-3.582-8-8s3.582-8 8-8 8 3.582 8 8-3.582 8-8 8zm0-14c-3.314 0-6 2.686-6 6s2.686 6 6 6 6-2.686 6-6-2.686-6-6-6z\' fill=\'black\'/%3E%3C/svg%3E") 0 20, auto';
 
+const CROSS_CURSOR = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'14\' height=\'14\' viewBox=\'0 0 24 24\'%3E%3Cpath d=\'M12 2v20M2 12h20\' stroke=\'black\' stroke-width=\'2\' stroke-linecap=\'round\'/%3E%3C/svg%3E") 12 12, crosshair';
+
 const setCursor = (cursor: string) => {
   document.body.style.cursor = cursor;
 };
@@ -558,6 +560,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         setCursor(LINE_CURSOR);
       } else if (tool === 'text') {
         setCursor(TEXT_CURSOR);
+      } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle') {
+        setCursor(CROSS_CURSOR);
       } else {
         setCursor(DEFAULT_CURSOR);
       }
@@ -760,6 +764,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         setCursor(LINE_CURSOR);
       } else if (tool === 'text') {
         setCursor(TEXT_CURSOR);
+      } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle') {
+        setCursor(CROSS_CURSOR);
       } else {
         setCursor(DEFAULT_CURSOR);
       }
@@ -850,6 +856,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           setCursor(LINE_CURSOR);
         } else if (tool === 'text') {
           setCursor(TEXT_CURSOR);
+        } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle') {
+          setCursor(CROSS_CURSOR);
         } else {
           setCursor(DEFAULT_CURSOR);
         }
@@ -875,6 +883,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           setCursor(LINE_CURSOR);
         } else if (tool === 'text') {
           setCursor(TEXT_CURSOR);
+        } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle') {
+          setCursor(CROSS_CURSOR);
         } else {
           setCursor(DEFAULT_CURSOR);
         }
@@ -897,6 +907,10 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       setCursor(DRAW_CURSOR);
     } else if (tool === 'line') {
       setCursor(LINE_CURSOR);
+    } else if (tool === 'text') {
+      setCursor(TEXT_CURSOR);
+    } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle') {
+      setCursor(CROSS_CURSOR);
     } else {
       setCursor(DEFAULT_CURSOR);
     }
