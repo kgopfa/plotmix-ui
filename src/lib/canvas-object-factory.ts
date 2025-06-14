@@ -1,4 +1,5 @@
 import type { AnimatedCanvasObject, ElementAnimation } from '@/types/canvas';
+import * as PIXI from 'pixi.js';
 
 // Simple ID generator
 const generateId = () => {
@@ -7,6 +8,23 @@ const generateId = () => {
   }
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
 };
+
+// Helper function to get accurate character width using PIXI Text object
+function getCharWidthPixi(char: string, fontSize: number = 16, fontFamily: string = 'Arial, sans-serif'): number {
+  // Create a temporary Text object to measure the character
+  const tempText = new PIXI.Text(char, {
+    fontSize,
+    fontFamily,
+  });
+  
+  // Get the width from the text bounds
+  const bounds = tempText.getBounds();
+  
+  // Clean up the temporary text object
+  tempText.destroy();
+  
+  return bounds.width;
+}
 
 type ShapeType = 'rectangle' | 'circle' | 'triangle' | 'line' | 'path' | 'image' | 'text' | 'textGroup' | 'character';
 
@@ -251,19 +269,8 @@ function createText(props: BaseObjectProps): AnimatedCanvasObject {
 function createCharacter(props: BaseObjectProps & { character: string; characterIndex: number; parentTextGroupId: string }): AnimatedCanvasObject {
   const fontSize = 16;
   
-  // Calculate character width based on character type
-  let charWidth;
-  if (props.character === ' ') {
-    charWidth = fontSize * 0.25; // Space character
-  } else if (props.character.match(/[iIlj1]/)) {
-    charWidth = fontSize * 0.35; // Narrow characters
-  } else if (props.character.match(/[mwMW]/)) {
-    charWidth = fontSize * 0.8; // Wide characters
-  } else if (props.character.match(/[A-Z]/)) {
-    charWidth = fontSize * 0.65; // Uppercase letters
-  } else {
-    charWidth = fontSize * 0.55; // Default lowercase/numbers
-  }
+  // Get accurate character width using PIXI measurement
+  const charWidth = getCharWidthPixi(props.character, fontSize, 'Arial, sans-serif');
   
   const height = fontSize * 1.5;
   
@@ -301,21 +308,10 @@ function createTextGroup(props: BaseObjectProps): AnimatedCanvasObject {
   const fontSize = 16;
   const letterSpacing = 0;
   
-  // Calculate accurate width based on character types
+  // Calculate accurate width using PIXI measurement
   let totalWidth = 0;
   characters.forEach((char) => {
-    let charWidth;
-    if (char === ' ') {
-      charWidth = fontSize * 0.25; // Space character
-    } else if (char.match(/[iIlj1]/)) {
-      charWidth = fontSize * 0.35; // Narrow characters
-    } else if (char.match(/[mwMW]/)) {
-      charWidth = fontSize * 0.8; // Wide characters
-    } else if (char.match(/[A-Z]/)) {
-      charWidth = fontSize * 0.65; // Uppercase letters
-    } else {
-      charWidth = fontSize * 0.55; // Default lowercase/numbers
-    }
+    const charWidth = getCharWidthPixi(char, fontSize, 'Arial, sans-serif');
     totalWidth += charWidth + letterSpacing;
   });
   
@@ -408,19 +404,8 @@ export function createTextGroupWithCharacters(
   let currentX = x - textGroup.width / 2;
   
   characters.forEach((char, index) => {
-    // Calculate character width
-    let charWidth;
-    if (char === ' ') {
-      charWidth = fontSize * 0.25;
-    } else if (char.match(/[iIlj1]/)) {
-      charWidth = fontSize * 0.35;
-    } else if (char.match(/[mwMW]/)) {
-      charWidth = fontSize * 0.8;
-    } else if (char.match(/[A-Z]/)) {
-      charWidth = fontSize * 0.65;
-    } else {
-      charWidth = fontSize * 0.55;
-    }
+    // Get accurate character width using PIXI measurement
+    const charWidth = getCharWidthPixi(char, fontSize, 'Arial, sans-serif');
     
     // Position character at its center
     const charX = currentX + charWidth / 2;
