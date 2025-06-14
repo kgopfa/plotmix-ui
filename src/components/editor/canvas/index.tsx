@@ -21,6 +21,7 @@ import { GridOverlay } from './grid-overlay';
 import { GridConfig } from '../../../utils/grid-utils';
 import { SnapGuides } from './snap-guides';
 import { SnapGuide } from '../../../utils/element-snapping';
+import { AnimatedTextGroup } from './animated-text-group';
 
 extend({ Container, Graphics, Text });
 
@@ -447,14 +448,14 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
     if (!element) return;
 
-    // For text elements, handle double-click to edit, single click to drag
-    if (element.type === 'text') {
+    // For text and textGroup elements, handle double-click to edit, single click to drag
+    if (element.type === 'text' || element.type === 'textGroup') {
       // Check if this is a double-click
       const currentTime = Date.now();
       const lastClickTime = textClickTimeRef.current.get(id) || 0;
       const timeDiff = currentTime - lastClickTime;
 
-      console.log('Text click detected:', { id, currentTime, lastClickTime, timeDiff });
+      console.log('Text click detected:', { id, currentTime, lastClickTime, timeDiff, type: element.type });
 
       if (timeDiff < 300) { // Double-click detected (within 300ms)
         console.log('Double-click detected, entering edit mode for:', id);
@@ -558,7 +559,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         setCursor(DRAW_CURSOR);
       } else if (tool === 'line') {
         setCursor(LINE_CURSOR);
-      } else if (tool === 'text') {
+      } else if (tool === 'text' || tool === 'textGroup') {
         setCursor(TEXT_CURSOR);
       } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle') {
         setCursor(CROSS_CURSOR);
@@ -762,7 +763,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         setCursor(DRAW_CURSOR);
       } else if (tool === 'line') {
         setCursor(LINE_CURSOR);
-      } else if (tool === 'text') {
+      } else if (tool === 'text' || tool === 'textGroup') {
         setCursor(TEXT_CURSOR);
       } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle') {
         setCursor(CROSS_CURSOR);
@@ -775,6 +776,20 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   const handleTextChange = (id: string, text: string) => {
     if (onTextChange) {
       onTextChange(id, text);
+    }
+    
+    // For textGroup elements, we need to update the characters array
+    const element = elements.find(el => el.id === id);
+    if (element && element.type === 'textGroup') {
+      // Dispatch a custom event to update the characters array
+      const updateCharactersEvent = new CustomEvent('update-text-group-characters', {
+        detail: {
+          id,
+          text,
+          characters: text.split('')
+        }
+      });
+      window.dispatchEvent(updateCharactersEvent);
     }
   };
 
@@ -854,7 +869,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           setCursor(DRAW_CURSOR);
         } else if (tool === 'line') {
           setCursor(LINE_CURSOR);
-        } else if (tool === 'text') {
+        } else if (tool === 'text' || tool === 'textGroup') {
           setCursor(TEXT_CURSOR);
         } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle') {
           setCursor(CROSS_CURSOR);
@@ -881,7 +896,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           setCursor(DRAW_CURSOR);
         } else if (tool === 'line') {
           setCursor(LINE_CURSOR);
-        } else if (tool === 'text') {
+        } else if (tool === 'text' || tool === 'textGroup') {
           setCursor(TEXT_CURSOR);
         } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle') {
           setCursor(CROSS_CURSOR);
@@ -907,7 +922,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       setCursor(DRAW_CURSOR);
     } else if (tool === 'line') {
       setCursor(LINE_CURSOR);
-    } else if (tool === 'text') {
+    } else if (tool === 'text' || tool === 'textGroup') {
       setCursor(TEXT_CURSOR);
     } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle') {
       setCursor(CROSS_CURSOR);
@@ -1046,7 +1061,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                       pivot={{ x: 0, y: 0 }}
                       interactive={true}
                       eventMode="dynamic"
-                      hitArea={(el.type === 'path' || el.type === 'line' || el.type === 'image')
+                      hitArea={(el.type === 'path' || el.type === 'line' || el.type === 'image' || el.type === 'textGroup')
                         ? new Rectangle(-el.width / 2, -el.height / 2, el.width, el.height)
                         : undefined
                       }
@@ -1084,6 +1099,29 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                         />
                       )}
 
+                      {/* Render character elements */}
+                      {el.type === 'character' && editingTextId !== el.id && (
+                        <pixiText
+                          text={el.character || el.text || 'A'}
+                          anchor={{ x: 0.5, y: 0.5 }}
+                          x={0}
+                          y={0}
+                          alpha={el.opacity ?? 1}
+                          style={{
+                            fontFamily: el.fontFamily || 'Arial, sans-serif',
+                            fontSize: el.fontSize || 16,
+                            fontWeight: (el.fontWeight as 'normal' | 'bold' | 'bolder' | 'lighter' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900') || 'normal',
+                            fontStyle: (el.fontStyle as 'normal' | 'italic' | 'oblique') || 'normal',
+                            fill: el.fill || '#000000',
+                            align: 'center',
+                          }}
+                        />
+                      )}
+
+                      {el.type === 'textGroup' && (
+                        <AnimatedTextGroup element={el} />
+                      )}
+
                       {/* Show hover outline when hovered but not selected */}
                       {hoveredId === el.id && !selectedIds.includes(el.id) && (
                         <HoverOutline element={el} />
@@ -1117,7 +1155,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                 pivot={{ x: 0, y: 0 }}
                 interactive={true}
                 eventMode="dynamic"
-                hitArea={(el.type === 'path' || el.type === 'line' || el.type === 'image')
+                hitArea={(el.type === 'path' || el.type === 'line' || el.type === 'image' || el.type === 'textGroup')
                   ? new Rectangle(-el.width / 2, -el.height / 2, el.width, el.height)
                   : undefined
                 }
@@ -1154,6 +1192,30 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                       wordWrapWidth: el.width - 16,
                     }}
                   />
+                )}
+
+                {/* Render character elements */}
+                {el.type === 'character' && editingTextId !== el.id && (
+                  <pixiText
+                    text={el.character || el.text || 'A'}
+                    anchor={{ x: 0.5, y: 0.5 }}
+                    x={0}
+                    y={0}
+                    alpha={el.opacity ?? 1}
+                    style={{
+                      fontFamily: el.fontFamily || 'Arial, sans-serif',
+                      fontSize: el.fontSize || 16,
+                      fontWeight: (el.fontWeight as 'normal' | 'bold' | 'bolder' | 'lighter' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900') || 'normal',
+                      fontStyle: (el.fontStyle as 'normal' | 'italic' | 'oblique') || 'normal',
+                      fill: el.fill || '#000000',
+                      align: 'center',
+                    }}
+                  />
+                )}
+
+                {/* Render textGroup elements */}
+                {el.type === 'textGroup' && (
+                  <AnimatedTextGroup element={el} />
                 )}
 
                 {/* Show hover outline when hovered but not selected */}

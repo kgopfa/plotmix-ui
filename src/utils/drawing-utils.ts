@@ -320,6 +320,11 @@ export function createShapeGraphics(shape: AnimatedCanvasObject, color?: string 
 export function drawShape(graphics: Graphics, shape: AnimatedCanvasObject) {
   graphics.clear();
 
+  // TextGroup and character elements don't need background graphics - they render text directly
+  if (shape.type === 'textGroup' || shape.type === 'character') {
+    return;
+  }
+
   processImage(graphics, shape);
   
   if (shape.isAnimationPath) {

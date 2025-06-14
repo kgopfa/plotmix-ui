@@ -16,7 +16,7 @@ import { AnimatedCanvasObject, ElementAnimation, CanvasGroup } from '@/types/can
 import { Canvas } from './canvas';
 import { FederatedPointerEvent, Container } from 'pixi.js';
 import type { CanvasRef } from './canvas';
-import { createNewObject } from '@/lib/canvas-object-factory';
+import { createNewObject, createTextGroupWithCharacters } from '@/lib/canvas-object-factory';
 import { useCanvasDimensions } from '@/hooks/use-canvas-dimensions';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { ToolType } from '@/types/editor';
@@ -434,6 +434,24 @@ export default function EditorCanvas() {
         // If in path mode, exit after creating the path
         if (isPathMode) {
           addPathToAnimation(newElement);
+          setIsPathMode(false);
+          setAnimationTarget(null);
+        }
+      } else if (tool === 'textGroup') {
+        const snappedPos = snapPoint({ x: e.global.x, y: e.global.y }, e);
+        const { textGroup, characters } = createTextGroupWithCharacters(snappedPos.x, snappedPos.y, canvasObjects);
+        
+        // Add both the textGroup and all character elements to the canvas
+        setCanvasObjects(prev => [...prev, textGroup, ...characters]);
+        
+        // Select the textGroup (parent element)
+        selectionManager.select(textGroup);
+        setTool('select');
+        setMaskPos(null);
+
+        // If in path mode, exit after creating the path
+        if (isPathMode) {
+          addPathToAnimation(textGroup);
           setIsPathMode(false);
           setAnimationTarget(null);
         }

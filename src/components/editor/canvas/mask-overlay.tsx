@@ -66,5 +66,23 @@ export function MaskOverlay({
     );
   }
 
+  if (tool === 'textGroup') {
+    return (
+      <div style={{
+        ...style,
+        borderRadius: 4,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '12px',
+        fontWeight: 'bold',
+        color: '#888',
+        backgroundColor: 'rgba(255, 255, 255, 0.9)'
+      }}>
+        TG
+      </div>
+    );
+  }
+
   return null;
 } 
