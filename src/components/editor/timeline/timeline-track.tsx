@@ -57,7 +57,16 @@ export function TimelineTrack({
       // For groups, we'll handle group selection in the main timeline component
       // This is a placeholder for now
     } else {
-      SelectionManager.getInstance().select(element as AnimatedCanvasObject);
+      const animatedElement = element as AnimatedCanvasObject;
+      // Prevent character selection if parent textGroup is selected
+      if (animatedElement.type === 'character' && animatedElement.parentTextGroupId) {
+        const selectionManager = SelectionManager.getInstance();
+        const parentTextGroup = selectionManager.getSelected().find((el: AnimatedCanvasObject) => el.id === animatedElement.parentTextGroupId);
+        if (parentTextGroup) {
+          return; // Don't select character if parent textGroup is selected
+        }
+      }
+      SelectionManager.getInstance().select(animatedElement);
     }
   };
 

@@ -189,9 +189,13 @@ export function SceneExplorer({ elements, selectionManager }: SceneExplorerProps
                               <div 
                                 className={`px-2 py-1 rounded cursor-pointer hover:bg-gray-100 hover:text-orange-600 flex items-center gap-2 text-sm ${
                                   selectionManager.isSelected(character) ? 'bg-orange-100 text-orange-700' : ''
-                                }`}
+                                } ${selectionManager.isSelected(element) ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  // Prevent character selection if parent textGroup is selected
+                                  if (selectionManager.isSelected(element)) {
+                                    return;
+                                  }
                                   const isMultiSelect = e.metaKey || e.ctrlKey;
                                   selectionManager.select(character, isMultiSelect);
                                   animationSelectionManager.clearSelection();
@@ -359,9 +363,13 @@ export function SceneExplorer({ elements, selectionManager }: SceneExplorerProps
                                       <div 
                                         className={`px-2 py-1 rounded cursor-pointer hover:bg-gray-100 hover:text-orange-600 flex items-center gap-2 text-sm ${
                                           selectionManager.isSelected(character) ? 'bg-orange-100 text-orange-700' : ''
-                                        }`}
+                                        } ${selectionManager.isSelected(element) ? 'opacity-50 cursor-not-allowed' : ''}`}
                                         onClick={(e) => {
                                           e.stopPropagation();
+                                          // Prevent character selection if parent textGroup is selected
+                                          if (selectionManager.isSelected(element)) {
+                                            return;
+                                          }
                                           const isMultiSelect = e.metaKey || e.ctrlKey;
                                           selectionManager.select(character, isMultiSelect);
                                           animationSelectionManager.clearSelection();

@@ -529,42 +529,52 @@ export default function EditorCanvas() {
 
   const handleElementDragEnd = (id: string, x: number, y: number) => {
     setCanvasObjects(prevElements => {
+      const draggedElement = prevElements.find(el => el.id === id);
+      if (!draggedElement) return prevElements;
+
+      // Create a temporary element with the new position for snapping calculation
+      const tempElement = { ...draggedElement, x, y };
+      
+      // Apply element snapping first (including grid centers), then grid snapping as fallback
+      const elementSnapResult = snapElement(tempElement, prevElements, gridConfig);
+      const snappedPos = snapPoint({ x: elementSnapResult.x, y: elementSnapResult.y });
+
+      // Calculate the movement delta
+      const dx = snappedPos.x - draggedElement.x;
+      const dy = snappedPos.y - draggedElement.y;
+
       const updatedElements = prevElements.map((el) => {
-        if (el.id !== id) return el;
-
-        // Create a temporary element with the new position for snapping calculation
-        const tempElement = { ...el, x, y };
-        
-        // Apply element snapping first (including grid centers), then grid snapping as fallback
-        const elementSnapResult = snapElement(tempElement, prevElements, gridConfig);
-        const snappedPos = snapPoint({ x: elementSnapResult.x, y: elementSnapResult.y });
-
-        // For lines, we need to update both position and points
-        if (el.type === 'line' && el.lineOptions?.points) {
-          const dx = snappedPos.x - el.x;
-          const dy = snappedPos.y - el.y;
-          return {
-            ...el,
-            x: snappedPos.x,
-            y: snappedPos.y,
-            lineOptions: {
-              ...el.lineOptions,
-              points: {
-                start: {
-                  x: el.lineOptions.points.start.x + dx,
-                  y: el.lineOptions.points.start.y + dy
-                },
-                end: {
-                  x: el.lineOptions.points.end.x + dx,
-                  y: el.lineOptions.points.end.y + dy
+        if (el.id === id) {
+          // Update the dragged element
+          if (el.type === 'line' && el.lineOptions?.points) {
+            return {
+              ...el,
+              x: snappedPos.x,
+              y: snappedPos.y,
+              lineOptions: {
+                ...el.lineOptions,
+                points: {
+                  start: {
+                    x: el.lineOptions.points.start.x + dx,
+                    y: el.lineOptions.points.start.y + dy
+                  },
+                  end: {
+                    x: el.lineOptions.points.end.x + dx,
+                    y: el.lineOptions.points.end.y + dy
+                  }
                 }
               }
-            }
-          };
+            };
+          }
+          return { ...el, x: snappedPos.x, y: snappedPos.y };
         }
 
-        // For other shapes, just update position
-        return { ...el, x: snappedPos.x, y: snappedPos.y };
+        // If the dragged element is a textGroup, also move its character children
+        if (draggedElement.type === 'textGroup' && el.type === 'character' && el.parentTextGroupId === id) {
+          return { ...el, x: el.x + dx, y: el.y + dy };
+        }
+
+        return el;
       });
 
       // If this is an animation path element, update related animations

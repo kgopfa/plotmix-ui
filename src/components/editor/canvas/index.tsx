@@ -124,6 +124,14 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   // Add hover state
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
+  // Helper function to check if a character's parent textGroup is selected
+  const isCharacterParentSelected = (element: AnimatedCanvasObject): boolean => {
+    if (element.type === 'character' && element.parentTextGroupId) {
+      return selectedIds.includes(element.parentTextGroupId);
+    }
+    return false;
+  };
+
   // Add mouse position for line preview
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
 
@@ -441,12 +449,28 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
     const isMultiSelect = (e.nativeEvent && 'metaKey' in e.nativeEvent) ? 
       (e.nativeEvent.metaKey || e.nativeEvent.ctrlKey) : false;
-    onElementSelect(id, isMultiSelect);
 
     const pos = e.global;
     const element = elements.find(el => el.id === id);
 
     if (!element) return;
+
+    // Special handling for characters when their parent textGroup is selected
+    if (element.type === 'character' && element.parentTextGroupId && isCharacterParentSelected(element)) {
+      // Find the parent textGroup
+      const parentTextGroup = elements.find(el => el.id === element.parentTextGroupId);
+      if (parentTextGroup) {
+        // Delegate the drag operation to the parent textGroup
+        // Don't change selection - keep the textGroup selected
+        // But set up dragging for the textGroup instead
+        setDraggingId(parentTextGroup.id);
+        setDragOffset({ x: pos.x - parentTextGroup.x, y: pos.y - parentTextGroup.y });
+        setIsDraggingGroup(false);
+        return;
+      }
+    }
+
+    onElementSelect(id, isMultiSelect);
 
     // For text and textGroup elements, handle double-click to edit, single click to drag
     if (element.type === 'text' || element.type === 'textGroup') {
@@ -1066,11 +1090,11 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                         : undefined
                       }
                       rotation={el.rotation || 0}
-                      onPointerDown={handlePointerDown(el.id, el.x, el.y)}
-                      onPointerUp={handlePointerUp}
-                      onPointerUpOutside={handlePointerUp}
-                      onPointerOver={handleElementMouseMove(el.id)}
-                      onPointerOut={handleElementMouseLeave(el.id)}
+                                      onPointerDown={handlePointerDown(el.id, el.x, el.y)}
+                onPointerUp={handlePointerUp}
+                onPointerUpOutside={handlePointerUp}
+                                              onPointerOver={el.type === 'character' && isCharacterParentSelected(el) ? undefined : handleElementMouseMove(el.id)}
+                        onPointerOut={el.type === 'character' && isCharacterParentSelected(el) ? undefined : handleElementMouseLeave(el.id)}
                       ref={(node) => {
                         if (node) shapeRefs.current[el.id] = node;
                       }}
@@ -1120,13 +1144,13 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
                       {/* Note: textGroup elements don't render directly - only their child characters do */}
 
-                      {/* Show hover outline when hovered but not selected */}
-                      {hoveredId === el.id && !selectedIds.includes(el.id) && (
+                      {/* Show hover outline when hovered but not selected (but not for characters when parent textGroup is selected) */}
+                      {hoveredId === el.id && !selectedIds.includes(el.id) && !(el.type === 'character' && isCharacterParentSelected(el)) && (
                         <HoverOutline element={el} />
                       )}
 
-                      {/* Show selection outline for all selected elements */}
-                      {selectedIds.includes(el.id) && (
+                      {/* Show selection outline for all selected elements (but not for characters when parent textGroup is selected) */}
+                      {selectedIds.includes(el.id) && !(el.type === 'character' && isCharacterParentSelected(el)) && (
                         <ObjectSelect
                           element={el}
                           scaleFactor={canvasScaleFactor.current}
@@ -1146,28 +1170,28 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           }).map((el) => {
             // Handle all element types consistently, including SVGs
             return (
-              <pixiContainer
-                key={el.id}
-                x={el.x}
-                y={el.y}
-                pivot={{ x: 0, y: 0 }}
-                interactive={true}
-                eventMode="dynamic"
-                hitArea={(el.type === 'path' || el.type === 'line' || el.type === 'image' || el.type === 'textGroup')
-                  ? new Rectangle(-el.width / 2, -el.height / 2, el.width, el.height)
-                  : undefined
-                }
-                rotation={el.rotation || 0}
-                onPointerDown={handlePointerDown(el.id, el.x, el.y)}
-                onPointerUp={handlePointerUp}
-                onPointerUpOutside={handlePointerUp}
-                // REMOVED: onPointerMove handler - now handled globally
-                onPointerOver={handleElementMouseMove(el.id)}
-                onPointerOut={handleElementMouseLeave(el.id)}
-                ref={(node) => {
-                  if (node) shapeRefs.current[el.id] = node;
-                }}
-              >
+                                <pixiContainer
+                    key={el.id}
+                    x={el.x}
+                    y={el.y}
+                    pivot={{ x: 0, y: 0 }}
+                    interactive={el.type === 'character' ? !isCharacterParentSelected(el) : true}
+                    eventMode={el.type === 'character' && isCharacterParentSelected(el) ? "none" : "dynamic"}
+                    hitArea={(el.type === 'path' || el.type === 'line' || el.type === 'image' || el.type === 'textGroup')
+                      ? new Rectangle(-el.width / 2, -el.height / 2, el.width, el.height)
+                      : undefined
+                    }
+                    rotation={el.rotation || 0}
+                    onPointerDown={handlePointerDown(el.id, el.x, el.y)}
+                    onPointerUp={handlePointerUp}
+                    onPointerUpOutside={handlePointerUp}
+                    // REMOVED: onPointerMove handler - now handled globally
+                    onPointerOver={el.type === 'character' && isCharacterParentSelected(el) ? undefined : handleElementMouseMove(el.id)}
+                    onPointerOut={el.type === 'character' && isCharacterParentSelected(el) ? undefined : handleElementMouseLeave(el.id)}
+                    ref={(node) => {
+                      if (node) shapeRefs.current[el.id] = node;
+                    }}
+                  >
                 <pixiGraphics draw={(g) => drawShape(g, el)} />
 
                 {/* Render text separately for text elements */}
@@ -1213,13 +1237,13 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
                 {/* Note: textGroup elements don't render directly - only their child characters do */}
 
-                {/* Show hover outline when hovered but not selected */}
-                {hoveredId === el.id && !selectedIds.includes(el.id) && (
+                {/* Show hover outline when hovered but not selected (but not for characters when parent textGroup is selected) */}
+                {hoveredId === el.id && !selectedIds.includes(el.id) && !(el.type === 'character' && isCharacterParentSelected(el)) && (
                   <HoverOutline element={el} />
                 )}
 
-                {/* Show selection outline for all selected elements */}
-                {selectedIds.includes(el.id) && (
+                {/* Show selection outline for all selected elements (but not for characters when parent textGroup is selected) */}
+                {selectedIds.includes(el.id) && !(el.type === 'character' && isCharacterParentSelected(el)) && (
                   <ObjectSelect
                     element={el}
                     scaleFactor={canvasScaleFactor.current}
