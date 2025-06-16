@@ -10,7 +10,8 @@ interface SceneExplorerProps {
 }
 
 export function SceneExplorer({ elements, selectionManager }: SceneExplorerProps) {
-  const shapes = elements.filter(element => !element.isAnimationPath);
+  // Filter out animation paths and character elements (characters will be shown under their textGroup parent)
+  const shapes = elements.filter(element => !element.isAnimationPath && element.type !== 'character');
   const animationSelectionManager = AnimationSelectionManager.getInstance();
   const groupManager = GroupManager.getInstance();
   const [expandedShapes, setExpandedShapes] = useState<Set<string>>(new Set());
@@ -25,6 +26,13 @@ export function SceneExplorer({ elements, selectionManager }: SceneExplorerProps
     acc[groupId].push(element);
     return acc;
   }, {} as Record<string, AnimatedCanvasObject[]>);
+
+  // Helper function to get characters for a textGroup
+  const getCharactersForTextGroup = (textGroupId: string): AnimatedCanvasObject[] => {
+    return elements
+      .filter(el => el.type === 'character' && el.parentTextGroupId === textGroupId)
+      .sort((a, b) => (a.characterIndex || 0) - (b.characterIndex || 0));
+  };
 
   const getAnimationIcon = (animationType: string) => {
     const iconMap: Record<string, string> = {
@@ -46,7 +54,9 @@ export function SceneExplorer({ elements, selectionManager }: SceneExplorerProps
       'line': '—',
       'path': '〰️',
       'image': '🖼️',
-      'text': '📝'
+      'text': '📝',
+      'textGroup': '📄',
+      'character': '🔤'
     };
     return iconMap[shapeType] || '◻️';
   };
@@ -118,12 +128,18 @@ export function SceneExplorer({ elements, selectionManager }: SceneExplorerProps
                   const hasAnimations = element.animations.length > 0;
                   const isExpanded = expandedShapes.has(element.id);
                   
+                  // For textGroups, also check if we have characters to show
+                  const isTextGroup = element.type === 'textGroup';
+                  const characters = isTextGroup ? getCharactersForTextGroup(element.id) : [];
+                  const hasCharacters = characters.length > 0;
+                  const shouldShowExpandButton = hasAnimations || hasCharacters;
+                  
                   return (
                     <li key={element.id}>
                       {/* Single Element Item */}
                       <div className="flex items-center">
-                        {/* Collapse/Expand Button for animations */}
-                        {hasAnimations && (
+                        {/* Collapse/Expand Button for animations and characters */}
+                        {shouldShowExpandButton && (
                           <button
                             className="w-4 h-4 flex items-center justify-center hover:bg-gray-300 rounded mr-1"
                             onClick={(e) => {
@@ -158,13 +174,38 @@ export function SceneExplorer({ elements, selectionManager }: SceneExplorerProps
                           {hasAnimations && (
                             <span className="text-xs text-gray-500">({element.animations.length} anim)</span>
                           )}
+                          {hasCharacters && (
+                            <span className="text-xs text-gray-500">({characters.length} chars)</span>
+                          )}
                         </div>
                       </div>
                       
-                      {/* Animations Children */}
-                      {hasAnimations && isExpanded && (
+                      {/* Children: Characters and Animations */}
+                      {isExpanded && (
                         <ul className="ml-6 mt-1 space-y-1">
-                          {element.animations.map(animation => (
+                          {/* Characters Children (for textGroup) */}
+                          {hasCharacters && characters.map(character => (
+                            <li key={character.id}>
+                              <div 
+                                className={`px-2 py-1 rounded cursor-pointer hover:bg-gray-100 hover:text-orange-600 flex items-center gap-2 text-sm ${
+                                  selectionManager.isSelected(character) ? 'bg-orange-100 text-orange-700' : ''
+                                }`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const isMultiSelect = e.metaKey || e.ctrlKey;
+                                  selectionManager.select(character, isMultiSelect);
+                                  animationSelectionManager.clearSelection();
+                                }}
+                              >
+                                <span className="text-xs">{getShapeIcon(character.type)}</span>
+                                <span className="flex-1">{character.character || 'char'}</span>
+                                <span className="text-xs text-gray-400">#{character.characterIndex}</span>
+                              </div>
+                            </li>
+                          ))}
+                          
+                          {/* Animations Children */}
+                          {hasAnimations && element.animations.map(animation => (
                             <li key={animation.id}>
                               {/* Animation Item */}
                               <div 
@@ -260,10 +301,16 @@ export function SceneExplorer({ elements, selectionManager }: SceneExplorerProps
                           const hasAnimations = element.animations.length > 0;
                           const isExpanded = expandedShapes.has(element.id);
                           
+                          // For textGroups, also check if we have characters to show
+                          const isTextGroup = element.type === 'textGroup';
+                          const characters = isTextGroup ? getCharactersForTextGroup(element.id) : [];
+                          const hasCharacters = characters.length > 0;
+                          const shouldShowExpandButton = hasAnimations || hasCharacters;
+                          
                           return (
                             <li key={element.id}>
                               <div className="flex items-center">
-                                {hasAnimations && (
+                                {shouldShowExpandButton && (
                                   <button
                                     className="w-4 h-4 flex items-center justify-center hover:bg-gray-300 rounded mr-1"
                                     onClick={(e) => {
@@ -297,13 +344,38 @@ export function SceneExplorer({ elements, selectionManager }: SceneExplorerProps
                                   {hasAnimations && (
                                     <span className="text-xs text-gray-500">({element.animations.length} anim)</span>
                                   )}
+                                  {hasCharacters && (
+                                    <span className="text-xs text-gray-500">({characters.length} chars)</span>
+                                  )}
                                 </div>
                               </div>
                               
-                              {/* Animations for group elements */}
-                              {hasAnimations && isExpanded && (
+                              {/* Children: Characters and Animations for group elements */}
+                              {isExpanded && (
                                 <ul className="ml-6 mt-1 space-y-1">
-                                  {element.animations.map(animation => (
+                                  {/* Characters Children (for textGroup) */}
+                                  {hasCharacters && characters.map(character => (
+                                    <li key={character.id}>
+                                      <div 
+                                        className={`px-2 py-1 rounded cursor-pointer hover:bg-gray-100 hover:text-orange-600 flex items-center gap-2 text-sm ${
+                                          selectionManager.isSelected(character) ? 'bg-orange-100 text-orange-700' : ''
+                                        }`}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          const isMultiSelect = e.metaKey || e.ctrlKey;
+                                          selectionManager.select(character, isMultiSelect);
+                                          animationSelectionManager.clearSelection();
+                                        }}
+                                      >
+                                        <span className="text-xs">{getShapeIcon(character.type)}</span>
+                                        <span className="flex-1">{character.character || 'char'}</span>
+                                        <span className="text-xs text-gray-400">#{character.characterIndex}</span>
+                                      </div>
+                                    </li>
+                                  ))}
+                                  
+                                  {/* Animations for group elements */}
+                                  {hasAnimations && element.animations.map(animation => (
                                     <li key={animation.id}>
                                       <div 
                                         className={`px-2 py-1 rounded cursor-pointer hover:bg-gray-100 hover:text-green-600 flex items-center gap-2 text-sm ${

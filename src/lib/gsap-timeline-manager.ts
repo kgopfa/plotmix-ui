@@ -48,6 +48,87 @@ export class GSAPTimelineManager {
     elements.forEach((element) => {
       if (element.isAnimationPath) return;
 
+      // Special handling for textGroup animations - apply to all character children
+      if (element.type === 'textGroup') {
+        if (element.animations.length === 0) return;
+        
+        // Find all character children for this textGroup
+        const characterChildren = elements.filter(el => 
+          el.type === 'character' && el.parentTextGroupId === element.id
+        );
+        
+        if (characterChildren.length === 0) {
+          console.warn(`TextGroup ${element.id} has no character children`);
+          return;
+        }
+
+        element.animations.forEach((animation) => {
+          // Apply the animation to each character child
+          characterChildren.forEach((character) => {
+            const characterTarget = shapeRefs[character.id];
+            if (!characterTarget || characterTarget.destroyed || !characterTarget.parent) {
+              console.warn(`Skipping animation for character ${character.id} - invalid target`);
+              return;
+            }
+
+                         const config = generateAnimationConfig(character, animation, characterTarget);
+             
+             // Apply animation config to character
+             if (isPathAnimationConfig(config)) {
+               // For textGroup path animations, apply to each character
+               // Note: This uses the same path for all characters, they'll move together
+               const pathElement = config.pathElement;
+
+               if (pathElement.type === 'rectangle') {
+                 const segmentDuration = config.duration / 4;
+                 const pathStartTime = config.startTime;
+
+                 this.timeline.to(characterTarget, { pixi: { x: "+=" + pathElement.width }, duration: segmentDuration, ease: config.ease }, pathStartTime);
+                 this.timeline.to(characterTarget, { pixi: { y: "+=" + pathElement.height }, duration: segmentDuration, ease: config.ease }, pathStartTime + segmentDuration);
+                 this.timeline.to(characterTarget, { pixi: { x: "-=" + pathElement.width }, duration: segmentDuration, ease: config.ease }, pathStartTime + (segmentDuration * 2));
+                 this.timeline.to(characterTarget, { pixi: { y: "-=" + pathElement.height }, duration: segmentDuration, ease: config.ease }, pathStartTime + (segmentDuration * 3));
+               }
+               // Add other path types as needed...
+             } else if (isColorAnimationConfig(config)) {
+              this.timeline.to(
+                config.oldChild,
+                {
+                  pixi: { alpha: 0 },
+                  duration: config.duration,
+                  ease: config.ease,
+                },
+                config.startTime
+              );
+
+              this.timeline.to(
+                config.newChild,
+                {
+                  pixi: { alpha: 1 },
+                  duration: config.duration,
+                  ease: config.ease,
+                  onInterrupt: () => {
+                    characterTarget.removeChild(config.newChild);
+                  }
+                },
+                config.startTime
+              );
+            } else {
+              this.timeline.to(
+                config.target,
+                {
+                  pixi: config.properties,
+                  duration: config.duration,
+                  ease: config.ease,
+                },
+                config.startTime
+              );
+            }
+          });
+        });
+        
+        return; // Skip regular processing for textGroup
+      }
+
       const target = shapeRefs[element.id];
       if (!target || target.destroyed || !target.parent) {
         console.warn(`Skipping animation for element ${element.id} - invalid target`);

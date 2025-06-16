@@ -21,7 +21,7 @@ import { GridOverlay } from './grid-overlay';
 import { GridConfig } from '../../../utils/grid-utils';
 import { SnapGuides } from './snap-guides';
 import { SnapGuide } from '../../../utils/element-snapping';
-import { AnimatedTextGroup } from './animated-text-group';
+
 
 extend({ Container, Graphics, Text });
 
@@ -1118,9 +1118,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                         />
                       )}
 
-                      {el.type === 'textGroup' && (
-                        <AnimatedTextGroup element={el} />
-                      )}
+                      {/* Note: textGroup elements don't render directly - only their child characters do */}
 
                       {/* Show hover outline when hovered but not selected */}
                       {hoveredId === el.id && !selectedIds.includes(el.id) && (
@@ -1213,10 +1211,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                   />
                 )}
 
-                {/* Render textGroup elements */}
-                {el.type === 'textGroup' && (
-                  <AnimatedTextGroup element={el} />
-                )}
+                {/* Note: textGroup elements don't render directly - only their child characters do */}
 
                 {/* Show hover outline when hovered but not selected */}
                 {hoveredId === el.id && !selectedIds.includes(el.id) && (

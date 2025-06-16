@@ -26,6 +26,7 @@ interface TimelineTrackProps {
   isChild?: boolean;
   depth?: number;
   onToggleExpansion?: () => void;
+  customName?: string; // Allow custom name override
 }
 
 export function TimelineTrack({
@@ -41,12 +42,13 @@ export function TimelineTrack({
   isChild,
   depth = 0,
   onToggleExpansion,
+  customName,
 }: TimelineTrackProps) {
   // Determine if this is a group track
   const isGroup = isGroupProp ?? (trackType === 'group' || ('elementIds' in element));
   
   // Get the appropriate properties
-  const name = element.name;
+  const name = customName || element.name;
   const animations = element.animations || [];
   const id = element.id;
 
@@ -80,7 +82,7 @@ export function TimelineTrack({
         style={{ paddingLeft: `${8 + depth * 16}px` }}
         onClick={handleTrackClick}
       >
-        {isGroup && (
+        {(isGroup || ('type' in element && element.type === 'textGroup')) && (
           <button
             onClick={handleExpandToggle}
             className="w-4 h-4 flex items-center justify-center hover:bg-gray-200 rounded text-xs"
@@ -89,7 +91,8 @@ export function TimelineTrack({
           </button>
         )}
         {isGroup && <span className="text-xs">📦</span>}
-        {!isGroup && <span className="text-xs">{isChild ? '└' : '🔵'}</span>}
+        {!isGroup && 'type' in element && element.type === 'textGroup' && <span className="text-xs">📄</span>}
+        {!isGroup && !('type' in element && element.type === 'textGroup') && <span className="text-xs">{isChild ? '└' : '🔵'}</span>}
         <span className="truncate">{name}</span>
       </div>
 

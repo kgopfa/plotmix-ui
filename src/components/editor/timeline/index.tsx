@@ -34,7 +34,7 @@ export function Timeline({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [scrollLeft, setScrollLeft] = useState(0);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [expandedElements, setExpandedElements] = useState<Set<string>>(new Set());
 
   const handleScroll = () => {
     if (scrollContainerRef.current) {
@@ -49,13 +49,13 @@ export function Timeline({
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
   };
 
-  const toggleGroupExpansion = (groupId: string) => {
-    setExpandedGroups(prev => {
+  const toggleElementExpansion = (elementId: string) => {
+    setExpandedElements(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(groupId)) {
-        newSet.delete(groupId);
+      if (newSet.has(elementId)) {
+        newSet.delete(elementId);
       } else {
-        newSet.add(groupId);
+        newSet.add(elementId);
       }
       return newSet;
     });
@@ -84,47 +84,18 @@ export function Timeline({
       depth: number;
     }> = [];
 
-    // Add groups first
-    groups
-      .filter(group => !group.isDefaultGroup)
-      .forEach(group => {
-        const groupElements = elements.filter(el => el.groupId === group.id);
-        
-        tracks.push({
-          id: group.id,
-          type: 'group',
-          name: group.name,
-          item: group,
-          animations: group.animations,
-          isSelected: selectionManager.getSelectedGroups().some(g => g.id === group.id),
-          isGroup: true,
-          isExpanded: expandedGroups.has(group.id),
-          depth: 0
-        });
+    // Note: Groups are not shown in timeline, only in scene explorer
 
-        // Add group children if expanded
-        if (expandedGroups.has(group.id)) {
-          groupElements.forEach(element => {
-            tracks.push({
-              id: element.id,
-              type: 'element',
-              name: element.name,
-              item: element,
-              animations: element.animations,
-              isSelected: selectionManager.isSelected(element),
-              isChild: true,
-              parentGroupId: group.id,
-              depth: 1
-            });
-          });
-        }
-      });
-
-    // Add individual elements (not in custom groups)
+    // Add individual elements and all textGroups (excluding character elements)
     elements
       .filter(el => {
+        // Include all textGroups regardless of group membership
+        if (el.type === 'textGroup') {
+          return true;
+        }
+        // For other elements, only include those not in custom groups and not characters
         const group = groups.find(g => g.id === el.groupId);
-        return !group || group.isDefaultGroup;
+        return (el.type !== 'character') && (!group || group.isDefaultGroup);
       })
       .forEach(element => {
         tracks.push({
@@ -134,8 +105,30 @@ export function Timeline({
           item: element,
           animations: element.animations,
           isSelected: selectionManager.isSelected(element),
-          depth: 0
+          depth: 0,
+          isExpanded: element.type === 'textGroup' ? expandedElements.has(element.id) : undefined
         });
+        
+        // For textGroups, add character children if textGroup is expanded
+        if (element.type === 'textGroup' && expandedElements.has(element.id)) {
+          const characters = elements.filter(el => 
+            el.type === 'character' && el.parentTextGroupId === element.id
+          ).sort((a, b) => (a.characterIndex || 0) - (b.characterIndex || 0));
+          
+                        characters.forEach(character => {
+                tracks.push({
+                  id: character.id,
+                  type: 'element',
+                  name: `'${character.character || 'char'}'`,
+                  item: character,
+                  animations: character.animations,
+                  isSelected: selectionManager.isSelected(character),
+                  isChild: true,
+                  parentGroupId: element.id,
+                  depth: 1
+                });
+              });
+        }
       });
 
     return tracks;
@@ -230,7 +223,12 @@ export function Timeline({
                 isExpanded={track.isExpanded}
                 isChild={track.isChild}
                 depth={track.depth}
-                onToggleExpansion={track.isGroup ? () => toggleGroupExpansion(track.id) : undefined}
+                customName={track.name}
+                onToggleExpansion={
+                  (track.item as AnimatedCanvasObject).type === 'textGroup'
+                    ? () => toggleElementExpansion(track.id)
+                    : undefined
+                }
               />
             ))}
             

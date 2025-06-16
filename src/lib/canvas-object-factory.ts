@@ -16,13 +16,13 @@ function getCharWidthPixi(char: string, fontSize: number = 16, fontFamily: strin
     fontSize,
     fontFamily,
   });
-  
+
   // Get the width from the text bounds
   const bounds = tempText.getBounds();
-  
+
   // Clean up the temporary text object
   tempText.destroy();
-  
+
   return bounds.width;
 }
 
@@ -32,7 +32,7 @@ interface BaseObjectProps {
   x: number;
   y: number;
   elements: AnimatedCanvasObject[];
-  pathPoints?: Array<{x: number, y: number}>;
+  pathPoints?: Array<{ x: number, y: number }>;
   isPath?: boolean;
   imageData?: string;
   width?: number;
@@ -189,12 +189,12 @@ function createPath(props: BaseObjectProps): AnimatedCanvasObject {
   const maxY = Math.max(...ys);
   const width = maxX - minX;
   const height = maxY - minY;
-  
+
   // Calculate centerX and centerY relative to props.x and props.y
   // (which should now be the first point of the path)
   const centerX = (minX + maxX) / 2;
   const centerY = (minY + maxY) / 2;
-  
+
   // We'll center the element at the midpoint of the path's bounding box
   return {
     ...generateCommonAttributes('path', props),
@@ -240,7 +240,7 @@ function createImage(props: BaseObjectProps): AnimatedCanvasObject {
 function createText(props: BaseObjectProps): AnimatedCanvasObject {
   const width = props.width || 200;
   const height = props.height || 40;
-  
+
   return {
     ...generateCommonAttributes('text', props),
     type: 'text',
@@ -268,12 +268,12 @@ function createText(props: BaseObjectProps): AnimatedCanvasObject {
 
 function createCharacter(props: BaseObjectProps & { character: string; characterIndex: number; parentTextGroupId: string }): AnimatedCanvasObject {
   const fontSize = 16;
-  
+
   // Get accurate character width using PIXI measurement
   const charWidth = getCharWidthPixi(props.character, fontSize, 'Arial, sans-serif');
-  
+
   const height = fontSize * 1.5;
-  
+
   return {
     ...generateCommonAttributes('character', props),
     type: 'character',
@@ -307,18 +307,18 @@ function createTextGroup(props: BaseObjectProps): AnimatedCanvasObject {
   const characters = textContent.split('');
   const fontSize = 16;
   const letterSpacing = 0;
-  
+
   // Calculate accurate width using PIXI measurement
   let totalWidth = 0;
   characters.forEach((char) => {
     const charWidth = getCharWidthPixi(char, fontSize, 'Arial, sans-serif');
     totalWidth += charWidth + letterSpacing;
   });
-  
+
   // Remove the last letter spacing since there's no spacing after the last character
   const width = Math.max(totalWidth - letterSpacing, fontSize);
   const height = fontSize * 1.5; // Leave some room for ascenders/descenders
-  
+
   return {
     ...generateCommonAttributes('textGroup', props),
     type: 'textGroup',
@@ -351,7 +351,7 @@ export function createNewObject(
   x: number,
   y: number,
   canvasObjects: AnimatedCanvasObject[],
-  pathPoints?: Array<{x: number, y: number}>,
+  pathPoints?: Array<{ x: number, y: number }>,
   isPath?: boolean,
   imageData?: string,
   width?: number,
@@ -359,7 +359,7 @@ export function createNewObject(
   text?: string
 ): AnimatedCanvasObject {
   const props: BaseObjectProps = { x, y, elements: canvasObjects, pathPoints, isPath, imageData, width, height, text };
-  
+
   switch (type) {
     case 'rectangle':
       return createRectangle(props);
@@ -395,21 +395,21 @@ export function createTextGroupWithCharacters(
   const characters = textContent.split('');
   const fontSize = 16;
   const letterSpacing = 0;
-  
+
   // Create the main textGroup element first
   const textGroup = createTextGroup({ x, y, elements: canvasObjects, text: textContent });
-  
+
   // Calculate positions for each character
   const characterElements: AnimatedCanvasObject[] = [];
   let currentX = x - textGroup.width / 2;
-  
+
   characters.forEach((char, index) => {
     // Get accurate character width using PIXI measurement
     const charWidth = getCharWidthPixi(char, fontSize, 'Arial, sans-serif');
-    
+
     // Position character at its center
     const charX = currentX + charWidth / 2;
-    
+
     const characterElement = createCharacter({
       x: charX,
       y: y,
@@ -418,15 +418,15 @@ export function createTextGroupWithCharacters(
       characterIndex: index,
       parentTextGroupId: textGroup.id
     });
-    
+
     // Set the same groupId as the textGroup so they're grouped together
     characterElement.groupId = textGroup.groupId;
-    
+
     characterElements.push(characterElement);
-    
+
     // Move to next character position
     currentX += charWidth + letterSpacing;
   });
-  
+
   return { textGroup, characters: characterElements };
 }
