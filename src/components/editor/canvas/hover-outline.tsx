@@ -22,14 +22,16 @@ const HoverOutline: React.FC<HoverOutlineProps> = ({ element }) => {
       const endX = end.x - element.x;
       const endY = end.y - element.y;
       
-      // Calculate line bounding box with padding for hover indication
-      const padding = 10;
-      const minX = Math.min(startX, endX) - padding;
-      const maxX = Math.max(startX, endX) + padding;
-      const minY = Math.min(startY, endY) - padding;
-      const maxY = Math.max(startY, endY) + padding;
+      const ENDPOINT_SIZE = 7;
+      const halfSize = ENDPOINT_SIZE / 2;
       
-      // Draw hover rectangle covering the entire line length (more transparent than selection)
+      // Calculate line bounding box (just around the line itself)
+      const minX = Math.min(startX, endX);
+      const maxX = Math.max(startX, endX);
+      const minY = Math.min(startY, endY);
+      const maxY = Math.max(startY, endY);
+      
+      // Draw hover rectangle around the line (without extending to handles, more transparent than selection)
       graphics.rect(minX, minY, maxX - minX, maxY - minY);
       graphics.stroke({ width: 1, color: 0x74b9ff, alpha: 0.3 });
       
@@ -37,16 +39,14 @@ const HoverOutline: React.FC<HoverOutlineProps> = ({ element }) => {
       graphics.moveTo(startX, startY).lineTo(endX, endY);
       graphics.stroke({ width: 1, color: 0x74b9ff, alpha: 0.5 });
       
-      // Draw endpoint markers (more subtle than selection)
-      const ENDPOINT_SIZE = 10;
-      
-      // Start point (subtle blue)
-      graphics.circle(startX, startY, ENDPOINT_SIZE / 2);
+      // Draw endpoint markers (square handles like resize handles, more subtle than selection) - positioned to extend outside the hover rectangle
+      // Start point - square handle (subtle blue)
+      graphics.rect(startX - halfSize, startY - halfSize, ENDPOINT_SIZE, ENDPOINT_SIZE);
       graphics.fill({ color: 0x74b9ff, alpha: 0.4 });
       graphics.stroke({ color: 0x74b9ff, width: 1, alpha: 0.5 });
       
-      // End point (subtle blue)
-      graphics.circle(endX, endY, ENDPOINT_SIZE / 2);
+      // End point - square handle (subtle blue)
+      graphics.rect(endX - halfSize, endY - halfSize, ENDPOINT_SIZE, ENDPOINT_SIZE);
       graphics.fill({ color: 0x74b9ff, alpha: 0.4 });
       graphics.stroke({ color: 0x74b9ff, width: 1, alpha: 0.5 });
       

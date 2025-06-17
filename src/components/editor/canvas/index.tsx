@@ -464,9 +464,12 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       const clickX = pos.x;
       const clickY = pos.y;
       
-      // Check if clicking near the start point of any line (to close the shape)
-      const startDist = Math.hypot(clickX - start.x, clickY - start.y);
-      if (startDist <= HANDLE_SIZE) {
+      // Check if clicking near the start point of any line (to close the shape) - use same square bounds
+      const ENDPOINT_SIZE = 7;
+      const halfSize = ENDPOINT_SIZE / 2;
+      
+      if (clickX >= start.x - halfSize && clickX <= start.x + halfSize &&
+          clickY >= start.y - halfSize && clickY <= start.y + halfSize) {
         // Close the shape by connecting to the start point
         e.stopPropagation();
         onCanvasClick(e); // This will trigger the shape closing logic
@@ -537,18 +540,22 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       const clickX = pos.x;
       const clickY = pos.y;
 
-      // Check if clicking near start point
-      const startDist = Math.hypot(clickX - start.x, clickY - start.y);
-      if (startDist <= HANDLE_SIZE) {
+      // Check if clicking near start point (match visual endpoint size - square bounds)
+      const ENDPOINT_SIZE = 7;
+      const halfSize = ENDPOINT_SIZE / 2;
+      
+      // Check if click is within start point square bounds
+      if (clickX >= start.x - halfSize && clickX <= start.x + halfSize &&
+          clickY >= start.y - halfSize && clickY <= start.y + halfSize) {
         setDraggingEndpoint('start');
         setDraggingId(id);
         onElementSelect(id, isMultiSelect);
         return;
       }
 
-      // Check if clicking near end point
-      const endDist = Math.hypot(clickX - end.x, clickY - end.y);
-      if (endDist <= HANDLE_SIZE) {
+      // Check if clicking near end point (match visual endpoint size - square bounds)
+      if (clickX >= end.x - halfSize && clickX <= end.x + halfSize &&
+          clickY >= end.y - halfSize && clickY <= end.y + halfSize) {
         setDraggingEndpoint('end');
         setDraggingId(id);
         onElementSelect(id, isMultiSelect);

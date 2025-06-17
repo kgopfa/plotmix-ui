@@ -32,33 +32,33 @@ const ObjectSelect: React.FC<ObjectSelectProps> = ({
       const endX = end.x - element.x;
       const endY = end.y - element.y;
 
-      // Calculate line bounding box with padding for better selection
-      const padding = 10;
-      const minX = Math.min(startX, endX) - padding;
-      const maxX = Math.max(startX, endX) + padding;
-      const minY = Math.min(startY, endY) - padding;
-      const maxY = Math.max(startY, endY) + padding;
+      const ENDPOINT_SIZE = 7;
+      const halfSize = ENDPOINT_SIZE / 2;
+      
+      // Calculate line bounding box (just around the line itself)
+      const minX = Math.min(startX, endX);
+      const maxX = Math.max(startX, endX);
+      const minY = Math.min(startY, endY);
+      const maxY = Math.max(startY, endY);
 
-      // Draw selection rectangle covering the entire line length
+      // Draw selection rectangle around the line (without extending to handles)
       g.rect(minX, minY, maxX - minX, maxY - minY);
-      g.stroke({ width: 1, color: 0x74b9ff, alpha: 0.5 });
+      g.stroke({ width: 1, color: 0x74b9ff, alpha: 0.8 });
 
       // Draw the actual line for visual reference
       g.moveTo(startX, startY).lineTo(endX, endY);
       g.stroke({ width: 2, color: 0x74b9ff, alpha: 0.8 });
 
-      // Draw endpoint markers
-      const ENDPOINT_SIZE = 10;
+      // Draw endpoint markers (square handles like resize handles) - positioned to extend outside the selection rectangle
+      // Start point - square handle
+      g.rect(startX - halfSize, startY - halfSize, ENDPOINT_SIZE, ENDPOINT_SIZE);
+      g.fill({ color: 0xFFFFFF, alpha: 1 });
+      g.stroke({ color: 0x74b9ff, width: 1, alpha: 0.8 });
 
-      // Start point
-      g.circle(startX, startY, ENDPOINT_SIZE / 2);
-      g.fill({ color: 0x74b9ff, alpha: 0.8 });
-      g.stroke({ color: 0x74b9ff, width: 1 });
-
-      // End point
-      g.circle(endX, endY, ENDPOINT_SIZE / 2);
-      g.fill({ color: 0x74b9ff, alpha: 0.8 });
-      g.stroke({ color: 0x74b9ff, width: 1 });
+      // End point - square handle  
+      g.rect(endX - halfSize, endY - halfSize, ENDPOINT_SIZE, ENDPOINT_SIZE);
+      g.fill({ color: 0xFFFFFF, alpha: 1 });
+      g.stroke({ color: 0x74b9ff, width: 1, alpha: 0.8 });
 
       return; // Exit early for line elements
     }
