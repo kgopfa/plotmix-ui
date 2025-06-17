@@ -34,6 +34,7 @@ export default function EditorCanvas() {
   const [tool, setTool] = useState<ToolType>('select');
   const [maskPos, setMaskPos] = useState<{ x: number, y: number } | null>(null);
   const [lineStartPoint, setLineStartPoint] = useState<{ x: number, y: number } | null>(null);
+  const [isLineChaining, setIsLineChaining] = useState(false);
   const [timeState, setTimeState] = useState<TimeManagerState>({
     isPlaying: false,
     elapsedTime: 0
@@ -277,7 +278,21 @@ export default function EditorCanvas() {
     selectionManager.select(null);
   }, [selectionManager]);
 
+  // Function to exit line chaining mode
+  const exitLineChaining = useCallback(() => {
+    setLineStartPoint(null);
+    setIsLineChaining(false);
+    setTool('select');
+    setMaskPos(null);
+  }, []);
+
   const handleToolChange = useCallback((newTool: ToolType) => {
+    // If we're in line chaining mode and switching away from line tool, exit chaining
+    if (isLineChaining && newTool !== 'line') {
+      exitLineChaining();
+      return;
+    }
+    
     setTool(newTool);
     setMaskPos(null);
     
@@ -285,7 +300,7 @@ export default function EditorCanvas() {
     if (newTool !== 'image') {
       setPendingImageData(null);
     }
-  }, []);
+  }, [isLineChaining, exitLineChaining]);
 
   // Handle select all
   const handleSelectAll = useCallback(() => {
@@ -297,7 +312,9 @@ export default function EditorCanvas() {
     selectedElements: selectedObjects,
     onDeleteElement: handleDeleteElement,
     onToolChange: handleToolChange,
-    onSelectAll: handleSelectAll
+    onSelectAll: handleSelectAll,
+    isLineChaining,
+    onExitLineChaining: exitLineChaining
   });
 
   useEffect(() => {
@@ -332,6 +349,8 @@ export default function EditorCanvas() {
     timelineManager.setTrackData(canvasObjects, allGroups);
   }, [canvasObjects, timelineManager, groupManager]);
 
+
+
   // Clear snap guides when element selection changes or drag ends
   useEffect(() => {
     clearElementSnapGuides();
@@ -346,10 +365,32 @@ export default function EditorCanvas() {
           // First click - set start point with snapping
           const snappedStart = snapPoint({ x: e.global.x, y: e.global.y }, e);
           setLineStartPoint(snappedStart);
+          setIsLineChaining(true);
         } else {
-          // Second click - create line and reset with snapping
+          // Second+ click - create line and continue chaining with snapping
           const snappedEnd = snapPoint({ x: e.global.x, y: e.global.y }, e);
-          const { start: finalStart, end: finalEnd } = snapLine(lineStartPoint, snappedEnd, e);
+          
+          // Check if we're trying to close the shape by checking if snappedEnd is close to the ORIGINAL start point
+          const firstLineWithStartPoint = canvasObjects.find(obj => 
+            obj.type === 'line' && 
+            obj.lineOptions?.points?.start &&
+            Math.hypot(obj.lineOptions.points.start.x - lineStartPoint.x, obj.lineOptions.points.start.y - lineStartPoint.y) < 5
+          );
+          
+          let isClosingShape = false;
+          let finalEndPoint = snappedEnd;
+          
+          if (firstLineWithStartPoint?.lineOptions?.points) {
+            const originalStartPoint = firstLineWithStartPoint.lineOptions.points.start;
+            const distanceToOriginalStart = Math.hypot(snappedEnd.x - originalStartPoint.x, snappedEnd.y - originalStartPoint.y);
+            
+            if (distanceToOriginalStart <= 15) { // Slightly larger threshold for closing
+              isClosingShape = true;
+              finalEndPoint = originalStartPoint; // Snap exactly to the original start point
+            }
+          }
+          
+          const { start: finalStart, end: finalEnd } = snapLine(lineStartPoint, finalEndPoint, e);
           
           const newElement = createNewObject('line', finalStart.x, finalStart.y, canvasObjects, undefined, isPathMode);
           // Update line end point
@@ -364,9 +405,15 @@ export default function EditorCanvas() {
 
           setCanvasObjects(prev => [...prev, newElement]);
           selectionManager.select(newElement);
-          setTool('select');
-          setLineStartPoint(null);
-          setMaskPos(null);
+          
+          if (isClosingShape) {
+            // Shape is closed - exit line chaining mode
+            exitLineChaining();
+          } else {
+            // Continue chaining: set the end point as the new start point
+            setLineStartPoint(finalEnd);
+            // Keep the tool as 'line' and don't reset mask position to maintain preview
+          }
 
           // If in path mode, exit after creating the path
           if (isPathMode) {
@@ -1481,6 +1528,7 @@ export default function EditorCanvas() {
                   gridConfig={gridConfig}
                   snapGuides={elementSnapGuides}
                   lineStartPoint={lineStartPoint}
+                  isLineChaining={isLineChaining}
                 />
               )}
             </div>

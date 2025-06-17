@@ -7,13 +7,17 @@ interface UseKeyboardShortcutsProps {
   onDeleteElement: (elementId: string) => void;
   onToolChange?: (tool: ToolType) => void;
   onSelectAll?: () => void;
+  isLineChaining?: boolean;
+  onExitLineChaining?: () => void;
 }
 
 export function useKeyboardShortcuts({ 
   selectedElements, 
   onDeleteElement,
   onToolChange,
-  onSelectAll
+  onSelectAll,
+  isLineChaining = false,
+  onExitLineChaining
 }: UseKeyboardShortcutsProps) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -34,13 +38,17 @@ export function useKeyboardShortcuts({
         selectedElements.forEach(element => onDeleteElement(element.id));
       }
 
-      // Escape to switch to select tool
-      if (e.key === 'Escape' && onToolChange) {
-        onToolChange('select');
+      // Escape to exit line chaining mode or switch to select tool
+      if (e.key === 'Escape') {
+        if (isLineChaining && onExitLineChaining) {
+          onExitLineChaining();
+        } else if (onToolChange) {
+          onToolChange('select');
+        }
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [selectedElements, onDeleteElement, onToolChange, onSelectAll]);
+  }, [selectedElements, onDeleteElement, onToolChange, onSelectAll, isLineChaining, onExitLineChaining]);
 } 

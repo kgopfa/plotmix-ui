@@ -51,6 +51,8 @@ interface CanvasProps {
   snapGuides?: SnapGuide[];
   // Add line preview
   lineStartPoint?: { x: number; y: number } | null;
+  // Add line chaining state
+  isLineChaining?: boolean;
 }
 
 export interface CanvasRef {
@@ -108,6 +110,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     gridConfig,
     snapGuides = [],
     lineStartPoint,
+    isLineChaining = false,
   },
   ref
 ) {
@@ -454,6 +457,22 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     const element = elements.find(el => el.id === id);
 
     if (!element) return;
+
+    // Check for shape closing during line chaining mode
+    if (isLineChaining && lineStartPoint && element.type === 'line' && element.lineOptions?.points) {
+      const { start } = element.lineOptions.points;
+      const clickX = pos.x;
+      const clickY = pos.y;
+      
+      // Check if clicking near the start point of any line (to close the shape)
+      const startDist = Math.hypot(clickX - start.x, clickY - start.y);
+      if (startDist <= HANDLE_SIZE) {
+        // Close the shape by connecting to the start point
+        e.stopPropagation();
+        onCanvasClick(e); // This will trigger the shape closing logic
+        return;
+      }
+    }
 
     // Special handling for characters when their parent textGroup is selected
     if (element.type === 'character' && element.parentTextGroupId && isCharacterParentSelected(element)) {
@@ -1276,21 +1295,33 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
               eventMode="none"
               draw={(g) => {
                 g.clear();
-                g.moveTo(lineStartPoint.x, lineStartPoint.y);
-                g.lineTo(mousePos.x, mousePos.y);
-                g.stroke({ 
-                  width: 2, 
-                  color: 0x888888, 
-                  alpha: 0.7,
-                  cap: 'round',
-                  // Create dotted pattern
-                  alignment: 0.5
-                });
+                
+                // Check if we're in chaining mode and if mouse is near a point that can close the shape
+                let canCloseShape = false;
+                let snapToPoint = mousePos;
+                
+                if (isLineChaining) {
+                  // Find the first line we created (the one that started the chain)
+                  const firstLineWithStartPoint = elements.find(obj => 
+                    obj.type === 'line' && 
+                    obj.lineOptions?.points?.start &&
+                    Math.hypot(obj.lineOptions.points.start.x - lineStartPoint.x, obj.lineOptions.points.start.y - lineStartPoint.y) < 5
+                  );
+                  
+                  if (firstLineWithStartPoint?.lineOptions?.points) {
+                    const originalStartPoint = firstLineWithStartPoint.lineOptions.points.start;
+                    const distanceToOriginalStart = Math.hypot(mousePos.x - originalStartPoint.x, mousePos.y - originalStartPoint.y);
+                    
+                    if (distanceToOriginalStart <= 15) {
+                      canCloseShape = true;
+                      snapToPoint = originalStartPoint;
+                    }
+                  }
+                }
                 
                 // Manually draw dotted line for better control
-                g.clear();
-                const dx = mousePos.x - lineStartPoint.x;
-                const dy = mousePos.y - lineStartPoint.y;
+                const dx = snapToPoint.x - lineStartPoint.x;
+                const dy = snapToPoint.y - lineStartPoint.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 const dashLength = 8;
                 const gapLength = 4;
@@ -1310,7 +1341,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                   g.lineTo(endX, endY);
                   g.stroke({ 
                     width: 2, 
-                    color: 0x888888, 
+                    color: canCloseShape ? 0x4CAF50 : 0x888888, // Green when can close shape
                     alpha: 0.7,
                     cap: 'round'
                   });
@@ -1319,6 +1350,22 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                 // Draw start point indicator
                 g.circle(lineStartPoint.x, lineStartPoint.y, 4);
                 g.fill({ color: 0x888888, alpha: 0.7 });
+                
+                // Draw end point indicator - special styling if can close shape
+                if (canCloseShape) {
+                  // Draw a larger, green circle to indicate shape closing
+                  g.circle(snapToPoint.x, snapToPoint.y, 8);
+                  g.fill({ color: 0x4CAF50, alpha: 0.8 });
+                  g.stroke({ color: 0x2E7D32, width: 2 });
+                  
+                  // Draw inner circle
+                  g.circle(snapToPoint.x, snapToPoint.y, 4);
+                  g.fill({ color: 0xFFFFFF, alpha: 0.9 });
+                } else {
+                  // Regular end point indicator
+                  g.circle(snapToPoint.x, snapToPoint.y, 4);
+                  g.fill({ color: 0x888888, alpha: 0.7 });
+                }
               }}
             />
           )}
