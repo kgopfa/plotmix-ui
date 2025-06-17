@@ -280,39 +280,14 @@ export default function EditorCanvas() {
     selectionManager.select(null);
   }, [selectionManager]);
 
-  // Function to exit line chaining mode and optionally create polygon
-  const exitLineChaining = useCallback((shouldCreatePolygon: boolean = true, lineIds?: string[]) => {
-    const idsToUse = lineIds || chainedLineIds;
-    
-    if (shouldCreatePolygon && idsToUse.length >= 2) {
-      // Get the lines that were created during this chaining session
-      const chainedLines = canvasObjects.filter(obj => idsToUse.includes(obj.id));
-
-      if (chainedLines.length >= 2) {
-        // Create a polygon group using the existing group system
-        const polygonGroup = groupManager.createGroup(chainedLines, 'Polygon');
-        
-        // Update the lines to belong to the polygon group
-        setCanvasObjects(prev => 
-          prev.map(obj => {
-            if (idsToUse.includes(obj.id)) {
-              return { ...obj, groupId: polygonGroup.id };
-            }
-            return obj;
-          })
-        );
-        
-        // Select the grouped lines
-        selectionManager.select(chainedLines);
-      }
-    }
-
+  // Function to exit line chaining mode (for ESC key or tool changes)
+  const exitLineChaining = useCallback(() => {
     setLineStartPoint(null);
     setIsLineChaining(false);
     setChainedLineIds([]); // Clear chained line IDs
     setTool('select');
     setMaskPos(null);
-  }, [chainedLineIds, canvasObjects, groupManager, selectionManager]);
+  }, []);
 
   const handleToolChange = useCallback((newTool: ToolType) => {
     // If we're in line chaining mode and switching away from line tool, exit chaining
@@ -435,17 +410,51 @@ export default function EditorCanvas() {
             dotted: false
           };
 
-          setCanvasObjects(prev => [...prev, newElement]);
-          selectionManager.select(newElement);
-          
           // Add this line to the chained lines (including the closing line)
           const updatedChainedLineIds = [...chainedLineIds, newElement.id];
           setChainedLineIds(updatedChainedLineIds);
           
+          setCanvasObjects(prev => [...prev, newElement]);
+          selectionManager.select(newElement);
+          
           if (isClosingShape) {
             // Shape is closed - exit line chaining mode and create polygon
-            // Pass the updated line IDs directly to avoid state timing issues
-            exitLineChaining(true, updatedChainedLineIds);
+            // Use setTimeout and get current canvas objects state to ensure we have the last line
+            setTimeout(() => {
+              setCanvasObjects(currentObjects => {
+                // Find the chained lines including the last one
+                const chainedLines = currentObjects.filter(obj => updatedChainedLineIds.includes(obj.id));
+                
+                if (chainedLines.length >= 2) {
+                  // Create a polygon group using the existing group system
+                  const polygonGroup = groupManager.createGroup(chainedLines, 'Polygon');
+                  
+                  // Update the lines to belong to the polygon group and return updated objects
+                  const updatedObjects = currentObjects.map(obj => {
+                    if (updatedChainedLineIds.includes(obj.id)) {
+                      return { ...obj, groupId: polygonGroup.id };
+                    }
+                    return obj;
+                  });
+                  
+                  // Select the grouped lines
+                  setTimeout(() => {
+                    selectionManager.select(chainedLines);
+                  }, 0);
+                  
+                  return updatedObjects;
+                }
+                
+                return currentObjects;
+              });
+              
+              // Clean up line chaining state
+              setLineStartPoint(null);
+              setIsLineChaining(false);
+              setChainedLineIds([]);
+              setTool('select');
+              setMaskPos(null);
+            }, 0);
           } else {
             // Continue chaining: set the end point as the new start point
             setLineStartPoint(finalEnd);
