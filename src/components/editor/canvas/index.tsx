@@ -640,8 +640,19 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     }
   };
 
-  // Global pointer move handler for dragging operations
+  // Global pointer move handler for dragging operations and line chaining
   const handleGlobalPointerMove = (e: PointerEvent) => {
+    // Always update mouse position for line chaining, even when hovering over elements
+    if (tool === 'line' && isLineChaining) {
+      const canvasElement = document.querySelector('canvas');
+      if (canvasElement) {
+        const rect = canvasElement.getBoundingClientRect();
+        const canvasX = e.clientX - rect.left;
+        const canvasY = e.clientY - rect.top;
+        setMousePos({ x: canvasX, y: canvasY });
+      }
+    }
+
     if (!draggingId) return;
 
     // Get the canvas element to calculate proper coordinates
@@ -750,7 +761,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   };
 
   const handleCanvasPointerMove = (e: FederatedPointerEvent) => {
-    // Update mouse position for line preview
+    // Always update mouse position for line preview, regardless of what's being hovered
     setMousePos({ x: e.global.x, y: e.global.y });
 
     if (isDrawing && tool === 'draw') {
@@ -772,6 +783,11 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
   // Update handleElementMouseMove to manage hover state
   const handleElementMouseMove = (id: string) => (e: FederatedPointerEvent) => {
+    // Always update mouse position during line chaining, even when hovering over elements
+    if (tool === 'line' && isLineChaining) {
+      setMousePos({ x: e.global.x, y: e.global.y });
+    }
+
     // Update hover state
     if (hoveredId !== id) {
       setHoveredId(id);
@@ -1301,18 +1317,40 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                 let snapToPoint = mousePos;
                 
                 if (isLineChaining) {
-                  // Find the first line we created (the one that started the chain)
-                  const firstLineWithStartPoint = elements.find(obj => 
-                    obj.type === 'line' && 
-                    obj.lineOptions?.points?.start &&
-                    Math.hypot(obj.lineOptions.points.start.x - lineStartPoint.x, obj.lineOptions.points.start.y - lineStartPoint.y) < 5
-                  );
+                  // Find the very first line created in this chain by looking for lines that start near our original starting point
+                  // We need to find the actual first line in the chain to get the true original start point
+                  const chainedLines = elements.filter(obj => obj.type === 'line' && obj.lineOptions?.points);
                   
-                  if (firstLineWithStartPoint?.lineOptions?.points) {
-                    const originalStartPoint = firstLineWithStartPoint.lineOptions.points.start;
+                  // Find the line whose start point is closest to our original lineStartPoint
+                  // This should be one of the first lines in our chain
+                  let originalStartPoint = null;
+                  let minDistance = Infinity;
+                  
+                  for (const line of chainedLines) {
+                    if (line.lineOptions?.points?.start) {
+                      const distance = Math.hypot(
+                        line.lineOptions.points.start.x - lineStartPoint.x, 
+                        line.lineOptions.points.start.y - lineStartPoint.y
+                      );
+                      if (distance < minDistance && distance < 10) {
+                        minDistance = distance;
+                        originalStartPoint = line.lineOptions.points.start;
+                      }
+                    }
+                  }
+                  
+                  // If we couldn't find through chain, use first line
+                  if (!originalStartPoint && chainedLines.length > 0) {
+                    const firstLine = chainedLines[0];
+                    if (firstLine.lineOptions?.points?.start) {
+                      originalStartPoint = firstLine.lineOptions.points.start;
+                    }
+                  }
+                  
+                  if (originalStartPoint) {
                     const distanceToOriginalStart = Math.hypot(mousePos.x - originalStartPoint.x, mousePos.y - originalStartPoint.y);
                     
-                    if (distanceToOriginalStart <= 15) {
+                    if (distanceToOriginalStart <= 20) {
                       canCloseShape = true;
                       snapToPoint = originalStartPoint;
                     }

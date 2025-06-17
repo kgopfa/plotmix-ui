@@ -35,6 +35,8 @@ export default function EditorCanvas() {
   const [maskPos, setMaskPos] = useState<{ x: number, y: number } | null>(null);
   const [lineStartPoint, setLineStartPoint] = useState<{ x: number, y: number } | null>(null);
   const [isLineChaining, setIsLineChaining] = useState(false);
+  // Track lines created during current chaining session for polygon creation
+  const [chainedLineIds, setChainedLineIds] = useState<string[]>([]);
   const [timeState, setTimeState] = useState<TimeManagerState>({
     isPlaying: false,
     elapsedTime: 0
@@ -278,13 +280,39 @@ export default function EditorCanvas() {
     selectionManager.select(null);
   }, [selectionManager]);
 
-  // Function to exit line chaining mode
-  const exitLineChaining = useCallback(() => {
+  // Function to exit line chaining mode and optionally create polygon
+  const exitLineChaining = useCallback((shouldCreatePolygon: boolean = true, lineIds?: string[]) => {
+    const idsToUse = lineIds || chainedLineIds;
+    
+    if (shouldCreatePolygon && idsToUse.length >= 2) {
+      // Get the lines that were created during this chaining session
+      const chainedLines = canvasObjects.filter(obj => idsToUse.includes(obj.id));
+
+      if (chainedLines.length >= 2) {
+        // Create a polygon group using the existing group system
+        const polygonGroup = groupManager.createGroup(chainedLines, 'Polygon');
+        
+        // Update the lines to belong to the polygon group
+        setCanvasObjects(prev => 
+          prev.map(obj => {
+            if (idsToUse.includes(obj.id)) {
+              return { ...obj, groupId: polygonGroup.id };
+            }
+            return obj;
+          })
+        );
+        
+        // Select the grouped lines
+        selectionManager.select(chainedLines);
+      }
+    }
+
     setLineStartPoint(null);
     setIsLineChaining(false);
+    setChainedLineIds([]); // Clear chained line IDs
     setTool('select');
     setMaskPos(null);
-  }, []);
+  }, [chainedLineIds, canvasObjects, groupManager, selectionManager]);
 
   const handleToolChange = useCallback((newTool: ToolType) => {
     // If we're in line chaining mode and switching away from line tool, exit chaining
@@ -366,25 +394,29 @@ export default function EditorCanvas() {
           const snappedStart = snapPoint({ x: e.global.x, y: e.global.y }, e);
           setLineStartPoint(snappedStart);
           setIsLineChaining(true);
+          setChainedLineIds([]); // Reset chained line IDs for new session
         } else {
           // Second+ click - create line and continue chaining with snapping
           const snappedEnd = snapPoint({ x: e.global.x, y: e.global.y }, e);
           
-          // Check if we're trying to close the shape by checking if snappedEnd is close to the ORIGINAL start point
-          const firstLineWithStartPoint = canvasObjects.find(obj => 
-            obj.type === 'line' && 
-            obj.lineOptions?.points?.start &&
-            Math.hypot(obj.lineOptions.points.start.x - lineStartPoint.x, obj.lineOptions.points.start.y - lineStartPoint.y) < 5
-          );
+          // Check if we're trying to close the shape by finding the original start point
+          let originalStartPoint = null;
+          
+          if (chainedLineIds.length > 0) {
+            // Find the first chained line to get the original start point
+            const firstChainedLine = canvasObjects.find(obj => obj.id === chainedLineIds[0]);
+            if (firstChainedLine?.lineOptions?.points?.start) {
+              originalStartPoint = firstChainedLine.lineOptions.points.start;
+            }
+          }
           
           let isClosingShape = false;
           let finalEndPoint = snappedEnd;
           
-          if (firstLineWithStartPoint?.lineOptions?.points) {
-            const originalStartPoint = firstLineWithStartPoint.lineOptions.points.start;
+          if (originalStartPoint) {
             const distanceToOriginalStart = Math.hypot(snappedEnd.x - originalStartPoint.x, snappedEnd.y - originalStartPoint.y);
             
-            if (distanceToOriginalStart <= 15) { // Slightly larger threshold for closing
+            if (distanceToOriginalStart <= 20) { // Match the preview threshold
               isClosingShape = true;
               finalEndPoint = originalStartPoint; // Snap exactly to the original start point
             }
@@ -406,9 +438,14 @@ export default function EditorCanvas() {
           setCanvasObjects(prev => [...prev, newElement]);
           selectionManager.select(newElement);
           
+          // Add this line to the chained lines (including the closing line)
+          const updatedChainedLineIds = [...chainedLineIds, newElement.id];
+          setChainedLineIds(updatedChainedLineIds);
+          
           if (isClosingShape) {
-            // Shape is closed - exit line chaining mode
-            exitLineChaining();
+            // Shape is closed - exit line chaining mode and create polygon
+            // Pass the updated line IDs directly to avoid state timing issues
+            exitLineChaining(true, updatedChainedLineIds);
           } else {
             // Continue chaining: set the end point as the new start point
             setLineStartPoint(finalEnd);
