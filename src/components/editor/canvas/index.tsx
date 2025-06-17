@@ -1127,10 +1127,33 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                       pivot={{ x: 0, y: 0 }}
                       interactive={true}
                       eventMode="dynamic"
-                      hitArea={(el.type === 'path' || el.type === 'line' || el.type === 'image' || el.type === 'textGroup')
-                        ? new Rectangle(-el.width / 2, -el.height / 2, el.width, el.height)
-                        : undefined
-                      }
+                      hitArea={(() => {
+                        if (el.type === 'line' && el.lineOptions?.points) {
+                          // Calculate hit area based on actual line geometry
+                          const { start, end } = el.lineOptions.points;
+                          const startX = start.x - el.x;
+                          const startY = start.y - el.y;
+                          const endX = end.x - el.x;
+                          const endY = end.y - el.y;
+                          
+                          const minX = Math.min(startX, endX);
+                          const maxX = Math.max(startX, endX);
+                          const minY = Math.min(startY, endY);
+                          const maxY = Math.max(startY, endY);
+                          
+                          // Add some padding for easier interaction
+                          const padding = 10;
+                          return new Rectangle(
+                            minX - padding, 
+                            minY - padding, 
+                            (maxX - minX) + (2 * padding), 
+                            (maxY - minY) + (2 * padding)
+                          );
+                        } else if (el.type === 'path' || el.type === 'image' || el.type === 'textGroup') {
+                          return new Rectangle(-el.width / 2, -el.height / 2, el.width, el.height);
+                        }
+                        return undefined;
+                      })()}
                       rotation={el.rotation || 0}
                                       onPointerDown={handlePointerDown(el.id, el.x, el.y)}
                 onPointerUp={handlePointerUp}
@@ -1219,10 +1242,33 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                     pivot={{ x: 0, y: 0 }}
                     interactive={el.type === 'character' ? !isCharacterParentSelected(el) : true}
                     eventMode={el.type === 'character' && isCharacterParentSelected(el) ? "none" : "dynamic"}
-                    hitArea={(el.type === 'path' || el.type === 'line' || el.type === 'image' || el.type === 'textGroup')
-                      ? new Rectangle(-el.width / 2, -el.height / 2, el.width, el.height)
-                      : undefined
-                    }
+                                          hitArea={(() => {
+                        if (el.type === 'line' && el.lineOptions?.points) {
+                          // Calculate hit area based on actual line geometry
+                          const { start, end } = el.lineOptions.points;
+                          const startX = start.x - el.x;
+                          const startY = start.y - el.y;
+                          const endX = end.x - el.x;
+                          const endY = end.y - el.y;
+                          
+                          const minX = Math.min(startX, endX);
+                          const maxX = Math.max(startX, endX);
+                          const minY = Math.min(startY, endY);
+                          const maxY = Math.max(startY, endY);
+                          
+                          // Add some padding for easier interaction
+                          const padding = 10;
+                          return new Rectangle(
+                            minX - padding, 
+                            minY - padding, 
+                            (maxX - minX) + (2 * padding), 
+                            (maxY - minY) + (2 * padding)
+                          );
+                        } else if (el.type === 'path' || el.type === 'image' || el.type === 'textGroup') {
+                          return new Rectangle(-el.width / 2, -el.height / 2, el.width, el.height);
+                        }
+                        return undefined;
+                      })()}
                     rotation={el.rotation || 0}
                     onPointerDown={handlePointerDown(el.id, el.x, el.y)}
                     onPointerUp={handlePointerUp}
