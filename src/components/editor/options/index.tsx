@@ -38,7 +38,6 @@ interface OptionsBarProps {
 export const OptionsBar: React.FC<OptionsBarProps> = ({
   selectedObjects,
   selectedGroups,
-  groups: _groups,
   canvasZoom,
   leftPanelVisible,
   rightPanelVisible,

@@ -274,32 +274,6 @@ export default function EditorCanvas() {
     };
   }, [canvasZoom, containerRef]);
 
-  // Selection management functions
-  const selectElement = useCallback((element: AnimatedCanvasObject | AnimatedCanvasObject[] | null, addToSelection = false) => {
-    if (element === null) {
-      setSelectedObjects([]);
-      setSelectedGroups([]);
-    } else if (Array.isArray(element)) {
-      setSelectedObjects([...element]);
-      // Auto-detect group selection when all elements in a group are selected
-      updateGroupSelectionFromElements(element);
-    } else {
-      if (addToSelection && !selectedObjects.some(el => el.id === element.id)) {
-        const newSelection = [...selectedObjects, element];
-        setSelectedObjects(newSelection);
-        updateGroupSelectionFromElements(newSelection);
-      } else if (addToSelection && selectedObjects.some(el => el.id === element.id)) {
-        // Remove from selection if already selected
-        const newSelection = selectedObjects.filter(el => el.id !== element.id);
-        setSelectedObjects(newSelection);
-        updateGroupSelectionFromElements(newSelection);
-      } else {
-        setSelectedObjects([element]);
-        updateGroupSelectionFromElements([element]);
-      }
-    }
-  }, [selectedObjects]);
-
   // Function to detect group selection based on selected elements
   const updateGroupSelectionFromElements = useCallback((elements: AnimatedCanvasObject[]) => {
     if (elements.length === 0) {
@@ -325,6 +299,32 @@ export default function EditorCanvas() {
 
     setSelectedGroups(selectedGroups);
   }, [groups]);
+
+  // Selection management functions
+  const selectElement = useCallback((element: AnimatedCanvasObject | AnimatedCanvasObject[] | null, addToSelection = false) => {
+    if (element === null) {
+      setSelectedObjects([]);
+      setSelectedGroups([]);
+    } else if (Array.isArray(element)) {
+      setSelectedObjects([...element]);
+      // Auto-detect group selection when all elements in a group are selected
+      updateGroupSelectionFromElements(element);
+    } else {
+      if (addToSelection && !selectedObjects.some(el => el.id === element.id)) {
+        const newSelection = [...selectedObjects, element];
+        setSelectedObjects(newSelection);
+        updateGroupSelectionFromElements(newSelection);
+      } else if (addToSelection && selectedObjects.some(el => el.id === element.id)) {
+        // Remove from selection if already selected
+        const newSelection = selectedObjects.filter(el => el.id !== element.id);
+        setSelectedObjects(newSelection);
+        updateGroupSelectionFromElements(newSelection);
+      } else {
+        setSelectedObjects([element]);
+        updateGroupSelectionFromElements([element]);
+      }
+    }
+  }, [selectedObjects, updateGroupSelectionFromElements]);
 
   // Helper functions removed - using direct state management
 
@@ -400,54 +400,7 @@ export default function EditorCanvas() {
     });
   }, [timeManager, gsapManager]);
 
-  // Helper functions for group management
-  const createTextGroup = useCallback((textElement: AnimatedCanvasObject): CanvasGroup => {
-    return {
-      id: textElement.id + '-group',
-      name: `${textElement.name} Text`,
-      elementIds: [textElement.id],
-      x: textElement.x,
-      y: textElement.y,
-      rotation: textElement.rotation || 0,
-      type: 'text',
-      isDefaultGroup: false,
-      animations: [],
-      characters: textElement.characters,
-      fontSize: textElement.fontSize,
-      fontFamily: textElement.fontFamily,
-      fontWeight: textElement.fontWeight,
-      fontStyle: textElement.fontStyle,
-      textAlign: textElement.textAlign,
-      letterSpacing: textElement.letterSpacing
-    };
-  }, []);
-
-
-
-  const createPolygonGroup = useCallback((lineElements: AnimatedCanvasObject[], isClosed: boolean = false): CanvasGroup => {
-    const groupId = crypto.randomUUID();
-    
-    // Calculate group center based on elements' bounding box
-    const bounds = calculateBounds(lineElements);
-    const centerX = bounds.x + bounds.width / 2;
-    const centerY = bounds.y + bounds.height / 2;
-
-    const polygonGroupCount = groups.filter(g => g.type === 'polygon').length;
-
-    return {
-      id: groupId,
-      name: `Polygon ${polygonGroupCount + 1}`,
-      elementIds: lineElements.map(el => el.id),
-      x: centerX,
-      y: centerY,
-      rotation: 0,
-      type: 'polygon',
-      isDefaultGroup: false,
-      animations: [],
-      isClosed
-    };
-  }, [groups]);
-
+  // Helper function for calculating element bounds - moved up to avoid hoisting issues
   const calculateBounds = (elements: AnimatedCanvasObject[]): { x: number; y: number; width: number; height: number } => {
     if (elements.length === 0) {
       return { x: 0, y: 0, width: 0, height: 0 };
@@ -477,6 +430,96 @@ export default function EditorCanvas() {
       height: maxY - minY
     };
   };
+
+  // Unified group management system
+  interface GroupCreationOptions {
+    elements: AnimatedCanvasObject[];
+    type: 'custom' | 'text' | 'polygon';
+    name?: string;
+    additionalProperties?: Partial<CanvasGroup>;
+    autoSelect?: boolean;
+    customId?: string; // For text groups that need specific IDs
+  }
+
+  const createGroup = useCallback((options: GroupCreationOptions): CanvasGroup | null => {
+    const { elements, type, name, additionalProperties = {}, autoSelect = true, customId } = options;
+    
+    if (elements.length === 0) {
+      console.warn('Cannot create group: no elements provided');
+      return null;
+    }
+
+    // Calculate group center and bounds
+    const bounds = calculateBounds(elements);
+    const centerX = bounds.x + bounds.width / 2;
+    const centerY = bounds.y + bounds.height / 2;
+
+    // Generate appropriate name and ID
+    const groupCount = groups.filter(g => !g.isDefaultGroup && g.type === type).length;
+    const defaultName = type === 'custom' ? `Group ${groupCount + 1}` 
+                      : type === 'text' ? `${elements[0].name} Text`
+                      : `Polygon ${groupCount + 1}`;
+
+    // Create the group
+    const newGroup: CanvasGroup = {
+      id: customId || crypto.randomUUID(),
+      name: name || defaultName,
+      elementIds: elements.map(el => el.id),
+      x: centerX,
+      y: centerY,
+      rotation: 0,
+      type,
+      isDefaultGroup: false,
+      animations: [],
+      ...additionalProperties
+    };
+
+    // Single atomic state update
+    setGroups(prev => [...prev, newGroup]);
+    setCanvasObjects(prev => 
+      prev.map(el => {
+        if (elements.some(element => element.id === el.id)) {
+          return { ...el, groupId: newGroup.id };
+        }
+        return el;
+      })
+    );
+
+    // Auto-select if requested
+    if (autoSelect) {
+      setSelectedObjects(elements);
+      setSelectedGroups([newGroup]);
+    }
+
+    return newGroup;
+  }, [groups]);
+
+  // Helper functions for specific group types - now thin wrappers around createGroup
+  const createTextGroup = useCallback((textElement: AnimatedCanvasObject): CanvasGroup | null => {
+    return createGroup({
+      elements: [textElement],
+      type: 'text',
+      customId: textElement.id + '-group', // Maintain existing ID pattern
+      additionalProperties: {
+        characters: textElement.characters,
+        fontSize: textElement.fontSize,
+        fontFamily: textElement.fontFamily,
+        fontWeight: textElement.fontWeight,
+        fontStyle: textElement.fontStyle,
+        textAlign: textElement.textAlign,
+        letterSpacing: textElement.letterSpacing
+      },
+      autoSelect: false // Text groups are created during element creation, don't auto-select
+    });
+  }, [createGroup]);
+
+  const createPolygonGroup = useCallback((lineElements: AnimatedCanvasObject[], isClosed: boolean = false): CanvasGroup | null => {
+    return createGroup({
+      elements: lineElements,
+      type: 'polygon',
+      additionalProperties: { isClosed }
+    });
+  }, [createGroup]);
 
   // Update timeline track data when elements or groups change
   useEffect(() => {
@@ -562,24 +605,18 @@ export default function EditorCanvas() {
                 // Create a polygon group using the typed group system
                 const polygonGroup = createPolygonGroup(chainedLines, true); // true = closed polygon
                 
-                // Update the lines to belong to the polygon group and return updated objects
-                const updatedObjects = currentObjects.map(obj => {
-                  if (updatedChainedLineIds.includes(obj.id)) {
-                    return { ...obj, groupId: polygonGroup.id };
-                  }
-                  return obj;
-                });
-                
-                // Add the polygon group to the groups state
-                setGroups(prev => [...prev, polygonGroup]);
-                
-                // Select the grouped lines
-                setTimeout(() => {
-                  setSelectedObjects(chainedLines);
-                  setSelectedGroups([polygonGroup]);
-                }, 0);
-                
-                return updatedObjects;
+                if (polygonGroup) {
+                  // Update the lines to belong to the polygon group and return updated objects
+                  const updatedObjects = currentObjects.map(obj => {
+                    if (updatedChainedLineIds.includes(obj.id)) {
+                      return { ...obj, groupId: polygonGroup.id };
+                    }
+                    return obj;
+                  });
+                  
+                  // Group creation already handled state updates, just return updated objects
+                  return updatedObjects;
+                }
               }
                 
                 return currentObjects;
@@ -1143,7 +1180,7 @@ export default function EditorCanvas() {
         if (updatedElement) {
           // Use setTimeout to ensure this happens after the state update
           setTimeout(() => {
-            setSelectedObjects([updatedElement]);
+            setSelectedObjects([updatedElement!]);
             setSelectedGroups([]);
           }, 0);
         }
@@ -1380,7 +1417,7 @@ export default function EditorCanvas() {
   }, [updateAnimationsForPathElement, gsapManager]);
 
   // Memoize the handleSelectElement function
-  const handleSelectElement = useCallback((id: string | null, _isMultiSelect = false) => {
+  const handleSelectElement = useCallback((id: string | null) => {
     if (id) {
       const element = canvasObjects.find(e => e.id === id);
       if (element) {
@@ -1415,8 +1452,8 @@ export default function EditorCanvas() {
 
     // If this is a textGroup, create a typed text group
     if (element.type === 'textGroup') {
-      const textGroup = createTextGroup(element);
-      setGroups(prev => [...prev, textGroup]);
+      createTextGroup(element);
+      // Group creation already handled state updates
     }
 
     if (isPathMode && element.type === 'path' && element.isAnimationPath) {
@@ -1424,44 +1461,20 @@ export default function EditorCanvas() {
       setIsPathMode(false);
       setAnimationTarget(null);
     }
-  }, [isPathMode, addPathToAnimation, setIsPathMode, setAnimationTarget, createTextGroup, setGroups]);
+  }, [isPathMode, addPathToAnimation, setIsPathMode, setAnimationTarget, createTextGroup]);
 
-  // Simplified group management handlers
+  // Simplified group management handlers - now using unified createGroup
   const handleGroupElements = useCallback(() => {
     if (!canvasObjects || canvasObjects.length === 0 || selectedObjects.length < 2) {
       console.warn('Cannot group elements: need at least 2 selected elements');
       return;
     }
     
-    // Create basic group - simplified version
-    const groupId = crypto.randomUUID();
-    const groupCount = groups.filter(g => !g.isDefaultGroup).length;
-    
-    const newGroup: CanvasGroup = {
-      id: groupId,
-      name: `Group ${groupCount + 1}`,
-      elementIds: selectedObjects.map(el => el.id),
-      x: selectedObjects[0].x,
-      y: selectedObjects[0].y,
-      rotation: 0,
-      type: 'custom',
-      isDefaultGroup: false,
-      animations: []
-    };
-    
-    // Add group to state
-    setGroups(prev => [...prev, newGroup]);
-    
-    // Update canvas objects with new group IDs
-    setCanvasObjects(prev => 
-      prev.map(el => {
-        if (selectedObjects.some(selected => selected.id === el.id)) {
-          return { ...el, groupId: newGroup.id };
-        }
-        return el;
-      })
-    );
-  }, [canvasObjects, selectedObjects, groups]);
+    createGroup({
+      elements: selectedObjects,
+      type: 'custom'
+    });
+  }, [canvasObjects, selectedObjects, createGroup]);
 
   const handleUngroupElements = useCallback(() => {
     if (!canvasObjects || canvasObjects.length === 0 || selectedGroups.length !== 1) {
