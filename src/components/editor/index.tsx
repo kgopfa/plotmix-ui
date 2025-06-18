@@ -714,6 +714,25 @@ export default function EditorCanvas() {
         // Add both the textGroup and all character elements to the canvas
         setCanvasObjects(prev => [...prev, textGroup, ...characters]);
         
+        // Create the typed text group that includes both textGroup and character elements
+        const textGroupCount = groups.filter(g => !g.isDefaultGroup && g.type === 'text').length;
+        createGroup({
+          elements: [textGroup, ...characters],
+          type: 'text',
+          name: `Textgroup ${textGroupCount + 1}`,
+          customId: textGroup.id + '-group',
+          additionalProperties: {
+            characters: textGroup.characters,
+            fontSize: textGroup.fontSize,
+            fontFamily: textGroup.fontFamily,
+            fontWeight: textGroup.fontWeight,
+            fontStyle: textGroup.fontStyle,
+            textAlign: textGroup.textAlign,
+            letterSpacing: textGroup.letterSpacing
+          },
+          autoSelect: false
+        });
+        
         // Select the textGroup (parent element)
         setSelectedObjects([textGroup]);
         setSelectedGroups([]);
