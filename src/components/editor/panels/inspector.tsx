@@ -73,13 +73,15 @@ export function Inspector({
   }, [selectedElement?.id, selectedGroup?.id, animationSelectionManager]);
 
   // Determine what to show based on selection priority:
-  // 1. If we have an individual element selected, show individual properties
-  // 2. If we have a group selected (without individual elements), show group properties
-  // 3. If we have multiple elements selected from the same group, show group properties
-  const hasIndividualElement = selectedElement && selectedElementsCount === 1;
+  // 1. If we have a group selected and multiple elements, show group properties
+  // 2. If we have an individual element selected, show individual properties  
+  // 3. If we have a group selected (without individual elements), show group properties
   const hasValidGroupSelection = selectedGroup && !selectedGroup.isDefaultGroup && selectedGroup.id;
-  const hasGroupSelection = hasValidGroupSelection && !hasIndividualElement;
+  const hasIndividualElement = selectedElement && selectedElementsCount === 1 && !hasValidGroupSelection;
+  const hasGroupSelection = hasValidGroupSelection;
   const hasSelection = selectedElement || hasGroupSelection;
+
+  // Selection logic working with state-based selection
 
   if (!hasSelection) {
     return (
@@ -107,23 +109,31 @@ export function Inspector({
       </div>
 
       {activeTab === 'properties' ? (
-        hasIndividualElement ? (
+        hasGroupSelection ? (
+          <GroupPropertiesTab
+            selectedGroup={selectedGroup!}
+            onGroupInspectorChange={onGroupInspectorChange!}
+          />
+        ) : hasIndividualElement ? (
           <PropertiesTab
             selectedElement={selectedElement!}
             onInspectorChange={onInspectorChange}
           />
-                  ) : hasValidGroupSelection ? (
-            <GroupPropertiesTab
-              selectedGroup={selectedGroup!}
-              onGroupInspectorChange={onGroupInspectorChange!}
-            />
-          ) : (
-            <div className="p-4 text-gray-600">
-              <p>Multiple elements selected. Group them to edit as a group.</p>
-            </div>
-          )
+        ) : (
+          <div className="p-4 text-gray-600">
+            <p>Multiple elements selected. Group them to edit as a group.</p>
+          </div>
+        )
       ) : (
-        hasIndividualElement ? (
+        hasGroupSelection ? (
+          <GroupAnimationsTab
+            selectedGroup={selectedGroup!}
+            localAnimations={localGroupAnimations}
+            onAddAnimation={handleAddGroupAnimation}
+            onDeleteAnimation={handleDeleteGroupAnimation}
+            onAnimationChange={handleGroupAnimationChange}
+          />
+        ) : hasIndividualElement ? (
           <AnimationsTab
             selectedElement={selectedElement!}
             localAnimations={localAnimations}
@@ -132,19 +142,11 @@ export function Inspector({
             onAnimationChange={handleAnimationChange}
             onEnterPathMode={handleEnterPathMode}
           />
-                  ) : hasValidGroupSelection ? (
-            <GroupAnimationsTab
-              selectedGroup={selectedGroup!}
-              localAnimations={localGroupAnimations}
-              onAddAnimation={handleAddGroupAnimation}
-              onDeleteAnimation={handleDeleteGroupAnimation}
-              onAnimationChange={handleGroupAnimationChange}
-            />
-          ) : (
-            <div className="p-4 text-gray-600">
-              <p>Multiple elements selected. Group them to edit animations as a group.</p>
-            </div>
-          )
+        ) : (
+          <div className="p-4 text-gray-600">
+            <p>Multiple elements selected. Group them to edit animations as a group.</p>
+          </div>
+        )
       )}
     </div>
   );

@@ -14,10 +14,6 @@ interface TimelineProps {
   onStop: () => void;
   onAnimationChange: (elementId: string, animationId: string, update: { startTime: number; duration: number }) => void;
   onGroupAnimationChange?: (groupId: string, animationId: string, update: { startTime: number; duration: number }) => void;
-  selectionManager: { 
-    isSelected: (element: AnimatedCanvasObject) => boolean;
-    getSelectedGroups: () => CanvasGroup[];
-  };
 }
 
 export function Timeline({
@@ -29,7 +25,6 @@ export function Timeline({
   onStop,
   onAnimationChange,
   onGroupAnimationChange,
-  selectionManager,
 }: TimelineProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [scrollLeft, setScrollLeft] = useState(0);
@@ -88,7 +83,7 @@ export function Timeline({
     groups
       .filter(group => !group.isDefaultGroup)
       .forEach(group => {
-        const isSelected = selectionManager.getSelectedGroups().some(g => g.id === group.id);
+        const isSelected = false; // Selection temporarily disabled
         
         tracks.push({
           id: group.id,
@@ -98,7 +93,7 @@ export function Timeline({
           animations: group.animations,
           isSelected,
           isGroup: true,
-          isExpanded: group.type === 'text' ? expandedElements.has(group.id) : undefined,
+          isExpanded: expandedElements.has(group.id),
           depth: 0
         });
         
@@ -115,7 +110,26 @@ export function Timeline({
               name: `'${character.character || 'char'}'`,
               item: character,
               animations: character.animations,
-              isSelected: selectionManager.isSelected(character),
+              isSelected: false, // Selection temporarily disabled
+              isChild: true,
+              parentGroupId: group.id,
+              depth: 1
+            });
+          });
+        }
+        
+        // For custom/polygon groups, add element children if group is expanded
+        if ((group.type === 'custom' || group.type === 'polygon') && expandedElements.has(group.id)) {
+          const groupElements = elements.filter(el => group.elementIds.includes(el.id));
+          
+          groupElements.forEach(element => {
+            tracks.push({
+              id: element.id,
+              type: 'element',
+              name: element.name,
+              item: element,
+              animations: element.animations,
+              isSelected: false, // Selection temporarily disabled
               isChild: true,
               parentGroupId: group.id,
               depth: 1
@@ -144,7 +158,7 @@ export function Timeline({
           name: element.name,
           item: element,
           animations: element.animations,
-          isSelected: selectionManager.isSelected(element),
+          isSelected: false, // Selection temporarily disabled
           depth: 0
         });
       });
@@ -242,12 +256,10 @@ export function Timeline({
                 isChild={track.isChild}
                 depth={track.depth}
                 customName={track.name}
-                onToggleExpansion={
-                  (track.type === 'group' && (track.item as CanvasGroup).type === 'text') ||
-                  (track.type === 'element' && (track.item as AnimatedCanvasObject).type === 'textGroup')
-                    ? () => toggleElementExpansion(track.id)
-                    : undefined
-                }
+                onToggleExpansion={track.type === 'group' ? () => toggleElementExpansion(track.id) : undefined}
+                onGroupSelect={() => {
+                  // Group selection temporarily disabled
+                }}
               />
             ))}
             

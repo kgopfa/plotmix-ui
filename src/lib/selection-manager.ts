@@ -7,6 +7,7 @@ export class SelectionManager {
   private selectedElements: AnimatedCanvasObject[] = [];
   private selectedGroups: CanvasGroup[] = [];
   private listeners: Set<SelectionListener> = new Set();
+  private currentGroups: CanvasGroup[] = []; // Cache current groups for automatic updates
 
   private constructor() {}
 
@@ -26,13 +27,37 @@ export class SelectionManager {
     this.listeners.forEach(listener => listener(this.selectedElements, this.selectedGroups));
   }
 
+  private updateSelectedGroupsInternal(currentGroups: CanvasGroup[]): void {
+    if (this.selectedElements.length === 0) {
+      this.selectedGroups = [];
+      return;
+    }
+
+    // Get all unique group IDs from selected elements
+    const groupIds = new Set(this.selectedElements.map(el => el.groupId).filter(Boolean));
+    
+    // Find groups that match these IDs
+    const candidateGroups = currentGroups.filter(group => groupIds.has(group.id));
+    
+    // Only select a group if ALL its elements are selected (for proper group selection)
+    this.selectedGroups = candidateGroups.filter(group => {
+      // Skip default groups - they don't represent real groups
+      if (group.isDefaultGroup) return false;
+      
+      // Check if all elements in the group are selected
+      const selectedElementIds = new Set(this.selectedElements.map(el => el.id));
+      return group.elementIds.every(elementId => selectedElementIds.has(elementId));
+    });
+  }
+
   select(element: AnimatedCanvasObject | AnimatedCanvasObject[] | null, addToSelection = false): void {
     if (element === null) {
       this.selectedElements = [];
       this.selectedGroups = [];
     } else if (Array.isArray(element)) {
       this.selectedElements = [...element];
-      // selectedGroups will be updated separately when groups state changes
+      // Update selected groups automatically when elements are selected
+      this.updateSelectedGroupsInternal(this.currentGroups);
     } else {
       if (addToSelection && !this.isSelected(element)) {
         this.selectedElements = [...this.selectedElements, element];
@@ -42,22 +67,17 @@ export class SelectionManager {
       } else {
         this.selectedElements = [element];
       }
-      // selectedGroups will be updated separately when groups state changes
+      // Update selected groups automatically when elements are selected
+      this.updateSelectedGroupsInternal(this.currentGroups);
     }
     this.notifyListeners();
   }
 
-  // Internal method to update selected groups without triggering listeners
-  private updateSelectedGroupsInternal(currentGroups: CanvasGroup[]): void {
-    const groupIds = new Set(this.selectedElements.map(el => el.groupId).filter(Boolean));
-    this.selectedGroups = currentGroups.filter(group => groupIds.has(group.id));
-  }
-
-  // Public method to update selected groups (for external calls - does not trigger listeners)
+  // Public method to update selected groups (for external calls)
   updateSelectedGroups(currentGroups: CanvasGroup[]): void {
+    this.currentGroups = currentGroups; // Cache the groups
     this.updateSelectedGroupsInternal(currentGroups);
-    // Note: We don't call notifyListeners() here to avoid infinite loops
-    // The component will handle updating its state based on the existing selection
+    // Don't call notifyListeners() here to avoid infinite loops
   }
 
   getSelected(): AnimatedCanvasObject[] {
@@ -107,7 +127,8 @@ export class SelectionManager {
 
   selectAll(elements: AnimatedCanvasObject[]): void {
     this.selectedElements = [...elements];
-    // selectedGroups will be updated separately when groups state changes
+    // Update selected groups automatically when elements are selected
+    this.updateSelectedGroupsInternal(this.currentGroups);
     this.notifyListeners();
   }
 

@@ -1,13 +1,13 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
-import { SelectionManager } from '@/lib/selection-manager';
+// SelectionManager removed - now using state-based selection
 import { SnappingOptions } from './snap-options';
 import { GridConfig } from '@/utils/grid-utils';
 import { ElementSnappingConfig } from '@/hooks/use-element-snapping';
 
 interface OptionsBarProps {
   selectedObjects: AnimatedCanvasObject[];
-  selectionManager: SelectionManager;
+  selectedGroups: CanvasGroup[];
   groups: CanvasGroup[];
   canvasZoom: number;
   leftPanelVisible: boolean;
@@ -37,8 +37,8 @@ interface OptionsBarProps {
 
 export const OptionsBar: React.FC<OptionsBarProps> = ({
   selectedObjects,
-  selectionManager,
-  groups,
+  selectedGroups,
+  groups: _groups,
   canvasZoom,
   leftPanelVisible,
   rightPanelVisible,
@@ -195,7 +195,7 @@ export const OptionsBar: React.FC<OptionsBarProps> = ({
             
             {/* Grouping buttons */}
             <div className="flex gap-1 ml-2 border-l pl-2">
-              {selectionManager.canGroup() && (
+              {selectedObjects.length > 1 && (
                 <button
                   className="btn-sm bg-green-500 text-white hover:bg-green-600"
                   onClick={onGroupElements}
@@ -204,11 +204,11 @@ export const OptionsBar: React.FC<OptionsBarProps> = ({
                   📦 Group
                 </button>
               )}
-              {selectionManager.canUngroup(groups) && (
+              {selectedGroups.length > 0 && selectedGroups.some(group => !group.isDefaultGroup) && (
                 <button
                   className="btn-sm bg-orange-500 text-white hover:bg-orange-600"
                   onClick={onUngroupElements}
-                  title="Ungroup selected elements"
+                  title="Ungroup selected group"
                 >
                   📤 Ungroup
                 </button>

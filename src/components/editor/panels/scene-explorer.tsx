@@ -1,15 +1,26 @@
 import { useState, useEffect } from 'react';
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
-import { SelectionManager } from '@/lib/selection-manager';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
 
 interface SceneExplorerProps {
   elements: AnimatedCanvasObject[];
   groups: CanvasGroup[];
-  selectionManager: SelectionManager;
+  selectedElements: AnimatedCanvasObject[];
+  selectedGroups: CanvasGroup[];
+  onElementSelect: (element: AnimatedCanvasObject | null, addToSelection?: boolean) => void;
+  onGroupSelect: (group: CanvasGroup, addToSelection?: boolean) => void;
+  onClearSelection: () => void;
 }
 
-export function SceneExplorer({ elements, groups, selectionManager }: SceneExplorerProps) {
+export function SceneExplorer({ 
+  elements, 
+  groups, 
+  selectedElements, 
+  selectedGroups,
+  onElementSelect,
+  onGroupSelect,
+  onClearSelection
+}: SceneExplorerProps) {
   // Filter out animation paths and character elements (characters will be shown under their group parent)
   const shapes = elements.filter(element => !element.isAnimationPath && element.type !== 'character' && element.type !== 'textGroup');
   const animationSelectionManager = AnimationSelectionManager.getInstance();
@@ -110,7 +121,7 @@ export function SceneExplorer({ elements, groups, selectionManager }: SceneExplo
   const handleEmptySpaceClick = (e: React.MouseEvent) => {
     // Only deselect if clicking directly on the aside element (empty space)
     if (e.target === e.currentTarget) {
-      selectionManager.select(null);
+      onClearSelection();
       animationSelectionManager.clearSelection();
     }
   };
@@ -120,6 +131,21 @@ export function SceneExplorer({ elements, groups, selectionManager }: SceneExplo
     const group = groups.find(g => g.elementIds.includes(element.id));
     return !group || group.isDefaultGroup;
   });
+
+  // Helper method to properly select a group
+  const selectGroup = (group: CanvasGroup, isMultiSelect: boolean = false) => {
+    onGroupSelect(group, isMultiSelect);
+  };
+
+  // Helper function to check if an element is selected
+  const isElementSelected = (element: AnimatedCanvasObject) => {
+    return selectedElements.some(el => el.id === element.id);
+  };
+
+  // Helper function to check if a group is selected
+  const isGroupSelected = (group: CanvasGroup) => {
+    return selectedGroups.some(g => g.id === group.id);
+  };
 
   return (
     <div 
@@ -143,7 +169,7 @@ export function SceneExplorer({ elements, groups, selectionManager }: SceneExplo
                   const hasCharacters = characters.length > 0;
                   const hasElements = groupElements.length > 0;
                   const shouldShowExpandButton = hasAnimations || hasCharacters || (hasElements && group.type !== 'text');
-                  const isSelected = selectionManager.getSelectedGroups().some(g => g.id === group.id);
+                  const isSelected = isGroupSelected(group);
 
                   return (
                     <li key={group.id}>
@@ -176,8 +202,7 @@ export function SceneExplorer({ elements, groups, selectionManager }: SceneExplo
                           onClick={(e) => {
                             e.stopPropagation();
                             const isMultiSelect = e.metaKey || e.ctrlKey;
-                            const elementsInGroup = elements.filter(el => group.elementIds.includes(el.id));
-                            selectionManager.select(elementsInGroup, isMultiSelect);
+                            selectGroup(group, isMultiSelect);
                             animationSelectionManager.clearSelection();
                           }}
                         >
@@ -198,13 +223,13 @@ export function SceneExplorer({ elements, groups, selectionManager }: SceneExplo
                             <li key={character.id}>
                               <div 
                                 className={`px-2 py-1 rounded cursor-pointer hover:bg-gray-100 hover:text-orange-600 flex items-center gap-2 text-sm ${
-                                  selectionManager.isSelected(character) ? 'bg-orange-100 text-orange-700' : ''
+                                  isElementSelected(character) ? 'bg-orange-100 text-orange-700' : ''
                                 } ${isSelected ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   if (isSelected) return; // Prevent character selection if group is selected
                                   const isMultiSelect = e.metaKey || e.ctrlKey;
-                                  selectionManager.select(character, isMultiSelect);
+                                  onElementSelect(character, isMultiSelect);
                                   animationSelectionManager.clearSelection();
                                 }}
                               >
@@ -220,13 +245,13 @@ export function SceneExplorer({ elements, groups, selectionManager }: SceneExplo
                             <li key={element.id}>
                               <div 
                                 className={`px-2 py-1 rounded cursor-pointer hover:bg-gray-100 hover:text-blue-600 flex items-center gap-2 text-sm ${
-                                  selectionManager.isSelected(element) ? 'bg-blue-100 text-blue-700' : ''
+                                  isElementSelected(element) ? 'bg-blue-100 text-blue-700' : ''
                                 } ${isSelected ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   if (isSelected) return; // Prevent element selection if group is selected
                                   const isMultiSelect = e.metaKey || e.ctrlKey;
-                                  selectionManager.select(element, isMultiSelect);
+                                  onElementSelect(element, isMultiSelect);
                                   animationSelectionManager.clearSelection();
                                 }}
                               >
@@ -249,7 +274,7 @@ export function SceneExplorer({ elements, groups, selectionManager }: SceneExplo
                                   // Need to select group for animation
                                   const elementsInGroup = elements.filter(el => group.elementIds.includes(el.id));
                                   if (elementsInGroup.length > 0) {
-                                    selectionManager.select(elementsInGroup[0]);
+                                    onElementSelect(elementsInGroup[0]);
                                     // For group animations, we'll handle selection differently
                                   }
                                 }}
@@ -300,12 +325,12 @@ export function SceneExplorer({ elements, groups, selectionManager }: SceneExplo
                       {/* Element Content */}
                       <div
                         className={`flex-1 px-2 py-1 rounded cursor-pointer hover:bg-gray-200 hover:text-blue-600 flex items-center gap-2 ${
-                          selectionManager.isSelected(element) ? 'bg-blue-100 text-blue-600' : ''
+                          isElementSelected(element) ? 'bg-blue-100 text-blue-600' : ''
                         }`}
                         onClick={(e) => {
                           e.stopPropagation();
                           const isMultiSelect = e.metaKey || e.ctrlKey;
-                          selectionManager.select(element, isMultiSelect);
+                          onElementSelect(element, isMultiSelect);
                           animationSelectionManager.clearSelection();
                         }}
                       >
@@ -327,7 +352,7 @@ export function SceneExplorer({ elements, groups, selectionManager }: SceneExplo
                               onClick={(e) => {
                                 e.stopPropagation();
                                                                  // For element animations
-                                 selectionManager.select(element);
+                                 onElementSelect(element);
                                  // Need to investigate animation selection pattern for elements
                               }}
                             >

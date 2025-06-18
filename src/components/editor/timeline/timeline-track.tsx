@@ -27,6 +27,7 @@ interface TimelineTrackProps {
   depth?: number;
   onToggleExpansion?: () => void;
   customName?: string; // Allow custom name override
+  onGroupSelect?: (group: CanvasGroup) => void;
 }
 
 export function TimelineTrack({
@@ -43,6 +44,7 @@ export function TimelineTrack({
   depth = 0,
   onToggleExpansion,
   customName,
+  onGroupSelect,
 }: TimelineTrackProps) {
   // Determine if this is a group track
   const isGroup = isGroupProp ?? (trackType === 'group' || ('elementIds' in element));
@@ -53,9 +55,10 @@ export function TimelineTrack({
   const id = element.id;
 
   const handleTrackClick = () => {
-    if (isGroup) {
-      // For groups, we'll handle group selection in the main timeline component
-      // This is a placeholder for now
+    if (isGroup && onGroupSelect) {
+      // For groups, use the callback to select the group properly
+      const group = element as CanvasGroup;
+      onGroupSelect(group);
     } else {
       const animatedElement = element as AnimatedCanvasObject;
       // Prevent character selection if parent textGroup is selected
@@ -91,7 +94,7 @@ export function TimelineTrack({
         style={{ paddingLeft: `${8 + depth * 16}px` }}
         onClick={handleTrackClick}
       >
-        {(isGroup || ('type' in element && element.type === 'textGroup')) && (
+        {(isGroup || ('type' in element && element.type === 'textGroup')) && onToggleExpansion && (
           <button
             onClick={handleExpandToggle}
             className="w-4 h-4 flex items-center justify-center hover:bg-gray-200 rounded text-xs"

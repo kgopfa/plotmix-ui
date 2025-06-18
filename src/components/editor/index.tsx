@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { TimeManager, type TimeManagerState } from '@/lib/time-manager';
 import { TimelineManager } from '@/lib/timeline-manager';
 import { TimelineState } from '@/types/timeline';
-import { SelectionManager } from '@/lib/selection-manager';
+// SelectionManager removed - now using React state for selection
 import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
 import { SceneExplorer } from './panels/scene-explorer';
 import { Inspector } from './panels/inspector';
@@ -71,7 +71,7 @@ export default function EditorCanvas() {
   const canvasRef = useRef<CanvasRef | null>(null);
   const imageFileInputRef = useRef<HTMLInputElement>(null);
 
-  const selectionManager = SelectionManager.getInstance();
+  // Selection manager now handled by React state above
   
   // Grid snapping functionality
   const { 
@@ -274,11 +274,65 @@ export default function EditorCanvas() {
     };
   }, [canvasZoom, containerRef]);
 
+  // Selection management functions
+  const selectElement = useCallback((element: AnimatedCanvasObject | AnimatedCanvasObject[] | null, addToSelection = false) => {
+    if (element === null) {
+      setSelectedObjects([]);
+      setSelectedGroups([]);
+    } else if (Array.isArray(element)) {
+      setSelectedObjects([...element]);
+      // Auto-detect group selection when all elements in a group are selected
+      updateGroupSelectionFromElements(element);
+    } else {
+      if (addToSelection && !selectedObjects.some(el => el.id === element.id)) {
+        const newSelection = [...selectedObjects, element];
+        setSelectedObjects(newSelection);
+        updateGroupSelectionFromElements(newSelection);
+      } else if (addToSelection && selectedObjects.some(el => el.id === element.id)) {
+        // Remove from selection if already selected
+        const newSelection = selectedObjects.filter(el => el.id !== element.id);
+        setSelectedObjects(newSelection);
+        updateGroupSelectionFromElements(newSelection);
+      } else {
+        setSelectedObjects([element]);
+        updateGroupSelectionFromElements([element]);
+      }
+    }
+  }, [selectedObjects]);
+
+  // Function to detect group selection based on selected elements
+  const updateGroupSelectionFromElements = useCallback((elements: AnimatedCanvasObject[]) => {
+    if (elements.length === 0) {
+      setSelectedGroups([]);
+      return;
+    }
+
+    // Get all unique group IDs from selected elements
+    const groupIds = new Set(elements.map(el => el.groupId).filter(Boolean));
+    
+    // Find groups that match these IDs
+    const candidateGroups = groups.filter(group => groupIds.has(group.id));
+    
+    // Only select a group if ALL its elements are selected (for proper group selection)
+    const selectedGroups = candidateGroups.filter(group => {
+      // Skip default groups - they don't represent real groups
+      if (group.isDefaultGroup) return false;
+      
+      // Check if all elements in the group are selected
+      const selectedElementIds = new Set(elements.map(el => el.id));
+      return group.elementIds.every(elementId => selectedElementIds.has(elementId));
+    });
+
+    setSelectedGroups(selectedGroups);
+  }, [groups]);
+
+  // Helper functions removed - using direct state management
+
   // Handle keyboard shortcuts
   const handleDeleteElement = useCallback((elementId: string) => {
     setCanvasObjects(elements => elements.filter(el => el.id !== elementId));
-    selectionManager.select(null);
-  }, [selectionManager]);
+    selectElement(null);
+  }, [selectElement]);
 
   // Function to exit line chaining mode (for ESC key or tool changes)
   const exitLineChaining = useCallback(() => {
@@ -308,8 +362,9 @@ export default function EditorCanvas() {
   // Handle select all
   const handleSelectAll = useCallback(() => {
     const selectableElements = canvasObjects.filter(el => !el.isAnimationPath);
-    selectionManager.selectAll(selectableElements);
-  }, [canvasObjects, selectionManager]);
+    setSelectedObjects(selectableElements);
+    setSelectedGroups([]);
+  }, [canvasObjects]);
 
   useKeyboardShortcuts({
     selectedElements: selectedObjects,
@@ -492,7 +547,8 @@ export default function EditorCanvas() {
           setChainedLineIds(updatedChainedLineIds);
           
           setCanvasObjects(prev => [...prev, newElement]);
-          selectionManager.select(newElement);
+          setSelectedObjects([newElement]);
+          setSelectedGroups([]);
           
           if (isClosingShape) {
             // Shape is closed - exit line chaining mode and create polygon
@@ -519,7 +575,8 @@ export default function EditorCanvas() {
                 
                 // Select the grouped lines
                 setTimeout(() => {
-                  selectionManager.select(chainedLines);
+                  setSelectedObjects(chainedLines);
+                  setSelectedGroups([polygonGroup]);
                 }, 0);
                 
                 return updatedObjects;
@@ -568,7 +625,8 @@ export default function EditorCanvas() {
           );
           
           setCanvasObjects(prev => [...prev, imageElement]);
-          selectionManager.select(imageElement);
+          setSelectedObjects([imageElement]);
+          setSelectedGroups([]);
           setTool('select');
           setMaskPos(null);
           setPendingImageData(null); // Clear pending image data
@@ -586,7 +644,8 @@ export default function EditorCanvas() {
         const snappedPos = snapPoint({ x: e.global.x, y: e.global.y }, e);
         const newElement = createNewObject(tool, snappedPos.x, snappedPos.y, canvasObjects, undefined, isPathMode);
         setCanvasObjects(prev => [...prev, newElement]);
-        selectionManager.select(newElement);
+        setSelectedObjects([newElement]);
+        setSelectedGroups([]);
         setTool('select');
         setMaskPos(null);
 
@@ -600,7 +659,8 @@ export default function EditorCanvas() {
         const snappedPos = snapPoint({ x: e.global.x, y: e.global.y }, e);
         const newElement = createNewObject('text', snappedPos.x, snappedPos.y, canvasObjects, undefined, isPathMode);
         setCanvasObjects(prev => [...prev, newElement]);
-        selectionManager.select(newElement);
+        setSelectedObjects([newElement]);
+        setSelectedGroups([]);
         setTool('select');
         setMaskPos(null);
 
@@ -618,7 +678,8 @@ export default function EditorCanvas() {
         setCanvasObjects(prev => [...prev, textGroup, ...characters]);
         
         // Select the textGroup (parent element)
-        selectionManager.select(textGroup);
+        setSelectedObjects([textGroup]);
+        setSelectedGroups([]);
         setTool('select');
         setMaskPos(null);
 
@@ -629,7 +690,8 @@ export default function EditorCanvas() {
           setAnimationTarget(null);
         }
       } else {
-        selectionManager.select(null);
+        setSelectedObjects([]);
+        setSelectedGroups([]);
       }
     }
   };
@@ -1033,7 +1095,8 @@ export default function EditorCanvas() {
 
         // Also update the selected element reference to ensure the inspector shows the latest values
         if (updatedElement) {
-          selectionManager.select(updatedElement);
+          setSelectedObjects([updatedElement]);
+          setSelectedGroups([]);
         }
       } else if (prop === 'lineOptions') {
         setCanvasObjects(prevElements => {
@@ -1058,7 +1121,8 @@ export default function EditorCanvas() {
 
         // Also update the selected element reference to ensure the inspector shows the latest values
         if (updatedElement) {
-          selectionManager.select(updatedElement);
+          setSelectedObjects([updatedElement]);
+          setSelectedGroups([]);
         }
       } else {
         // For regular property changes (width, height, colors, etc.)
@@ -1079,7 +1143,8 @@ export default function EditorCanvas() {
         if (updatedElement) {
           // Use setTimeout to ensure this happens after the state update
           setTimeout(() => {
-            selectionManager.select(updatedElement);
+            setSelectedObjects([updatedElement]);
+            setSelectedGroups([]);
           }, 0);
         }
       }
@@ -1098,18 +1163,18 @@ export default function EditorCanvas() {
 
 
 
-  // Subscribe to selection updates
-  useEffect(() => {
-    return selectionManager.subscribe((selectedElements, selectedGroups) => {
-      setSelectedObjects(selectedElements);
-      setSelectedGroups(selectedGroups);
-    });
-  }, [selectionManager]);
+  // Subscribe to selection updates (REMOVED - now using React state)
+  // useEffect(() => {
+  //   return selectionManager.subscribe((selectedElements, selectedGroups) => {
+  //     setSelectedObjects(selectedElements);
+  //     setSelectedGroups(selectedGroups);
+  //   });
+  // }, [selectionManager]);
 
-  // Update selected groups when groups state changes
-  useEffect(() => {
-    selectionManager.updateSelectedGroups(groups);
-  }, [groups, selectionManager]);
+  // Update selected groups when groups state changes (REMOVED - handled by state)
+  // useEffect(() => {
+  //   selectionManager.updateSelectedGroups(groups);
+  // }, [groups, selectionManager]);
 
   const handleGroupInspectorChange = (
     groupId: string,
@@ -1315,10 +1380,18 @@ export default function EditorCanvas() {
   }, [updateAnimationsForPathElement, gsapManager]);
 
   // Memoize the handleSelectElement function
-  const handleSelectElement = useCallback((id: string | null, isMultiSelect = false) => {
-    const element = id ? canvasObjects.find(e => e.id === id) || null : null;
-    selectionManager.select(element, isMultiSelect);
-  }, [canvasObjects, selectionManager]);
+  const handleSelectElement = useCallback((id: string | null, _isMultiSelect = false) => {
+    if (id) {
+      const element = canvasObjects.find(e => e.id === id);
+      if (element) {
+        setSelectedObjects([element]);
+        setSelectedGroups([]);
+      }
+    } else {
+      setSelectedObjects([]);
+      setSelectedGroups([]);
+    }
+  }, [canvasObjects]);
 
   // Memoize the handlePlayPause function
   const handlePlayPause = useCallback(() => {
@@ -1334,39 +1407,11 @@ export default function EditorCanvas() {
     timeManager.stop();
   }, [timeManager]);
 
-  const handleLineEndpointDrag = (id: string, endpoint: 'start' | 'end', x: number, y: number) => {
-    setCanvasObjects(prevElements => {
-      const updatedElements = prevElements.map((el) => {
-        if (el.id !== id || el.type !== 'line' || !el.lineOptions?.points) return el;
-
-        return {
-          ...el,
-          lineOptions: {
-            ...el.lineOptions,
-            points: {
-              ...el.lineOptions.points,
-              [endpoint]: { x, y }
-            }
-          }
-        };
-      });
-
-      // If this is an animation path element, update related animations
-      const modifiedElement = updatedElements.find(el => el.id === id);
-      if (modifiedElement?.isAnimationPath) {
-        const elementsWithUpdatedAnimations = updateAnimationsForPathElement(updatedElements, modifiedElement);
-        // Rebuild timeline after animation path update
-        setTimeout(() => gsapManager.buildAnimationTimeline(elementsWithUpdatedAnimations), 0);
-        return elementsWithUpdatedAnimations;
-      }
-
-      return updatedElements;
-    });
-  };
-
+  // Simplified element addition handler
   const handleAddElement = useCallback((element: AnimatedCanvasObject) => {
     setCanvasObjects(prev => [...prev, element]);
-    selectionManager.select(element);
+    setSelectedObjects([element]);
+    setSelectedGroups([]);
 
     // If this is a textGroup, create a typed text group
     if (element.type === 'textGroup') {
@@ -1379,100 +1424,31 @@ export default function EditorCanvas() {
       setIsPathMode(false);
       setAnimationTarget(null);
     }
-  }, [selectionManager, isPathMode, addPathToAnimation, setIsPathMode, setAnimationTarget, createTextGroup, setGroups]);
+  }, [isPathMode, addPathToAnimation, setIsPathMode, setAnimationTarget, createTextGroup, setGroups]);
 
-  const handleImageImport = useCallback(async (file: File) => {
-    try {
-      console.log("Importing image:", file.name, file.type);
-
-      // Check if it's an SVG file and needs text content
-      if (file.type === 'image/svg+xml') {
-        // Read SVG as text to preserve the XML content
-        const svgData = await file.text();
-
-        // Validate SVG by loading it
-        const imgUrl = URL.createObjectURL(new Blob([svgData], { type: 'image/svg+xml' }));
-        const img = new Image();
-
-        // Wait for image to load to validate
-        await new Promise<void>((resolve, reject) => {
-          img.onload = () => resolve();
-          img.onerror = () => reject(new Error("Failed to load SVG"));
-          img.src = imgUrl;
-        });
-
-        // Store SVG content and switch to placement mode
-        setPendingImageData(svgData);
-        setTool('image');
-
-        // Clean up
-        URL.revokeObjectURL(imgUrl);
-      } else {
-        // For other image types (PNG, JPG, etc.), create a data URL
-        const reader = new FileReader();
-        
-        await new Promise<void>((resolve, reject) => {
-          reader.onload = (e) => {
-            if (e.target?.result) {
-              const dataUrl = e.target.result as string;
-              
-              // Validate the image by loading it
-              const img = new Image();
-              img.onload = () => {
-                // Store image data URL and switch to placement mode
-                setPendingImageData(dataUrl);
-                setTool('image');
-                resolve();
-              };
-              img.onerror = () => reject(new Error("Failed to load image"));
-              img.src = dataUrl;
-            } else {
-              reject(new Error("Failed to read file"));
-            }
-          };
-          reader.onerror = () => reject(new Error("Failed to read file"));
-          reader.readAsDataURL(file);
-        });
-      }
-    } catch (error) {
-      console.error("Error importing image:", error);
-      alert("Failed to import image. Please try another file.");
-    }
-  }, []);
-
-  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      const file = files[0];
-      // Accept common image formats
-      const validTypes = ['image/svg+xml', 'image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp', 'image/bmp'];
-      
-      if (validTypes.includes(file.type)) {
-        handleImageImport(file);
-      } else {
-        alert('Please select a valid image file (SVG, PNG, JPG, GIF, WebP, BMP)');
-      }
-      // Reset the input
-      e.target.value = '';
-    }
-  };
-
-
-
-  // Group/Ungroup handlers
+  // Simplified group management handlers
   const handleGroupElements = useCallback(() => {
     if (!canvasObjects || canvasObjects.length === 0 || selectedObjects.length < 2) {
       console.warn('Cannot group elements: need at least 2 selected elements');
       return;
     }
     
-    // Create group using SelectionManager
-    const newGroup = selectionManager.createGroupFromSelected(groups);
-    if (!newGroup) {
-      console.warn('Failed to create group');
-      return;
-    }
-      
+    // Create basic group - simplified version
+    const groupId = crypto.randomUUID();
+    const groupCount = groups.filter(g => !g.isDefaultGroup).length;
+    
+    const newGroup: CanvasGroup = {
+      id: groupId,
+      name: `Group ${groupCount + 1}`,
+      elementIds: selectedObjects.map(el => el.id),
+      x: selectedObjects[0].x,
+      y: selectedObjects[0].y,
+      rotation: 0,
+      type: 'custom',
+      isDefaultGroup: false,
+      animations: []
+    };
+    
     // Add group to state
     setGroups(prev => [...prev, newGroup]);
     
@@ -1485,47 +1461,56 @@ export default function EditorCanvas() {
         return el;
       })
     );
-  }, [canvasObjects, selectedObjects, selectionManager, groups]);
+  }, [canvasObjects, selectedObjects, groups]);
 
   const handleUngroupElements = useCallback(() => {
-    if (!canvasObjects || canvasObjects.length === 0 || !selectionManager.canUngroup(groups)) {
-      console.warn('Cannot ungroup elements: no canvas objects available or ungroup not allowed');
+    if (!canvasObjects || canvasObjects.length === 0 || selectedGroups.length !== 1) {
+      console.warn('Cannot ungroup elements: need exactly one group selected');
       return;
     }
     
-    const selectedGroups = selectionManager.getSelectedGroups();
-    if (selectedGroups.length !== 1) return;
-    
     const groupToUngroup = selectedGroups[0];
-    const elementsInGroup = selectionManager.getElementsInGroup(groupToUngroup.id, canvasObjects);
     
-    // Create new default groups for each element
-    const newGroups = selectionManager.createDefaultGroupsForElements(elementsInGroup);
+    // Remove the group
+    setGroups(prev => prev.filter(g => g.id !== groupToUngroup.id));
     
-    // Remove the old group and add the new default groups
-    setGroups(prev => [
-      ...prev.filter((g: CanvasGroup) => g.id !== groupToUngroup.id),
-      ...newGroups
-    ]);
-    
-    // Update canvas objects with new group IDs
+    // Update canvas objects to remove group IDs
     setCanvasObjects(prev => 
       prev.map(el => {
         if (groupToUngroup.elementIds.includes(el.id)) {
-          const elementGroup = newGroups.find((g: CanvasGroup) => g.elementIds.includes(el.id));
-          return elementGroup ? { ...el, groupId: elementGroup.id } : el;
+          return { ...el, groupId: undefined };
         }
         return el;
       })
     );
-  }, [selectionManager, canvasObjects, groups]);
+  }, [canvasObjects, selectedGroups]);
+
+  // Update group selection whenever groups or selected objects change
+  useEffect(() => {
+    // Auto-detect group selection when all elements in a group are selected
+    if (selectedObjects.length === 0) {
+      setSelectedGroups([]);
+      return;
+    }
+
+    const groupIds = new Set(selectedObjects.map(el => el.groupId).filter(Boolean));
+    const candidateGroups = groups.filter(group => groupIds.has(group.id));
+    
+    const detectedGroups = candidateGroups.filter(group => {
+      if (group.isDefaultGroup) return false;
+      const selectedElementIds = new Set(selectedObjects.map(el => el.id));
+      return group.elementIds.every(elementId => selectedElementIds.has(elementId));
+    });
+
+    setSelectedGroups(detectedGroups);
+  }, [selectedObjects, groups]);
 
   return (
     <div className="flex flex-col h-screen w-screen">
       {/* Options Bar */}
       <OptionsBar
         selectedObjects={selectedObjects}
-        selectionManager={selectionManager}
+        selectedGroups={selectedGroups}
         groups={groups}
         canvasZoom={canvasZoom}
         leftPanelVisible={leftPanelVisible}
@@ -1668,7 +1653,6 @@ export default function EditorCanvas() {
                   onElementDragEnd={handleElementDragEnd}
                   onGroupDrag={handleGroupDrag}
                   onCanvasClick={canvasClickHandler}
-                  onLineEndpointDrag={handleLineEndpointDrag}
                   tool={tool}
                   onAddElement={handleAddElement}
                   isPathMode={isPathMode}
@@ -1717,7 +1701,40 @@ export default function EditorCanvas() {
               className="absolute top-0 left-0 h-full bg-gray-50/95 backdrop-blur-sm border-r border-gray-200 overflow-y-auto z-30 shadow-lg transition-transform duration-300"
               style={{ width: `${leftPanelWidth}px` }}
             >
-              <SceneExplorer elements={canvasObjects} groups={groups} selectionManager={selectionManager} />
+              <SceneExplorer 
+                elements={canvasObjects} 
+                groups={groups} 
+                selectedElements={selectedObjects}
+                selectedGroups={selectedGroups}
+                onElementSelect={(element, addToSelection) => {
+                  if (element === null) {
+                    setSelectedObjects([]);
+                    setSelectedGroups([]);
+                  } else {
+                    if (addToSelection && !selectedObjects.some(el => el.id === element.id)) {
+                      setSelectedObjects([...selectedObjects, element]);
+                    } else if (addToSelection && selectedObjects.some(el => el.id === element.id)) {
+                      setSelectedObjects(selectedObjects.filter(el => el.id !== element.id));
+                    } else {
+                      setSelectedObjects([element]);
+                      setSelectedGroups([]);
+                    }
+                  }
+                }}
+                onGroupSelect={(group, addToSelection) => {
+                  const elementsInGroup = canvasObjects.filter(el => group.elementIds.includes(el.id));
+                  if (addToSelection) {
+                    setSelectedObjects([...selectedObjects, ...elementsInGroup]);
+                  } else {
+                    setSelectedObjects(elementsInGroup);
+                  }
+                  setSelectedGroups([group]);
+                }}
+                onClearSelection={() => {
+                  setSelectedObjects([]);
+                  setSelectedGroups([]);
+                }}
+              />
             </div>
             
             {/* Left Resize Handle */}
@@ -1766,17 +1783,16 @@ export default function EditorCanvas() {
           onStop={handleStop}
           onAnimationChange={handleAnimationChange}
           onGroupAnimationChange={handleGroupAnimationChange}
-          selectionManager={selectionManager}
         />
       </div>
       
-      {/* Hidden file input for image upload */}
+      {/* Hidden file input for image upload - temporarily disabled */}
       <input
         ref={imageFileInputRef}
         type="file"
         accept="image/*"
         style={{ display: 'none' }}
-        onChange={handleImageFileChange}
+        onChange={() => {/* Image import temporarily disabled */}}
       />
     </div>
   );
