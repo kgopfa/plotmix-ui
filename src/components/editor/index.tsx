@@ -64,7 +64,9 @@ export default function EditorCanvas() {
   const [rightPanelWidth, setRightPanelWidth] = useState(320); // Default 320px (w-80)
   const [leftPanelVisible, setLeftPanelVisible] = useState(true);
   const [rightPanelVisible, setRightPanelVisible] = useState(true);
-  const [isResizing, setIsResizing] = useState<'left' | 'right' | null>(null);
+  const [timelineHeight, setTimelineHeight] = useState(240); // Default 240px (h-60)
+  const [isTimelineCollapsed, setIsTimelineCollapsed] = useState(false);
+  const [isResizing, setIsResizing] = useState<'left' | 'right' | 'timeline' | null>(null);
 
   const MASK_OFFSET_X = 0;
   const MASK_OFFSET_Y = 0;
@@ -112,7 +114,7 @@ export default function EditorCanvas() {
   });
 
   // Panel resize handlers
-  const handleMouseDown = useCallback((panel: 'left' | 'right') => (e: React.MouseEvent) => {
+  const handleMouseDown = useCallback((panel: 'left' | 'right' | 'timeline') => (e: React.MouseEvent) => {
     e.preventDefault();
     setIsResizing(panel);
   }, []);
@@ -120,13 +122,21 @@ export default function EditorCanvas() {
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isResizing) return;
 
-    if (isResizing === 'left') {
-      const newWidth = Math.max(200, Math.min(600, e.clientX)); // Min 200px, max 600px
-      setLeftPanelWidth(newWidth);
-    } else if (isResizing === 'right') {
-      const newWidth = Math.max(200, Math.min(600, window.innerWidth - e.clientX)); // Min 200px, max 600px
-      setRightPanelWidth(newWidth);
-    }
+    // Use requestAnimationFrame for smooth resizing
+    requestAnimationFrame(() => {
+      if (isResizing === 'left') {
+        const newWidth = Math.max(200, Math.min(600, e.clientX)); // Min 200px, max 600px
+        setLeftPanelWidth(newWidth);
+      } else if (isResizing === 'right') {
+        const newWidth = Math.max(200, Math.min(600, window.innerWidth - e.clientX)); // Min 200px, max 600px
+        setRightPanelWidth(newWidth);
+      } else if (isResizing === 'timeline') {
+        const maxHeight = window.innerHeight * 0.8; // 80% of viewport height
+        const minHeight = 32; // Can collapse to just the controls bar
+        const newHeight = Math.max(minHeight, Math.min(maxHeight, window.innerHeight - e.clientY)); // Dynamic max height
+        setTimelineHeight(newHeight);
+      }
+    });
   }, [isResizing]);
 
   const handleMouseUp = useCallback(() => {
@@ -153,7 +163,7 @@ export default function EditorCanvas() {
     if (isResizing) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = 'col-resize';
+      document.body.style.cursor = isResizing === 'timeline' ? 'row-resize' : 'col-resize';
       document.body.style.userSelect = 'none';
 
       return () => {
@@ -1529,7 +1539,7 @@ export default function EditorCanvas() {
   }, [selectedObjects, groups]);
 
   return (
-    <div className="flex flex-col h-screen w-screen">
+    <div className="h-screen w-screen flex flex-col">
       {/* Options Bar */}
       <OptionsBar
         selectedObjects={selectedObjects}
@@ -1580,7 +1590,7 @@ export default function EditorCanvas() {
         isElementSnapTemporarilyDisabled={isElementSnapDisabled}
       />
 
-      {/* Main Body - Full width canvas with floating panels */}
+      {/* Main Body - Full height canvas with floating panels */}
       <div className="flex-1 relative overflow-hidden">
         {/* Scrollable Canvas Container */}
         <main
@@ -1695,7 +1705,7 @@ export default function EditorCanvas() {
 
         {/* Floating Toolbar - Fixed position outside scrollable area */}
         <div 
-          className="absolute top-1/2 -translate-y-1/2 z-50 transition-all duration-300"
+          className="absolute top-2/5 -translate-y-1/2 z-50 transition-all duration-300"
           style={{ left: `${leftPanelVisible ? leftPanelWidth + 16 : 16}px` }}
         >
           <Toolbar
@@ -1795,8 +1805,23 @@ export default function EditorCanvas() {
         )}
       </div>
 
-      {/* Timeline - positioned absolutely when collapsed to float on top */}
-      <div className="relative">
+      {/* Floating Timeline - positioned fixed at bottom, floats over content */}
+      <div 
+        className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50"
+        style={{ 
+          height: isTimelineCollapsed ? '32px' : `${timelineHeight}px`,
+          minHeight: '32px', // Allow collapsing to 32px (h-8)
+          maxHeight: '80vh'
+        }}
+      >
+        {/* Timeline Resize Handle - Visual indicator - only show when not collapsed */}
+        {!isTimelineCollapsed && (
+          <div
+            className="absolute top-0 left-0 right-0 h-1 border-t-2 border-gray-300 hover:border-blue-500 cursor-row-resize z-40 transition-colors"
+            onMouseDown={handleMouseDown('timeline')}
+          />
+        )}
+        
         <Timeline
           elements={canvasObjects.filter(el => !el.isAnimationPath)}
           groups={groups}
@@ -1806,6 +1831,8 @@ export default function EditorCanvas() {
           onStop={handleStop}
           onAnimationChange={handleAnimationChange}
           onGroupAnimationChange={handleGroupAnimationChange}
+          isCollapsed={isTimelineCollapsed}
+          onToggleCollapse={() => setIsTimelineCollapsed(!isTimelineCollapsed)}
         />
       </div>
       

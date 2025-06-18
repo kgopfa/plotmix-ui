@@ -14,6 +14,8 @@ interface TimelineProps {
   onStop: () => void;
   onAnimationChange: (elementId: string, animationId: string, update: { startTime: number; duration: number }) => void;
   onGroupAnimationChange?: (groupId: string, animationId: string, update: { startTime: number; duration: number }) => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 export function Timeline({
@@ -25,10 +27,11 @@ export function Timeline({
   onStop,
   onAnimationChange,
   onGroupAnimationChange,
+  isCollapsed = false,
+  onToggleCollapse,
 }: TimelineProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [scrollLeft, setScrollLeft] = useState(0);
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedElements, setExpandedElements] = useState<Set<string>>(new Set());
 
   const handleScroll = () => {
@@ -169,11 +172,13 @@ export function Timeline({
   const hierarchicalTracks = createHierarchicalTracks();
 
   return (
-    <footer className={`border-t border-gray-200 bg-white transition-all duration-200 ${
-      isCollapsed 
-        ? 'h-8 absolute bottom-0 left-0 right-0 z-50' 
-        : 'h-60 relative'
-    }`}>
+    <div 
+      className={`bg-white transition-all duration-200 ${
+        isCollapsed 
+          ? 'h-8' 
+          : 'h-full flex flex-col'
+      }`}
+    >
       {/* Controls */}
       <div className="h-8 border-b border-gray-200 flex items-center px-4 justify-between">
         <div className="flex items-center gap-4">
@@ -195,7 +200,7 @@ export function Timeline({
         </div>
         
         <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
+          onClick={onToggleCollapse}
           className="flex items-center justify-center w-6 h-6 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
           title={isCollapsed ? 'Expand Timeline' : 'Collapse Timeline'}
         >
@@ -209,7 +214,7 @@ export function Timeline({
 
       {/* Scrollable timeline container (ruler + tracks) - only visible when not collapsed */}
       {!isCollapsed && (
-        <div className="h-[calc(100%-32px)] overflow-y-auto">
+        <div className="flex-1 overflow-y-auto">
           <div
             className="relative w-max"
             style={{ width: `${timelineState.scale * 120 + 128}px` }} // 128 = w-32 name column
@@ -271,6 +276,6 @@ export function Timeline({
           </div>
         </div>
       )}
-    </footer>
+    </div>
   );
 } 
