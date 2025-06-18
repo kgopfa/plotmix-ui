@@ -141,8 +141,19 @@ export interface CanvasGroup {
   x: number; // Group position (center)
   y: number;
   rotation?: number; // Group rotation
+  type: 'text' | 'custom' | 'polygon'; // Group type determines presentation and behavior
   isDefaultGroup: boolean; // True for auto-created single-object groups
   animations: ElementAnimation[]; // Group animations
+  // Text group specific properties (when type === 'text')
+  characters?: string[]; // For text groups, the individual characters
+  fontSize?: number;
+  fontFamily?: string;
+  fontWeight?: string;
+  fontStyle?: string;
+  textAlign?: string;
+  letterSpacing?: number;
+  // Polygon group specific properties (when type === 'polygon')
+  isClosed?: boolean; // Whether the polygon path is closed
 }
 
 export type ElementAnimationTarget = 'element' | 'group';

@@ -29,6 +29,7 @@ import { OptionsBar } from './options';
 
 export default function EditorCanvas() {
   const [canvasObjects, setCanvasObjects] = useState<AnimatedCanvasObject[]>([]);
+  const [groups, setGroups] = useState<CanvasGroup[]>([]);
   const [selectedObjects, setSelectedObjects] = useState<AnimatedCanvasObject[]>([]);
   const [selectedGroups, setSelectedGroups] = useState<CanvasGroup[]>([]);
   const [tool, setTool] = useState<ToolType>('select');
@@ -333,11 +334,10 @@ export default function EditorCanvas() {
     if (dimensions.width > 0 && canvasObjects.length > 0 && gsapManager) {
       // Small delay to ensure canvas refs are ready
       setTimeout(() => {
-        const allGroups = groupManager.getAllGroups();
-        gsapManager.buildAnimationTimeline(canvasObjects, allGroups);
+        gsapManager.buildAnimationTimeline(canvasObjects, groups);
       }, 10);
     }
-  }, [canvasObjects, dimensions, gsapManager, groupManager]);
+  }, [canvasObjects, groups, dimensions, gsapManager]);
 
   useEffect(() => {
     return timeManager.subscribe(({ isPlaying, elapsedTime }) => {
@@ -346,11 +346,109 @@ export default function EditorCanvas() {
     });
   }, [timeManager, gsapManager]);
 
+  // Helper functions for group management
+  const createTextGroup = useCallback((textElement: AnimatedCanvasObject): CanvasGroup => {
+    return {
+      id: textElement.id + '-group',
+      name: `${textElement.name} Text`,
+      elementIds: [textElement.id],
+      x: textElement.x,
+      y: textElement.y,
+      rotation: textElement.rotation || 0,
+      type: 'text',
+      isDefaultGroup: false,
+      animations: [],
+      characters: textElement.characters,
+      fontSize: textElement.fontSize,
+      fontFamily: textElement.fontFamily,
+      fontWeight: textElement.fontWeight,
+      fontStyle: textElement.fontStyle,
+      textAlign: textElement.textAlign,
+      letterSpacing: textElement.letterSpacing
+    };
+  }, []);
+
+  const createCustomGroup = useCallback((elements: AnimatedCanvasObject[], name?: string): CanvasGroup => {
+    const groupId = crypto.randomUUID();
+    
+    // Calculate group center based on elements' bounding box
+    const bounds = calculateBounds(elements);
+    const centerX = bounds.x + bounds.width / 2;
+    const centerY = bounds.y + bounds.height / 2;
+
+    const nonDefaultGroupCount = groups.filter(g => !g.isDefaultGroup).length;
+
+    return {
+      id: groupId,
+      name: name || `Group ${nonDefaultGroupCount + 1}`,
+      elementIds: elements.map(el => el.id),
+      x: centerX,
+      y: centerY,
+      rotation: 0,
+      type: 'custom',
+      isDefaultGroup: false,
+      animations: []
+    };
+  }, [groups]);
+
+  const createPolygonGroup = useCallback((lineElements: AnimatedCanvasObject[], isClosed: boolean = false): CanvasGroup => {
+    const groupId = crypto.randomUUID();
+    
+    // Calculate group center based on elements' bounding box
+    const bounds = calculateBounds(lineElements);
+    const centerX = bounds.x + bounds.width / 2;
+    const centerY = bounds.y + bounds.height / 2;
+
+    const polygonGroupCount = groups.filter(g => g.type === 'polygon').length;
+
+    return {
+      id: groupId,
+      name: `Polygon ${polygonGroupCount + 1}`,
+      elementIds: lineElements.map(el => el.id),
+      x: centerX,
+      y: centerY,
+      rotation: 0,
+      type: 'polygon',
+      isDefaultGroup: false,
+      animations: [],
+      isClosed
+    };
+  }, [groups]);
+
+  const calculateBounds = (elements: AnimatedCanvasObject[]): { x: number; y: number; width: number; height: number } => {
+    if (elements.length === 0) {
+      return { x: 0, y: 0, width: 0, height: 0 };
+    }
+
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    for (const element of elements) {
+      const left = element.x - element.width / 2;
+      const right = element.x + element.width / 2;
+      const top = element.y - element.height / 2;
+      const bottom = element.y + element.height / 2;
+
+      minX = Math.min(minX, left);
+      minY = Math.min(minY, top);
+      maxX = Math.max(maxX, right);
+      maxY = Math.max(maxY, bottom);
+    }
+
+    return {
+      x: minX,
+      y: minY,
+      width: maxX - minX,
+      height: maxY - minY
+    };
+  };
+
   // Update timeline track data when elements or groups change
   useEffect(() => {
-    const allGroups = groupManager.getAllGroups();
-    timelineManager.setTrackData(canvasObjects, allGroups);
-  }, [canvasObjects, timelineManager, groupManager]);
+    timelineManager.setTrackData(canvasObjects, groups);
+  }, [canvasObjects, groups, timelineManager]);
 
 
 
@@ -890,20 +988,28 @@ export default function EditorCanvas() {
     animationId: string,
     update: { startTime: number; duration: number }
   ) => {
-    const group = groupManager.getGroup(groupId);
-    if (group) {
-      group.animations = group.animations.map(anim =>
-        anim.id === animationId
-          ? { ...anim, startTime: update.startTime, duration: update.duration }
-          : anim
-      );
+    setGroups(prevGroups => {
+      const updatedGroups = prevGroups.map(group => {
+        if (group.id === groupId) {
+          return {
+            ...group,
+            animations: group.animations.map(anim =>
+              anim.id === animationId
+                ? { ...anim, startTime: update.startTime, duration: update.duration }
+                : anim
+            )
+          };
+        }
+        return group;
+      });
       
       // Update timeline with groups
-      const allGroups = groupManager.getAllGroups();
       setTimeout(() => {
-        gsapManager.buildAnimationTimeline(canvasObjects, allGroups);
+        gsapManager.buildAnimationTimeline(canvasObjects, updatedGroups);
       }, 0);
-    }
+      
+      return updatedGroups;
+    });
   };
 
   const handleInspectorChange = (
@@ -1026,41 +1132,36 @@ export default function EditorCanvas() {
     prop: string,
     value: string | number | boolean | ElementAnimation[]
   ) => {
-    if (prop === 'animations') {
-      // Update group animations
-      const group = groupManager.getGroup(groupId);
-      if (group) {
-        group.animations = value as ElementAnimation[];
-        
-        // Get all groups for the timeline rebuild
-        const allGroups = groupManager.getAllGroups();
-        
+    setGroups(prevGroups => {
+      const updatedGroups = prevGroups.map(group => {
+        if (group.id === groupId) {
+          if (prop === 'animations') {
+            return { ...group, animations: value as ElementAnimation[] };
+          } else if (prop === 'name') {
+            return { ...group, name: value as string };
+          } else if (prop === 'x') {
+            return { ...group, x: value as number };
+          } else if (prop === 'y') {
+            return { ...group, y: value as number };
+          } else if (prop === 'rotation') {
+            return { ...group, rotation: value as number };
+          }
+        }
+        return group;
+      });
+
+      if (prop === 'animations') {
         // Update timeline track data
-        timelineManager.setTrackData(canvasObjects, allGroups);
+        timelineManager.setTrackData(canvasObjects, updatedGroups);
         
         // Rebuild timeline after group animation changes
         setTimeout(() => {
-          gsapManager.buildAnimationTimeline(canvasObjects, allGroups);
+          gsapManager.buildAnimationTimeline(canvasObjects, updatedGroups);
         }, 0);
       }
-    } else {
-      // Handle other group property changes
-      if (prop === 'name') {
-        const group = groupManager.getGroup(groupId);
-        if (group) {
-          group.name = value as string;
-        }
-      } else if (prop === 'x' || prop === 'y' || prop === 'rotation') {
-        if (prop === 'x' || prop === 'y') {
-          groupManager.updateGroupPosition(groupId, 
-            prop === 'x' ? value as number : groupManager.getGroup(groupId)?.x || 0,
-            prop === 'y' ? value as number : groupManager.getGroup(groupId)?.y || 0
-          );
-        } else if (prop === 'rotation') {
-          groupManager.updateGroupRotation(groupId, value as number);
-        }
-      }
-    }
+
+      return updatedGroups;
+    });
   };
 
   // Use a ref to access current elements to avoid dependency issues
@@ -1283,12 +1384,18 @@ export default function EditorCanvas() {
     setCanvasObjects(prev => [...prev, element]);
     selectionManager.select(element);
 
+    // If this is a textGroup, create a typed text group
+    if (element.type === 'textGroup') {
+      const textGroup = createTextGroup(element);
+      setGroups(prev => [...prev, textGroup]);
+    }
+
     if (isPathMode && element.type === 'path' && element.isAnimationPath) {
       addPathToAnimation(element);
       setIsPathMode(false);
       setAnimationTarget(null);
     }
-  }, [selectionManager, isPathMode, addPathToAnimation, setIsPathMode, setAnimationTarget]);
+  }, [selectionManager, isPathMode, addPathToAnimation, setIsPathMode, setAnimationTarget, createTextGroup, setGroups]);
 
   const handleImageImport = useCallback(async (file: File) => {
     try {
@@ -1376,24 +1483,33 @@ export default function EditorCanvas() {
 
   // Group/Ungroup handlers
   const handleGroupElements = useCallback(() => {
-    if (!canvasObjects || canvasObjects.length === 0) {
-      console.warn('Cannot group elements: no canvas objects available');
+    if (!canvasObjects || canvasObjects.length === 0 || selectedObjects.length < 2) {
+      console.warn('Cannot group elements: need at least 2 selected elements');
       return;
     }
     
-    const newGroup = selectionManager.groupSelectedElements();
-    if (newGroup) {
-      // Update canvas objects with new group IDs
-      setCanvasObjects(prev => 
-        prev.map(el => {
-          if (selectedObjects.some(selected => selected.id === el.id)) {
-            return { ...el, groupId: newGroup.id };
-          }
-          return el;
-        })
-      );
-    }
-  }, [selectionManager, canvasObjects, selectedObjects]);
+    // Determine group type based on selected elements
+    const hasOnlyLines = selectedObjects.every(el => el.type === 'line');
+    const groupType = hasOnlyLines ? 'polygon' : 'custom';
+    
+    // Create appropriate typed group
+    const newGroup = groupType === 'polygon' 
+      ? createPolygonGroup(selectedObjects)
+      : createCustomGroup(selectedObjects);
+      
+    // Add group to state
+    setGroups(prev => [...prev, newGroup]);
+    
+    // Update canvas objects with new group IDs
+    setCanvasObjects(prev => 
+      prev.map(el => {
+        if (selectedObjects.some(selected => selected.id === el.id)) {
+          return { ...el, groupId: newGroup.id };
+        }
+        return el;
+      })
+    );
+  }, [canvasObjects, selectedObjects, createCustomGroup, createPolygonGroup, setGroups]);
 
   const handleUngroupElements = useCallback(() => {
     if (!canvasObjects || canvasObjects.length === 0) {
@@ -1557,7 +1673,7 @@ export default function EditorCanvas() {
                     height: Math.max(dimensions.height * 3, 4000)
                   }}
                   elements={showPaths ? canvasObjects : canvasObjects.filter(el => !el.isAnimationPath)}
-                  groups={groupManager.getAllGroups()}
+                  groups={groups}
                   selectedIds={selectedObjects.map(obj => obj.id)}
                   onElementSelect={handleSelectElement}
                   onElementDragEnd={handleElementDragEnd}
@@ -1611,7 +1727,7 @@ export default function EditorCanvas() {
               className="absolute top-0 left-0 h-full bg-gray-50/95 backdrop-blur-sm border-r border-gray-200 overflow-y-auto z-30 shadow-lg transition-transform duration-300"
               style={{ width: `${leftPanelWidth}px` }}
             >
-              <SceneExplorer elements={canvasObjects} selectionManager={selectionManager} />
+              <SceneExplorer elements={canvasObjects} groups={groups} selectionManager={selectionManager} />
             </div>
             
             {/* Left Resize Handle */}
@@ -1653,7 +1769,7 @@ export default function EditorCanvas() {
       <div className="relative">
         <Timeline
           elements={canvasObjects.filter(el => !el.isAnimationPath)}
-          groups={groupManager.getAllGroups()}
+          groups={groups}
           timelineState={timelineState}
           timeState={timeState}
           onPlayPause={handlePlayPause}

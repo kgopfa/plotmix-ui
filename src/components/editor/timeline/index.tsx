@@ -84,18 +84,58 @@ export function Timeline({
       depth: number;
     }> = [];
 
-    // Note: Groups are not shown in timeline, only in scene explorer
+    // Add typed groups (text, custom, polygon)
+    groups
+      .filter(group => !group.isDefaultGroup)
+      .forEach(group => {
+        const isSelected = selectionManager.getSelectedGroups().some(g => g.id === group.id);
+        
+        tracks.push({
+          id: group.id,
+          type: 'group',
+          name: group.name,
+          item: group,
+          animations: group.animations,
+          isSelected,
+          isGroup: true,
+          isExpanded: group.type === 'text' ? expandedElements.has(group.id) : undefined,
+          depth: 0
+        });
+        
+        // For text groups, add character children if group is expanded
+        if (group.type === 'text' && expandedElements.has(group.id)) {
+          const characters = elements.filter(el => 
+            el.type === 'character' && group.elementIds.includes(el.id)
+          ).sort((a, b) => (a.characterIndex || 0) - (b.characterIndex || 0));
+          
+          characters.forEach(character => {
+            tracks.push({
+              id: character.id,
+              type: 'element',
+              name: `'${character.character || 'char'}'`,
+              item: character,
+              animations: character.animations,
+              isSelected: selectionManager.isSelected(character),
+              isChild: true,
+              parentGroupId: group.id,
+              depth: 1
+            });
+          });
+        }
+      });
 
-    // Add individual elements and all textGroups (excluding character elements)
+    // Add individual elements not in custom/polygon groups (excluding characters, they appear under text groups)
     elements
       .filter(el => {
-        // Include all textGroups regardless of group membership
-        if (el.type === 'textGroup') {
-          return true;
-        }
-        // For other elements, only include those not in custom groups and not characters
-        const group = groups.find(g => g.id === el.groupId);
-        return (el.type !== 'character') && (!group || group.isDefaultGroup);
+        // Skip characters - they appear under text groups
+        if (el.type === 'character') return false;
+        
+        // Skip textGroup elements - they're now represented as typed groups
+        if (el.type === 'textGroup') return false;
+        
+        // Include elements that are in default groups or not in any typed group
+        const group = groups.find(g => g.elementIds.includes(el.id));
+        return !group || group.isDefaultGroup;
       })
       .forEach(element => {
         tracks.push({
@@ -105,30 +145,8 @@ export function Timeline({
           item: element,
           animations: element.animations,
           isSelected: selectionManager.isSelected(element),
-          depth: 0,
-          isExpanded: element.type === 'textGroup' ? expandedElements.has(element.id) : undefined
+          depth: 0
         });
-        
-        // For textGroups, add character children if textGroup is expanded
-        if (element.type === 'textGroup' && expandedElements.has(element.id)) {
-          const characters = elements.filter(el => 
-            el.type === 'character' && el.parentTextGroupId === element.id
-          ).sort((a, b) => (a.characterIndex || 0) - (b.characterIndex || 0));
-          
-                        characters.forEach(character => {
-                tracks.push({
-                  id: character.id,
-                  type: 'element',
-                  name: `'${character.character || 'char'}'`,
-                  item: character,
-                  animations: character.animations,
-                  isSelected: selectionManager.isSelected(character),
-                  isChild: true,
-                  parentGroupId: element.id,
-                  depth: 1
-                });
-              });
-        }
       });
 
     return tracks;
@@ -225,7 +243,8 @@ export function Timeline({
                 depth={track.depth}
                 customName={track.name}
                 onToggleExpansion={
-                  (track.item as AnimatedCanvasObject).type === 'textGroup'
+                  (track.type === 'group' && (track.item as CanvasGroup).type === 'text') ||
+                  (track.type === 'element' && (track.item as AnimatedCanvasObject).type === 'textGroup')
                     ? () => toggleElementExpansion(track.id)
                     : undefined
                 }
