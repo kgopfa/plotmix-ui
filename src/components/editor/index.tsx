@@ -467,7 +467,8 @@ export default function EditorCanvas() {
           if (originalStartPoint) {
             const distanceToOriginalStart = Math.hypot(snappedEnd.x - originalStartPoint.x, snappedEnd.y - originalStartPoint.y);
             
-            if (distanceToOriginalStart <= 20) { // Match the preview threshold
+            // Use a larger threshold for easier polygon closing - 30px instead of 20px
+            if (distanceToOriginalStart <= 30) {
               isClosingShape = true;
               finalEndPoint = originalStartPoint; // Snap exactly to the original start point
             }
@@ -1679,6 +1680,7 @@ export default function EditorCanvas() {
                   snapGuides={elementSnapGuides}
                   lineStartPoint={lineStartPoint}
                   isLineChaining={isLineChaining}
+                  chainedLineIds={chainedLineIds}
                 />
               )}
             </div>

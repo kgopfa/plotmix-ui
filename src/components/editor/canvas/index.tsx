@@ -53,6 +53,8 @@ interface CanvasProps {
   lineStartPoint?: { x: number; y: number } | null;
   // Add line chaining state
   isLineChaining?: boolean;
+  // Add chained line IDs for polygon closing detection
+  chainedLineIds?: string[];
 }
 
 export interface CanvasRef {
@@ -111,6 +113,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     snapGuides = [],
     lineStartPoint,
     isLineChaining = false,
+    chainedLineIds = [],
   },
   ref
 ) {
@@ -464,9 +467,9 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       const clickX = pos.x;
       const clickY = pos.y;
       
-      // Check if clicking near the start point of any line (to close the shape) - use same square bounds
-      const ENDPOINT_SIZE = 7;
-      const halfSize = ENDPOINT_SIZE / 2;
+      // Use larger click area for easier polygon closing - 15px instead of 7px
+      const ENDPOINT_CLICK_SIZE = 15;
+      const halfSize = ENDPOINT_CLICK_SIZE / 2;
       
       if (clickX >= start.x - halfSize && clickX <= start.x + halfSize &&
           clickY >= start.y - halfSize && clickY <= start.y + halfSize) {
@@ -540,9 +543,9 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       const clickX = pos.x;
       const clickY = pos.y;
 
-      // Check if clicking near start point (match visual endpoint size - square bounds)
-      const ENDPOINT_SIZE = 7;
-      const halfSize = ENDPOINT_SIZE / 2;
+      // Use larger click area for easier endpoint interaction - 12px instead of 7px
+      const ENDPOINT_CLICK_SIZE = 12;
+      const halfSize = ENDPOINT_CLICK_SIZE / 2;
       
       // Check if click is within start point square bounds
       if (clickX >= start.x - halfSize && clickX <= start.x + halfSize &&
@@ -553,7 +556,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         return;
       }
 
-      // Check if clicking near end point (match visual endpoint size - square bounds)
+      // Check if clicking near end point (larger click area for easier interaction)
       if (clickX >= end.x - halfSize && clickX <= end.x + halfSize &&
           clickY >= end.y - halfSize && clickY <= end.y + halfSize) {
         setDraggingEndpoint('end');
@@ -1403,7 +1406,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                   if (originalStartPoint) {
                     const distanceToOriginalStart = Math.hypot(mousePos.x - originalStartPoint.x, mousePos.y - originalStartPoint.y);
                     
-                    if (distanceToOriginalStart <= 20) {
+                    // Use same threshold as closing logic - 30px for easier polygon closing
+                    if (distanceToOriginalStart <= 30) {
                       canCloseShape = true;
                       snapToPoint = originalStartPoint;
                     }
@@ -1438,9 +1442,15 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                   });
                 }
                 
-                // Draw start point indicator
-                g.circle(lineStartPoint.x, lineStartPoint.y, 4);
-                g.fill({ color: 0x888888, alpha: 0.7 });
+                // Show start point indicator ONLY for the very first line in the chain
+                // For subsequent lines, the previous line's endpoint is already visible
+                if (chainedLineIds.length === 0) {
+                  const HANDLE_SIZE = 7;
+                  const halfSize = HANDLE_SIZE / 2;
+                  g.rect(lineStartPoint.x - halfSize, lineStartPoint.y - halfSize, HANDLE_SIZE, HANDLE_SIZE);
+                  g.fill({ color: 0xFFFFFF, alpha: 1 });
+                  g.stroke({ width: 1, color: 0x74b9ff, alpha: 0.8 });
+                }
                 
                 // Draw end point indicator - special styling if can close shape
                 if (canCloseShape) {
