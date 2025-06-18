@@ -20,7 +20,7 @@ import { createNewObject, createTextGroupWithCharacters } from '@/lib/canvas-obj
 import { useCanvasDimensions } from '@/hooks/use-canvas-dimensions';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { ToolType } from '@/types/editor';
-import { GroupManager } from '@/lib/group-manager';
+
 import { useGridSnapping } from '@/hooks/use-grid-snapping';
 import { useElementSnapping } from '@/hooks/use-element-snapping';
 import { applyElementSnapping } from '@/utils/element-snapping';
@@ -72,7 +72,6 @@ export default function EditorCanvas() {
   const imageFileInputRef = useRef<HTMLInputElement>(null);
 
   const selectionManager = SelectionManager.getInstance();
-  const groupManager = GroupManager.getInstance();
   
   // Grid snapping functionality
   const { 
@@ -368,28 +367,7 @@ export default function EditorCanvas() {
     };
   }, []);
 
-  const createCustomGroup = useCallback((elements: AnimatedCanvasObject[], name?: string): CanvasGroup => {
-    const groupId = crypto.randomUUID();
-    
-    // Calculate group center based on elements' bounding box
-    const bounds = calculateBounds(elements);
-    const centerX = bounds.x + bounds.width / 2;
-    const centerY = bounds.y + bounds.height / 2;
 
-    const nonDefaultGroupCount = groups.filter(g => !g.isDefaultGroup).length;
-
-    return {
-      id: groupId,
-      name: name || `Group ${nonDefaultGroupCount + 1}`,
-      elementIds: elements.map(el => el.id),
-      x: centerX,
-      y: centerY,
-      rotation: 0,
-      type: 'custom',
-      isDefaultGroup: false,
-      animations: []
-    };
-  }, [groups]);
 
   const createPolygonGroup = useCallback((lineElements: AnimatedCanvasObject[], isClosed: boolean = false): CanvasGroup => {
     const groupId = crypto.randomUUID();
@@ -523,25 +501,28 @@ export default function EditorCanvas() {
                 // Find the chained lines including the last one
                 const chainedLines = currentObjects.filter(obj => updatedChainedLineIds.includes(obj.id));
                 
-                if (chainedLines.length >= 2) {
-                  // Create a polygon group using the existing group system
-                  const polygonGroup = groupManager.createGroup(chainedLines, 'Polygon');
-                  
-                  // Update the lines to belong to the polygon group and return updated objects
-                  const updatedObjects = currentObjects.map(obj => {
-                    if (updatedChainedLineIds.includes(obj.id)) {
-                      return { ...obj, groupId: polygonGroup.id };
-                    }
-                    return obj;
-                  });
-                  
-                  // Select the grouped lines
-                  setTimeout(() => {
-                    selectionManager.select(chainedLines);
-                  }, 0);
-                  
-                  return updatedObjects;
-                }
+                              if (chainedLines.length >= 2) {
+                // Create a polygon group using the typed group system
+                const polygonGroup = createPolygonGroup(chainedLines, true); // true = closed polygon
+                
+                // Update the lines to belong to the polygon group and return updated objects
+                const updatedObjects = currentObjects.map(obj => {
+                  if (updatedChainedLineIds.includes(obj.id)) {
+                    return { ...obj, groupId: polygonGroup.id };
+                  }
+                  return obj;
+                });
+                
+                // Add the polygon group to the groups state
+                setGroups(prev => [...prev, polygonGroup]);
+                
+                // Select the grouped lines
+                setTimeout(() => {
+                  selectionManager.select(chainedLines);
+                }, 0);
+                
+                return updatedObjects;
+              }
                 
                 return currentObjects;
               });
@@ -1114,10 +1095,7 @@ export default function EditorCanvas() {
     return timelineManager.subscribe(setTimelineState);
   }, [timelineManager]);
 
-  // Update tracks whenever elements change
-  useEffect(() => {
-    timelineManager.setTracks(canvasObjects);
-  }, [canvasObjects, timelineManager]);
+
 
   // Subscribe to selection updates
   useEffect(() => {
@@ -1126,6 +1104,11 @@ export default function EditorCanvas() {
       setSelectedGroups(selectedGroups);
     });
   }, [selectionManager]);
+
+  // Update selected groups when groups state changes
+  useEffect(() => {
+    selectionManager.updateSelectedGroups(groups);
+  }, [groups, selectionManager]);
 
   const handleGroupInspectorChange = (
     groupId: string,
@@ -1473,13 +1456,7 @@ export default function EditorCanvas() {
     }
   };
 
-  // Initialize groups for existing elements (migration) - only run when canvasObjects change
-  useEffect(() => {
-    if (canvasObjects.length > 0) {
-      // Ensure all elements have groups created in the manager
-      groupManager.initializeGroupsForElements(canvasObjects);
-    }
-  }, [canvasObjects, groupManager]);
+
 
   // Group/Ungroup handlers
   const handleGroupElements = useCallback(() => {
@@ -1488,14 +1465,12 @@ export default function EditorCanvas() {
       return;
     }
     
-    // Determine group type based on selected elements
-    const hasOnlyLines = selectedObjects.every(el => el.type === 'line');
-    const groupType = hasOnlyLines ? 'polygon' : 'custom';
-    
-    // Create appropriate typed group
-    const newGroup = groupType === 'polygon' 
-      ? createPolygonGroup(selectedObjects)
-      : createCustomGroup(selectedObjects);
+    // Create group using SelectionManager
+    const newGroup = selectionManager.createGroupFromSelected(groups);
+    if (!newGroup) {
+      console.warn('Failed to create group');
+      return;
+    }
       
     // Add group to state
     setGroups(prev => [...prev, newGroup]);
@@ -1509,28 +1484,40 @@ export default function EditorCanvas() {
         return el;
       })
     );
-  }, [canvasObjects, selectedObjects, createCustomGroup, createPolygonGroup, setGroups]);
+  }, [canvasObjects, selectedObjects, selectionManager, groups]);
 
   const handleUngroupElements = useCallback(() => {
-    if (!canvasObjects || canvasObjects.length === 0) {
-      console.warn('Cannot ungroup elements: no canvas objects available');
+    if (!canvasObjects || canvasObjects.length === 0 || !selectionManager.canUngroup(groups)) {
+      console.warn('Cannot ungroup elements: no canvas objects available or ungroup not allowed');
       return;
     }
     
-    const newGroups = selectionManager.ungroupSelectedElements(canvasObjects);
-    if (newGroups.length > 0) {
-      // Update canvas objects with new group IDs
-      setCanvasObjects(prev => 
-        prev.map(el => {
-          const elementGroup = newGroups.find(g => g.elementIds.includes(el.id));
-          if (elementGroup) {
-            return { ...el, groupId: elementGroup.id };
-          }
-          return el;
-        })
-      );
-    }
-  }, [selectionManager, canvasObjects]);
+    const selectedGroups = selectionManager.getSelectedGroups();
+    if (selectedGroups.length !== 1) return;
+    
+    const groupToUngroup = selectedGroups[0];
+    const elementsInGroup = selectionManager.getElementsInGroup(groupToUngroup.id, canvasObjects);
+    
+    // Create new default groups for each element
+    const newGroups = selectionManager.createDefaultGroupsForElements(elementsInGroup);
+    
+    // Remove the old group and add the new default groups
+    setGroups(prev => [
+      ...prev.filter((g: CanvasGroup) => g.id !== groupToUngroup.id),
+      ...newGroups
+    ]);
+    
+    // Update canvas objects with new group IDs
+    setCanvasObjects(prev => 
+      prev.map(el => {
+        if (groupToUngroup.elementIds.includes(el.id)) {
+          const elementGroup = newGroups.find((g: CanvasGroup) => g.elementIds.includes(el.id));
+          return elementGroup ? { ...el, groupId: elementGroup.id } : el;
+        }
+        return el;
+      })
+    );
+  }, [selectionManager, canvasObjects, groups]);
 
   return (
     <div className="flex flex-col h-screen w-screen">
@@ -1538,6 +1525,7 @@ export default function EditorCanvas() {
       <OptionsBar
         selectedObjects={selectedObjects}
         selectionManager={selectionManager}
+        groups={groups}
         canvasZoom={canvasZoom}
         leftPanelVisible={leftPanelVisible}
         rightPanelVisible={rightPanelVisible}

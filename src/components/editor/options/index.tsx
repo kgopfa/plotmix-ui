@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { AnimatedCanvasObject } from '@/types/canvas';
+import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { SelectionManager } from '@/lib/selection-manager';
 import { SnappingOptions } from './snap-options';
 import { GridConfig } from '@/utils/grid-utils';
@@ -8,6 +8,7 @@ import { ElementSnappingConfig } from '@/hooks/use-element-snapping';
 interface OptionsBarProps {
   selectedObjects: AnimatedCanvasObject[];
   selectionManager: SelectionManager;
+  groups: CanvasGroup[];
   canvasZoom: number;
   leftPanelVisible: boolean;
   rightPanelVisible: boolean;
@@ -37,6 +38,7 @@ interface OptionsBarProps {
 export const OptionsBar: React.FC<OptionsBarProps> = ({
   selectedObjects,
   selectionManager,
+  groups,
   canvasZoom,
   leftPanelVisible,
   rightPanelVisible,
@@ -202,7 +204,7 @@ export const OptionsBar: React.FC<OptionsBarProps> = ({
                   📦 Group
                 </button>
               )}
-              {selectionManager.canUngroup() && (
+              {selectionManager.canUngroup(groups) && (
                 <button
                   className="btn-sm bg-orange-500 text-white hover:bg-orange-600"
                   onClick={onUngroupElements}

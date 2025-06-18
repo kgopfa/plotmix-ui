@@ -11,7 +11,7 @@ import {
   isPathAnimationConfig,
   isGroupAnimationConfig
 } from '@/utils/animation-generator';
-import { GroupManager } from '@/lib/group-manager';
+
 
 gsap.registerPlugin(PixiPlugin, MotionPathPlugin);
 PixiPlugin.registerPIXI(PIXI);
@@ -19,11 +19,9 @@ PixiPlugin.registerPIXI(PIXI);
 export class GSAPTimelineManager {
   private timeline: gsap.core.Timeline;
   private canvasRef: React.RefObject<CanvasRef | null> | null = null;
-  private groupManager: GroupManager;
 
   constructor() {
     this.timeline = gsap.timeline({ paused: true });
-    this.groupManager = GroupManager.getInstance();
   }
 
   setCanvasRef(ref: React.RefObject<CanvasRef | null>) {
