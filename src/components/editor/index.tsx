@@ -38,6 +38,7 @@ export default function EditorCanvas() {
   const [isLineChaining, setIsLineChaining] = useState(false);
   // Track lines created during current chaining session for polygon creation
   const [chainedLineIds, setChainedLineIds] = useState<string[]>([]);
+  const [isClosingShape, setIsClosingShape] = useState(false);
   const [timeState, setTimeState] = useState<TimeManagerState>({
     isPlaying: false,
     elapsedTime: 0
@@ -339,6 +340,7 @@ export default function EditorCanvas() {
     setLineStartPoint(null);
     setIsLineChaining(false);
     setChainedLineIds([]); // Clear chained line IDs
+    setIsClosingShape(false);
     setTool('select');
     setMaskPos(null);
   }, []);
@@ -533,6 +535,44 @@ export default function EditorCanvas() {
     clearElementSnapGuides();
   }, [selectedObjects, clearElementSnapGuides]);
 
+  // Handle polygon closure when isClosingShape becomes true
+  useEffect(() => {
+    if (!isClosingShape || chainedLineIds.length === 0) return;
+
+    setCanvasObjects(currentObjects => {
+      // Find the chained lines including the last one
+      const chainedLines = currentObjects.filter(obj => chainedLineIds.includes(obj.id));
+      
+      if (chainedLines.length >= 2) {
+        // Create a polygon group using the typed group system
+        const polygonGroup = createPolygonGroup(chainedLines, true); // true = closed polygon
+        
+        if (polygonGroup) {
+          // Update the lines to belong to the polygon group and return updated objects
+          const updatedObjects = currentObjects.map(obj => {
+            if (chainedLineIds.includes(obj.id)) {
+              return { ...obj, groupId: polygonGroup.id };
+            }
+            return obj;
+          });
+          
+          // Group creation already handled state updates, just return updated objects
+          return updatedObjects;
+        }
+      }
+      
+      return currentObjects;
+    });
+    
+    // Clean up line chaining state
+    setLineStartPoint(null);
+    setIsLineChaining(false);
+    setChainedLineIds([]);
+    setIsClosingShape(false);
+    setTool('select');
+    setMaskPos(null);
+  }, [isClosingShape, chainedLineIds, createPolygonGroup]);
+
   const canvasClickHandler = (e: FederatedPointerEvent) => {
     const isEmptyClick = !(e.target && (e.target as Container).label === 'shape');
 
@@ -559,7 +599,7 @@ export default function EditorCanvas() {
             }
           }
           
-          let isClosingShape = false;
+          let shouldCloseShape = false;
           let finalEndPoint = snappedEnd;
           
           if (originalStartPoint) {
@@ -567,7 +607,7 @@ export default function EditorCanvas() {
             
             // Use a larger threshold for easier polygon closing - 30px instead of 20px
             if (distanceToOriginalStart <= 30) {
-              isClosingShape = true;
+              shouldCloseShape = true;
               finalEndPoint = originalStartPoint; // Snap exactly to the original start point
             }
           }
@@ -593,42 +633,9 @@ export default function EditorCanvas() {
           setSelectedObjects([newElement]);
           setSelectedGroups([]);
           
-          if (isClosingShape) {
-            // Shape is closed - exit line chaining mode and create polygon
-            // Use setTimeout and get current canvas objects state to ensure we have the last line
-            setTimeout(() => {
-              setCanvasObjects(currentObjects => {
-                // Find the chained lines including the last one
-                const chainedLines = currentObjects.filter(obj => updatedChainedLineIds.includes(obj.id));
-                
-                              if (chainedLines.length >= 2) {
-                // Create a polygon group using the typed group system
-                const polygonGroup = createPolygonGroup(chainedLines, true); // true = closed polygon
-                
-                if (polygonGroup) {
-                  // Update the lines to belong to the polygon group and return updated objects
-                  const updatedObjects = currentObjects.map(obj => {
-                    if (updatedChainedLineIds.includes(obj.id)) {
-                      return { ...obj, groupId: polygonGroup.id };
-                    }
-                    return obj;
-                  });
-                  
-                  // Group creation already handled state updates, just return updated objects
-                  return updatedObjects;
-                }
-              }
-                
-                return currentObjects;
-              });
-              
-              // Clean up line chaining state
-              setLineStartPoint(null);
-              setIsLineChaining(false);
-              setChainedLineIds([]);
-              setTool('select');
-              setMaskPos(null);
-            }, 0);
+          if (shouldCloseShape) {
+            // Shape is closed - trigger polygon creation via useEffect
+            setIsClosingShape(true);
           } else {
             // Continue chaining: set the end point as the new start point
             setLineStartPoint(finalEnd);
