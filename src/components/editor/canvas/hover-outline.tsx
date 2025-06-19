@@ -53,14 +53,32 @@ const HoverOutline: React.FC<HoverOutlineProps> = ({ element }) => {
       return;
     }
     
-    // For other shapes, draw rectangular hover outline
-    graphics.roundRect(
-      -element.width / 2,
-      -element.height / 2,
-      element.width,
-      element.height,
-      element.cornerRadius
-    );
+    // For other shapes, draw shape-specific hover outline
+    if (element.type === 'circle') {
+      // Draw circle outline
+      const radius = element.height / 2;
+      graphics.ellipse(0, 0, radius, radius);
+    } else if (element.type === 'triangle') {
+      // Draw triangle outline (same as drawing-utils.ts)
+      const height = element.height;
+      const sideLength = (2 * height) / Math.sqrt(3);
+      const halfWidth = sideLength / 2;
+      const points = [
+        { x: 0, y: -height/2 },                    // top point
+        { x: -halfWidth, y: height/2 },            // bottom left
+        { x: halfWidth, y: height/2 }              // bottom right
+      ];
+      graphics.poly(points);
+    } else {
+      // For rectangles and other shapes, draw rectangular hover outline
+      graphics.roundRect(
+        -element.width / 2,
+        -element.height / 2,
+        element.width,
+        element.height,
+        element.cornerRadius
+      );
+    }
     
     // Apply a light stroke for the hover effect
     graphics.stroke({
