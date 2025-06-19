@@ -59,10 +59,10 @@ const HoverOutline: React.FC<HoverOutlineProps> = ({ element }) => {
       const radius = element.height / 2;
       graphics.ellipse(0, 0, radius, radius);
     } else if (element.type === 'triangle') {
-      // Draw triangle outline (same as drawing-utils.ts)
+      // Draw triangle outline using actual width and height bounds
       const height = element.height;
-      const sideLength = (2 * height) / Math.sqrt(3);
-      const halfWidth = sideLength / 2;
+      const width = element.width;
+      const halfWidth = width / 2;
       const points = [
         { x: 0, y: -height/2 },                    // top point
         { x: -halfWidth, y: height/2 },            // bottom left

@@ -1344,8 +1344,11 @@ export default function EditorCanvas() {
             updatedElement.radius = height / 2;
           }
 
-          // For triangles, update radius to match the height 
+          // For triangles, maintain equilateral proportions and update radius
           if (el.type === 'triangle') {
+            // Calculate correct width for an equilateral triangle based on height
+            const correctWidth = (2 * height) / Math.sqrt(3);
+            updatedElement.width = correctWidth;
             updatedElement.radius = height / 2;
           }
 

@@ -200,8 +200,8 @@ export class GSAPTimelineManager {
           if (pathElement.type === 'triangle') {
             const segmentDuration = config.duration / 3;
             const height = pathElement.height;
-            const sideLength = (2 * height) / Math.sqrt(3);
-            const halfWidth = sideLength / 2;
+            const width = pathElement.width;
+            const halfWidth = width / 2;
             
             // Calculate triangle vertices relative to center
             const topPoint = { x: pathElement.x, y: pathElement.y - height/2 };

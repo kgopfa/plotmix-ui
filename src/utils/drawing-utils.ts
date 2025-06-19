@@ -5,6 +5,13 @@ import type { AnimatedCanvasObject } from '@/types/canvas';
 // Cache for loaded image textures to prevent reloading during drag operations
 const imageTextureCache = new Map<string, Texture>();
 
+// Utility function to calculate the correct width for an equilateral triangle based on height
+export const calculateEquilateralTriangleWidth = (height: number): number => {
+  // For an equilateral triangle, if h is height, then side length = 2h/√3
+  // The width of an equilateral triangle equals its side length
+  return (2 * height) / Math.sqrt(3);
+};
+
 // Function to clear texture cache (useful for memory management)
 export function clearImageTextureCache() {
   imageTextureCache.forEach(texture => {
@@ -167,12 +174,11 @@ function drawShapePath(graphics: Graphics, shape: AnimatedCanvasObject) {
       break;
       
     case 'triangle':
-      // Draw equilateral triangle with height matching rectangle height, pixel-aligned
+      // Draw triangle to fit within the specified width and height bounds, pixel-aligned
       const height = roundToPixel(shape.height);
-      // For an equilateral triangle, if h is height, then side length = 2h/√3
-      const sideLength = (2 * height) / Math.sqrt(3);
-      // Calculate the points for an equilateral triangle centered at origin
-      const halfWidth = roundToPixel(sideLength / 2);
+      const width = roundToPixel(shape.width);
+      // Use the actual width specified in the shape, not the calculated equilateral width
+      const halfWidth = roundToPixel(width / 2);
       const points = [
         { x: 0, y: roundToPixel(-height/2) },                    // top point
         { x: -halfWidth, y: roundToPixel(height/2) },            // bottom left
@@ -263,16 +269,16 @@ function drawShapeAsPath(graphics: Graphics, shape: AnimatedCanvasObject) {
         );
         break;
         
-      case 'triangle':
-        const height = shape.height;
-        const sideLength = (2 * height) / Math.sqrt(3);
-        const halfWidth = sideLength / 2;
-        
-        dashLine.moveTo(0, -height/2)
-          .lineTo(halfWidth, height/2)
-          .lineTo(-halfWidth, height/2)
-          .closePath();
-        break;
+              case 'triangle':
+          const height = shape.height;
+          const width = shape.width;
+          const halfWidth = width / 2;
+          
+          dashLine.moveTo(0, -height/2)
+            .lineTo(halfWidth, height/2)
+            .lineTo(-halfWidth, height/2)
+            .closePath();
+          break;
     }
   }
 }
@@ -411,8 +417,8 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasObject) {
           
         case 'triangle':
           const height = shape.height;
-          const sideLength = (2 * height) / Math.sqrt(3);
-          const halfWidth = sideLength / 2;
+          const width = shape.width;
+          const halfWidth = width / 2;
           
           dashLine.moveTo(0, -height/2)
             .lineTo(halfWidth, height/2)

@@ -142,8 +142,9 @@ function createCircle(props: BaseObjectProps): AnimatedCanvasObject {
 }
 
 function createTriangle(props: BaseObjectProps): AnimatedCanvasObject {
-  const width = 100;
   const height = 100;
+  // Calculate correct width for an equilateral triangle based on height
+  const width = (2 * height) / Math.sqrt(3);
   const radius = 50;
   return {
     ...generateCommonAttributes('triangle', props),
