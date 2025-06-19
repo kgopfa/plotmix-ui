@@ -48,6 +48,7 @@ interface CommonObjectAttributes {
   stroke: string;
   strokeWidth: number;
   opacity: number;
+  visible: boolean;
   fill: string;
   shadowEnabled: boolean;
   shadowColor: string;
@@ -89,6 +90,7 @@ function generateCommonAttributes(
     stroke: '#000000',
     strokeWidth: 1,
     opacity: 1,
+    visible: true,
     fill: '#ffffff',
     shadowEnabled: false,
     shadowColor: '#000000',

@@ -188,6 +188,7 @@ export class SelectionManager {
       x: centerX,
       y: centerY,
       rotation: 0,
+      visible: true,
       type: groupType,
       isDefaultGroup: false,
       animations: []
@@ -210,6 +211,7 @@ export class SelectionManager {
       x: element.x,
       y: element.y,
       rotation: element.rotation || 0,
+      visible: true,
       type: 'custom' as const,
       isDefaultGroup: true,
       animations: []

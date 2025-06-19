@@ -99,6 +99,7 @@ export interface AnimatedCanvasObject {
   cornerRadius?: number;
   rotation?: number;
   opacity?: number;
+  visible?: boolean; // Element visibility - defaults to true
   shadowEnabled?: boolean;
   shadowColor?: string;
   shadowBlur?: number;
@@ -141,6 +142,7 @@ export interface CanvasGroup {
   x: number; // Group position (center)
   y: number;
   rotation?: number; // Group rotation
+  visible?: boolean; // Group visibility - defaults to true
   type: 'text' | 'custom' | 'polygon'; // Group type determines presentation and behavior
   isDefaultGroup: boolean; // True for auto-created single-object groups
   animations: ElementAnimation[]; // Group animations

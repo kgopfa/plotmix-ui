@@ -487,6 +487,7 @@ export default function EditorCanvas() {
       x: centerX,
       y: centerY,
       rotation: 0,
+      visible: true,
       type,
       isDefaultGroup: false,
       animations: [],
@@ -1782,6 +1783,24 @@ export default function EditorCanvas() {
                 onClearSelection={() => {
                   setSelectedObjects([]);
                   setSelectedGroups([]);
+                }}
+                onElementVisibilityChange={(elementId, visible) => {
+                  setCanvasObjects(prev => 
+                    prev.map(el => 
+                      el.id === elementId 
+                        ? { ...el, visible } 
+                        : el
+                    )
+                  );
+                }}
+                onGroupVisibilityChange={(groupId, visible) => {
+                  setGroups(prev => 
+                    prev.map(group => 
+                      group.id === groupId 
+                        ? { ...group, visible } 
+                        : group
+                    )
+                  );
                 }}
               />
             </div>

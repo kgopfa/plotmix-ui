@@ -1111,8 +1111,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           />
 
           {/* Render group containers first */}
-          {groups.filter(group => !group.isDefaultGroup).map((group) => {
-            const groupElements = elements.filter(el => el.groupId === group.id);
+          {groups.filter(group => !group.isDefaultGroup && (group.visible !== false)).map((group) => {
+            const groupElements = elements.filter(el => el.groupId === group.id && (el.visible !== false));
             
             return (
               <pixiContainer
@@ -1242,7 +1242,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           {/* Render elements that are not in custom groups */}
           {elements.filter(el => {
             const group = groups.find(g => g.id === el.groupId);
-            return !group || group.isDefaultGroup;
+            return (!group || group.isDefaultGroup) && (el.visible !== false);
           }).map((el) => {
             // Handle all element types consistently, including SVGs
             return (
