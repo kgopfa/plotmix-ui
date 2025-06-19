@@ -369,6 +369,13 @@ export default function EditorCanvas() {
     if (newTool !== 'image') {
       setPendingImageData(null);
     }
+    
+    // Clear selection when switching to creation tools to prevent drag conflicts
+    // This allows placing new objects on top of previously selected shapes
+    if (newTool !== 'select') {
+      setSelectedObjects([]);
+      setSelectedGroups([]);
+    }
   }, [isLineChaining, exitLineChaining]);
 
   // Handle select all
@@ -569,8 +576,12 @@ export default function EditorCanvas() {
 
   const canvasClickHandler = (e: FederatedPointerEvent) => {
     const isEmptyClick = !(e.target && (e.target as Container).label === 'shape');
+    
+    // Allow object creation when using creation tools, even on top of existing shapes
+    const isCreationTool = tool !== 'select';
+    const shouldCreateObject = isEmptyClick || isCreationTool;
 
-    if (isEmptyClick) {
+    if (shouldCreateObject) {
       if (tool === 'line') {
         if (!lineStartPoint) {
           // First click - set start point with snapping
@@ -750,6 +761,11 @@ export default function EditorCanvas() {
         setSelectedObjects([]);
         setSelectedGroups([]);
       }
+    } else {
+      // When clicking on existing shapes with select tool, just clear selection
+      // This maintains the existing behavior for selection mode
+      setSelectedObjects([]);
+      setSelectedGroups([]);
     }
   };
 

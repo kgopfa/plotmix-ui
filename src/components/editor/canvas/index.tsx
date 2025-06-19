@@ -451,6 +451,14 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   };
 
   const handlePointerDown = (id: string, shapeX: number, shapeY: number) => (e: FederatedPointerEvent) => {
+    // When using creation tools (not select), call the canvas click handler directly
+    // to create new objects on top of existing shapes
+    if (tool !== 'select') {
+      e.stopPropagation();
+      onCanvasClick(e);
+      return;
+    }
+    
     e.stopPropagation();
 
     const isMultiSelect = (e.nativeEvent && 'metaKey' in e.nativeEvent) ? 
