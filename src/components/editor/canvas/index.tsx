@@ -138,6 +138,12 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     return false;
   };
 
+  // Helper function to check if an element is part of a custom or polygon group
+  const isElementInCustomOrPolygonGroup = (element: AnimatedCanvasObject): boolean => {
+    const group = groups.find(g => g.id === element.groupId);
+    return !!(group && !group.isDefaultGroup && (group.type === 'custom' || group.type === 'polygon'));
+  };
+
   // Add mouse position for line preview
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
 
@@ -1220,13 +1226,13 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
                       {/* Note: textGroup elements don't render directly - only their child characters do */}
 
-                      {/* Show hover outline when hovered but not selected (but not for characters when parent textGroup is selected) */}
-                      {hoveredId === el.id && !selectedIds.includes(el.id) && !(el.type === 'character' && isCharacterParentSelected(el)) && (
+                      {/* Show hover outline when hovered but not selected (but not for characters when parent textGroup is selected or elements in custom/polygon groups) */}
+                      {hoveredId === el.id && !selectedIds.includes(el.id) && !(el.type === 'character' && isCharacterParentSelected(el)) && !isElementInCustomOrPolygonGroup(el) && (
                         <HoverOutline element={el} />
                       )}
 
-                      {/* Show selection outline for all selected elements (but not for characters when parent textGroup is selected) */}
-                      {selectedIds.includes(el.id) && !(el.type === 'character' && isCharacterParentSelected(el)) && (
+                      {/* Show selection outline for all selected elements (but not for characters when parent textGroup is selected or elements in custom/polygon groups) */}
+                      {selectedIds.includes(el.id) && !(el.type === 'character' && isCharacterParentSelected(el)) && !isElementInCustomOrPolygonGroup(el) && (
                         <ObjectSelect
                           element={el}
                           scaleFactor={canvasScaleFactor.current}
@@ -1336,13 +1342,13 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
                 {/* Note: textGroup elements don't render directly - only their child characters do */}
 
-                {/* Show hover outline when hovered but not selected (but not for characters when parent textGroup is selected) */}
-                {hoveredId === el.id && !selectedIds.includes(el.id) && !(el.type === 'character' && isCharacterParentSelected(el)) && (
+                {/* Show hover outline when hovered but not selected (but not for characters when parent textGroup is selected or elements in custom/polygon groups) */}
+                {hoveredId === el.id && !selectedIds.includes(el.id) && !(el.type === 'character' && isCharacterParentSelected(el)) && !isElementInCustomOrPolygonGroup(el) && (
                   <HoverOutline element={el} />
                 )}
 
-                {/* Show selection outline for all selected elements (but not for characters when parent textGroup is selected) */}
-                {selectedIds.includes(el.id) && !(el.type === 'character' && isCharacterParentSelected(el)) && (
+                {/* Show selection outline for all selected elements (but not for characters when parent textGroup is selected or elements in custom/polygon groups) */}
+                {selectedIds.includes(el.id) && !(el.type === 'character' && isCharacterParentSelected(el)) && !isElementInCustomOrPolygonGroup(el) && (
                   <ObjectSelect
                     element={el}
                     scaleFactor={canvasScaleFactor.current}

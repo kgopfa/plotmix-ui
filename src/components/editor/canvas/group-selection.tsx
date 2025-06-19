@@ -34,36 +34,61 @@ export const GroupSelection: React.FC<GroupSelectionProps> = ({
       throw new Error('Cannot create virtual group from empty selection');
     }
 
+    // Check if all elements are lines (polygon case)
+    const isPolygonGroup = elements.every(el => el.type === 'line' && el.lineOptions?.points);
+
     // Calculate bounding box for all selected elements
     let minX = Infinity;
     let minY = Infinity;
     let maxX = -Infinity;
     let maxY = -Infinity;
 
-    for (const element of elements) {
-      // Calculate element bounds considering rotation
-      const cos = Math.cos(element.rotation || 0);
-      const sin = Math.sin(element.rotation || 0);
-      const halfWidth = element.width / 2;
-      const halfHeight = element.height / 2;
+    if (isPolygonGroup) {
+      // For polygon groups, find the extreme points from all line endpoints
+      for (const element of elements) {
+        if (element.lineOptions?.points) {
+          const { start, end } = element.lineOptions.points;
+          
+          // Check start point
+          minX = Math.min(minX, start.x);
+          minY = Math.min(minY, start.y);
+          maxX = Math.max(maxX, start.x);
+          maxY = Math.max(maxY, start.y);
+          
+          // Check end point
+          minX = Math.min(minX, end.x);
+          minY = Math.min(minY, end.y);
+          maxX = Math.max(maxX, end.x);
+          maxY = Math.max(maxY, end.y);
+        }
+      }
+    } else {
+      // For non-polygon groups, use element bounds with rotation
+      for (const element of elements) {
+        // Calculate element bounds considering rotation
+        const cos = Math.cos(element.rotation || 0);
+        const sin = Math.sin(element.rotation || 0);
+        const halfWidth = element.width / 2;
+        const halfHeight = element.height / 2;
 
-      // Calculate the four corners of the rotated element
-      const corners = [
-        { x: -halfWidth, y: -halfHeight },
-        { x: halfWidth, y: -halfHeight },
-        { x: halfWidth, y: halfHeight },
-        { x: -halfWidth, y: halfHeight }
-      ];
+        // Calculate the four corners of the rotated element
+        const corners = [
+          { x: -halfWidth, y: -halfHeight },
+          { x: halfWidth, y: -halfHeight },
+          { x: halfWidth, y: halfHeight },
+          { x: -halfWidth, y: halfHeight }
+        ];
 
-      // Transform corners to world coordinates
-      for (const corner of corners) {
-        const worldX = element.x + corner.x * cos - corner.y * sin;
-        const worldY = element.y + corner.x * sin + corner.y * cos;
+        // Transform corners to world coordinates
+        for (const corner of corners) {
+          const worldX = element.x + corner.x * cos - corner.y * sin;
+          const worldY = element.y + corner.x * sin + corner.y * cos;
 
-        minX = Math.min(minX, worldX);
-        minY = Math.min(minY, worldY);
-        maxX = Math.max(maxX, worldX);
-        maxY = Math.max(maxY, worldY);
+          minX = Math.min(minX, worldX);
+          minY = Math.min(minY, worldY);
+          maxX = Math.max(maxX, worldX);
+          maxY = Math.max(maxY, worldY);
+        }
       }
     }
 
