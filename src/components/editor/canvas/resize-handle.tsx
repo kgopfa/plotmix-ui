@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { extend } from '@pixi/react';
 import { Graphics } from 'pixi.js';
 import * as PIXI from 'pixi.js';
+import { eventManager } from '@/lib/event-manager';
 
 extend({ Graphics });
 
@@ -28,6 +29,7 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({
   const dragOffsetRef = useRef({ x: 0, y: 0 });
   const resizeInProgressRef = useRef(false);
   const initialElementStateRef = useRef({ x: 0, y: 0, width: 0, height: 0, rotation: 0 });
+  const wrappersRef = useRef<{ move?: (event: Event | PointerEvent | MouseEvent | KeyboardEvent) => void; up?: () => void }>({});
 
   // Calculate the rotated position of this corner handle
   const getRotatedCornerPosition = () => {
@@ -226,9 +228,24 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({
       y: globalPos.y - position.y
     };
     
-    // Add global listeners
-    window.addEventListener('pointermove', handleGlobalPointerMove);
-    window.addEventListener('pointerup', handleGlobalPointerUp);
+    // Create wrapper functions to handle event type casting
+    const pointerMoveWrapper = (event: Event | PointerEvent | MouseEvent | KeyboardEvent) => {
+      if (event instanceof PointerEvent) {
+        handleGlobalPointerMove(event);
+      }
+    };
+    
+    const pointerUpWrapper = () => {
+      handleGlobalPointerUp();
+    };
+    
+    // Store references for cleanup
+    wrappersRef.current.move = pointerMoveWrapper;
+    wrappersRef.current.up = pointerUpWrapper;
+    
+    // Use EventManager with wrapper functions
+    eventManager.addListener('pointermove', pointerMoveWrapper, window);
+    eventManager.addListener('pointerup', pointerUpWrapper, window);
     
     // Stop event propagation
     e.stopPropagation();
@@ -263,9 +280,12 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({
     console.log(`Finished dragging ${corner} handle`);
     isDraggingRef.current = false;
     
-    // Remove global listeners
-    window.removeEventListener('pointermove', handleGlobalPointerMove);
-    window.removeEventListener('pointerup', handleGlobalPointerUp);
+    // Use EventManager to remove listeners
+    if (wrappersRef.current.move && wrappersRef.current.up) {
+      eventManager.removeListener('pointermove', wrappersRef.current.move, window);
+      eventManager.removeListener('pointerup', wrappersRef.current.up, window);
+      wrappersRef.current = {};
+    }
   };
 
   // Get cursor style based on corner position and rotation

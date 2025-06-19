@@ -16,7 +16,7 @@ import { AnimatedCanvasObject, ElementAnimation, CanvasGroup } from '@/types/can
 import { Canvas } from './canvas';
 import { FederatedPointerEvent, Container } from 'pixi.js';
 import type { CanvasRef } from './canvas';
-import { createNewObject, createTextGroupWithCharacters } from '@/lib/canvas-object-factory';
+import { createNewObject } from '@/lib/canvas-object-factory';
 import { useCanvasDimensions } from '@/hooks/use-canvas-dimensions';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { ToolType } from '@/types/editor';
@@ -412,15 +412,33 @@ export default function EditorCanvas() {
     }
   }, [canvasObjects, groups, dimensions, gsapManager]);
 
+  // Subscribe to time updates
   useEffect(() => {
-    return timeManager.subscribe(({ isPlaying, elapsedTime }) => {
+    return timeManager.subscribe(setTimeState);
+  }, [timeManager]);
+
+  // Subscribe to timeline updates
+  useEffect(() => {
+    return timelineManager.subscribe(setTimelineState);
+  }, [timelineManager]);
+
+  // Separate effect for GSAP timeline synchronization - only sync time, not playback state
+  useEffect(() => {
+    return timeManager.subscribe(({ elapsedTime }) => {
       gsapManager.updateTime(elapsedTime);
-      gsapManager.handlePlayback(isPlaying, () => gsapManager.updateTime(timeManager.getState().elapsedTime));
     });
   }, [timeManager, gsapManager]);
 
-  // Helper function for calculating element bounds - moved up to avoid hoisting issues
-  const calculateBounds = (elements: AnimatedCanvasObject[]): { x: number; y: number; width: number; height: number } => {
+  // Separate effect for GSAP playback state management - only call when isPlaying changes
+  useEffect(() => {
+    gsapManager.handlePlayback(timeState.isPlaying, () => {
+      const currentTime = timeManager.getState().elapsedTime;
+      gsapManager.updateTime(currentTime);
+    });
+  }, [timeState.isPlaying, gsapManager, timeManager]);
+
+  // Helper function for calculating element bounds - wrapped in useCallback to avoid dependency issues
+  const calculateBounds = useCallback((elements: AnimatedCanvasObject[]): { x: number; y: number; width: number; height: number } => {
     if (elements.length === 0) {
       return { x: 0, y: 0, width: 0, height: 0 };
     }
@@ -448,7 +466,7 @@ export default function EditorCanvas() {
       width: maxX - minX,
       height: maxY - minY
     };
-  };
+  }, []);
 
   // Unified group management system
   interface GroupCreationOptions {
@@ -460,78 +478,63 @@ export default function EditorCanvas() {
     customId?: string; // For text groups that need specific IDs
   }
 
-  const createGroup = useCallback((options: GroupCreationOptions): CanvasGroup | null => {
-    const { elements, type, name, additionalProperties = {}, autoSelect = true, customId } = options;
-    
-    if (elements.length === 0) {
+  // Create group using the unified system
+  const createGroup = useCallback(({ elements, type, name, additionalProperties = {}, autoSelect = true, customId }: GroupCreationOptions): CanvasGroup | null => {
+    if (!elements || elements.length === 0) {
       console.warn('Cannot create group: no elements provided');
       return null;
     }
 
-    // Calculate group center and bounds
     const bounds = calculateBounds(elements);
-    const centerX = bounds.x + bounds.width / 2;
-    const centerY = bounds.y + bounds.height / 2;
+    const groupId = customId || `group-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    const groupName = name || (() => {
+      switch (type) {
+        case 'custom':
+          const customGroupCount = groups.filter(g => !g.isDefaultGroup && g.type === 'custom').length;
+          return `Custom Group ${customGroupCount + 1}`;
+        case 'polygon':
+          const polygonGroupCount = groups.filter(g => !g.isDefaultGroup && g.type === 'polygon').length;
+          return `Polygon ${polygonGroupCount + 1}`;
+        default:
+          return 'Group';
+      }
+    })();
 
-    // Generate appropriate name and ID
-    const groupCount = groups.filter(g => !g.isDefaultGroup && g.type === type).length;
-    const defaultName = type === 'custom' ? `Group ${groupCount + 1}` 
-                      : type === 'text' ? `${elements[0].name} Text`
-                      : `Polygon ${groupCount + 1}`;
-
-    // Create the group
     const newGroup: CanvasGroup = {
-      id: customId || crypto.randomUUID(),
-      name: name || defaultName,
+      id: groupId,
+      name: groupName,
       elementIds: elements.map(el => el.id),
-      x: centerX,
-      y: centerY,
-      rotation: 0,
-      visible: true,
-      type,
+      type: type,
       isDefaultGroup: false,
+      x: bounds.x,
+      y: bounds.y,
+      rotation: 0,
       animations: [],
       ...additionalProperties
     };
 
-    // Single atomic state update
-    setGroups(prev => [...prev, newGroup]);
-    setCanvasObjects(prev => 
-      prev.map(el => {
-        if (elements.some(element => element.id === el.id)) {
-          return { ...el, groupId: newGroup.id };
+    // Update elements to have group IDs
+    setCanvasObjects(prevElements => 
+      prevElements.map(el => {
+        if (elements.some(groupEl => groupEl.id === el.id)) {
+          return { ...el, groupId: groupId };
         }
         return el;
       })
     );
 
-    // Auto-select if requested
+    // Add group to groups state
+    setGroups(prevGroups => [...prevGroups, newGroup]);
+
+    // Auto-select the group if requested
     if (autoSelect) {
       setSelectedObjects(elements);
       setSelectedGroups([newGroup]);
     }
 
     return newGroup;
-  }, [groups]);
-
-  // Helper functions for specific group types - now thin wrappers around createGroup
-  const createTextGroup = useCallback((textElement: AnimatedCanvasObject): CanvasGroup | null => {
-    return createGroup({
-      elements: [textElement],
-      type: 'text',
-      customId: textElement.id + '-group', // Maintain existing ID pattern
-      additionalProperties: {
-        characters: textElement.characters,
-        fontSize: textElement.fontSize,
-        fontFamily: textElement.fontFamily,
-        fontWeight: textElement.fontWeight,
-        fontStyle: textElement.fontStyle,
-        textAlign: textElement.textAlign,
-        letterSpacing: textElement.letterSpacing
-      },
-      autoSelect: false // Text groups are created during element creation, don't auto-select
-    });
-  }, [createGroup]);
+  }, [groups, calculateBounds]);
 
   const createPolygonGroup = useCallback((lineElements: AnimatedCanvasObject[], isClosed: boolean = false): CanvasGroup | null => {
     return createGroup({
@@ -720,44 +723,6 @@ export default function EditorCanvas() {
           setIsPathMode(false);
           setAnimationTarget(null);
         }
-      } else if (tool === 'textGroup') {
-        const snappedPos = snapPoint({ x: e.global.x, y: e.global.y }, e);
-        const { textGroup, characters } = createTextGroupWithCharacters(snappedPos.x, snappedPos.y, canvasObjects);
-        
-        // Add both the textGroup and all character elements to the canvas
-        setCanvasObjects(prev => [...prev, textGroup, ...characters]);
-        
-        // Create the typed text group that includes both textGroup and character elements
-        const textGroupCount = groups.filter(g => !g.isDefaultGroup && g.type === 'text').length;
-        createGroup({
-          elements: [textGroup, ...characters],
-          type: 'text',
-          name: `Textgroup ${textGroupCount + 1}`,
-          customId: textGroup.id + '-group',
-          additionalProperties: {
-            characters: textGroup.characters,
-            fontSize: textGroup.fontSize,
-            fontFamily: textGroup.fontFamily,
-            fontWeight: textGroup.fontWeight,
-            fontStyle: textGroup.fontStyle,
-            textAlign: textGroup.textAlign,
-            letterSpacing: textGroup.letterSpacing
-          },
-          autoSelect: false
-        });
-        
-        // Select the textGroup (parent element)
-        setSelectedObjects([textGroup]);
-        setSelectedGroups([]);
-        setTool('select');
-        setMaskPos(null);
-
-        // If in path mode, exit after creating the path
-        if (isPathMode) {
-          addPathToAnimation(textGroup);
-          setIsPathMode(false);
-          setAnimationTarget(null);
-        }
       } else {
         setSelectedObjects([]);
         setSelectedGroups([]);
@@ -878,10 +843,7 @@ export default function EditorCanvas() {
           return { ...el, x: snappedPos.x, y: snappedPos.y };
         }
 
-        // If the dragged element is a textGroup, also move its character children
-        if (draggedElement.type === 'textGroup' && el.type === 'character' && el.parentTextGroupId === id) {
-          return { ...el, x: el.x + dx, y: el.y + dy };
-        }
+        // textGroup functionality removed
 
         return el;
       });
@@ -1235,7 +1197,20 @@ export default function EditorCanvas() {
     return timelineManager.subscribe(setTimelineState);
   }, [timelineManager]);
 
+  // Separate effect for GSAP timeline synchronization - only sync time, not playback state
+  useEffect(() => {
+    return timeManager.subscribe(({ elapsedTime }) => {
+      gsapManager.updateTime(elapsedTime);
+    });
+  }, [timeManager, gsapManager]);
 
+  // Separate effect for GSAP playback state management - only call when isPlaying changes
+  useEffect(() => {
+    gsapManager.handlePlayback(timeState.isPlaying, () => {
+      const currentTime = timeManager.getState().elapsedTime;
+      gsapManager.updateTime(currentTime);
+    });
+  }, [timeState.isPlaying, gsapManager, timeManager]);
 
   // Subscribe to selection updates (REMOVED - now using React state)
   // useEffect(() => {
@@ -1490,18 +1465,14 @@ export default function EditorCanvas() {
     setSelectedObjects([element]);
     setSelectedGroups([]);
 
-    // If this is a textGroup, create a typed text group
-    if (element.type === 'textGroup') {
-      createTextGroup(element);
-      // Group creation already handled state updates
-    }
+    // textGroup functionality removed
 
     if (isPathMode && element.type === 'path' && element.isAnimationPath) {
       addPathToAnimation(element);
       setIsPathMode(false);
       setAnimationTarget(null);
     }
-  }, [isPathMode, addPathToAnimation, setIsPathMode, setAnimationTarget, createTextGroup]);
+  }, [isPathMode, addPathToAnimation, setIsPathMode, setAnimationTarget]);
 
   // Simplified group management handlers - now using unified createGroup
   const handleGroupElements = useCallback(() => {

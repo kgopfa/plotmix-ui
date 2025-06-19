@@ -32,6 +32,24 @@ export class GSAPTimelineManager {
   }
 
   buildAnimationTimeline(elements: AnimatedCanvasObject[], groups?: CanvasGroup[]) {
+    // Performance optimization: Check if any animations exist before building timeline
+    const hasElementAnimations = elements.some(el => 
+      !el.isAnimationPath && el.animations && el.animations.length > 0
+    );
+    const hasGroupAnimations = groups?.some(group => 
+      !group.isDefaultGroup && group.animations && group.animations.length > 0
+    );
+    
+    // Skip timeline building if no animations exist
+    if (!hasElementAnimations && !hasGroupAnimations) {
+      console.log('Skipping timeline build - no animations found');
+      // Clear any existing timeline to ensure clean state
+      this.timeline.kill();
+      this.timeline.clear();
+      this.timeline = gsap.timeline({ paused: true });
+      return;
+    }
+
     const shapeRefs = this.canvasRef?.current?.getShapeRefs();
     if (!shapeRefs) {
       console.warn('No shape refs available, skipping timeline build');
@@ -45,11 +63,9 @@ export class GSAPTimelineManager {
     this.timeline.clear();
     this.timeline = gsap.timeline({ paused: true });
 
-    // Process element animations
+    // Process element animations - only for elements that have animations
     elements.forEach((element) => {
-      if (element.isAnimationPath) return;
-
-
+      if (element.isAnimationPath || !element.animations || element.animations.length === 0) return;
 
       const target = shapeRefs[element.id];
       if (!target || target.destroyed || !target.parent) {

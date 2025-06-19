@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { extend } from '@pixi/react';
 import { Graphics } from 'pixi.js';
 import * as PIXI from 'pixi.js';
 import type { AnimatedCanvasObject } from '@/types/canvas';
+import { eventManager } from '@/lib/event-manager';
 
 extend({ Graphics });
 
@@ -22,6 +23,7 @@ const RotationHandles: React.FC<RotationHandlesProps> = ({
   onRotationEnd 
 }) => {
   const { x, y, width, height, rotation = 0 } = element;
+  const wrappersRef = useRef<{ move?: (event: Event | PointerEvent | MouseEvent | KeyboardEvent) => void; end?: () => void }>({});
 
   // Get world-space corner positions
   const getCornerPosition = (offsetX: number, offsetY: number) => {
@@ -81,8 +83,11 @@ const RotationHandles: React.FC<RotationHandlesProps> = ({
     };
 
     const handleRotationEnd = () => {
-      document.removeEventListener('pointermove', handleRotationMove);
-      document.removeEventListener('pointerup', handleRotationEnd);
+      if (wrappersRef.current.move && wrappersRef.current.end) {
+        eventManager.removeListener('pointermove', wrappersRef.current.move);
+        eventManager.removeListener('pointerup', wrappersRef.current.end);
+        wrappersRef.current = {};
+      }
       
       // Notify that rotation ended
       if (onRotationEnd) {
@@ -90,8 +95,23 @@ const RotationHandles: React.FC<RotationHandlesProps> = ({
       }
     };
 
-    document.addEventListener('pointermove', handleRotationMove);
-    document.addEventListener('pointerup', handleRotationEnd);
+    // Create wrapper functions to handle event type casting
+    const rotationMoveWrapper = (event: Event | PointerEvent | MouseEvent | KeyboardEvent) => {
+      if (event instanceof PointerEvent) {
+        handleRotationMove(event);
+      }
+    };
+
+    const rotationEndWrapper = () => {
+      handleRotationEnd();
+    };
+
+    // Store references for cleanup
+    wrappersRef.current.move = rotationMoveWrapper;
+    wrappersRef.current.end = rotationEndWrapper;
+
+    eventManager.addListener('pointermove', rotationMoveWrapper);
+    eventManager.addListener('pointerup', rotationEndWrapper);
   };
 
   // Draw a rotation handle

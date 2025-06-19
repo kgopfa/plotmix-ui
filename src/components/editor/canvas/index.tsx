@@ -21,6 +21,7 @@ import { GridOverlay } from './grid-overlay';
 import { GridConfig } from '../../../utils/grid-utils';
 import { SnapGuides } from './snap-guides';
 import { SnapGuide } from '../../../utils/element-snapping';
+import { eventManager } from '@/lib/event-manager';
 
 
 extend({ Container, Graphics, Text });
@@ -130,14 +131,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   // Add hover state
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
-  // Helper function to check if a character's parent textGroup is selected
-  const isCharacterParentSelected = (element: AnimatedCanvasObject): boolean => {
-    if (element.type === 'character' && element.parentTextGroupId) {
-      return selectedIds.includes(element.parentTextGroupId);
-    }
-    return false;
-  };
-
   // Helper function to check if an element is part of a custom or polygon group
   const isElementInCustomOrPolygonGroup = (element: AnimatedCanvasObject): boolean => {
     const group = groups.find(g => g.id === element.groupId);
@@ -170,14 +163,14 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       const viewport = viewportRef.current;
       if (!viewport) return;
       const newScale = Math.min(viewport.scale.x * 1.1, 5); // Limit to 5x max zoom
-      
+
       // Get the current center point of the viewport
       const currentCenter = viewport.center;
-      
+
       // Use PIXI viewport's built-in center-based zoom
       viewport.setZoom(newScale, true);
       viewport.moveCenter(currentCenter);
-      
+
       setCurrentZoom(newScale);
       if (onZoomChange) onZoomChange(newScale);
     },
@@ -185,14 +178,14 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       const viewport = viewportRef.current;
       if (!viewport) return;
       const newScale = Math.max(viewport.scale.x * 0.9, 0.1); // Limit to 0.1x min zoom
-      
+
       // Get the current center point of the viewport
       const currentCenter = viewport.center;
-      
+
       // Use PIXI viewport's built-in center-based zoom
       viewport.setZoom(newScale, true);
       viewport.moveCenter(currentCenter);
-      
+
       setCurrentZoom(newScale);
       if (onZoomChange) onZoomChange(newScale);
     },
@@ -201,14 +194,14 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       const viewport = viewportRef.current;
       if (!viewport) return;
       const clampedScale = Math.min(Math.max(scale, 0.1), 5); // Limit between 0.1x and 5x
-      
+
       // Get the current center point of the viewport
       const currentCenter = viewport.center;
-      
+
       // Use PIXI viewport's built-in center-based zoom
       viewport.setZoom(clampedScale, true);
       viewport.moveCenter(currentCenter);
-      
+
       setCurrentZoom(clampedScale);
       if (onZoomChange) onZoomChange(clampedScale);
     },
@@ -216,14 +209,14 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     centerOnElement: (id?: string) => {
       const targetId = id || selectedIds[0];
       if (!targetId) return;
-      
+
       const shape = shapeRefs.current[targetId];
       const viewport = viewportRef.current;
       if (!shape || !viewport) return;
-  
+
       const bounds = shape.getBounds();
-      viewport.animate({ 
-        position: { 
+      viewport.animate({
+        position: {
           x: viewport.worldScreenWidth / 2 - (bounds.x + bounds.width / 2),
           y: viewport.worldScreenHeight / 2 - (bounds.y + bounds.height / 2)
         },
@@ -233,29 +226,29 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     zoomToFitElement: (id?: string) => {
       const targetId = id || selectedIds[0];
       if (!targetId) return;
-      
+
       const shape = shapeRefs.current[targetId];
       const viewport = viewportRef.current;
       if (!shape || !viewport) return;
-  
+
       const bounds = shape.getBounds();
-      
+
       // Handle edge cases where bounds might be 0
       if (bounds.width <= 0 || bounds.height <= 0) {
         console.warn('Element has invalid bounds for zoom to fit');
         return;
       }
-      
+
       const margin = 40;
       const availableWidth = viewport.screenWidth - margin * 2;
       const availableHeight = viewport.screenHeight - margin * 2;
-      
+
       // Ensure we don't divide by zero
       const scaleX = availableWidth > 0 ? availableWidth / bounds.width : 1;
       const scaleY = availableHeight > 0 ? availableHeight / bounds.height : 1;
       const scale = Math.min(Math.min(scaleX, scaleY), 8); // Respect maxScale updated for large canvas
       const clampedScale = Math.max(scale, 0.1); // Respect minScale updated for large canvas
-  
+
       viewport.animate({
         scale: clampedScale,
         position: {
@@ -269,7 +262,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     getViewportCenter: () => {
       const viewport = viewportRef.current;
       if (!viewport) return { x: 50000, y: 50000 }; // Default to world center
-      
+
       // Get the center point of what's currently visible
       const centerX = viewport.center.x;
       const centerY = viewport.center.y;
@@ -278,7 +271,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     resetToCenter: () => {
       const viewport = viewportRef.current;
       if (!viewport) return;
-      
+
       // Reset to center of the world with default zoom
       viewport.animate({
         position: { x: 0, y: 0 }, // This centers the viewport on world center
@@ -291,14 +284,14 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     resetZoomToOneHundredPercent: () => {
       const viewport = viewportRef.current;
       if (!viewport) return;
-      
+
       // Get the current center point of the viewport to maintain position
       const currentCenter = viewport.center;
-      
+
       // Set zoom to exactly 1.0 (100%) while maintaining center
       viewport.setZoom(1, true);
       viewport.moveCenter(currentCenter);
-      
+
       setCurrentZoom(1);
       if (onZoomChange) onZoomChange(1);
     }
@@ -464,10 +457,10 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       onCanvasClick(e);
       return;
     }
-    
+
     e.stopPropagation();
 
-    const isMultiSelect = (e.nativeEvent && 'metaKey' in e.nativeEvent) ? 
+    const isMultiSelect = (e.nativeEvent && 'metaKey' in e.nativeEvent) ?
       (e.nativeEvent.metaKey || e.nativeEvent.ctrlKey) : false;
 
     const pos = e.global;
@@ -480,13 +473,13 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       const { start } = element.lineOptions.points;
       const clickX = pos.x;
       const clickY = pos.y;
-      
+
       // Use larger click area for easier polygon closing - 15px instead of 7px
       const ENDPOINT_CLICK_SIZE = 15;
       const halfSize = ENDPOINT_CLICK_SIZE / 2;
-      
+
       if (clickX >= start.x - halfSize && clickX <= start.x + halfSize &&
-          clickY >= start.y - halfSize && clickY <= start.y + halfSize) {
+        clickY >= start.y - halfSize && clickY <= start.y + halfSize) {
         // Close the shape by connecting to the start point
         e.stopPropagation();
         onCanvasClick(e); // This will trigger the shape closing logic
@@ -494,25 +487,12 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       }
     }
 
-    // Special handling for characters when their parent textGroup is selected
-    if (element.type === 'character' && element.parentTextGroupId && isCharacterParentSelected(element)) {
-      // Find the parent textGroup
-      const parentTextGroup = elements.find(el => el.id === element.parentTextGroupId);
-      if (parentTextGroup) {
-        // Delegate the drag operation to the parent textGroup
-        // Don't change selection - keep the textGroup selected
-        // But set up dragging for the textGroup instead
-        setDraggingId(parentTextGroup.id);
-        setDragOffset({ x: pos.x - parentTextGroup.x, y: pos.y - parentTextGroup.y });
-        setIsDraggingGroup(false);
-        return;
-      }
-    }
+
 
     onElementSelect(id, isMultiSelect);
 
     // For text and textGroup elements, handle double-click to edit, single click to drag
-            if (element.type === 'text') {
+    if (element.type === 'text') {
       // Check if this is a double-click
       const currentTime = Date.now();
       const lastClickTime = textClickTimeRef.current.get(id) || 0;
@@ -560,10 +540,10 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       // Use larger click area for easier endpoint interaction - 12px instead of 7px
       const ENDPOINT_CLICK_SIZE = 12;
       const halfSize = ENDPOINT_CLICK_SIZE / 2;
-      
+
       // Check if click is within start point square bounds
       if (clickX >= start.x - halfSize && clickX <= start.x + halfSize &&
-          clickY >= start.y - halfSize && clickY <= start.y + halfSize) {
+        clickY >= start.y - halfSize && clickY <= start.y + halfSize) {
         setDraggingEndpoint('start');
         setDraggingId(id);
         onElementSelect(id, isMultiSelect);
@@ -572,7 +552,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
       // Check if clicking near end point (larger click area for easier interaction)
       if (clickX >= end.x - halfSize && clickX <= end.x + halfSize &&
-          clickY >= end.y - halfSize && clickY <= end.y + halfSize) {
+        clickY >= end.y - halfSize && clickY <= end.y + halfSize) {
         setDraggingEndpoint('end');
         setDraggingId(id);
         onElementSelect(id, isMultiSelect);
@@ -592,7 +572,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           offsetY: pos.y - selectedElement.y
         };
       });
-      
+
       setGroupDragOffsets(offsets);
       setIsDraggingGroup(true);
       setDraggingId(id); // Still track the primary dragged element
@@ -616,7 +596,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       // Reset group dragging state
       setIsDraggingGroup(false);
       setGroupDragOffsets([]);
-      
+
       // Reset the dragging flag for performance optimization
       const resetDragEvent = new CustomEvent('group-drag-end');
       window.dispatchEvent(resetDragEvent);
@@ -860,20 +840,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     if (onTextChange) {
       onTextChange(id, text);
     }
-    
-    // For textGroup elements, we need to update the characters array
-    const element = elements.find(el => el.id === id);
-    if (element && element.type === 'textGroup') {
-      // Dispatch a custom event to update the characters array
-      const updateCharactersEvent = new CustomEvent('update-text-group-characters', {
-        detail: {
-          id,
-          text,
-          characters: text.split('')
-        }
-      });
-      window.dispatchEvent(updateCharactersEvent);
-    }
+
+
   };
 
   const handleTextEditEnd = () => {
@@ -882,8 +850,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
   // Handle drag start from the group selection area
   const handleGroupSelectionDragStart = (
-    virtualElement: AnimatedCanvasObject, 
-    mouseX: number, 
+    virtualElement: AnimatedCanvasObject,
+    mouseX: number,
     mouseY: number,
     allElements?: AnimatedCanvasObject[],
     gridConfig?: GridConfig
@@ -898,12 +866,12 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         offsetY: mouseY - selectedElement.y
       };
     });
-    
+
     // Store the virtual element and additional data for snapping
     setGroupDragOffsets(offsets);
     setIsDraggingGroup(true);
     setDraggingId('virtual-group'); // Use virtual group ID to distinguish from individual element drags
-    
+
     // Store snapping context for group dragging
     if (allElements && gridConfig) {
       // Store these in state or refs if needed for the group drag handler
@@ -938,7 +906,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     };
   }, [elements, onElementRadiusChange]);
 
-  // Global event handlers for pointer capture
+  // Update the useEffect that manages global event listeners
   useEffect(() => {
     const handleGlobalPointerUp = () => {
       if (resizingHandle) {
@@ -952,7 +920,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           setCursor(DRAW_CURSOR);
         } else if (tool === 'line') {
           setCursor(LINE_CURSOR);
-        } else if (tool === 'text' || tool === 'textGroup') {
+        } else if (tool === 'text') {
           setCursor(TEXT_CURSOR);
         } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle') {
           setCursor(CROSS_CURSOR);
@@ -969,7 +937,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         // Reset group dragging state
         setIsDraggingGroup(false);
         setGroupDragOffsets([]);
-        
+
         // Reset the dragging flag for performance optimization
         const resetDragEvent = new CustomEvent('group-drag-end');
         window.dispatchEvent(resetDragEvent);
@@ -979,7 +947,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           setCursor(DRAW_CURSOR);
         } else if (tool === 'line') {
           setCursor(LINE_CURSOR);
-        } else if (tool === 'text' || tool === 'textGroup') {
+        } else if (tool === 'text') {
           setCursor(TEXT_CURSOR);
         } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle') {
           setCursor(CROSS_CURSOR);
@@ -989,13 +957,24 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       }
     };
 
-    // Add global event listeners for pointer capture
-    document.addEventListener('pointermove', handleGlobalPointerMove);
-    document.addEventListener('pointerup', handleGlobalPointerUp);
+    // Create wrapper functions to properly handle event types with EventManager
+    const handleGlobalPointerMoveWrapper = (event: Event | PointerEvent | MouseEvent | KeyboardEvent) => {
+      if (event instanceof PointerEvent) {
+        handleGlobalPointerMove(event);
+      }
+    };
+
+    const handleGlobalPointerUpWrapper = () => {
+      handleGlobalPointerUp();
+    };
+
+    // Use EventManager instead of direct event listeners
+    eventManager.addListener('pointermove', handleGlobalPointerMoveWrapper);
+    eventManager.addListener('pointerup', handleGlobalPointerUpWrapper);
 
     return () => {
-      document.removeEventListener('pointermove', handleGlobalPointerMove);
-      document.removeEventListener('pointerup', handleGlobalPointerUp);
+      eventManager.removeListener('pointermove', handleGlobalPointerMoveWrapper);
+      eventManager.removeListener('pointerup', handleGlobalPointerUpWrapper);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draggingId, resizingHandle, initialSize, initialMouse, dragOffset, draggingEndpoint, isDraggingGroup, groupDragOffsets, elements, onElementDragEnd, onGroupDrag, onLineEndpointDrag, tool]);
@@ -1086,14 +1065,14 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
               zoom={zoom}
             />
           )}
-          
+
           {/* Snap guides */}
           <SnapGuides
             guides={snapGuides}
             canvasWidth={dimensions.width}
             canvasHeight={dimensions.height}
           />
-          
+
           {/* Full-size transparent interactive layer to capture background clicks */}
           <pixiGraphics
             draw={(g) => {
@@ -1119,7 +1098,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           {/* Render group containers first */}
           {groups.filter(group => !group.isDefaultGroup && (group.visible !== false)).map((group) => {
             const groupElements = elements.filter(el => el.groupId === group.id && (el.visible !== false));
-            
+
             return (
               <pixiContainer
                 key={`group-${group.id}`}
@@ -1135,7 +1114,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                   // Calculate element position relative to group center
                   const relativeX = el.x - group.x;
                   const relativeY = el.y - group.y;
-                  
+
                   return (
                     <pixiContainer
                       key={el.id}
@@ -1152,31 +1131,31 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                           const startY = start.y - el.y;
                           const endX = end.x - el.x;
                           const endY = end.y - el.y;
-                          
+
                           const minX = Math.min(startX, endX);
                           const maxX = Math.max(startX, endX);
                           const minY = Math.min(startY, endY);
                           const maxY = Math.max(startY, endY);
-                          
+
                           // Add some padding for easier interaction
                           const padding = 10;
                           return new Rectangle(
-                            minX - padding, 
-                            minY - padding, 
-                            (maxX - minX) + (2 * padding), 
+                            minX - padding,
+                            minY - padding,
+                            (maxX - minX) + (2 * padding),
                             (maxY - minY) + (2 * padding)
                           );
-                        } else if (el.type === 'path' || el.type === 'image' || el.type === 'textGroup') {
+                        } else if (el.type === 'path' || el.type === 'image') {
                           return new Rectangle(-el.width / 2, -el.height / 2, el.width, el.height);
                         }
                         return undefined;
                       })()}
                       rotation={el.rotation || 0}
-                                      onPointerDown={handlePointerDown(el.id, el.x, el.y)}
-                onPointerUp={handlePointerUp}
-                onPointerUpOutside={handlePointerUp}
-                                              onPointerOver={el.type === 'character' && isCharacterParentSelected(el) ? undefined : handleElementMouseMove(el.id)}
-                        onPointerOut={el.type === 'character' && isCharacterParentSelected(el) ? undefined : handleElementMouseLeave(el.id)}
+                      onPointerDown={handlePointerDown(el.id, el.x, el.y)}
+                      onPointerUp={handlePointerUp}
+                      onPointerUpOutside={handlePointerUp}
+                      onPointerOver={handleElementMouseMove(el.id)}
+                      onPointerOut={handleElementMouseLeave(el.id)}
                       ref={(node) => {
                         if (node) shapeRefs.current[el.id] = node;
                       }}
@@ -1205,34 +1184,15 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                         />
                       )}
 
-                      {/* Render character elements */}
-                      {el.type === 'character' && editingTextId !== el.id && (
-                        <pixiText
-                          text={el.character || el.text || 'A'}
-                          anchor={{ x: 0.5, y: 0.5 }}
-                          x={0}
-                          y={0}
-                          alpha={el.opacity ?? 1}
-                          style={{
-                            fontFamily: el.fontFamily || 'Arial, sans-serif',
-                            fontSize: el.fontSize || 16,
-                            fontWeight: (el.fontWeight as 'normal' | 'bold' | 'bolder' | 'lighter' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900') || 'normal',
-                            fontStyle: (el.fontStyle as 'normal' | 'italic' | 'oblique') || 'normal',
-                            fill: el.fill || '#000000',
-                            align: 'center',
-                          }}
-                        />
-                      )}
-
                       {/* Note: textGroup elements don't render directly - only their child characters do */}
 
                       {/* Show hover outline when hovered but not selected (but not for characters when parent textGroup is selected or elements in custom/polygon groups) */}
-                      {hoveredId === el.id && !selectedIds.includes(el.id) && !(el.type === 'character' && isCharacterParentSelected(el)) && !isElementInCustomOrPolygonGroup(el) && (
+                      {hoveredId === el.id && !selectedIds.includes(el.id) && !isElementInCustomOrPolygonGroup(el) && (
                         <HoverOutline element={el} />
                       )}
 
                       {/* Show selection outline for all selected elements (but not for characters when parent textGroup is selected or elements in custom/polygon groups) */}
-                      {selectedIds.includes(el.id) && !(el.type === 'character' && isCharacterParentSelected(el)) && !isElementInCustomOrPolygonGroup(el) && (
+                      {selectedIds.includes(el.id) && !isElementInCustomOrPolygonGroup(el) && (
                         <ObjectSelect
                           element={el}
                           scaleFactor={canvasScaleFactor.current}
@@ -1252,51 +1212,51 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           }).map((el) => {
             // Handle all element types consistently, including SVGs
             return (
-                                <pixiContainer
-                    key={el.id}
-                    x={el.x}
-                    y={el.y}
-                    pivot={{ x: 0, y: 0 }}
-                    interactive={el.type === 'character' ? !isCharacterParentSelected(el) : true}
-                    eventMode={el.type === 'character' && isCharacterParentSelected(el) ? "none" : "dynamic"}
-                                          hitArea={(() => {
-                        if (el.type === 'line' && el.lineOptions?.points) {
-                          // Calculate hit area based on actual line geometry
-                          const { start, end } = el.lineOptions.points;
-                          const startX = start.x - el.x;
-                          const startY = start.y - el.y;
-                          const endX = end.x - el.x;
-                          const endY = end.y - el.y;
-                          
-                          const minX = Math.min(startX, endX);
-                          const maxX = Math.max(startX, endX);
-                          const minY = Math.min(startY, endY);
-                          const maxY = Math.max(startY, endY);
-                          
-                          // Add some padding for easier interaction
-                          const padding = 10;
-                          return new Rectangle(
-                            minX - padding, 
-                            minY - padding, 
-                            (maxX - minX) + (2 * padding), 
-                            (maxY - minY) + (2 * padding)
-                          );
-                        } else if (el.type === 'path' || el.type === 'image' || el.type === 'textGroup') {
-                          return new Rectangle(-el.width / 2, -el.height / 2, el.width, el.height);
-                        }
-                        return undefined;
-                      })()}
-                    rotation={el.rotation || 0}
-                    onPointerDown={handlePointerDown(el.id, el.x, el.y)}
-                    onPointerUp={handlePointerUp}
-                    onPointerUpOutside={handlePointerUp}
-                    // REMOVED: onPointerMove handler - now handled globally
-                    onPointerOver={el.type === 'character' && isCharacterParentSelected(el) ? undefined : handleElementMouseMove(el.id)}
-                    onPointerOut={el.type === 'character' && isCharacterParentSelected(el) ? undefined : handleElementMouseLeave(el.id)}
-                    ref={(node) => {
-                      if (node) shapeRefs.current[el.id] = node;
-                    }}
-                  >
+              <pixiContainer
+                key={el.id}
+                x={el.x}
+                y={el.y}
+                pivot={{ x: 0, y: 0 }}
+                interactive={true}
+                eventMode="dynamic"
+                hitArea={(() => {
+                  if (el.type === 'line' && el.lineOptions?.points) {
+                    // Calculate hit area based on actual line geometry
+                    const { start, end } = el.lineOptions.points;
+                    const startX = start.x - el.x;
+                    const startY = start.y - el.y;
+                    const endX = end.x - el.x;
+                    const endY = end.y - el.y;
+
+                    const minX = Math.min(startX, endX);
+                    const maxX = Math.max(startX, endX);
+                    const minY = Math.min(startY, endY);
+                    const maxY = Math.max(startY, endY);
+
+                    // Add some padding for easier interaction
+                    const padding = 10;
+                    return new Rectangle(
+                      minX - padding,
+                      minY - padding,
+                      (maxX - minX) + (2 * padding),
+                      (maxY - minY) + (2 * padding)
+                    );
+                  } else if (el.type === 'path' || el.type === 'image') {
+                    return new Rectangle(-el.width / 2, -el.height / 2, el.width, el.height);
+                  }
+                  return undefined;
+                })()}
+                rotation={el.rotation || 0}
+                onPointerDown={handlePointerDown(el.id, el.x, el.y)}
+                onPointerUp={handlePointerUp}
+                onPointerUpOutside={handlePointerUp}
+                // REMOVED: onPointerMove handler - now handled globally
+                onPointerOver={handleElementMouseMove(el.id)}
+                onPointerOut={handleElementMouseLeave(el.id)}
+                ref={(node) => {
+                  if (node) shapeRefs.current[el.id] = node;
+                }}
+              >
                 <pixiGraphics draw={(g) => drawShape(g, el)} />
 
                 {/* Render text separately for text elements */}
@@ -1321,34 +1281,17 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                   />
                 )}
 
-                {/* Render character elements */}
-                {el.type === 'character' && editingTextId !== el.id && (
-                  <pixiText
-                    text={el.character || el.text || 'A'}
-                    anchor={{ x: 0.5, y: 0.5 }}
-                    x={0}
-                    y={0}
-                    alpha={el.opacity ?? 1}
-                    style={{
-                      fontFamily: el.fontFamily || 'Arial, sans-serif',
-                      fontSize: el.fontSize || 16,
-                      fontWeight: (el.fontWeight as 'normal' | 'bold' | 'bolder' | 'lighter' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900') || 'normal',
-                      fontStyle: (el.fontStyle as 'normal' | 'italic' | 'oblique') || 'normal',
-                      fill: el.fill || '#000000',
-                      align: 'center',
-                    }}
-                  />
-                )}
+
 
                 {/* Note: textGroup elements don't render directly - only their child characters do */}
 
                 {/* Show hover outline when hovered but not selected (but not for characters when parent textGroup is selected or elements in custom/polygon groups) */}
-                {hoveredId === el.id && !selectedIds.includes(el.id) && !(el.type === 'character' && isCharacterParentSelected(el)) && !isElementInCustomOrPolygonGroup(el) && (
+                {hoveredId === el.id && !selectedIds.includes(el.id) && !isElementInCustomOrPolygonGroup(el) && (
                   <HoverOutline element={el} />
                 )}
 
                 {/* Show selection outline for all selected elements (but not for characters when parent textGroup is selected or elements in custom/polygon groups) */}
-                {selectedIds.includes(el.id) && !(el.type === 'character' && isCharacterParentSelected(el)) && !isElementInCustomOrPolygonGroup(el) && (
+                {selectedIds.includes(el.id) && !isElementInCustomOrPolygonGroup(el) && (
                   <ObjectSelect
                     element={el}
                     scaleFactor={canvasScaleFactor.current}
@@ -1381,25 +1324,25 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
               eventMode="none"
               draw={(g) => {
                 g.clear();
-                
+
                 // Check if we're in chaining mode and if mouse is near a point that can close the shape
                 let canCloseShape = false;
                 let snapToPoint = mousePos;
-                
+
                 if (isLineChaining) {
                   // Find the very first line created in this chain by looking for lines that start near our original starting point
                   // We need to find the actual first line in the chain to get the true original start point
                   const chainedLines = elements.filter(obj => obj.type === 'line' && obj.lineOptions?.points);
-                  
+
                   // Find the line whose start point is closest to our original lineStartPoint
                   // This should be one of the first lines in our chain
                   let originalStartPoint = null;
                   let minDistance = Infinity;
-                  
+
                   for (const line of chainedLines) {
                     if (line.lineOptions?.points?.start) {
                       const distance = Math.hypot(
-                        line.lineOptions.points.start.x - lineStartPoint.x, 
+                        line.lineOptions.points.start.x - lineStartPoint.x,
                         line.lineOptions.points.start.y - lineStartPoint.y
                       );
                       if (distance < minDistance && distance < 10) {
@@ -1408,7 +1351,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                       }
                     }
                   }
-                  
+
                   // If we couldn't find through chain, use first line
                   if (!originalStartPoint && chainedLines.length > 0) {
                     const firstLine = chainedLines[0];
@@ -1416,10 +1359,10 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                       originalStartPoint = firstLine.lineOptions.points.start;
                     }
                   }
-                  
+
                   if (originalStartPoint) {
                     const distanceToOriginalStart = Math.hypot(mousePos.x - originalStartPoint.x, mousePos.y - originalStartPoint.y);
-                    
+
                     // Use same threshold as closing logic - 30px for easier polygon closing
                     if (distanceToOriginalStart <= 30) {
                       canCloseShape = true;
@@ -1427,7 +1370,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                     }
                   }
                 }
-                
+
                 // Manually draw dotted line for better control
                 const dx = snapToPoint.x - lineStartPoint.x;
                 const dy = snapToPoint.y - lineStartPoint.y;
@@ -1436,26 +1379,26 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                 const gapLength = 4;
                 const totalDashLength = dashLength + gapLength;
                 const numDashes = Math.floor(distance / totalDashLength);
-                
+
                 for (let i = 0; i <= numDashes; i++) {
                   const startRatio = (i * totalDashLength) / distance;
                   const endRatio = Math.min((i * totalDashLength + dashLength) / distance, 1);
-                  
+
                   const startX = lineStartPoint.x + dx * startRatio;
                   const startY = lineStartPoint.y + dy * startRatio;
                   const endX = lineStartPoint.x + dx * endRatio;
                   const endY = lineStartPoint.y + dy * endRatio;
-                  
+
                   g.moveTo(startX, startY);
                   g.lineTo(endX, endY);
-                  g.stroke({ 
-                    width: 2, 
+                  g.stroke({
+                    width: 2,
                     color: canCloseShape ? 0x4CAF50 : 0x888888, // Green when can close shape
                     alpha: 0.7,
                     cap: 'round'
                   });
                 }
-                
+
                 // Show start point indicator ONLY for the very first line in the chain
                 // For subsequent lines, the previous line's endpoint is already visible
                 if (chainedLineIds.length === 0) {
@@ -1465,14 +1408,14 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                   g.fill({ color: 0xFFFFFF, alpha: 1 });
                   g.stroke({ width: 1, color: 0x74b9ff, alpha: 0.8 });
                 }
-                
+
                 // Draw end point indicator - special styling if can close shape
                 if (canCloseShape) {
                   // Draw a larger, green circle to indicate shape closing
                   g.circle(snapToPoint.x, snapToPoint.y, 8);
                   g.fill({ color: 0x4CAF50, alpha: 0.8 });
                   g.stroke({ color: 0x2E7D32, width: 2 });
-                  
+
                   // Draw inner circle
                   g.circle(snapToPoint.x, snapToPoint.y, 4);
                   g.fill({ color: 0xFFFFFF, alpha: 0.9 });
@@ -1488,7 +1431,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           {/* Draggable corner squares - only for single selection */}
           {selectedIds.length === 1 && selectedIds.map(selectedId => {
             const selectedElement = elements.find(el => el.id === selectedId);
-            
+
             if (!selectedElement || selectedElement.type === 'line' || selectedElement.type === 'path') {
               return null;
             }
@@ -1503,7 +1446,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
               if (selectedElement.type === 'triangle') {
                 // For triangles, place handle at the top corner only
                 const height = selectedElement.height;
-                
+
                 // Calculate triangle top corner position relative to shape center
                 const localPosition = { x: 0, y: -height / 2 + totalDistance };
 
@@ -1691,24 +1634,26 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           })}
 
           {/* Multi-selection rectangle for multiple selected elements */}
-          <GroupSelection
-            selectedElements={elements.filter(el => selectedIds.includes(el.id))}
-            scaleFactor={canvasScaleFactor.current}
-            onGroupDragStart={handleGroupSelectionDragStart}
-            allElements={elements}
-            gridConfig={gridConfig}
-            groups={groups}
-          />
+          {selectedIds.length > 1 && (
+            <GroupSelection
+              selectedElements={elements.filter(el => selectedIds.includes(el.id))}
+              scaleFactor={canvasScaleFactor.current}
+              onGroupDragStart={handleGroupSelectionDragStart}
+              allElements={elements}
+              gridConfig={gridConfig}
+              groups={groups}
+            />
+          )}
 
           {/* Rotation handles OUTSIDE the rotating containers (only for single selection) */}
           {selectedIds.length === 1 && (() => {
             const firstSelectedId = selectedIds[0];
             const selectedElement = elements.find(el => el.id === firstSelectedId);
-            
+
             if (!selectedElement || selectedElement.type === 'line' || selectedElement.type === 'path') {
               return null;
             }
-            
+
             return (
               <RotationHandles
                 element={selectedElement}

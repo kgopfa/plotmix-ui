@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { extend } from '@pixi/react';
 import { Container, Graphics } from 'pixi.js';
 import * as PIXI from 'pixi.js';
+import { eventManager } from '@/lib/event-manager';
 
 extend({ Container, Graphics });
 
@@ -25,6 +26,7 @@ const RadiusHandle: React.FC<RadiusHandleProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const isDraggingRef = useRef(false);
   const dragStartRef = useRef({ x: 0, y: 0, startX: 0, startY: 0, initialRadius: 0 });
+  const wrappersRef = useRef<{ move?: (event: Event | PointerEvent | MouseEvent | KeyboardEvent) => void; up?: () => void }>({});
 
   const drawCircle = (g: PIXI.Graphics) => {
     g.clear();
@@ -55,9 +57,24 @@ const RadiusHandle: React.FC<RadiusHandleProps> = ({
       initialRadius: currentRadius
     };
     
-    // Use window event listeners to avoid conflicts with resize handles
-    window.addEventListener('pointermove', handlePointerMove);
-    window.addEventListener('pointerup', handlePointerUp);
+    // Create wrapper functions to handle event type casting
+    const pointerMoveWrapper = (event: Event | PointerEvent | MouseEvent | KeyboardEvent) => {
+      if (event instanceof PointerEvent) {
+        handlePointerMove(event);
+      }
+    };
+    
+    const pointerUpWrapper = () => {
+      handlePointerUp();
+    };
+    
+    // Store references for cleanup
+    wrappersRef.current.move = pointerMoveWrapper;
+    wrappersRef.current.up = pointerUpWrapper;
+    
+    // Use EventManager with wrapper functions
+    eventManager.addListener('pointermove', pointerMoveWrapper, window);
+    eventManager.addListener('pointerup', pointerUpWrapper, window);
     
     // CRITICAL: Stop propagation to prevent resize handles from activating
     e.preventDefault();
@@ -115,16 +132,18 @@ const RadiusHandle: React.FC<RadiusHandleProps> = ({
     onRadiusChange(newRadius);
   };
 
-  
-
   const handlePointerUp = () => {
     if (isDraggingRef.current) {
       console.log(`Finished radius drag on ${corner} handle`);
       isDraggingRef.current = false;
       setIsDragging(false);
       
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerUp);
+      // Remove using the stored wrapper references
+      if (wrappersRef.current.move && wrappersRef.current.up) {
+        eventManager.removeListener('pointermove', wrappersRef.current.move, window);
+        eventManager.removeListener('pointerup', wrappersRef.current.up, window);
+        wrappersRef.current = {};
+      }
     }
   };
 

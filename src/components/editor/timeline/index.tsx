@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useMemo } from 'react';
 import { TimelineTrack } from '@/components/editor/timeline/timeline-track';
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { TimelineState } from '@/types/timeline';
@@ -59,8 +59,23 @@ export function Timeline({
     });
   };
 
-  // Create hierarchical track structure
-  const createHierarchicalTracks = () => {
+  // Memoize expensive filtering operations for performance
+  const visibleGroups = useMemo(() => 
+    groups.filter(group => !group.isDefaultGroup),
+    [groups]
+  );
+
+  const elementsNotInTypedGroups = useMemo(() => 
+    elements.filter(el => {
+      // Include elements that are in default groups or not in any typed group
+      const group = groups.find(g => g.elementIds.includes(el.id));
+      return !group || group.isDefaultGroup;
+    }),
+    [elements, groups]
+  );
+
+  // Create hierarchical track structure - memoized for performance
+  const hierarchicalTracks = useMemo(() => {
     const tracks: Array<{
       id: string;
       type: 'element' | 'group';
@@ -83,66 +98,67 @@ export function Timeline({
     }> = [];
 
     // Add typed groups (text, custom, polygon)
-    groups
-      .filter(group => !group.isDefaultGroup)
-      .forEach(group => {
-        const isSelected = false; // Selection temporarily disabled
-        
-        tracks.push({
-          id: group.id,
-          type: 'group',
-          name: group.name,
-          item: group,
-          animations: group.animations,
-          isSelected,
-          isGroup: true,
-          isExpanded: expandedElements.has(group.id),
-          depth: 0
-        });
-        
-                // For all groups, add element children if group is expanded  
-        if (expandedElements.has(group.id)) {
-          const groupElements = elements.filter(el => group.elementIds.includes(el.id));
-          
-          groupElements.forEach(element => {
-            tracks.push({
-              id: element.id,
-              type: 'element',
-              name: element.name,
-              item: element,
-              animations: element.animations,
-              isSelected: false, // Selection temporarily disabled
-              isChild: true,
-              parentGroupId: group.id,
-              depth: 1
-            });
-          });
-        }
+    visibleGroups.forEach(group => {
+      const isSelected = false; // Selection temporarily disabled
+      
+      tracks.push({
+        id: group.id,
+        type: 'group',
+        name: group.name,
+        item: group,
+        animations: group.animations,
+        isSelected,
+        isGroup: true,
+        isExpanded: expandedElements.has(group.id),
+        depth: 0
       });
+      
+      // For all groups, add element children if group is expanded  
+      if (expandedElements.has(group.id)) {
+        const groupElements = elements.filter(el => group.elementIds.includes(el.id));
+        
+        groupElements.forEach(element => {
+          tracks.push({
+            id: element.id,
+            type: 'element',
+            name: element.name,
+            item: element,
+            animations: element.animations,
+            isSelected: false, // Selection temporarily disabled
+            isChild: true,
+            parentGroupId: group.id,
+            depth: 1
+          });
+        });
+      }
+    });
 
     // Add individual elements not in custom/polygon groups
-    elements
-      .filter(el => {
-        // Include elements that are in default groups or not in any typed group
-        const group = groups.find(g => g.elementIds.includes(el.id));
-        return !group || group.isDefaultGroup;
-      })
-      .forEach(element => {
-        tracks.push({
-          id: element.id,
-          type: 'element',
-          name: element.name,
-          item: element,
-          animations: element.animations,
-          isSelected: false, // Selection temporarily disabled
-          depth: 0
-        });
+    elementsNotInTypedGroups.forEach(element => {
+      tracks.push({
+        id: element.id,
+        type: 'element',
+        name: element.name,
+        item: element,
+        animations: element.animations,
+        isSelected: false, // Selection temporarily disabled
+        depth: 0
       });
+    });
 
     return tracks;
-  };
+  }, [visibleGroups, elementsNotInTypedGroups, elements, expandedElements]);
 
-  const hierarchicalTracks = createHierarchicalTracks();
+  // Memoize ruler ticks for performance
+  const rulerTicks = useMemo(() => 
+    Array.from({ length: 121 }).map((_, i) => ({
+      index: i,
+      isMajor: i % 5 === 0,
+      left: i * timelineState.scale,
+      time: formatTime(i)
+    })),
+    [timelineState.scale]
+  );
 
   return (
     <div 
@@ -197,22 +213,19 @@ export function Timeline({
             {/* Ruler (scrolls with timeline) */}
             <div className="h-6 relative border-b border-gray-200">
               <div className="absolute top-0 left-32 h-full w-full" style={{ transform: `translateX(-${scrollLeft}px)` }}>
-                {Array.from({ length: 121 }).map((_, i) => {
-                  const isMajor = i % 5 === 0;
-                  return (
-                    <div
-                      key={i}
-                      className="absolute h-full border-l border-gray-200"
-                      style={{ left: `${i * timelineState.scale}px`, width: 0 }}
-                    >
-                      {isMajor && (
-                        <div className="absolute top-0 text-[10px] text-gray-500 font-mono translate-x-[-50%]">
-                          {formatTime(i)}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                {rulerTicks.map((tick) => (
+                  <div
+                    key={tick.index}
+                    className="absolute h-full border-l border-gray-200"
+                    style={{ left: `${tick.left}px`, width: 0 }}
+                  >
+                    {tick.isMajor && (
+                      <div className="absolute top-0 text-[10px] text-gray-500 font-mono translate-x-[-50%]">
+                        {tick.time}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
 

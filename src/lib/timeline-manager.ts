@@ -11,6 +11,7 @@ export class TimelineManager {
     duration: 10,
     scale: 100
   };
+  private previousState: TimelineState | null = null;
   private listeners: Set<TimelineUpdateListener> = new Set();
   private updateTimeout: number | null = null;
   private pendingUpdates: boolean = false;
@@ -30,7 +31,28 @@ export class TimelineManager {
     return () => this.listeners.delete(listener);
   }
 
+  private notifyListeners(): void {
+    this.listeners.forEach(listener => listener(this.state));
+  }
+
+  private hasStateChanged(): boolean {
+    if (!this.previousState) return true;
+    
+    // Quick shallow comparison for performance
+    return (
+      this.state.duration !== this.previousState.duration ||
+      this.state.scale !== this.previousState.scale ||
+      this.state.tracks.length !== this.previousState.tracks.length ||
+      this.state.trackData.length !== this.previousState.trackData.length
+    );
+  }
+
   private scheduleUpdate(): void {
+    // Performance optimization: Only schedule update if state has actually changed
+    if (!this.hasStateChanged()) {
+      return;
+    }
+
     if (this.updateTimeout) {
       window.clearTimeout(this.updateTimeout);
     }
@@ -39,13 +61,16 @@ export class TimelineManager {
       this.pendingUpdates = true;
       this.updateTimeout = window.setTimeout(() => {
         this.notifyListeners();
+        // Store previous state after notification
+        this.previousState = {
+          tracks: [...this.state.tracks],
+          trackData: [...this.state.trackData],
+          duration: this.state.duration,
+          scale: this.state.scale
+        };
         this.pendingUpdates = false;
       }, 16); // Roughly one frame at 60fps
     }
-  }
-
-  private notifyListeners(): void {
-    this.listeners.forEach(listener => listener(this.state));
   }
 
   addTrack(track: AnimatedCanvasObject): void {
