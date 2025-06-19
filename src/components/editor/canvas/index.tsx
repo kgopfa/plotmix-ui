@@ -1487,43 +1487,62 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
               return null;
             }
 
-            // Calculate radius handle positions (similar to ShapeSelect logic)
+            // Calculate radius handle positions (different for rectangles vs triangles)
             const getRadiusHandlePositions = () => {
               const baseDistance = 12;
               const radiusOffset = selectedElement.cornerRadius || 0;
               const totalDistance = baseDistance + radiusOffset;
               const rotation = selectedElement.rotation || 0;
 
-              // Calculate local positions relative to shape center
-              const localPositions = {
-                tl: { x: -selectedElement.width / 2 + totalDistance, y: -selectedElement.height / 2 + totalDistance },
-                tr: { x: selectedElement.width / 2 - totalDistance, y: -selectedElement.height / 2 + totalDistance },
-                bl: { x: -selectedElement.width / 2 + totalDistance, y: selectedElement.height / 2 - totalDistance },
-                br: { x: selectedElement.width / 2 - totalDistance, y: selectedElement.height / 2 - totalDistance }
-              };
+              if (selectedElement.type === 'triangle') {
+                // For triangles, place handle at the top corner only
+                const height = selectedElement.height;
+                
+                // Calculate triangle top corner position relative to shape center
+                const localPosition = { x: 0, y: -height / 2 + totalDistance };
 
-              // Apply rotation transformation
-              const cos = Math.cos(rotation);
-              const sin = Math.sin(rotation);
+                // Apply rotation transformation
+                const cos = Math.cos(rotation);
+                const sin = Math.sin(rotation);
 
-              return {
-                tl: {
-                  x: selectedElement.x + localPositions.tl.x * cos - localPositions.tl.y * sin,
-                  y: selectedElement.y + localPositions.tl.x * sin + localPositions.tl.y * cos
-                },
-                tr: {
-                  x: selectedElement.x + localPositions.tr.x * cos - localPositions.tr.y * sin,
-                  y: selectedElement.y + localPositions.tr.x * sin + localPositions.tr.y * cos
-                },
-                bl: {
-                  x: selectedElement.x + localPositions.bl.x * cos - localPositions.bl.y * sin,
-                  y: selectedElement.y + localPositions.bl.x * sin + localPositions.bl.y * cos
-                },
-                br: {
-                  x: selectedElement.x + localPositions.br.x * cos - localPositions.br.y * sin,
-                  y: selectedElement.y + localPositions.br.x * sin + localPositions.br.y * cos
-                }
-              };
+                return {
+                  top: {
+                    x: selectedElement.x + localPosition.x * cos - localPosition.y * sin,
+                    y: selectedElement.y + localPosition.x * sin + localPosition.y * cos
+                  }
+                };
+              } else {
+                // For rectangles, use the existing 4-corner logic
+                const localPositions = {
+                  tl: { x: -selectedElement.width / 2 + totalDistance, y: -selectedElement.height / 2 + totalDistance },
+                  tr: { x: selectedElement.width / 2 - totalDistance, y: -selectedElement.height / 2 + totalDistance },
+                  bl: { x: -selectedElement.width / 2 + totalDistance, y: selectedElement.height / 2 - totalDistance },
+                  br: { x: selectedElement.width / 2 - totalDistance, y: selectedElement.height / 2 - totalDistance }
+                };
+
+                // Apply rotation transformation
+                const cos = Math.cos(rotation);
+                const sin = Math.sin(rotation);
+
+                return {
+                  tl: {
+                    x: selectedElement.x + localPositions.tl.x * cos - localPositions.tl.y * sin,
+                    y: selectedElement.y + localPositions.tl.x * sin + localPositions.tl.y * cos
+                  },
+                  tr: {
+                    x: selectedElement.x + localPositions.tr.x * cos - localPositions.tr.y * sin,
+                    y: selectedElement.y + localPositions.tr.x * sin + localPositions.tr.y * cos
+                  },
+                  bl: {
+                    x: selectedElement.x + localPositions.bl.x * cos - localPositions.bl.y * sin,
+                    y: selectedElement.y + localPositions.bl.x * sin + localPositions.bl.y * cos
+                  },
+                  br: {
+                    x: selectedElement.x + localPositions.br.x * cos - localPositions.br.y * sin,
+                    y: selectedElement.y + localPositions.br.x * sin + localPositions.br.y * cos
+                  }
+                };
+              }
             };
 
             const radiusPositions = getRadiusHandlePositions();
@@ -1569,9 +1588,9 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                 />
 
                 {/* Radius Handles (only for rectangle/triangle) */}
-                {(selectedElement.type === 'rectangle' || selectedElement.type === 'triangle') && (
+                {selectedElement.type === 'rectangle' && radiusPositions.tl && (
                   <>
-                    {/* Top-left radius handle */}
+                    {/* Rectangle: 4 corner radius handles */}
                     <RadiusHandle
                       x={radiusPositions.tl.x}
                       y={radiusPositions.tl.y}
@@ -1589,7 +1608,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                       }}
                     />
 
-                    {/* Top-right radius handle */}
                     <RadiusHandle
                       x={radiusPositions.tr.x}
                       y={radiusPositions.tr.y}
@@ -1607,7 +1625,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                       }}
                     />
 
-                    {/* Bottom-left radius handle */}
                     <RadiusHandle
                       x={radiusPositions.bl.x}
                       y={radiusPositions.bl.y}
@@ -1625,7 +1642,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                       }}
                     />
 
-                    {/* Bottom-right radius handle */}
                     <RadiusHandle
                       x={radiusPositions.br.x}
                       y={radiusPositions.br.y}
@@ -1643,6 +1659,26 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                       }}
                     />
                   </>
+                )}
+
+                {/* Triangle: Single radius handle at top corner */}
+                {selectedElement.type === 'triangle' && radiusPositions.top && (
+                  <RadiusHandle
+                    x={radiusPositions.top.x}
+                    y={radiusPositions.top.y}
+                    scaleFactor={canvasScaleFactor.current}
+                    corner="top"
+                    currentRadius={selectedElement.cornerRadius || 0}
+                    onRadiusChange={(newRadius) => {
+                      const radiusChangeEvent = new CustomEvent('element-border-radius-change', {
+                        detail: {
+                          id: selectedElement.id,
+                          cornerRadius: newRadius
+                        }
+                      });
+                      window.dispatchEvent(radiusChangeEvent);
+                    }}
+                  />
                 )}
               </React.Fragment>
             );

@@ -9,7 +9,7 @@ interface RadiusHandleProps {
   x: number;
   y: number;
   scaleFactor?: number;
-  corner: 'tl' | 'tr' | 'bl' | 'br';
+  corner: 'tl' | 'tr' | 'bl' | 'br' | 'top';
   onRadiusChange: (newRadius: number) => void;
   currentRadius: number;
 }
@@ -94,6 +94,9 @@ const RadiusHandle: React.FC<RadiusHandleProps> = ({
         break;
       case 'br': // Bottom-right: negative delta means moving toward center
         radiusDelta = (-deltaX + -deltaY) / 2;
+        break;
+      case 'top': // Triangle top corner: moving down increases radius
+        radiusDelta = deltaY;
         break;
     }
     
