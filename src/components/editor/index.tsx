@@ -1689,6 +1689,7 @@ export default function EditorCanvas() {
                   lineStartPoint={lineStartPoint}
                   isLineChaining={isLineChaining}
                   chainedLineIds={chainedLineIds}
+                  isPlaying={timeState.isPlaying}
                 />
               )}
             </div>

@@ -56,6 +56,8 @@ interface CanvasProps {
   isLineChaining?: boolean;
   // Add chained line IDs for polygon closing detection
   chainedLineIds?: string[];
+  // Add animation playback state
+  isPlaying?: boolean;
 }
 
 export interface CanvasRef {
@@ -115,6 +117,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     lineStartPoint,
     isLineChaining = false,
     chainedLineIds = [],
+    isPlaying = false,
   },
   ref
 ) {
@@ -1428,8 +1431,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
             />
           )}
 
-          {/* Draggable corner squares - only for single selection */}
-          {selectedIds.length === 1 && selectedIds.map(selectedId => {
+          {/* Draggable corner squares - only for single selection and when not playing animations */}
+          {!isPlaying && selectedIds.length === 1 && selectedIds.map(selectedId => {
             const selectedElement = elements.find(el => el.id === selectedId);
 
             if (!selectedElement || selectedElement.type === 'line' || selectedElement.type === 'path') {
@@ -1634,7 +1637,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           })}
 
           {/* Multi-selection rectangle for multiple selected elements */}
-          {selectedIds.length > 1 && (
+          {!isPlaying && selectedIds.length > 1 && (
             <GroupSelection
               selectedElements={elements.filter(el => selectedIds.includes(el.id))}
               scaleFactor={canvasScaleFactor.current}
@@ -1645,8 +1648,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
             />
           )}
 
-          {/* Rotation handles OUTSIDE the rotating containers (only for single selection) */}
-          {selectedIds.length === 1 && (() => {
+          {/* Rotation handles OUTSIDE the rotating containers (only for single selection and when not playing animations) */}
+          {!isPlaying && selectedIds.length === 1 && (() => {
             const firstSelectedId = selectedIds[0];
             const selectedElement = elements.find(el => el.id === firstSelectedId);
 
