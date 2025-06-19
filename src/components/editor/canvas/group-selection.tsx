@@ -1,5 +1,5 @@
 import React from 'react';
-import type { AnimatedCanvasObject } from '@/types/canvas';
+import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import type { FederatedPointerEvent } from 'pixi.js';
 import ObjectSelect from './object-select';
 import ResizeHandle from './resize-handle';
@@ -17,6 +17,7 @@ interface GroupSelectionProps {
   ) => void;
   allElements?: AnimatedCanvasObject[];
   gridConfig?: GridConfig;
+  groups?: CanvasGroup[]; // Add groups prop to check group types
 }
 
 export const GroupSelection: React.FC<GroupSelectionProps> = ({ 
@@ -24,9 +25,51 @@ export const GroupSelection: React.FC<GroupSelectionProps> = ({
   scaleFactor,
   onGroupDragStart,
   allElements,
-  gridConfig
+  gridConfig,
+  groups = []
 }) => {
   if (selectedElements.length <= 1) return null;
+
+  // Helper function to check if selected elements belong to a custom type group
+  const isCustomTypeGroup = (): boolean => {
+    if (selectedElements.length === 0) return false;
+    
+    // Check if all selected elements belong to the same group
+    const firstGroupId = selectedElements[0].groupId;
+    const allSameGroup = selectedElements.every(el => el.groupId === firstGroupId);
+    
+    if (!allSameGroup) return false;
+    
+    // Find the group and check if it's a custom type
+    const group = groups.find(g => g.id === firstGroupId);
+    return !!(group && group.type === 'custom' && !group.isDefaultGroup);
+  };
+
+  // Helper function to create individual line outlines for custom groups
+  const renderCustomGroupOutlines = () => {
+    return selectedElements.map((element) => (
+      <pixiContainer
+        key={`custom-outline-${element.id}`}
+        x={element.x}
+        y={element.y}
+        rotation={element.rotation || 0}
+      >
+        <ObjectSelect
+          element={element}
+          scaleFactor={scaleFactor}
+        />
+      </pixiContainer>
+    ));
+  };
+
+  // If this is a custom type group, render individual line outlines
+  if (isCustomTypeGroup()) {
+    return (
+      <React.Fragment key="custom-group-selection">
+        {renderCustomGroupOutlines()}
+      </React.Fragment>
+    );
+  }
 
   // Helper function to create a virtual group element for multi-selection
   const createVirtualGroupElement = (elements: AnimatedCanvasObject[]): AnimatedCanvasObject => {

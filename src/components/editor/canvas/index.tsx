@@ -1697,6 +1697,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
             onGroupDragStart={handleGroupSelectionDragStart}
             allElements={elements}
             gridConfig={gridConfig}
+            groups={groups}
           />
 
           {/* Rotation handles OUTSIDE the rotating containers (only for single selection) */}
