@@ -63,7 +63,7 @@ const ObjectSelect: React.FC<ObjectSelectProps> = ({
       return; // Exit early for line elements
     }
 
-    // Draw rectangular outline for non-line elements - NO HANDLES
+    // Draw rectangular bounding box for all non-line elements first
     g.roundRect(
       -dimensions.width / 2,
       -dimensions.height / 2,
@@ -71,12 +71,53 @@ const ObjectSelect: React.FC<ObjectSelectProps> = ({
       dimensions.height,
       element.cornerRadius
     );
-
     g.stroke({
       width: 1,
       color: 0x74b9ff,
-      alpha: 0.85,
+      alpha: 0.4, // More transparent for bounding box
     });
+
+    // Then draw shape-specific outlines on top for circles and triangles
+    if (element.type === 'circle') {
+      // Draw circle outline
+      const radius = element.height / 2;
+      g.ellipse(0, 0, radius, radius);
+      g.stroke({
+        width: 2,
+        color: 0x74b9ff,
+        alpha: 0.85,
+      });
+    } else if (element.type === 'triangle') {
+      // Draw triangle outline using actual width and height bounds
+      const height = element.height;
+      const width = element.width;
+      const halfWidth = width / 2;
+      const points = [
+        { x: 0, y: -height/2 },                    // top point
+        { x: -halfWidth, y: height/2 },            // bottom left
+        { x: halfWidth, y: height/2 }              // bottom right
+      ];
+      g.poly(points);
+      g.stroke({
+        width: 2,
+        color: 0x74b9ff,
+        alpha: 0.85,
+      });
+    } else if (element.type === 'rectangle') {
+      // For rectangles, enhance the existing outline
+      g.roundRect(
+        -dimensions.width / 2,
+        -dimensions.height / 2,
+        dimensions.width,
+        dimensions.height,
+        element.cornerRadius
+      );
+      g.stroke({
+        width: 2,
+        color: 0x74b9ff,
+        alpha: 0.85,
+      });
+    }
   };
 
   // Update local dimensions when element props change
