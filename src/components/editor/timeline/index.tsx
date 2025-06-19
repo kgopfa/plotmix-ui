@@ -100,29 +100,8 @@ export function Timeline({
           depth: 0
         });
         
-        // For text groups, add character children if group is expanded
-        if (group.type === 'text' && expandedElements.has(group.id)) {
-          const characters = elements.filter(el => 
-            el.type === 'character' && group.elementIds.includes(el.id)
-          ).sort((a, b) => (a.characterIndex || 0) - (b.characterIndex || 0));
-          
-          characters.forEach(character => {
-            tracks.push({
-              id: character.id,
-              type: 'element',
-              name: `'${character.character || 'char'}'`,
-              item: character,
-              animations: character.animations,
-              isSelected: false, // Selection temporarily disabled
-              isChild: true,
-              parentGroupId: group.id,
-              depth: 1
-            });
-          });
-        }
-        
-        // For custom/polygon groups, add element children if group is expanded
-        if ((group.type === 'custom' || group.type === 'polygon') && expandedElements.has(group.id)) {
+                // For all groups, add element children if group is expanded  
+        if (expandedElements.has(group.id)) {
           const groupElements = elements.filter(el => group.elementIds.includes(el.id));
           
           groupElements.forEach(element => {
@@ -141,15 +120,9 @@ export function Timeline({
         }
       });
 
-    // Add individual elements not in custom/polygon groups (excluding characters, they appear under text groups)
+    // Add individual elements not in custom/polygon groups
     elements
       .filter(el => {
-        // Skip characters - they appear under text groups
-        if (el.type === 'character') return false;
-        
-        // Skip textGroup elements - they're now represented as typed groups
-        if (el.type === 'textGroup') return false;
-        
         // Include elements that are in default groups or not in any typed group
         const group = groups.find(g => g.elementIds.includes(el.id));
         return !group || group.isDefaultGroup;

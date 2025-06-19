@@ -7,4 +7,4 @@ export type ToolType =
   | 'draw' 
   | 'image'
   | 'text'
-  | 'textGroup'; 
+; 

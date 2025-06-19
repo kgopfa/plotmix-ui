@@ -59,13 +59,7 @@ export function Toolbar({
         <span className="text-xl text-black">T</span>
       </button>
 
-      <button
-        className={`flex flex-col items-center justify-center p-2 ${currentTool === 'textGroup' ? (isPathMode ? 'bg-blue-100' : 'bg-gray-100') : 'hover:bg-gray-100'}`}
-        onClick={() => onToolChange('textGroup')}
-        title="Text Group"
-      >
-        <span className="text-xl text-black">TG</span>
-      </button>
+
 
       <button
         className={`flex flex-col items-center justify-center p-2 ${currentTool === 'select' ? 'bg-gray-100' : 'hover:bg-gray-100'}`}

@@ -512,7 +512,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     onElementSelect(id, isMultiSelect);
 
     // For text and textGroup elements, handle double-click to edit, single click to drag
-    if (element.type === 'text' || element.type === 'textGroup') {
+            if (element.type === 'text') {
       // Check if this is a double-click
       const currentTime = Date.now();
       const lastClickTime = textClickTimeRef.current.get(id) || 0;
@@ -626,7 +626,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         setCursor(DRAW_CURSOR);
       } else if (tool === 'line') {
         setCursor(LINE_CURSOR);
-      } else if (tool === 'text' || tool === 'textGroup') {
+      } else if (tool === 'text') {
         setCursor(TEXT_CURSOR);
       } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle') {
         setCursor(CROSS_CURSOR);
