@@ -863,7 +863,17 @@ export default function EditorCanvas() {
           return { ...el, x: snappedPos.x, y: snappedPos.y };
         }
 
-        // textGroup functionality removed
+        // If this is a textGroup, also move all its character children
+        if (draggedElement.type === 'textGroup') {
+          const characterChildren = prevElements.filter(child => 
+            child.type === 'character' && child.parentTextGroupId === draggedElement.id
+          );
+          
+          // Check if this element is a character child of the dragged textGroup
+          if (characterChildren.some(child => child.id === el.id)) {
+            return { ...el, x: el.x + dx, y: el.y + dy };
+          }
+        }
 
         return el;
       });
@@ -985,7 +995,26 @@ export default function EditorCanvas() {
     setCanvasObjects(prevElements => {
       return prevElements.map((el) => {
         const newPosition = snappedPositions.find(pos => pos.id === el.id);
-        if (!newPosition) return el;
+        if (!newPosition) {
+          // Check if this element is a character child of a textGroup being moved
+          const parentTextGroup = prevElements.find(parent => 
+            parent.type === 'textGroup' && 
+            el.type === 'character' && 
+            el.parentTextGroupId === parent.id &&
+            snappedPositions.some(pos => pos.id === parent.id)
+          );
+          
+          if (parentTextGroup) {
+            const parentNewPosition = snappedPositions.find(pos => pos.id === parentTextGroup.id);
+            if (parentNewPosition) {
+              const dx = parentNewPosition.x - parentTextGroup.x;
+              const dy = parentNewPosition.y - parentTextGroup.y;
+              return { ...el, x: el.x + dx, y: el.y + dy };
+            }
+          }
+          
+          return el;
+        }
 
         // For lines, we need to update both position and points
         if (el.type === 'line' && el.lineOptions?.points) {
