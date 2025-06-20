@@ -330,12 +330,6 @@ export function SceneExplorer({
     setDragOverItem(null);
   };
 
-  // Get elements that are not in any non-default group
-  const ungroupedElements = shapes.filter(element => {
-    const group = groups.find(g => g.elementIds.includes(element.id));
-    return !group || group.isDefaultGroup;
-  });
-
   // Helper method to properly select a group
   const selectGroup = (group: CanvasGroup, isMultiSelect: boolean = false) => {
     onGroupSelect(group, isMultiSelect);

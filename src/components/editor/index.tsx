@@ -1739,6 +1739,54 @@ export default function EditorCanvas() {
                   isLineChaining={isLineChaining}
                   chainedLineIds={chainedLineIds}
                   isPlaying={timeState.isPlaying}
+                  onCopyElement={(elementId) => {
+                    // Find the element to copy
+                    const elementToCopy = canvasObjects.find(el => el.id === elementId);
+                    if (elementToCopy) {
+                      // Create a copy with new ID and slight offset
+                      const newElement = {
+                        ...elementToCopy,
+                        id: `copy-${Date.now()}`,
+                        name: `${elementToCopy.name} Copy`,
+                        x: elementToCopy.x + 20,
+                        y: elementToCopy.y + 20
+                      };
+                      setCanvasObjects(prev => [...prev, newElement]);
+                      selectElement([newElement]);
+                    }
+                  }}
+                  onGroupElements={(elementIds) => {
+                    const elementsToGroup = canvasObjects.filter(el => elementIds.includes(el.id));
+                    if (elementsToGroup.length > 0) {
+                      handleGroupElements();
+                    }
+                  }}
+                  onBoundToParent={(elementId) => {
+                    // This would implement parent binding logic
+                    console.log('Bound to parent requested for element:', elementId);
+                  }}
+                  onMoveToFront={(elementId) => {
+                    // Move element to front by updating z-index or reordering
+                    setCanvasObjects(prev => {
+                      const element = prev.find(el => el.id === elementId);
+                      if (element) {
+                        const otherElements = prev.filter(el => el.id !== elementId);
+                        return [...otherElements, element]; // Move to end (front)
+                      }
+                      return prev;
+                    });
+                  }}
+                  onMoveToBack={(elementId) => {
+                    // Move element to back by updating z-index or reordering  
+                    setCanvasObjects(prev => {
+                      const element = prev.find(el => el.id === elementId);
+                      if (element) {
+                        const otherElements = prev.filter(el => el.id !== elementId);
+                        return [element, ...otherElements]; // Move to beginning (back)
+                      }
+                      return prev;
+                    });
+                  }}
                 />
               )}
             </div>

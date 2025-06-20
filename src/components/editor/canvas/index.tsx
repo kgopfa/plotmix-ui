@@ -26,6 +26,12 @@ import { eventManager } from '@/lib/event-manager';
 
 extend({ Container, Graphics, Text });
 
+interface ContextMenuPosition {
+  x: number;
+  y: number;
+  targetId: string;
+}
+
 interface CanvasProps {
   dimensions: { width: number; height: number };
   elements: AnimatedCanvasObject[];
@@ -58,6 +64,12 @@ interface CanvasProps {
   chainedLineIds?: string[];
   // Add animation playback state
   isPlaying?: boolean;
+  // Context menu action callbacks
+  onCopyElement?: (elementId: string) => void;
+  onGroupElements?: (elementIds: string[]) => void;
+  onBoundToParent?: (elementId: string) => void;
+  onMoveToFront?: (elementId: string) => void;
+  onMoveToBack?: (elementId: string) => void;
 }
 
 export interface CanvasRef {
@@ -118,6 +130,11 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     isLineChaining = false,
     chainedLineIds = [],
     isPlaying = false,
+    onCopyElement,
+    onGroupElements,
+    onBoundToParent,
+    onMoveToFront,
+    onMoveToBack,
   },
   ref
 ) {
@@ -133,6 +150,9 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
   // Add hover state
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+  // Context menu state
+  const [contextMenu, setContextMenu] = useState<ContextMenuPosition | null>(null);
 
   // Helper function to check if an element is part of a custom or polygon group
   const isElementInCustomOrPolygonGroup = (element: AnimatedCanvasObject): boolean => {
@@ -458,6 +478,12 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   };
 
   const handlePointerDown = (id: string, shapeX: number, shapeY: number) => (e: FederatedPointerEvent) => {
+    // Check for right-click (button 2) and show context menu
+    if (e.button === 2) {
+      handleRightClick(e, id);
+      return;
+    }
+
     // When using creation tools (not select), call the canvas click handler directly
     // to create new objects on top of existing shapes
     if (tool !== 'select') {
@@ -865,13 +891,95 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     if (onTextChange) {
       onTextChange(id, text);
     }
-
-
   };
 
   const handleTextEditEnd = () => {
     setEditingTextId(null);
   };
+
+  // Context menu handlers
+  const handleRightClick = (e: FederatedPointerEvent, elementId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Only show context menu for shapes (not animation paths or characters)
+    const element = elements.find(el => el.id === elementId);
+    if (!element || element.isAnimationPath || isTextGroupCharacter(element)) {
+      return;
+    }
+
+    // Get the canvas element to calculate proper screen coordinates
+    const canvasElement = document.querySelector('canvas');
+    if (!canvasElement) return;
+
+    const rect = canvasElement.getBoundingClientRect();
+    const screenX = rect.left + e.global.x;
+    const screenY = rect.top + e.global.y;
+
+    setContextMenu({
+      x: screenX,
+      y: screenY,
+      targetId: elementId
+    });
+  };
+
+  const handleContextMenuAction = (action: string) => {
+    if (!contextMenu) return;
+
+    const { targetId } = contextMenu;
+    
+    switch (action) {
+      case 'copy':
+        if (onCopyElement) {
+          onCopyElement(targetId);
+        }
+        break;
+      case 'group':
+        if (onGroupElements) {
+          onGroupElements([targetId]);
+        }
+        break;
+      case 'boundToParent':
+        if (onBoundToParent) {
+          onBoundToParent(targetId);
+        }
+        break;
+      case 'moveToFront':
+        if (onMoveToFront) {
+          onMoveToFront(targetId);
+        }
+        break;
+      case 'moveToBack':
+        if (onMoveToBack) {
+          onMoveToBack(targetId);
+        }
+        break;
+    }
+    
+    setContextMenu(null);
+  };
+
+  // Close context menu on outside clicks
+  useEffect(() => {
+    const handleClickOutside = () => setContextMenu(null);
+    if (contextMenu) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [contextMenu]);
+
+  // Disable browser context menu on canvas
+  useEffect(() => {
+    const handleContextMenu = (e: Event) => {
+      e.preventDefault();
+    };
+    
+    const canvas = document.querySelector('canvas');
+    if (canvas) {
+      canvas.addEventListener('contextmenu', handleContextMenu);
+      return () => canvas.removeEventListener('contextmenu', handleContextMenu);
+    }
+  }, []);
 
   // Handle drag start from the group selection area
   const handleGroupSelectionDragStart = (
@@ -1294,7 +1402,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                 onPointerDown={handlePointerDown(el.id, el.x, el.y)}
                 onPointerUp={handlePointerUp}
                 onPointerUpOutside={handlePointerUp}
-                // REMOVED: onPointerMove handler - now handled globally
                 onPointerOver={handleElementMouseMove(el.id)}
                 onPointerOut={handleElementMouseLeave(el.id)}
                 ref={(node) => {
@@ -1347,17 +1454,17 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                 {/* Note: textGroup elements don't render directly - only their child characters do */}
 
                                       {/* Show hover outline when hovered but not selected (but not for textgroup characters or elements in custom/polygon groups) */}
-                      {hoveredId === el.id && !selectedIds.includes(el.id) && !isTextGroupCharacter(el) && !isElementInCustomOrPolygonGroup(el) && (
-                        <HoverOutline element={el} />
-                      )}
+                {hoveredId === el.id && !selectedIds.includes(el.id) && !isTextGroupCharacter(el) && !isElementInCustomOrPolygonGroup(el) && (
+                  <HoverOutline element={el} />
+                )}
 
-                      {/* Show selection outline for all selected elements (but not for textgroup characters or elements in custom/polygon groups) */}
-                      {selectedIds.includes(el.id) && !isTextGroupCharacter(el) && !isElementInCustomOrPolygonGroup(el) && (
-                        <ObjectSelect
-                          element={el}
-                          scaleFactor={canvasScaleFactor.current}
-                        />
-                      )}
+                {/* Show selection outline for all selected elements (but not for textgroup characters or elements in custom/polygon groups) */}
+                {selectedIds.includes(el.id) && !isTextGroupCharacter(el) && !isElementInCustomOrPolygonGroup(el) && (
+                  <ObjectSelect
+                    element={el}
+                    scaleFactor={canvasScaleFactor.current}
+                  />
+                )}
               </pixiContainer>
             );
           })}
@@ -1732,6 +1839,71 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           })()}
         </CanvasContent>
       </Application>
+      
+      {/* Context Menu */}
+      {contextMenu && (
+        <div
+          className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[180px]"
+          style={{
+            left: contextMenu.x,
+            top: contextMenu.y,
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
+            onClick={() => handleContextMenuAction('copy')}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            Copy
+          </button>
+          
+          <button
+            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
+            onClick={() => handleContextMenuAction('group')}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            Group Element
+          </button>
+          
+          <button
+            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
+            onClick={() => handleContextMenuAction('boundToParent')}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            </svg>
+            Bound to Parent
+          </button>
+          
+          <div className="border-t border-gray-100 my-1" />
+          
+          <button
+            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
+            onClick={() => handleContextMenuAction('moveToFront')}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
+            </svg>
+            Move to Front
+          </button>
+          
+          <button
+            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
+            onClick={() => handleContextMenuAction('moveToBack')}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
+            </svg>
+            Move to Back
+          </button>
+        </div>
+      )}
+      
       {/* Text Editor Overlay */}
       {editingTextId && (
         <TextEditor
