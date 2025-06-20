@@ -127,7 +127,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   const HANDLE_SIZE = 10;
   const drawingRef = useRef<Graphics | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const textClickTimeRef = useRef<Map<string, number>>(new Map());
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentPath, setCurrentPath] = useState<Array<{ x: number; y: number }>>([]);
 
@@ -494,29 +493,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
     onElementSelect(id, isMultiSelect);
 
-    // For text and textGroup elements, handle double-click to edit, single click to drag
-    if (element.type === 'text') {
-      // Check if this is a double-click
-      const currentTime = Date.now();
-      const lastClickTime = textClickTimeRef.current.get(id) || 0;
-      const timeDiff = currentTime - lastClickTime;
-
-      console.log('Text click detected:', { id, currentTime, lastClickTime, timeDiff, type: element.type });
-
-      if (timeDiff < 300) { // Double-click detected (within 300ms)
-        console.log('Double-click detected, entering edit mode for:', id);
-        setEditingTextId(id);
-        onElementSelect(id, isMultiSelect);
-        textClickTimeRef.current.delete(id); // Clear the click time
-        return;
-      } else {
-        // Single click - store the time and continue with dragging logic
-        console.log('Single click detected, storing time for:', id);
-        textClickTimeRef.current.set(id, currentTime);
-        // Don't return here, let it fall through to normal drag handling
-      }
-    }
-
     // First, check if we're clicking on a resize handle (only for selected elements)
     if (selectedIds.includes(id) && element.type !== 'line' && element.type !== 'path') {
       const handle = getResizeHandleAtPoint(element, pos.x, pos.y);
@@ -829,7 +805,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         setCursor(DRAW_CURSOR);
       } else if (tool === 'line') {
         setCursor(LINE_CURSOR);
-      } else if (tool === 'text' || tool === 'textGroup') {
+      } else if (tool === 'text') {
         setCursor(TEXT_CURSOR);
       } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle') {
         setCursor(CROSS_CURSOR);
@@ -987,7 +963,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       setCursor(DRAW_CURSOR);
     } else if (tool === 'line') {
       setCursor(LINE_CURSOR);
-    } else if (tool === 'text' || tool === 'textGroup') {
+    } else if (tool === 'text') {
       setCursor(TEXT_CURSOR);
     } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle') {
       setCursor(CROSS_CURSOR);
@@ -1187,14 +1163,12 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                         />
                       )}
 
-                      {/* Note: textGroup elements don't render directly - only their child characters do */}
-
-                      {/* Show hover outline when hovered but not selected (but not for characters when parent textGroup is selected or elements in custom/polygon groups) */}
+                      {/* Show hover outline when hovered but not selected */}
                       {hoveredId === el.id && !selectedIds.includes(el.id) && !isElementInCustomOrPolygonGroup(el) && (
                         <HoverOutline element={el} />
                       )}
 
-                      {/* Show selection outline for all selected elements (but not for characters when parent textGroup is selected or elements in custom/polygon groups) */}
+                      {/* Show selection outline for all selected elements */}
                       {selectedIds.includes(el.id) && !isElementInCustomOrPolygonGroup(el) && (
                         <ObjectSelect
                           element={el}
@@ -1284,16 +1258,12 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                   />
                 )}
 
-
-
-                {/* Note: textGroup elements don't render directly - only their child characters do */}
-
-                {/* Show hover outline when hovered but not selected (but not for characters when parent textGroup is selected or elements in custom/polygon groups) */}
+                {/* Show hover outline when hovered but not selected */}
                 {hoveredId === el.id && !selectedIds.includes(el.id) && !isElementInCustomOrPolygonGroup(el) && (
                   <HoverOutline element={el} />
                 )}
 
-                {/* Show selection outline for all selected elements (but not for characters when parent textGroup is selected or elements in custom/polygon groups) */}
+                {/* Show selection outline for all selected elements */}
                 {selectedIds.includes(el.id) && !isElementInCustomOrPolygonGroup(el) && (
                   <ObjectSelect
                     element={el}

@@ -19,7 +19,6 @@ export interface CanvasElement {
   shadowOffsetY?: number;
   shadowOpacity?: number;
   shadowEnabled?: boolean;
-  // Text-specific properties
   text?: string;
   fontSize?: number;
   fontFamily?: string;
@@ -51,20 +50,19 @@ export type AnimatableProperties = {
   pathDirection?: 'clockwise' | 'counterclockwise';
   yoyo?: boolean;
   pathElement?: AnimatedCanvasObject;
-  attachDelay?: number; // Time to move to the starting corner of the path
-  // Text animation properties
+  attachDelay?: number;
   text?: string;
   fontSize?: number;
   letterSpacing?: number;
 };
 
-export type AnimationType = 'rotate' | 'scale' | 'move' | 'color' | 'fade' | 'path' | 'typewriter' | 'textScale';
+export type AnimationType = 'rotate' | 'scale' | 'move' | 'color' | 'fade' | 'path';
 
 export interface ElementAnimation {
   id: string;
   type: AnimationType;
-  startTime: number; // seconds
-  duration: number; // seconds
+  startTime: number;
+  duration: number;
   properties: AnimatableProperties;
   easing?: GsapEase;
 }
@@ -92,7 +90,7 @@ export interface AnimatedCanvasObject {
   cornerRadius?: number;
   rotation?: number;
   opacity?: number;
-  visible?: boolean; // Element visibility - defaults to true
+  visible?: boolean;
   shadowEnabled?: boolean;
   shadowColor?: string;
   shadowBlur?: number;
@@ -110,7 +108,6 @@ export interface AnimatedCanvasObject {
   imageData?: string;
   animations: ElementAnimation[];
   isAnimationPath?: boolean;
-  // Text-specific properties
   text?: string;
   fontSize?: number;
   fontFamily?: string;
@@ -118,32 +115,29 @@ export interface AnimatedCanvasObject {
   fontStyle?: string;
   textAlign?: string;
   lineHeight?: number;
-  // Text-specific properties
-  letterSpacing?: number; // Spacing between characters
-  groupId?: string; // Every object belongs to a group
+  letterSpacing?: number;
+  groupId?: string;
 }
 
 export interface CanvasGroup {
   id: string;
   name: string;
-  elementIds: string[]; // IDs of objects in this group
-  x: number; // Group position (center)
+  elementIds: string[];
+  x: number;
   y: number;
-  rotation?: number; // Group rotation
-  visible?: boolean; // Group visibility - defaults to true
-  type: 'text' | 'custom' | 'polygon'; // Group type determines presentation and behavior
-  isDefaultGroup: boolean; // True for auto-created single-object groups
-  animations: ElementAnimation[]; // Group animations
-  // Text group specific properties (when type === 'text')
-  characters?: string[]; // For text groups, the individual characters
+  rotation?: number;
+  visible?: boolean;
+  type: 'text' | 'custom' | 'polygon';
+  isDefaultGroup: boolean;
+  animations: ElementAnimation[];
+  characters?: string[];
   fontSize?: number;
   fontFamily?: string;
   fontWeight?: string;
   fontStyle?: string;
   textAlign?: string;
   letterSpacing?: number;
-  // Polygon group specific properties (when type === 'polygon')
-  isClosed?: boolean; // Whether the polygon path is closed
+  isClosed?: boolean;
 }
 
 export type ElementAnimationTarget = 'element' | 'group';
