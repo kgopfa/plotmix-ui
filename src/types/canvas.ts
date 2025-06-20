@@ -67,6 +67,11 @@ export type AnimatableProperties = {
   velocity?: number;
   angle?: number;
   gravity?: number;
+  acceleration?: number;
+  accelerationAngle?: number;
+  friction?: number;
+  xProp?: string;
+  yProp?: string;
 };
 
 export type AnimationType = 'rotate' | 'scale' | 'move' | 'color' | 'fade' | 'path' | 'typewriter' | 'textScale' | 'physics';

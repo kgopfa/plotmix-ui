@@ -358,6 +358,61 @@ export function AnimationsTab({
                           step="10"
                         />
                       </label>
+                      <label>
+                        Acceleration:
+                        <input
+                          type="number"
+                          value={animation.properties.acceleration ?? ''}
+                          onChange={e => handleAnimationChange(animation.id, 'properties.acceleration', e.target.value)}
+                          className="w-full"
+                          step="10"
+                          placeholder="Optional"
+                        />
+                      </label>
+                      <label>
+                        Acceleration Angle (degrees):
+                        <input
+                          type="number"
+                          value={animation.properties.accelerationAngle ?? ''}
+                          onChange={e => handleAnimationChange(animation.id, 'properties.accelerationAngle', e.target.value)}
+                          className="w-full"
+                          step="1"
+                          placeholder="Optional"
+                        />
+                      </label>
+                      <label>
+                        Friction:
+                        <input
+                          type="number"
+                          value={animation.properties.friction ?? ''}
+                          onChange={e => handleAnimationChange(animation.id, 'properties.friction', e.target.value)}
+                          className="w-full"
+                          step="0.1"
+                          min="0"
+                          max="1"
+                          placeholder="0-1 (Optional)"
+                        />
+                      </label>
+                      <label>
+                        X Property:
+                        <input
+                          type="text"
+                          value={animation.properties.xProp ?? ''}
+                          onChange={e => handleAnimationChange(animation.id, 'properties.xProp', e.target.value)}
+                          className="w-full"
+                          placeholder="e.g., x, rotation (Optional)"
+                        />
+                      </label>
+                      <label>
+                        Y Property:
+                        <input
+                          type="text"
+                          value={animation.properties.yProp ?? ''}
+                          onChange={e => handleAnimationChange(animation.id, 'properties.yProp', e.target.value)}
+                          className="w-full"
+                          placeholder="e.g., y, scaleY (Optional)"
+                        />
+                      </label>
                     </>
                   )}
                 </div>

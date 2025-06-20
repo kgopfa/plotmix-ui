@@ -86,7 +86,12 @@ export function useAnimationHandlers(
           physics: {
             velocity: 400,
             angle: 60,
-            gravity: 800
+            gravity: 800,
+            acceleration: undefined,
+            accelerationAngle: undefined,
+            friction: undefined,
+            xProp: '',
+            yProp: ''
           }
         };
         return { 
@@ -155,11 +160,16 @@ export function useAnimationHandlers(
         scaleX: 1,
         scaleY: 1
       },
-      physics: {
-        velocity: 400,
-        angle: 60,
-        gravity: 800
-      }
+                physics: {
+            velocity: 400,
+            angle: 60,
+            gravity: 800,
+            acceleration: undefined,
+            accelerationAngle: undefined,
+            friction: undefined,
+            xProp: '',
+            yProp: ''
+          }
     };
 
     const newAnimation = {

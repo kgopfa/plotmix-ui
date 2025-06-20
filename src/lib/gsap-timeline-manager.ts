@@ -130,14 +130,23 @@ export class GSAPTimelineManager {
                 config.startTime
               );
             } else if (isPhysicsAnimationConfig(config)) {
+              const physics2DConfig: Record<string, string | number> = {
+                velocity: config.velocity,
+                angle: config.angle,
+                gravity: config.gravity
+              };
+              
+              // Add optional properties only if they exist
+              if (config.acceleration !== undefined) physics2DConfig.acceleration = config.acceleration;
+              if (config.accelerationAngle !== undefined) physics2DConfig.accelerationAngle = config.accelerationAngle;
+              if (config.friction !== undefined) physics2DConfig.friction = config.friction;
+              if (config.xProp) physics2DConfig.xProp = config.xProp;
+              if (config.yProp) physics2DConfig.yProp = config.yProp;
+              
               this.timeline.to(
                 characterTarget,
                 {
-                  physics2D: {
-                    velocity: config.velocity,
-                    angle: config.angle,
-                    gravity: config.gravity
-                  },
+                  physics2D: physics2DConfig,
                   duration: config.duration,
                   ease: config.ease,
                 },
@@ -414,14 +423,23 @@ export class GSAPTimelineManager {
             config.startTime
           );
         } else if (isPhysicsAnimationConfig(config)) {
+          const physics2DConfig: Record<string, string | number> = {
+            velocity: config.velocity,
+            angle: config.angle,
+            gravity: config.gravity
+          };
+          
+          // Add optional properties only if they exist
+          if (config.acceleration !== undefined) physics2DConfig.acceleration = config.acceleration;
+          if (config.accelerationAngle !== undefined) physics2DConfig.accelerationAngle = config.accelerationAngle;
+          if (config.friction !== undefined) physics2DConfig.friction = config.friction;
+          if (config.xProp) physics2DConfig.xProp = config.xProp;
+          if (config.yProp) physics2DConfig.yProp = config.yProp;
+          
           this.timeline.to(
             config.target,
             {
-              physics2D: {
-                velocity: config.velocity,
-                angle: config.angle,
-                gravity: config.gravity
-              },
+              physics2D: physics2DConfig,
               duration: config.duration,
               ease: config.ease,
             },

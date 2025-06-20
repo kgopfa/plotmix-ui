@@ -31,6 +31,11 @@ export interface PhysicsAnimationConfig extends BaseAnimationConfig {
   velocity: number;
   angle: number;
   gravity: number;
+  acceleration?: number;
+  accelerationAngle?: number;
+  friction?: number;
+  xProp?: string;
+  yProp?: string;
 }
 
 export interface GroupAnimationConfig extends BaseAnimationConfig {
@@ -95,7 +100,12 @@ function generateAnimationProperties(
       return {
         velocity: Number(animeProps.velocity) ?? 400,
         angle: Number(animeProps.angle) ?? 60,
-        gravity: Number(animeProps.gravity) ?? 800
+        gravity: Number(animeProps.gravity) ?? 800,
+        acceleration: animeProps.acceleration ? Number(animeProps.acceleration) : undefined,
+        accelerationAngle: animeProps.accelerationAngle ? Number(animeProps.accelerationAngle) : undefined,
+        friction: animeProps.friction ? Number(animeProps.friction) : undefined,
+        xProp: animeProps.xProp as string,
+        yProp: animeProps.yProp as string
       };
 
     default:
@@ -211,6 +221,11 @@ export function generateAnimationConfig(
     const velocity = animationProps.velocity ?? 400;
     const angle = animationProps.angle ?? 60;
     const gravity = animationProps.gravity ?? 800;
+    const acceleration = animationProps.acceleration;
+    const accelerationAngle = animationProps.accelerationAngle;
+    const friction = animationProps.friction;
+    const xProp = animationProps.xProp;
+    const yProp = animationProps.yProp;
     
     return {
       ...baseConfig,
@@ -218,6 +233,11 @@ export function generateAnimationConfig(
       velocity,
       angle,
       gravity,
+      acceleration,
+      accelerationAngle,
+      friction,
+      xProp,
+      yProp,
       properties: {}
     };
   }
