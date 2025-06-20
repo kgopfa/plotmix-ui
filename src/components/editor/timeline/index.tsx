@@ -60,11 +60,6 @@ export function Timeline({
   };
 
   // Memoize expensive filtering operations for performance
-  const visibleGroups = useMemo(() => 
-    groups.filter(group => !group.isDefaultGroup),
-    [groups]
-  );
-
   const elementsNotInTypedGroups = useMemo(() => 
     elements.filter(el => {
       // Include elements that are in default groups or not in any typed group
@@ -155,40 +150,6 @@ export function Timeline({
           });
         }
       });
-    visibleGroups.forEach(group => {
-      const isSelected = false; // Selection temporarily disabled
-      
-      tracks.push({
-        id: group.id,
-        type: 'group',
-        name: group.name,
-        item: group,
-        animations: group.animations,
-        isSelected,
-        isGroup: true,
-        isExpanded: expandedElements.has(group.id),
-        depth: 0
-      });
-      
-      // For all groups, add element children if group is expanded  
-      if (expandedElements.has(group.id)) {
-        const groupElements = elements.filter(el => group.elementIds.includes(el.id));
-        
-        groupElements.forEach(element => {
-          tracks.push({
-            id: element.id,
-            type: 'element',
-            name: element.name,
-            item: element,
-            animations: element.animations,
-            isSelected: false, // Selection temporarily disabled
-            isChild: true,
-            parentGroupId: group.id,
-            depth: 1
-          });
-        });
-      }
-    });
 
     // Add individual elements not in custom/polygon groups (excluding characters, they appear under text groups)
     elements
@@ -216,7 +177,7 @@ export function Timeline({
       });
 
     return tracks;
-  }, [visibleGroups, elementsNotInTypedGroups, elements, expandedElements]);
+  }, [elementsNotInTypedGroups, elements, groups, expandedElements]);
 
   // Memoize ruler ticks for performance
   const rulerTicks = useMemo(() => 

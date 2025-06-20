@@ -491,7 +491,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     }
 
     // Special handling for characters when their parent textGroup is selected
-    if (element.type === 'character' && element.parentTextGroupId && isCharacterParentSelected(element)) {
+    if (element.type === 'character' && element.parentTextGroupId) {
       // Find the parent textGroup
       const parentTextGroup = elements.find(el => el.id === element.parentTextGroupId);
       if (parentTextGroup) {
@@ -1201,29 +1201,48 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                     >
                       <pixiGraphics draw={(g) => drawShape(g, el)} />
 
-                      {/* Render text separately for text elements */}
-                      {el.type === 'text' && editingTextId !== el.id && (
-                        <pixiText
-                          text={el.text || 'Text'}
-                          anchor={{ x: 0, y: 0 }}
-                          x={-el.width / 2 + 8}
-                          y={-el.height / 2 + 8}
-                          alpha={el.opacity ?? 1}
-                          style={{
-                            fontFamily: el.fontFamily || 'Arial, sans-serif',
-                            fontSize: el.fontSize || 16,
-                            fontWeight: (el.fontWeight as 'normal' | 'bold' | 'bolder' | 'lighter' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900') || 'normal',
-                            fontStyle: (el.fontStyle as 'normal' | 'italic' | 'oblique') || 'normal',
-                            fill: el.fill || '#000000',
-                            align: (el.textAlign as 'left' | 'center' | 'right') || 'left',
-                            lineHeight: el.lineHeight || 1.2,
-                            wordWrap: true,
-                            wordWrapWidth: el.width - 16,
-                          }}
-                        />
-                      )}
+                                      {/* Render text separately for text elements */}
+                {el.type === 'text' && editingTextId !== el.id && (
+                  <pixiText
+                    text={el.text || 'Text'}
+                    anchor={{ x: 0, y: 0 }}
+                    x={-el.width / 2 + 8}
+                    y={-el.height / 2 + 8}
+                    alpha={el.opacity ?? 1}
+                    style={{
+                      fontFamily: el.fontFamily || 'Arial, sans-serif',
+                      fontSize: el.fontSize || 16,
+                      fontWeight: (el.fontWeight as 'normal' | 'bold' | 'bolder' | 'lighter' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900') || 'normal',
+                      fontStyle: (el.fontStyle as 'normal' | 'italic' | 'oblique') || 'normal',
+                      fill: el.fill || '#000000',
+                      align: (el.textAlign as 'left' | 'center' | 'right') || 'left',
+                      lineHeight: el.lineHeight || 1.2,
+                      wordWrap: true,
+                      wordWrapWidth: el.width - 16,
+                    }}
+                  />
+                )}
 
-                      {/* Note: textGroup elements don't render directly - only their child characters do */}
+                {/* Render individual characters for character elements */}
+                {el.type === 'character' && (
+                  <pixiText
+                    text={el.character || el.text || ' '}
+                    anchor={{ x: 0.5, y: 0.5 }}
+                    x={0}
+                    y={0}
+                    alpha={el.opacity ?? 1}
+                    style={{
+                      fontFamily: el.fontFamily || 'Arial, sans-serif',
+                      fontSize: el.fontSize || 16,
+                      fontWeight: (el.fontWeight as 'normal' | 'bold' | 'bolder' | 'lighter' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900') || 'normal',
+                      fontStyle: (el.fontStyle as 'normal' | 'italic' | 'oblique') || 'normal',
+                      fill: el.fill || '#000000',
+                      align: 'center',
+                    }}
+                  />
+                )}
+
+                {/* Note: textGroup elements don't render directly - only their child characters do */}
 
                       {/* Show hover outline when hovered but not selected (but not for characters when parent textGroup is selected or elements in custom/polygon groups) */}
                       {hoveredId === el.id && !selectedIds.includes(el.id) && !isElementInCustomOrPolygonGroup(el) && (
@@ -1320,7 +1339,24 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                   />
                 )}
 
-
+                {/* Render individual characters for character elements */}
+                {el.type === 'character' && (
+                  <pixiText
+                    text={el.character || el.text || ' '}
+                    anchor={{ x: 0.5, y: 0.5 }}
+                    x={0}
+                    y={0}
+                    alpha={el.opacity ?? 1}
+                    style={{
+                      fontFamily: el.fontFamily || 'Arial, sans-serif',
+                      fontSize: el.fontSize || 16,
+                      fontWeight: (el.fontWeight as 'normal' | 'bold' | 'bolder' | 'lighter' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900') || 'normal',
+                      fontStyle: (el.fontStyle as 'normal' | 'italic' | 'oblique') || 'normal',
+                      fill: el.fill || '#000000',
+                      align: 'center',
+                    }}
+                  />
+                )}
 
                 {/* Note: textGroup elements don't render directly - only their child characters do */}
 
