@@ -2,6 +2,13 @@ import { useState, useEffect } from 'react';
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
 
+interface ContextMenuPosition {
+  x: number;
+  y: number;
+  targetId: string;
+  targetType: 'element' | 'group';
+}
+
 interface SceneExplorerProps {
   elements: AnimatedCanvasObject[];
   groups: CanvasGroup[];
@@ -13,6 +20,13 @@ interface SceneExplorerProps {
   onElementVisibilityChange: (elementId: string, visible: boolean) => void;
   onGroupVisibilityChange: (groupId: string, visible: boolean) => void;
   onParentChange: (childId: string, newParentId: string | null, childType: 'element' | 'group') => void;
+  // Context menu action callbacks
+  onCopyElement?: (elementId: string) => void;
+  onCopyGroup?: (groupId: string) => void;
+  onGroupElements?: (elementIds: string[]) => void;
+  onBoundToParent?: (elementId: string, isElement: boolean) => void;
+  onMoveToFront?: (elementId: string, isElement: boolean) => void;
+  onMoveToBack?: (elementId: string, isElement: boolean) => void;
 }
 
 export function SceneExplorer({ 
@@ -25,7 +39,13 @@ export function SceneExplorer({
   onClearSelection,
   onElementVisibilityChange,
   onGroupVisibilityChange,
-  onParentChange
+  onParentChange,
+  onCopyElement,
+  onCopyGroup,
+  onGroupElements,
+  onBoundToParent,
+  onMoveToFront,
+  onMoveToBack
 }: SceneExplorerProps) {
   // Filter out animation paths and character elements (characters will be shown under their group parent)
   const shapes = elements.filter(element => !element.isAnimationPath && element.type !== 'character');
@@ -34,6 +54,7 @@ export function SceneExplorer({
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [draggedItem, setDraggedItem] = useState<{id: string, type: 'element' | 'group'} | null>(null);
   const [dragOverItem, setDragOverItem] = useState<{id: string, type: 'element' | 'group'} | null>(null);
+  const [contextMenu, setContextMenu] = useState<ContextMenuPosition | null>(null);
 
   // Helper function to get characters for a text group
   const getCharactersForTextGroup = (groupId: string): AnimatedCanvasObject[] => {
@@ -196,7 +217,68 @@ export function SceneExplorer({
       onClearSelection();
       animationSelectionManager.clearSelection();
     }
+    // Close context menu when clicking elsewhere
+    setContextMenu(null);
   };
+
+  // Context menu handlers
+  const handleContextMenu = (e: React.MouseEvent, targetId: string, targetType: 'element' | 'group') => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      targetId,
+      targetType
+    });
+  };
+
+  const handleContextMenuAction = (action: string) => {
+    if (!contextMenu) return;
+
+    const { targetId, targetType } = contextMenu;
+    
+    switch (action) {
+      case 'copy':
+        if (targetType === 'element' && onCopyElement) {
+          onCopyElement(targetId);
+        } else if (targetType === 'group' && onCopyGroup) {
+          onCopyGroup(targetId);
+        }
+        break;
+      case 'group':
+        if (targetType === 'element' && onGroupElements) {
+          onGroupElements([targetId]);
+        }
+        break;
+      case 'boundToParent':
+        if (onBoundToParent) {
+          onBoundToParent(targetId, targetType === 'element');
+        }
+        break;
+      case 'moveToFront':
+        if (onMoveToFront) {
+          onMoveToFront(targetId, targetType === 'element');
+        }
+        break;
+      case 'moveToBack':
+        if (onMoveToBack) {
+          onMoveToBack(targetId, targetType === 'element');
+        }
+        break;
+    }
+    
+    setContextMenu(null);
+  };
+
+  // Close context menu on outside clicks
+  useEffect(() => {
+    const handleClickOutside = () => setContextMenu(null);
+    if (contextMenu) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [contextMenu]);
 
   // Drag and drop handlers
   const handleDragStart = (e: React.DragEvent, id: string, type: 'element' | 'group') => {
@@ -310,6 +392,7 @@ export function SceneExplorer({
             onDragOver={(e) => handleDragOver(e, element.id, 'element')}
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, element.id, 'element')}
+            onContextMenu={(e) => handleContextMenu(e, element.id, 'element')}
             className={`flex-1 px-2 py-1 rounded cursor-pointer hover:bg-gray-200 hover:text-blue-600 flex items-center gap-2 transition-colors ${
               isElementSelected(element) ? 'bg-blue-100 text-blue-600' : ''
             } ${element.visible === false ? 'opacity-50' : ''} ${
@@ -436,6 +519,7 @@ export function SceneExplorer({
               onDragOver={(e) => handleDragOver(e, group.id, 'group')}
               onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e, group.id, 'group')}
+              onContextMenu={(e) => handleContextMenu(e, group.id, 'group')}
               className={`flex-1 px-2 py-1 rounded cursor-pointer hover:bg-gray-200 hover:text-purple-600 flex items-center gap-2 transition-colors ${
                 isSelected ? 'bg-purple-100 text-purple-600' : ''
               } ${group.visible === false ? 'opacity-50' : ''} ${
@@ -645,6 +729,72 @@ export function SceneExplorer({
           </details>
         </li>
       </ul>
+
+      {/* Context Menu */}
+      {contextMenu && (
+        <div
+          className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[180px]"
+          style={{
+            left: contextMenu.x,
+            top: contextMenu.y,
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
+            onClick={() => handleContextMenuAction('copy')}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            Copy
+          </button>
+          
+          {contextMenu.targetType === 'element' && (
+            <button
+              className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
+              onClick={() => handleContextMenuAction('group')}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+              Group Element
+            </button>
+          )}
+          
+          <button
+            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
+            onClick={() => handleContextMenuAction('boundToParent')}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            </svg>
+            Bound to Parent
+          </button>
+          
+          <div className="border-t border-gray-100 my-1" />
+          
+          <button
+            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
+            onClick={() => handleContextMenuAction('moveToFront')}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
+            </svg>
+            Move to Front
+          </button>
+          
+          <button
+            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
+            onClick={() => handleContextMenuAction('moveToBack')}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
+            </svg>
+            Move to Back
+          </button>
+        </div>
+      )}
     </div>
   );
 } 
