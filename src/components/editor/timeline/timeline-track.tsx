@@ -61,13 +61,10 @@ export function TimelineTrack({
       onGroupSelect(group);
     } else {
       const animatedElement = element as AnimatedCanvasObject;
-      // Prevent character selection if parent textGroup is selected
+      // Completely prevent character selection - characters should not be selectable
       if (animatedElement.type === 'character' && animatedElement.parentTextGroupId) {
-        const selectionManager = SelectionManager.getInstance();
-        const parentTextGroup = selectionManager.getSelected().find((el: AnimatedCanvasObject) => el.id === animatedElement.parentTextGroupId);
-        if (parentTextGroup) {
-          return; // Don't select character if parent textGroup is selected
-        }
+        // Characters are not selectable, do nothing
+        return;
       }
       SelectionManager.getInstance().select(animatedElement);
     }
@@ -80,9 +77,14 @@ export function TimelineTrack({
     }
   };
 
+  // Check if this is a textgroup character
+  const isTextGroupCharacter = !isGroup && 'type' in element && element.type === 'character' && (element as AnimatedCanvasObject).parentTextGroupId;
+
   return (
     <div
-      className={`h-8 flex items-center border-b border-gray-200 text-gray-700 cursor-pointer ${
+      className={`h-8 flex items-center border-b border-gray-200 text-gray-700 ${
+        isTextGroupCharacter ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+      } ${
         isSelected ? 'bg-blue-50' : ''
       } ${isChild ? 'bg-gray-50' : ''}`}
     >

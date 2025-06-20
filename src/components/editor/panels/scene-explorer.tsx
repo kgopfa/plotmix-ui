@@ -26,7 +26,7 @@ export function SceneExplorer({
   onGroupVisibilityChange
 }: SceneExplorerProps) {
   // Filter out animation paths and character elements (characters will be shown under their group parent)
-  const shapes = elements.filter(element => !element.isAnimationPath && element.type !== 'character' && element.type !== 'textGroup');
+  const shapes = elements.filter(element => !element.isAnimationPath && element.type !== 'character');
   const animationSelectionManager = AnimationSelectionManager.getInstance();
   const [expandedShapes, setExpandedShapes] = useState<Set<string>>(new Set());
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
@@ -251,16 +251,10 @@ export function SceneExplorer({
                             <li key={character.id}>
                               <div className="flex items-center gap-1">
                                 <div 
-                                  className={`flex-1 px-2 py-1 rounded cursor-pointer hover:bg-gray-100 hover:text-orange-600 flex items-center gap-2 text-sm ${
-                                    isElementSelected(character) ? 'bg-orange-100 text-orange-700' : ''
-                                  } ${isSelected ? 'opacity-50 cursor-not-allowed' : ''} ${character.visible === false ? 'opacity-50' : ''}`}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (isSelected) return; // Prevent character selection if group is selected
-                                    const isMultiSelect = e.metaKey || e.ctrlKey;
-                                    onElementSelect(character, isMultiSelect);
-                                    animationSelectionManager.clearSelection();
-                                  }}
+                                  className={`flex-1 px-2 py-1 rounded flex items-center gap-2 text-sm opacity-50 cursor-not-allowed ${
+                                    character.visible === false ? 'opacity-25' : ''
+                                  }`}
+                                  title="Characters cannot be selected individually. Select the text group instead."
                                 >
                                   <span className="text-xs">{getShapeIcon(character.type)}</span>
                                   <span className="flex-1">{character.character || 'char'}</span>
@@ -375,7 +369,9 @@ export function SceneExplorer({
               {ungroupedElements.map(element => {
                 const hasAnimations = element.animations.length > 0;
                 const isExpanded = expandedShapes.has(element.id);
-                const shouldShowExpandButton = hasAnimations;
+                // For textGroups, also check if they have characters
+                const hasCharacters = element.type === 'textGroup' && elements.some(el => el.type === 'character' && el.parentTextGroupId === element.id);
+                const shouldShowExpandButton = hasAnimations || hasCharacters;
 
                 return (
                   <li key={element.id}>
@@ -443,18 +439,63 @@ export function SceneExplorer({
                       </button>
                     </div>
                     
-                    {/* Element Animations */}
-                    {isExpanded && hasAnimations && (
+                    {/* TextGroup Characters and Element Animations */}
+                    {isExpanded && (
                       <ul className="ml-6 mt-1 space-y-1">
-                        {element.animations.map(animation => (
+                        {/* Show characters for textGroups */}
+                        {element.type === 'textGroup' && elements
+                          .filter(el => el.type === 'character' && el.parentTextGroupId === element.id)
+                          .sort((a, b) => (a.characterIndex || 0) - (b.characterIndex || 0))
+                          .map(character => (
+                            <li key={character.id}>
+                              <div className="flex items-center gap-1">
+                                <div 
+                                  className={`flex-1 px-2 py-1 rounded flex items-center gap-2 text-sm opacity-50 cursor-not-allowed ${
+                                    character.visible === false ? 'opacity-25' : ''
+                                  }`}
+                                  title="Characters cannot be selected individually. Select the text group instead."
+                                >
+                                  <span className="text-xs">{getShapeIcon(character.type)}</span>
+                                  <span className="flex-1">{character.character || 'char'}</span>
+                                  <span className="text-xs text-gray-400">#{character.characterIndex}</span>
+                                </div>
+                                
+                                {/* Character Visibility Toggle */}
+                                <button
+                                  className="w-4 h-4 flex items-center justify-center hover:bg-gray-300 rounded text-gray-400 hover:text-gray-600"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const newVisible = !(character.visible ?? true);
+                                    onElementVisibilityChange(character.id, newVisible);
+                                  }}
+                                  title={`${character.visible === false ? 'Show' : 'Hide'} character`}
+                                >
+                                  {character.visible === false ? (
+                                    <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                                      <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clipRule="evenodd" />
+                                      <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
+                                    </svg>
+                                  ) : (
+                                    <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                      <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                                    </svg>
+                                  )}
+                                </button>
+                              </div>
+                            </li>
+                          ))}
+                        
+                        {/* Show animations for all elements */}
+                        {hasAnimations && element.animations.map(animation => (
                           <li key={animation.id}>
                             <div 
                               className="px-2 py-1 rounded cursor-pointer hover:bg-gray-100 hover:text-green-600 flex items-center gap-2 text-sm"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                                                 // For element animations
-                                 onElementSelect(element);
-                                 // Need to investigate animation selection pattern for elements
+                                // For element animations
+                                onElementSelect(element);
+                                // Need to investigate animation selection pattern for elements
                               }}
                             >
                               <span className="text-xs">{getAnimationIcon(animation.type)}</span>

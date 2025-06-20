@@ -157,8 +157,11 @@ export function Timeline({
         // Skip characters - they appear under text groups
         if (el.type === 'character') return false;
         
-        // Skip textGroup elements - they're now represented as typed groups
-        if (el.type === 'textGroup') return false;
+        // textGroup elements that aren't in typed groups should be shown
+        if (el.type === 'textGroup') {
+          const group = groups.find(g => g.elementIds.includes(el.id));
+          return !group || group.isDefaultGroup;
+        }
         
         // Include elements that are in default groups or not in any typed group
         const group = groups.find(g => g.elementIds.includes(el.id));
