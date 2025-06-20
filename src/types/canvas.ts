@@ -142,6 +142,8 @@ export interface AnimatedCanvasObject {
   characterIndex?: number; // Index within parent textGroup
   parentTextGroupId?: string; // Reference to parent textGroup
   groupId?: string; // Every object belongs to a group
+  // Parent-child relationship
+  parent?: string | null; // ID of parent element or group
 }
 
 export interface CanvasGroup {
@@ -165,6 +167,8 @@ export interface CanvasGroup {
   letterSpacing?: number;
   // Polygon group specific properties (when type === 'polygon')
   isClosed?: boolean; // Whether the polygon path is closed
+  // Parent-child relationship
+  parent?: string | null; // ID of parent element or group
 }
 
 export type ElementAnimationTarget = 'element' | 'group';

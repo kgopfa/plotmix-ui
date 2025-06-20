@@ -1826,6 +1826,28 @@ export default function EditorCanvas() {
                     )
                   );
                 }}
+                onParentChange={(childId, newParentId, childType) => {
+                  console.log('onParentChange called:', { childId, newParentId, childType });
+                  if (childType === 'element') {
+                    setCanvasObjects(prev => {
+                      const updated = prev.map(el => 
+                        el.id === childId 
+                          ? { ...el, parent: newParentId } 
+                          : el
+                      );
+                      console.log('Updated canvas objects:', updated.find(el => el.id === childId));
+                      return updated;
+                    });
+                  } else {
+                    setGroups(prev => 
+                      prev.map(group => 
+                        group.id === childId 
+                          ? { ...group, parent: newParentId } 
+                          : group
+                      )
+                    );
+                  }
+                }}
               />
             </div>
             
