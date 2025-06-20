@@ -489,9 +489,45 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       }
     }
 
-
+    // Special handling for characters when their parent textGroup is selected
+    if (element.type === 'character' && element.parentTextGroupId && isCharacterParentSelected(element)) {
+      // Find the parent textGroup
+      const parentTextGroup = elements.find(el => el.id === element.parentTextGroupId);
+      if (parentTextGroup) {
+        // Delegate the drag operation to the parent textGroup
+        // Don't change selection - keep the textGroup selected
+        // But set up dragging for the textGroup instead
+        setDraggingId(parentTextGroup.id);
+        setDragOffset({ x: pos.x - parentTextGroup.x, y: pos.y - parentTextGroup.y });
+        setIsDraggingGroup(false);
+        return;
+      }
+    }
 
     onElementSelect(id, isMultiSelect);
+
+    // For text and textGroup elements, handle double-click to edit, single click to drag
+    if (element.type === 'text' || element.type === 'textGroup') {
+      // Check if this is a double-click
+      const currentTime = Date.now();
+      const lastClickTime = textClickTimeRef.current.get(id) || 0;
+      const timeDiff = currentTime - lastClickTime;
+
+      console.log('Text click detected:', { id, currentTime, lastClickTime, timeDiff, type: element.type });
+
+      if (timeDiff < 300) { // Double-click detected (within 300ms)
+        console.log('Double-click detected, entering edit mode for:', id);
+        setEditingTextId(id);
+        onElementSelect(id, isMultiSelect);
+        textClickTimeRef.current.delete(id); // Clear the click time
+        return;
+      } else {
+        // Single click - store the time and continue with dragging logic
+        console.log('Single click detected, storing time for:', id);
+        textClickTimeRef.current.set(id, currentTime);
+        // Don't return here, let it fall through to normal drag handling
+      }
+    }
 
     // First, check if we're clicking on a resize handle (only for selected elements)
     if (selectedIds.includes(id) && element.type !== 'line' && element.type !== 'path') {
@@ -585,7 +621,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         setCursor(DRAW_CURSOR);
       } else if (tool === 'line') {
         setCursor(LINE_CURSOR);
-      } else if (tool === 'text') {
+      } else if (tool === 'text' || tool === 'textGroup') {
         setCursor(TEXT_CURSOR);
       } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle') {
         setCursor(CROSS_CURSOR);

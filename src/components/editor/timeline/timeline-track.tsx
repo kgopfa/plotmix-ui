@@ -86,7 +86,7 @@ export function TimelineTrack({
         style={{ paddingLeft: `${8 + depth * 16}px` }}
         onClick={handleTrackClick}
       >
-        {isGroup && onToggleExpansion && (
+        {(isGroup || ('type' in element && element.type === 'textGroup')) && onToggleExpansion && (
           <button
             onClick={handleExpandToggle}
             className="w-4 h-4 flex items-center justify-center hover:bg-gray-200 rounded text-xs"
@@ -95,7 +95,8 @@ export function TimelineTrack({
           </button>
         )}
         {isGroup && <span className="text-xs">📦</span>}
-                  {!isGroup && <span className="text-xs">{isChild ? '└' : '🔵'}</span>}
+        {!isGroup && 'type' in element && element.type === 'textGroup' && <span className="text-xs">📄</span>}
+        {!isGroup && !('type' in element && element.type === 'textGroup') && <span className="text-xs">{isChild ? '└' : '🔵'}</span>}
         <span className="truncate">{name}</span>
       </div>
 
