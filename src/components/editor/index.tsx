@@ -843,6 +843,8 @@ export default function EditorCanvas() {
           return { ...el, x: snappedPos.x, y: snappedPos.y };
         }
 
+        // textGroup functionality removed
+
         return el;
       });
 
@@ -1462,6 +1464,8 @@ export default function EditorCanvas() {
     setCanvasObjects(prev => [...prev, element]);
     setSelectedObjects([element]);
     setSelectedGroups([]);
+
+    // textGroup functionality removed
 
     if (isPathMode && element.type === 'path' && element.isAnimationPath) {
       addPathToAnimation(element);

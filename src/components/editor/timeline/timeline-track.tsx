@@ -61,6 +61,14 @@ export function TimelineTrack({
       onGroupSelect(group);
     } else {
       const animatedElement = element as AnimatedCanvasObject;
+      // Prevent character selection if parent textGroup is selected
+      if (animatedElement.type === 'character' && animatedElement.parentTextGroupId) {
+        const selectionManager = SelectionManager.getInstance();
+        const parentTextGroup = selectionManager.getSelected().find((el: AnimatedCanvasObject) => el.id === animatedElement.parentTextGroupId);
+        if (parentTextGroup) {
+          return; // Don't select character if parent textGroup is selected
+        }
+      }
       SelectionManager.getInstance().select(animatedElement);
     }
   };

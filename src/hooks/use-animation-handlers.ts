@@ -76,6 +76,13 @@ export function useAnimationHandlers(
             yoyo: false,
             attachDelay: 0.5
           },
+          typewriter: {
+            text: selectedElement!.text || ''
+          },
+          textScale: {
+            scaleX: 1,
+            scaleY: 1
+          }
         };
         return { 
           ...anim, 
@@ -135,6 +142,13 @@ export function useAnimationHandlers(
         pathDirection: 'clockwise' as 'clockwise' | 'counterclockwise',
         yoyo: false,
         attachDelay: 0.5
+      },
+      typewriter: {
+        text: selectedElement.text || ''
+      },
+      textScale: {
+        scaleX: 1,
+        scaleY: 1
       }
     };
 
