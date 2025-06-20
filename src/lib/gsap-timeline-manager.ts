@@ -2,18 +2,19 @@ import { gsap } from 'gsap';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import type { CanvasRef } from '@/components/editor/canvas';
 import { PixiPlugin } from "gsap/PixiPlugin";
-import { MotionPathPlugin } from 'gsap/MotionPathPlugin';
+import { Physics2DPlugin } from "gsap/Physics2DPlugin";
 import * as PIXI from 'pixi.js';
-import { 
-  generateAnimationConfig, 
+import {
+  generateAnimationConfig,
   generateGroupAnimationConfig,
-  isColorAnimationConfig, 
+  isColorAnimationConfig,
   isPathAnimationConfig,
+  isPhysicsAnimationConfig,
   isGroupAnimationConfig
 } from '@/utils/animation-generator';
 
 
-gsap.registerPlugin(PixiPlugin, MotionPathPlugin);
+gsap.registerPlugin(PixiPlugin, Physics2DPlugin);
 PixiPlugin.registerPIXI(PIXI);
 
 export class GSAPTimelineManager {
@@ -30,13 +31,13 @@ export class GSAPTimelineManager {
 
   buildAnimationTimeline(elements: AnimatedCanvasObject[], groups?: CanvasGroup[]) {
     // Performance optimization: Check if any animations exist before building timeline
-    const hasElementAnimations = elements.some(el => 
+    const hasElementAnimations = elements.some(el =>
       !el.isAnimationPath && el.animations && el.animations.length > 0
     );
-    const hasGroupAnimations = groups?.some(group => 
+    const hasGroupAnimations = groups?.some(group =>
       !group.isDefaultGroup && group.animations && group.animations.length > 0
     );
-    
+
     // Skip timeline building if no animations exist
     if (!hasElementAnimations && !hasGroupAnimations) {
       console.log('Skipping timeline build - no animations found');
@@ -54,7 +55,7 @@ export class GSAPTimelineManager {
     }
 
     console.log('Building timeline for', elements.length, 'elements');
-    
+
     // Kill all existing tweens and clear timeline
     this.timeline.kill();
     this.timeline.clear();
@@ -67,12 +68,12 @@ export class GSAPTimelineManager {
       // Special handling for textGroup animations - apply to all character children
       if (element.type === 'textGroup') {
         if (element.animations.length === 0) return;
-        
+
         // Find all character children for this textGroup
-        const characterChildren = elements.filter(el => 
+        const characterChildren = elements.filter(el =>
           el.type === 'character' && el.parentTextGroupId === element.id
         );
-        
+
         if (characterChildren.length === 0) {
           console.warn(`TextGroup ${element.id} has no character children`);
           return;
@@ -87,25 +88,25 @@ export class GSAPTimelineManager {
               return;
             }
 
-                         const config = generateAnimationConfig(character, animation, characterTarget);
-             
-             // Apply animation config to character
-             if (isPathAnimationConfig(config)) {
-               // For textGroup path animations, apply to each character
-               // Note: This uses the same path for all characters, they'll move together
-               const pathElement = config.pathElement;
+            const config = generateAnimationConfig(character, animation, characterTarget);
 
-               if (pathElement.type === 'rectangle') {
-                 const segmentDuration = config.duration / 4;
-                 const pathStartTime = config.startTime;
+            // Apply animation config to character
+            if (isPathAnimationConfig(config)) {
+              // For textGroup path animations, apply to each character
+              // Note: This uses the same path for all characters, they'll move together
+              const pathElement = config.pathElement;
 
-                 this.timeline.to(characterTarget, { pixi: { x: "+=" + pathElement.width }, duration: segmentDuration, ease: config.ease }, pathStartTime);
-                 this.timeline.to(characterTarget, { pixi: { y: "+=" + pathElement.height }, duration: segmentDuration, ease: config.ease }, pathStartTime + segmentDuration);
-                 this.timeline.to(characterTarget, { pixi: { x: "-=" + pathElement.width }, duration: segmentDuration, ease: config.ease }, pathStartTime + (segmentDuration * 2));
-                 this.timeline.to(characterTarget, { pixi: { y: "-=" + pathElement.height }, duration: segmentDuration, ease: config.ease }, pathStartTime + (segmentDuration * 3));
-               }
-               // Add other path types as needed...
-             } else if (isColorAnimationConfig(config)) {
+              if (pathElement.type === 'rectangle') {
+                const segmentDuration = config.duration / 4;
+                const pathStartTime = config.startTime;
+
+                this.timeline.to(characterTarget, { pixi: { x: "+=" + pathElement.width }, duration: segmentDuration, ease: config.ease }, pathStartTime);
+                this.timeline.to(characterTarget, { pixi: { y: "+=" + pathElement.height }, duration: segmentDuration, ease: config.ease }, pathStartTime + segmentDuration);
+                this.timeline.to(characterTarget, { pixi: { x: "-=" + pathElement.width }, duration: segmentDuration, ease: config.ease }, pathStartTime + (segmentDuration * 2));
+                this.timeline.to(characterTarget, { pixi: { y: "-=" + pathElement.height }, duration: segmentDuration, ease: config.ease }, pathStartTime + (segmentDuration * 3));
+              }
+              // Add other path types as needed...
+            } else if (isColorAnimationConfig(config)) {
               this.timeline.to(
                 config.oldChild,
                 {
@@ -128,6 +129,20 @@ export class GSAPTimelineManager {
                 },
                 config.startTime
               );
+            } else if (isPhysicsAnimationConfig(config)) {
+              this.timeline.to(
+                characterTarget,
+                {
+                  physics2D: {
+                    velocity: config.velocity,
+                    angle: config.angle,
+                    gravity: config.gravity
+                  },
+                  duration: config.duration,
+                  ease: config.ease,
+                },
+                config.startTime
+              );
             } else {
               this.timeline.to(
                 config.target,
@@ -141,7 +156,7 @@ export class GSAPTimelineManager {
             }
           });
         });
-        
+
         return; // Skip regular processing for textGroup
       }
 
@@ -220,11 +235,11 @@ export class GSAPTimelineManager {
             const height = pathElement.height;
             const width = pathElement.width;
             const halfWidth = width / 2;
-            
+
             // Calculate triangle vertices relative to center
-            const topPoint = { x: pathElement.x, y: pathElement.y - height/2 };
-            const bottomLeft = { x: pathElement.x - halfWidth, y: pathElement.y + height/2 };
-            const bottomRight = { x: pathElement.x + halfWidth, y: pathElement.y + height/2 };
+            const topPoint = { x: pathElement.x, y: pathElement.y - height / 2 };
+            const bottomLeft = { x: pathElement.x - halfWidth, y: pathElement.y + height / 2 };
+            const bottomRight = { x: pathElement.x + halfWidth, y: pathElement.y + height / 2 };
 
             const pathStartTime = config.startTime;
 
@@ -270,14 +285,14 @@ export class GSAPTimelineManager {
               pathStartTime + (segmentDuration * 2)
             );
           }
-          
+
           if (pathElement.type === 'circle') {
             // For circles, we'll use angle interpolation for smooth circular motion
             const radius = pathElement.radius || pathElement.width / 2;
-            const state = { angle: -Math.PI/2 }; // Start at 12 o'clock position (top)
-            
+            const state = { angle: -Math.PI / 2 }; // Start at 12 o'clock position (top)
+
             this.timeline.to(
-              state, 
+              state,
               {
                 angle: Math.PI * 1.5, // Full circle from -π/2 to 3π/2
                 duration: config.duration,
@@ -288,7 +303,7 @@ export class GSAPTimelineManager {
                     // Calculate position based on current angle
                     const x = element.x + radius * Math.cos(state.angle);
                     const y = element.y + radius * Math.sin(state.angle);
-                    
+
                     // Set the position directly
                     target.x = x;
                     target.y = y;
@@ -304,9 +319,9 @@ export class GSAPTimelineManager {
             if (!pathElement.lineOptions || !pathElement.lineOptions.points) {
               return;
             }
-            
+
             const { start, end } = pathElement.lineOptions.points;
-            
+
             // Initial move to the start point of the line
             this.timeline.to(
               target,
@@ -320,9 +335,9 @@ export class GSAPTimelineManager {
               },
               config.startTime
             );
-            
+
             const pathStartTime = config.startTime + config.attachDelay;
-            
+
             // Animate from start to end point
             this.timeline.to(
               target,
@@ -337,25 +352,25 @@ export class GSAPTimelineManager {
               pathStartTime
             );
           }
-          
+
           if (pathElement.type === 'path' && pathElement.pathPoints) {
             // Convert pathPoints to the format for animation
             const pathPoints = pathElement.pathPoints.map(p => ({
               x: pathElement.x + p.x,
               y: pathElement.y + p.y
             }));
-            
+
             // Use MotionPathPlugin with proper SVG path format
             // Convert points to SVG path string
             let svgPath = `M${pathPoints[0].x},${pathPoints[0].y} `;
-            
+
             for (let i = 1; i < pathPoints.length; i++) {
               svgPath += `L${pathPoints[i].x},${pathPoints[i].y} `;
             }
-            
+
             // Create a proxy object that MotionPathPlugin can animate
             const proxy = { x: 0, y: 0 };
-            
+
             this.timeline.to(
               proxy,
               {
@@ -398,6 +413,20 @@ export class GSAPTimelineManager {
             },
             config.startTime
           );
+        } else if (isPhysicsAnimationConfig(config)) {
+          this.timeline.to(
+            config.target,
+            {
+              physics2D: {
+                velocity: config.velocity,
+                angle: config.angle,
+                gravity: config.gravity
+              },
+              duration: config.duration,
+              ease: config.ease,
+            },
+            config.startTime
+          );
         } else {
           this.timeline.to(
             config.target,
@@ -434,7 +463,7 @@ export class GSAPTimelineManager {
               // Animate the container position directly
               const targetX = config.properties.x || group.x;
               const targetY = config.properties.y || group.y;
-              
+
               this.timeline.to(
                 groupContainer,
                 {
@@ -446,7 +475,7 @@ export class GSAPTimelineManager {
             } else if (animation.type === 'rotate') {
               // Animate container rotation - use degrees directly (same as individual elements)
               const targetRotation = config.properties.rotation || 0;
-              
+
               this.timeline.to(
                 groupContainer,
                 {
@@ -459,13 +488,13 @@ export class GSAPTimelineManager {
               // Animate container scale
               const targetScaleX = config.properties.scaleX || 1;
               const targetScaleY = config.properties.scaleY || 1;
-              
+
               this.timeline.to(
                 groupContainer,
                 {
-                  pixi: { 
-                    scaleX: targetScaleX, 
-                    scaleY: targetScaleY 
+                  pixi: {
+                    scaleX: targetScaleX,
+                    scaleY: targetScaleY
                   },
                   ...baseConfig,
                 },
@@ -474,7 +503,7 @@ export class GSAPTimelineManager {
             } else if (animation.type === 'fade') {
               // Animate container alpha
               const targetAlpha = config.properties.alpha || 1;
-              
+
               this.timeline.to(
                 groupContainer,
                 {

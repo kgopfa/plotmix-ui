@@ -147,6 +147,7 @@ export function AnimationsTab({
                   <option value="color">Color</option>
                   <option value="fade">Fade</option>
                   <option value="path">Path</option>
+                  <option value="physics">Physics</option>
                 </select>
               </label>
               <label>
@@ -324,6 +325,40 @@ export function AnimationsTab({
                         </label>
                       </div>
                     </div>
+                  )}
+                  {animation.type === 'physics' && (
+                    <>
+                      <label>
+                        Velocity:
+                        <input
+                          type="number"
+                          value={animation.properties.velocity ?? 400}
+                          onChange={e => handleAnimationChange(animation.id, 'properties.velocity', e.target.value)}
+                          className="w-full"
+                          step="10"
+                        />
+                      </label>
+                      <label>
+                        Angle (degrees):
+                        <input
+                          type="number"
+                          value={animation.properties.angle ?? 60}
+                          onChange={e => handleAnimationChange(animation.id, 'properties.angle', e.target.value)}
+                          className="w-full"
+                          step="1"
+                        />
+                      </label>
+                      <label>
+                        Gravity:
+                        <input
+                          type="number"
+                          value={animation.properties.gravity ?? 800}
+                          onChange={e => handleAnimationChange(animation.id, 'properties.gravity', e.target.value)}
+                          className="w-full"
+                          step="10"
+                        />
+                      </label>
+                    </>
                   )}
                 </div>
               </div>

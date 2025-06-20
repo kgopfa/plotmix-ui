@@ -82,6 +82,11 @@ export function useAnimationHandlers(
           textScale: {
             scaleX: 1,
             scaleY: 1
+          },
+          physics: {
+            velocity: 400,
+            angle: 60,
+            gravity: 800
           }
         };
         return { 
@@ -149,6 +154,11 @@ export function useAnimationHandlers(
       textScale: {
         scaleX: 1,
         scaleY: 1
+      },
+      physics: {
+        velocity: 400,
+        angle: 60,
+        gravity: 800
       }
     };
 

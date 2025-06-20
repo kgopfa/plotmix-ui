@@ -26,6 +26,13 @@ export interface PathAnimationConfig extends BaseAnimationConfig {
   attachDelay: number;
 }
 
+export interface PhysicsAnimationConfig extends BaseAnimationConfig {
+  type: 'physics';
+  velocity: number;
+  angle: number;
+  gravity: number;
+}
+
 export interface GroupAnimationConfig extends BaseAnimationConfig {
   type: 'group';
   group: CanvasGroup;
@@ -38,6 +45,10 @@ export function isColorAnimationConfig(config: BaseAnimationConfig): config is C
 
 export function isPathAnimationConfig(config: BaseAnimationConfig): config is PathAnimationConfig {
   return 'type' in config && config.type === 'path';
+}
+
+export function isPhysicsAnimationConfig(config: BaseAnimationConfig): config is PhysicsAnimationConfig {
+  return 'type' in config && config.type === 'physics';
 }
 
 export function isGroupAnimationConfig(config: BaseAnimationConfig): config is GroupAnimationConfig {
@@ -78,6 +89,13 @@ function generateAnimationProperties(
     case 'color':
       return {
         fillColor: animeProps.fillColor ?? element.fill
+      };
+
+    case 'physics':
+      return {
+        velocity: Number(animeProps.velocity) ?? 400,
+        angle: Number(animeProps.angle) ?? 60,
+        gravity: Number(animeProps.gravity) ?? 800
       };
 
     default:
@@ -123,7 +141,7 @@ export function generateAnimationConfig(
   element: AnimatedCanvasObject,
   animation: ElementAnimation,
   target: Container
-): BaseAnimationConfig | ColorAnimationConfig | PathAnimationConfig {
+): BaseAnimationConfig | ColorAnimationConfig | PathAnimationConfig | PhysicsAnimationConfig {
   const animationProps = generateAnimationProperties(animation, element);
   const baseConfig = {
     target,
@@ -187,6 +205,21 @@ export function generateAnimationConfig(
         properties: updatedProps
       };
     }
+  }
+
+  if (animation.type === 'physics') {
+    const velocity = animationProps.velocity ?? 400;
+    const angle = animationProps.angle ?? 60;
+    const gravity = animationProps.gravity ?? 800;
+    
+    return {
+      ...baseConfig,
+      type: 'physics',
+      velocity,
+      angle,
+      gravity,
+      properties: {}
+    };
   }
 
   return {

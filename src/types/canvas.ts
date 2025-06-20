@@ -63,9 +63,13 @@ export type AnimatableProperties = {
   characterY?: number[];
   characterRotation?: number[];
   characterScale?: number[];
+  // Physics animation properties
+  velocity?: number;
+  angle?: number;
+  gravity?: number;
 };
 
-export type AnimationType = 'rotate' | 'scale' | 'move' | 'color' | 'fade' | 'path' | 'typewriter' | 'textScale';
+export type AnimationType = 'rotate' | 'scale' | 'move' | 'color' | 'fade' | 'path' | 'typewriter' | 'textScale' | 'physics';
 
 export interface ElementAnimation {
   id: string;
