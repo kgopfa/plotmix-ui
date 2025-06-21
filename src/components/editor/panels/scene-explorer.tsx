@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
+import { ContextMenu } from '../canvas/context-menu';
+import { contextMenuManager } from '@/lib/context-menu-manager';
 
 interface ContextMenuPosition {
   x: number;
@@ -225,9 +227,18 @@ export function SceneExplorer({
   const handleContextMenu = (e: React.MouseEvent, targetId: string, targetType: 'element' | 'group') => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Use context menu manager to ensure only one menu is shown
+    const menuId = 'scene-explorer-context-menu';
+    contextMenuManager.openContextMenu(menuId);
+    
+    // Get the element's bounding box to align context menu horizontally
+    const targetElement = e.currentTarget as HTMLElement;
+    const rect = targetElement.getBoundingClientRect();
+    
     setContextMenu({
-      x: e.clientX,
-      y: e.clientY,
+      x: rect.left, // Align horizontally with the left edge of the element
+      y: rect.bottom, // Position 8px below the bottom of the element
       targetId,
       targetType
     });
@@ -271,12 +282,24 @@ export function SceneExplorer({
     setContextMenu(null);
   };
 
-  // Close context menu on outside clicks
+  // Close context menu on outside clicks and global close events
   useEffect(() => {
-    const handleClickOutside = () => setContextMenu(null);
+    const handleClickOutside = () => {
+      setContextMenu(null);
+      contextMenuManager.closeAllContextMenus();
+    };
+    
+    const handleGlobalClose = () => {
+      setContextMenu(null);
+    };
+
     if (contextMenu) {
       document.addEventListener('click', handleClickOutside);
-      return () => document.removeEventListener('click', handleClickOutside);
+      window.addEventListener('close-context-menu', handleGlobalClose);
+      return () => {
+        document.removeEventListener('click', handleClickOutside);
+        window.removeEventListener('close-context-menu', handleGlobalClose);
+      };
     }
   }, [contextMenu]);
 
@@ -725,70 +748,12 @@ export function SceneExplorer({
       </ul>
 
       {/* Context Menu */}
-      {contextMenu && (
-        <div
-          className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[180px]"
-          style={{
-            left: contextMenu.x,
-            top: contextMenu.y,
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
-            onClick={() => handleContextMenuAction('copy')}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-            Copy
-          </button>
-          
-          {contextMenu.targetType === 'element' && (
-            <button
-              className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
-              onClick={() => handleContextMenuAction('group')}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-              Group Element
-            </button>
-          )}
-          
-          <button
-            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
-            onClick={() => handleContextMenuAction('boundToParent')}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-            </svg>
-            Bound to Parent
-          </button>
-          
-          <div className="border-t border-gray-100 my-1" />
-          
-          <button
-            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
-            onClick={() => handleContextMenuAction('moveToFront')}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
-            </svg>
-            Move to Front
-          </button>
-          
-          <button
-            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
-            onClick={() => handleContextMenuAction('moveToBack')}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
-            </svg>
-            Move to Back
-          </button>
-        </div>
-      )}
+      <ContextMenu
+        contextMenu={contextMenu}
+        elements={elements}
+        onAction={handleContextMenuAction}
+        onClose={() => setContextMenu(null)}
+      />
     </div>
   );
 } 
