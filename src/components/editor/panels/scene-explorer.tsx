@@ -80,7 +80,7 @@ export function SceneExplorer({
   };
 
   const getChildGroups = (parentId: string): CanvasGroup[] => {
-    return groups.filter(group => group.parent === parentId);
+    return groups.filter(group => group.parent === parentId && !group.isAnimationPath);
   };
 
   const getRootElements = (): AnimatedCanvasObject[] => {
@@ -100,7 +100,7 @@ export function SceneExplorer({
   };
 
   const getRootGroups = (): CanvasGroup[] => {
-    return groups.filter(group => !group.isDefaultGroup && !group.parent);
+    return groups.filter(group => !group.isDefaultGroup && !group.parent && !group.isAnimationPath);
   };
 
   /**

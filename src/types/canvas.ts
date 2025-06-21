@@ -156,6 +156,7 @@ export interface CanvasGroup {
   visible?: boolean; // Group visibility - defaults to true
   type: 'text' | 'custom' | 'polygon'; // Group type determines presentation and behavior
   isDefaultGroup: boolean; // True for auto-created single-object groups
+  isAnimationPath?: boolean; // True for groups that are animation paths
   animations: ElementAnimation[]; // Group animations
   // Text group specific properties (when type === 'text')
   characters?: string[]; // For text groups, the individual characters

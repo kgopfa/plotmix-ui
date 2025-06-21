@@ -564,9 +564,23 @@ export default function EditorCanvas() {
     const chainedLines = canvasObjects.filter(obj => chainedLineIds.includes(obj.id));
     
     if (chainedLines.length >= 2) {
+      // Check if any of the lines in the polygon are dotted (indicating path mode)
+      const isPolygonPath = chainedLines.some(line => line.lineOptions?.dotted === true);
+      
       // Create a polygon group using the typed group system
       // Note: createPolygonGroup already handles all state updates including setGroups and setCanvasObjects
-      createPolygonGroup(chainedLines, true); // true = closed polygon
+      const polygonGroup = createPolygonGroup(chainedLines, true); // true = closed polygon
+      
+      // If this polygon was created in path mode, mark the group as an animation path
+      if (isPolygonPath && polygonGroup) {
+        setGroups(prevGroups => 
+          prevGroups.map(group => 
+            group.id === polygonGroup.id 
+              ? { ...group, isAnimationPath: true }
+              : group
+          )
+        );
+      }
     }
     
     // Clean up line chaining state
@@ -817,74 +831,7 @@ export default function EditorCanvas() {
     );
   }, [animationTarget, setCanvasObjects]);
 
-  // Handle polygon path addition when polygon is closed in path mode
-  useEffect(() => {
-    if (!isClosingShape || chainedLineIds.length === 0) return;
 
-    // Find the chained lines including the last one
-    const chainedLines = canvasObjects.filter(obj => chainedLineIds.includes(obj.id));
-    
-    if (chainedLines.length >= 2) {
-      // Check if any of the lines in the polygon are dotted (indicating path mode)
-      const isPolygonPath = chainedLines.some(line => line.lineOptions?.dotted === true);
-      
-      // If this polygon was created in path mode, add it to the animation path
-      if (isPolygonPath && isPathMode) {
-        // Calculate bounding box for all line endpoints
-        let minX = Infinity;
-        let minY = Infinity;
-        let maxX = -Infinity;
-        let maxY = -Infinity;
-
-        chainedLines.forEach(line => {
-          if (line.lineOptions?.points) {
-            const { start, end } = line.lineOptions.points;
-            minX = Math.min(minX, start.x, end.x);
-            minY = Math.min(minY, start.y, end.y);
-            maxX = Math.max(maxX, start.x, end.x);
-            maxY = Math.max(maxY, start.y, end.y);
-          }
-        });
-
-        const centerX = (minX + maxX) / 2;
-        const centerY = (minY + maxY) / 2;
-        const width = maxX - minX;
-        const height = maxY - minY;
-
-        // Create a virtual polygon element that represents the entire group
-        const polygonElement: AnimatedCanvasObject = {
-          id: `polygon-path-${Date.now()}`,
-          type: 'path', // Use 'path' type for animation paths
-          name: `Polygon Path`,
-          x: centerX,
-          y: centerY,
-          width: Math.max(width, 20), // Ensure minimum width
-          height: Math.max(height, 20), // Ensure minimum height
-          rotation: 0,
-          fill: 'transparent',
-          stroke: '#000000',
-          strokeWidth: 2,
-          opacity: 1,
-          groupId: '',
-          animations: [],
-          isAnimationPath: true,
-          // Store the line elements that make up this polygon as path points
-          pathPoints: chainedLines.flatMap(line => 
-            line.lineOptions?.points ? [line.lineOptions.points.start, line.lineOptions.points.end] : []
-          ).filter((point, index, arr) => {
-            // Remove duplicate consecutive points
-            if (index === 0) return true;
-            const prev = arr[index - 1];
-            return !(Math.abs(point.x - prev.x) < 1 && Math.abs(point.y - prev.y) < 1);
-          })
-        };
-        
-        addPathToAnimation(polygonElement);
-        setIsPathMode(false);
-        setAnimationTarget(null);
-      }
-    }
-  }, [isClosingShape, chainedLineIds, canvasObjects, isPathMode, addPathToAnimation, setIsPathMode, setAnimationTarget]);
 
   // Update animations when their path element is modified
   const updateAnimationsForPathElement = useCallback((elements: AnimatedCanvasObject[], pathElement: AnimatedCanvasObject) => {

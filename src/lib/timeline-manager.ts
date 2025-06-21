@@ -163,7 +163,7 @@ export class TimelineManager {
       }));
 
     const groupTracks: TimelineTrackData[] = groups
-      .filter(group => !group.isDefaultGroup) // Only show non-default groups
+      .filter(group => !group.isDefaultGroup && !group.isAnimationPath) // Only show non-default, non-animation-path groups
       .map(group => ({
         id: group.id,
         type: 'group' as const,

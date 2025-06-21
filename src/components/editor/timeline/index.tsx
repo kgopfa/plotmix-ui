@@ -92,9 +92,9 @@ export function Timeline({
       depth: number;
     }> = [];
 
-    // Add typed groups (text, custom, polygon)
+    // Add typed groups (text, custom, polygon) - exclude animation path groups
     groups
-      .filter(group => !group.isDefaultGroup)
+      .filter(group => !group.isDefaultGroup && !group.isAnimationPath)
       .forEach(group => {
         const isSelected = false; // Selection temporarily disabled
         
