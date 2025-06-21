@@ -26,7 +26,6 @@ interface SceneExplorerProps {
   onCopyElement?: (elementId: string) => void;
   onCopyGroup?: (groupId: string) => void;
   onGroupElements?: (elementIds: string[]) => void;
-  onBoundToParent?: (elementId: string, isElement: boolean) => void;
   onMoveToFront?: (elementId: string, isElement: boolean) => void;
   onMoveToBack?: (elementId: string, isElement: boolean) => void;
 }
@@ -45,7 +44,6 @@ export function SceneExplorer({
   onCopyElement,
   onCopyGroup,
   onGroupElements,
-  onBoundToParent,
   onMoveToFront,
   onMoveToBack
 }: SceneExplorerProps) {
@@ -105,9 +103,29 @@ export function SceneExplorer({
     return groups.filter(group => !group.isDefaultGroup && !group.parent);
   };
 
+  /**
+   * Validates whether a dragged item can be dropped on a target.
+   * Enforces the following constraints:
+   * 1. Shapes cannot be dragged into other shapes - only into groups
+   * 2. Shapes cannot be dragged into text groups (type === 'text')
+   * 3. Prevents circular dependencies
+   */
   const canDropOnTarget = (draggedId: string, draggedType: 'element' | 'group', targetId: string, targetType: 'element' | 'group'): boolean => {
     // Can't drop on self
     if (draggedId === targetId) return false;
+    
+    // Shapes should not be draggable into other shapes - only into groups
+    if (draggedType === 'element' && targetType === 'element') {
+      return false;
+    }
+    
+    // If target is a group, check if it's a text group (not allowed)
+    if (targetType === 'group') {
+      const targetGroup = groups.find(g => g.id === targetId);
+      if (targetGroup && targetGroup.type === 'text') {
+        return false;
+      }
+    }
     
     // Can't create circular dependencies - check if target is a descendant of dragged item
     const isDescendant = (ancestorId: string, descendantId: string, type: 'element' | 'group'): boolean => {
@@ -260,11 +278,6 @@ export function SceneExplorer({
       case 'group':
         if (targetType === 'element' && onGroupElements) {
           onGroupElements([targetId]);
-        }
-        break;
-      case 'boundToParent':
-        if (onBoundToParent) {
-          onBoundToParent(targetId, targetType === 'element');
         }
         break;
       case 'moveToFront':
@@ -748,12 +761,11 @@ export function SceneExplorer({
       </ul>
 
       {/* Context Menu */}
-      <ContextMenu
-        contextMenu={contextMenu}
-        elements={elements}
-        onAction={handleContextMenuAction}
-        onClose={() => setContextMenu(null)}
-      />
+              <ContextMenu
+          contextMenu={contextMenu}
+          onAction={handleContextMenuAction}
+          onClose={() => setContextMenu(null)}
+        />
     </div>
   );
 } 

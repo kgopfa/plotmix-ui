@@ -70,7 +70,6 @@ interface CanvasProps {
   // Context menu action callbacks
   onCopyElement?: (elementId: string) => void;
   onGroupElements?: (elementIds: string[]) => void;
-  onBoundToParent?: (elementId: string) => void;
   onMoveToFront?: (elementId: string) => void;
   onMoveToBack?: (elementId: string) => void;
 }
@@ -135,7 +134,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     isPlaying = false,
     onCopyElement,
     onGroupElements,
-    onBoundToParent,
     onMoveToFront,
     onMoveToBack,
   },
@@ -945,11 +943,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       case 'group':
         if (onGroupElements) {
           onGroupElements([targetId]);
-        }
-        break;
-      case 'boundToParent':
-        if (onBoundToParent) {
-          onBoundToParent(targetId);
         }
         break;
       case 'moveToFront':
@@ -1863,7 +1856,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       {/* Context Menu */}
       <ContextMenu
         contextMenu={contextMenu}
-        elements={elements}
         onAction={handleContextMenuAction}
         onClose={() => setContextMenu(null)}
       />

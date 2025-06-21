@@ -1761,10 +1761,6 @@ export default function EditorCanvas() {
                       handleGroupElements();
                     }
                   }}
-                  onBoundToParent={(elementId) => {
-                    // This would implement parent binding logic
-                    console.log('Bound to parent requested for element:', elementId);
-                  }}
                   onMoveToFront={(elementId) => {
                     // Move element to front by updating z-index or reordering
                     setCanvasObjects(prev => {

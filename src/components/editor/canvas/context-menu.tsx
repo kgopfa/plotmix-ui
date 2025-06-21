@@ -1,5 +1,4 @@
 import React from 'react';
-import type { AnimatedCanvasObject } from '@/types/canvas';
 
 interface ContextMenuPosition {
   x: number;
@@ -10,20 +9,16 @@ interface ContextMenuPosition {
 
 interface ContextMenuProps {
   contextMenu: ContextMenuPosition | null;
-  elements: AnimatedCanvasObject[];
   onAction: (action: string) => void;
   onClose: () => void;
 }
 
 export const ContextMenu: React.FC<ContextMenuProps> = ({
   contextMenu,
-  elements,
   onAction
 }) => {
   if (!contextMenu) return null;
 
-  const contextElement = elements.find(el => el.id === contextMenu.targetId);
-  const hasParent = contextElement && (contextElement.groupId || contextElement.parentTextGroupId);
   const isElement = contextMenu.targetType === 'element' || !contextMenu.targetType; // Default to element for backward compatibility
 
   return (
@@ -56,21 +51,6 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
           Group Element
         </button>
       )}
-      
-      <button
-        className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 ${
-          hasParent 
-            ? 'hover:bg-gray-100 cursor-pointer' 
-            : 'opacity-30 cursor-not-allowed'
-        }`}
-        onClick={() => hasParent && onAction('boundToParent')}
-        disabled={!hasParent}
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-        </svg>
-        Bound to Parent
-      </button>
       
       <div className="border-t border-gray-100 my-1" />
       
