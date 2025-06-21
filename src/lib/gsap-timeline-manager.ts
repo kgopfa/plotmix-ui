@@ -10,7 +10,8 @@ import {
   isColorAnimationConfig,
   isPathAnimationConfig,
   isPhysicsAnimationConfig,
-  isGroupAnimationConfig
+  isGroupAnimationConfig,
+  PathAnimationConfig
 } from '@/utils/animation-generator';
 
 
@@ -50,11 +51,8 @@ export class GSAPTimelineManager {
 
     const shapeRefs = this.canvasRef?.current?.getShapeRefs();
     if (!shapeRefs) {
-      console.warn('No shape refs available, skipping timeline build');
       return;
     }
-
-    console.log('Building timeline for', elements.length, 'elements');
 
     // Kill all existing tweens and clear timeline
     this.timeline.kill();
@@ -75,7 +73,6 @@ export class GSAPTimelineManager {
         );
 
         if (characterChildren.length === 0) {
-          console.warn(`TextGroup ${element.id} has no character children`);
           return;
         }
 
@@ -84,29 +81,12 @@ export class GSAPTimelineManager {
           characterChildren.forEach((character) => {
             const characterTarget = shapeRefs[character.id];
             if (!characterTarget || characterTarget.destroyed || !characterTarget.parent) {
-              console.warn(`Skipping animation for character ${character.id} - invalid target`);
               return;
             }
 
             const config = generateAnimationConfig(character, animation, characterTarget);
 
-            // Apply animation config to character
-            if (isPathAnimationConfig(config)) {
-              // For textGroup path animations, apply to each character
-              // Note: This uses the same path for all characters, they'll move together
-              const pathElement = config.pathElement;
-
-              if (pathElement.type === 'rectangle') {
-                const segmentDuration = config.duration / 4;
-                const pathStartTime = config.startTime;
-
-                this.timeline.to(characterTarget, { pixi: { x: "+=" + pathElement.width }, duration: segmentDuration, ease: config.ease }, pathStartTime);
-                this.timeline.to(characterTarget, { pixi: { y: "+=" + pathElement.height }, duration: segmentDuration, ease: config.ease }, pathStartTime + segmentDuration);
-                this.timeline.to(characterTarget, { pixi: { x: "-=" + pathElement.width }, duration: segmentDuration, ease: config.ease }, pathStartTime + (segmentDuration * 2));
-                this.timeline.to(characterTarget, { pixi: { y: "-=" + pathElement.height }, duration: segmentDuration, ease: config.ease }, pathStartTime + (segmentDuration * 3));
-              }
-              // Add other path types as needed...
-            } else if (isColorAnimationConfig(config)) {
+            if (isColorAnimationConfig(config)) {
               this.timeline.to(
                 config.oldChild,
                 {
@@ -171,7 +151,6 @@ export class GSAPTimelineManager {
 
       const target = shapeRefs[element.id];
       if (!target || target.destroyed || !target.parent) {
-        console.warn(`Skipping animation for element ${element.id} - invalid target`);
         return;
       }
 
@@ -179,226 +158,7 @@ export class GSAPTimelineManager {
         const config = generateAnimationConfig(element, animation, target);
 
         if (isPathAnimationConfig(config)) {
-          const pathElement = config.pathElement;
-
-          if (pathElement.type === 'rectangle') {
-            const segmentDuration = config.duration / 4;
-
-            const pathStartTime = config.startTime;
-
-            // 1. Move from top-left to top-right (right: add width)
-            this.timeline.to(
-              target,
-              {
-                pixi: {
-                  x: "+=" + pathElement.width
-                },
-                duration: segmentDuration,
-                ease: config.ease,
-              },
-              pathStartTime
-            );
-
-            // 2. Move from top-right to bottom-right (down: add height)
-            this.timeline.to(
-              target,
-              {
-                pixi: {
-                  y: "+=" + pathElement.height
-                },
-                duration: segmentDuration,
-                ease: config.ease,
-              },
-              pathStartTime + segmentDuration
-            );
-
-            // 3. Move from bottom-right to bottom-left (left: subtract width)
-            this.timeline.to(
-              target,
-              {
-                pixi: {
-                  x: "-=" + pathElement.width
-                },
-                duration: segmentDuration,
-                ease: config.ease,
-              },
-              pathStartTime + (segmentDuration * 2)
-            );
-
-            // 4. Move from bottom-left to top-left (up: subtract height)
-            this.timeline.to(
-              target,
-              {
-                pixi: {
-                  y: "-=" + pathElement.height
-                },
-                duration: segmentDuration,
-                ease: config.ease,
-              },
-              pathStartTime + (segmentDuration * 3)
-            );
-          }
-
-          if (pathElement.type === 'triangle') {
-            const segmentDuration = config.duration / 3;
-            const height = pathElement.height;
-            const width = pathElement.width;
-            const halfWidth = width / 2;
-
-            // Calculate triangle vertices relative to center
-            const topPoint = { x: pathElement.x, y: pathElement.y - height / 2 };
-            const bottomLeft = { x: pathElement.x - halfWidth, y: pathElement.y + height / 2 };
-            const bottomRight = { x: pathElement.x + halfWidth, y: pathElement.y + height / 2 };
-
-            const pathStartTime = config.startTime;
-
-            // 1. Move from top to bottom-right
-            this.timeline.to(
-              target,
-              {
-                pixi: {
-                  x: bottomRight.x,
-                  y: bottomRight.y
-                },
-                duration: segmentDuration,
-                ease: config.ease,
-              },
-              pathStartTime
-            );
-
-            // 2. Move from bottom-right to bottom-left
-            this.timeline.to(
-              target,
-              {
-                pixi: {
-                  x: bottomLeft.x,
-                  y: bottomLeft.y
-                },
-                duration: segmentDuration,
-                ease: config.ease,
-              },
-              pathStartTime + segmentDuration
-            );
-
-            // 3. Move from bottom-left back to top
-            this.timeline.to(
-              target,
-              {
-                pixi: {
-                  x: topPoint.x,
-                  y: topPoint.y
-                },
-                duration: segmentDuration,
-                ease: config.ease,
-              },
-              pathStartTime + (segmentDuration * 2)
-            );
-          }
-
-          if (pathElement.type === 'circle') {
-            // For circles, we'll use angle interpolation for smooth circular motion
-            const radius = pathElement.radius || pathElement.width / 2;
-            const state = { angle: -Math.PI / 2 }; // Start at 12 o'clock position (top)
-
-            this.timeline.to(
-              state,
-              {
-                angle: Math.PI * 1.5, // Full circle from -π/2 to 3π/2
-                duration: config.duration,
-                ease: config.ease,
-                onUpdate: () => {
-                  // Get the current target from the GSAP timeline
-                  if (target && target.parent && !target.destroyed) {
-                    // Calculate position based on current angle
-                    const x = element.x + radius * Math.cos(state.angle);
-                    const y = element.y + radius * Math.sin(state.angle);
-
-                    // Set the position directly
-                    target.x = x;
-                    target.y = y;
-                  }
-                }
-              },
-              config.startTime
-            );
-          }
-
-          if (pathElement.type === 'line') {
-            // For lines, we need to animate from start point to end point
-            if (!pathElement.lineOptions || !pathElement.lineOptions.points) {
-              return;
-            }
-
-            const { start, end } = pathElement.lineOptions.points;
-
-            // Initial move to the start point of the line
-            this.timeline.to(
-              target,
-              {
-                pixi: {
-                  x: start.x,
-                  y: start.y
-                },
-                duration: config.attachDelay,
-                ease: config.ease,
-              },
-              config.startTime
-            );
-
-            const pathStartTime = config.startTime + config.attachDelay;
-
-            // Animate from start to end point
-            this.timeline.to(
-              target,
-              {
-                pixi: {
-                  x: end.x,
-                  y: end.y
-                },
-                duration: config.duration,
-                ease: config.ease,
-              },
-              pathStartTime
-            );
-          }
-
-          if (pathElement.type === 'path' && pathElement.pathPoints) {
-            // Convert pathPoints to the format for animation
-            const pathPoints = pathElement.pathPoints.map(p => ({
-              x: pathElement.x + p.x,
-              y: pathElement.y + p.y
-            }));
-
-            // Use MotionPathPlugin with proper SVG path format
-            // Convert points to SVG path string
-            let svgPath = `M${pathPoints[0].x},${pathPoints[0].y} `;
-
-            for (let i = 1; i < pathPoints.length; i++) {
-              svgPath += `L${pathPoints[i].x},${pathPoints[i].y} `;
-            }
-
-            // Create a proxy object that MotionPathPlugin can animate
-            const proxy = { x: 0, y: 0 };
-
-            this.timeline.to(
-              proxy,
-              {
-                motionPath: {
-                  path: svgPath,
-                  autoRotate: false,
-                },
-                duration: config.duration,
-                ease: config.ease,
-                onUpdate: () => {
-                  if (target && target.parent && !target.destroyed) {
-                    target.x = proxy.x;
-                    target.y = proxy.y;
-                  }
-                }
-              },
-              config.startTime
-            );
-          }
+          this.addPathAnimation(config, target, element);
         } else if (isColorAnimationConfig(config)) {
           this.timeline.to(
             config.oldChild,
@@ -537,6 +297,212 @@ export class GSAPTimelineManager {
     }
 
     this.timeline.pause(0);
+  }
+
+  private addPathAnimation(config: PathAnimationConfig, target: PIXI.Container, element: AnimatedCanvasObject) {
+    const pathElement = config.pathElement;
+
+    if (pathElement.type === 'rectangle') {
+      const segmentDuration = config.duration / 4;
+      const pathStartTime = config.startTime;
+
+      // 1. Move from top-left to top-right (right: add width)
+      this.timeline.to(
+        target,
+        {
+          pixi: {
+            x: "+=" + pathElement.width
+          },
+          duration: segmentDuration,
+          ease: config.ease,
+        },
+        pathStartTime
+      );
+
+      // 2. Move from top-right to bottom-right (down: add height)
+      this.timeline.to(
+        target,
+        {
+          pixi: {
+            y: "+=" + pathElement.height
+          },
+          duration: segmentDuration,
+          ease: config.ease,
+        },
+        pathStartTime + segmentDuration
+      );
+
+      // 3. Move from bottom-right to bottom-left (left: subtract width)
+      this.timeline.to(
+        target,
+        {
+          pixi: {
+            x: "-=" + pathElement.width
+          },
+          duration: segmentDuration,
+          ease: config.ease,
+        },
+        pathStartTime + (segmentDuration * 2)
+      );
+
+      // 4. Move from bottom-left to top-left (up: subtract height)
+      this.timeline.to(
+        target,
+        {
+          pixi: {
+            y: "-=" + pathElement.height
+          },
+          duration: segmentDuration,
+          ease: config.ease,
+        },
+        pathStartTime + (segmentDuration * 3)
+      );
+    }
+
+    if (pathElement.type === 'triangle') {
+      const segmentDuration = config.duration / 3;
+      const height = pathElement.height;
+      const width = pathElement.width;
+      const halfWidth = width / 2;
+
+      // Calculate triangle vertices relative to center
+      const topPoint = { x: pathElement.x, y: pathElement.y - height / 2 };
+      const bottomLeft = { x: pathElement.x - halfWidth, y: pathElement.y + height / 2 };
+      const bottomRight = { x: pathElement.x + halfWidth, y: pathElement.y + height / 2 };
+
+      const pathStartTime = config.startTime;
+
+      // 1. Move from top to bottom-right
+      this.timeline.to(
+        target,
+        {
+          pixi: {
+            x: bottomRight.x,
+            y: bottomRight.y
+          },
+          duration: segmentDuration,
+          ease: config.ease,
+        },
+        pathStartTime
+      );
+
+      // 2. Move from bottom-right to bottom-left
+      this.timeline.to(
+        target,
+        {
+          pixi: {
+            x: bottomLeft.x,
+            y: bottomLeft.y
+          },
+          duration: segmentDuration,
+          ease: config.ease,
+        },
+        pathStartTime + segmentDuration
+      );
+
+      // 3. Move from bottom-left back to top
+      this.timeline.to(
+        target,
+        {
+          pixi: {
+            x: topPoint.x,
+            y: topPoint.y
+          },
+          duration: segmentDuration,
+          ease: config.ease,
+        },
+        pathStartTime + (segmentDuration * 2)
+      );
+    }
+
+    if (pathElement.type === 'circle') {
+      // For circles, we'll use angle interpolation for smooth circular motion
+      const radius = pathElement.radius || pathElement.width / 2;
+      const state = { angle: -Math.PI / 2 }; // Start at 12 o'clock position (top)
+
+      this.timeline.to(
+        state,
+        {
+          angle: Math.PI * 1.5, // Full circle from -π/2 to 3π/2
+          duration: config.duration,
+          ease: config.ease,
+          onUpdate: () => {
+            // Get the current target from the GSAP timeline
+            if (target && target.parent && !target.destroyed) {
+              // Calculate position based on current angle
+              const x = element.x + radius * Math.cos(state.angle);
+              const y = element.y + radius * Math.sin(state.angle);
+
+              // Set the position directly
+              target.x = x;
+              target.y = y;
+            }
+          }
+        },
+        config.startTime
+      );
+    }
+
+    if (pathElement.type === 'line') {
+      // For lines, we need to animate from start point to end point
+      if (!pathElement.lineOptions || !pathElement.lineOptions.points) {
+        return;
+      }
+
+      const { end } = pathElement.lineOptions.points;
+
+      // Animate from start to end point
+      this.timeline.to(
+        target,
+        {
+          pixi: {
+            x: end.x,
+            y: end.y
+          },
+          duration: config.duration,
+          ease: config.ease,
+        },
+        config.startTime
+      );
+    }
+
+    if (pathElement.type === 'path' && pathElement.pathPoints) {
+             // Convert pathPoints to the format for animation
+       const pathPoints = pathElement.pathPoints.map((p: {x: number, y: number}) => ({
+         x: pathElement.x + p.x,
+         y: pathElement.y + p.y
+       }));
+
+      // Use MotionPathPlugin with proper SVG path format
+      // Convert points to SVG path string
+      let svgPath = `M${pathPoints[0].x},${pathPoints[0].y} `;
+
+      for (let i = 1; i < pathPoints.length; i++) {
+        svgPath += `L${pathPoints[i].x},${pathPoints[i].y} `;
+      }
+
+      // Create a proxy object that MotionPathPlugin can animate
+      const proxy = { x: 0, y: 0 };
+
+      this.timeline.to(
+        proxy,
+        {
+          motionPath: {
+            path: svgPath,
+            autoRotate: false,
+          },
+          duration: config.duration,
+          ease: config.ease,
+          onUpdate: () => {
+            if (target && target.parent && !target.destroyed) {
+              target.x = proxy.x;
+              target.y = proxy.y;
+            }
+          }
+        },
+        config.startTime
+      );
+    }
   }
 
   updateTime(elapsedTime: number) {
