@@ -3,6 +3,7 @@ import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import type { CanvasRef } from '@/components/editor/canvas';
 import { PixiPlugin } from "gsap/PixiPlugin";
 import { Physics2DPlugin } from "gsap/Physics2DPlugin";
+import { MotionPathPlugin } from "gsap/MotionPathPlugin";
 import * as PIXI from 'pixi.js';
 import {
   generateAnimationConfig,
@@ -15,7 +16,7 @@ import {
 } from '@/utils/animation-generator';
 
 
-gsap.registerPlugin(PixiPlugin, Physics2DPlugin);
+gsap.registerPlugin(PixiPlugin, Physics2DPlugin, MotionPathPlugin);
 PixiPlugin.registerPIXI(PIXI);
 
 export class GSAPTimelineManager {
