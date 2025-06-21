@@ -96,7 +96,7 @@ export function TimelineTrack({
         style={{ paddingLeft: `${8 + depth * 16}px` }}
         onClick={handleTrackClick}
       >
-        {(isGroup || ('type' in element && element.type === 'textGroup')) && onToggleExpansion && (
+        {(isGroup || ('type' in element && element.type === 'textGroup')) && onToggleExpansion && (!isGroup || !('type' in element) || (element as CanvasGroup).type !== 'polygon') && (
           <button
             onClick={handleExpandToggle}
             className="w-4 h-4 flex items-center justify-center hover:bg-gray-200 rounded text-xs"

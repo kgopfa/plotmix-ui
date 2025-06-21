@@ -131,8 +131,8 @@ export function Timeline({
           });
         }
         
-        // For custom/polygon groups, add element children if group is expanded
-        if ((group.type === 'custom' || group.type === 'polygon') && expandedElements.has(group.id)) {
+        // For custom groups, add element children if group is expanded (polygon groups are not expandable)
+        if (group.type === 'custom' && expandedElements.has(group.id)) {
           const groupElements = elements.filter(el => group.elementIds.includes(el.id));
           
           groupElements.forEach(element => {

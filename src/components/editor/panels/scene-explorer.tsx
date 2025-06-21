@@ -513,7 +513,7 @@ export function SceneExplorer({
     const children = getChildElements(group.id);
     const childGroups = getChildGroups(group.id);
     const hasChildren = children.length > 0 || childGroups.length > 0;
-    const shouldShowExpandButton = hasAnimations || hasCharacters || (hasElements && group.type !== 'text') || hasChildren;
+    const shouldShowExpandButton = hasAnimations || hasCharacters || (hasElements && group.type !== 'text' && group.type !== 'polygon') || hasChildren;
     const isSelected = isGroupSelected(group);
     const isDraggedOver = dragOverItem?.id === group.id && dragOverItem?.type === 'group';
     const isDragging = draggedItem?.id === group.id && draggedItem?.type === 'group';
@@ -641,8 +641,8 @@ export function SceneExplorer({
               </li>
             ))}
 
-            {/* For custom/polygon groups, show elements */}
-            {(group.type === 'custom' || group.type === 'polygon') && hasElements && groupElements.map(element => (
+            {/* For custom groups, show elements (polygon groups are not expandable) */}
+            {group.type === 'custom' && hasElements && groupElements.map(element => (
               <li key={element.id}>
                 <div className="flex items-center gap-1">
                   <div 

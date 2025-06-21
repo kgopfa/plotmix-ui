@@ -4,6 +4,7 @@ export type ToolType =
   | 'circle' 
   | 'triangle' 
   | 'line' 
+  | 'simpleLine'
   | 'draw' 
   | 'image'
   | 'text'

@@ -45,6 +45,13 @@ export function Toolbar({
         <span className="text-xl">🔗</span>
       </button>
       <button
+        className={`flex flex-col items-center justify-center p-2 ${currentTool === 'simpleLine' ? (isPathMode ? 'bg-blue-100' : 'bg-gray-100') : 'hover:bg-gray-100'}`}
+        onClick={() => onToolChange('simpleLine')}
+        title="Simple Line"
+      >
+        <span className="text-xl">📏</span>
+      </button>
+      <button
         className={`flex flex-col items-center justify-center p-2 ${currentTool === 'draw' ? (isPathMode ? 'bg-blue-100' : 'bg-gray-100') : 'hover:bg-gray-100'}`}
         onClick={() => onToolChange('draw')}
         title="Free Draw"

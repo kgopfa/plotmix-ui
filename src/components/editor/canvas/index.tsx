@@ -650,7 +650,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       // Reset cursor style based on current tool
       if (tool === 'draw') {
         setCursor(DRAW_CURSOR);
-      } else if (tool === 'line') {
+      } else if (tool === 'line' || tool === 'simpleLine') {
         setCursor(LINE_CURSOR);
       } else if (tool === 'text' || tool === 'textGroup') {
         setCursor(TEXT_CURSOR);
@@ -693,7 +693,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   // Global pointer move handler for dragging operations and line chaining
   const handleGlobalPointerMove = (e: PointerEvent) => {
     // Always update mouse position for line chaining, even when hovering over elements
-    if (tool === 'line' && isLineChaining) {
+    if ((tool === 'line' && isLineChaining) || (tool === 'simpleLine' && lineStartPoint)) {
       const canvasElement = document.querySelector('canvas');
       if (canvasElement) {
         const rect = canvasElement.getBoundingClientRect();
@@ -834,7 +834,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   // Update handleElementMouseMove to manage hover state
   const handleElementMouseMove = (id: string) => (e: FederatedPointerEvent) => {
     // Always update mouse position during line chaining, even when hovering over elements
-    if (tool === 'line' && isLineChaining) {
+    if ((tool === 'line' && isLineChaining) || (tool === 'simpleLine' && lineStartPoint)) {
       setMousePos({ x: e.global.x, y: e.global.y });
     }
 
@@ -876,7 +876,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     if (!draggingId) {
       if (tool === 'draw') {
         setCursor(DRAW_CURSOR);
-      } else if (tool === 'line') {
+      } else if (tool === 'line' || tool === 'simpleLine') {
         setCursor(LINE_CURSOR);
       } else if (tool === 'text' || tool === 'textGroup') {
         setCursor(TEXT_CURSOR);
@@ -1091,7 +1091,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         // Reset cursor style based on current tool
         if (tool === 'draw') {
           setCursor(DRAW_CURSOR);
-        } else if (tool === 'line') {
+        } else if (tool === 'line' || tool === 'simpleLine') {
           setCursor(LINE_CURSOR);
         } else if (tool === 'text') {
           setCursor(TEXT_CURSOR);
@@ -1500,7 +1500,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           )}
 
           {/* Line preview layer */}
-          {tool === 'line' && lineStartPoint && mousePos && (
+          {(tool === 'line' || tool === 'simpleLine') && lineStartPoint && mousePos && (
             <pixiGraphics
               eventMode="none"
               draw={(g) => {
