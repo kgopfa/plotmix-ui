@@ -571,7 +571,7 @@ export default function EditorCanvas() {
       // Note: createPolygonGroup already handles all state updates including setGroups and setCanvasObjects
       const polygonGroup = createPolygonGroup(chainedLines, true); // true = closed polygon
       
-      // If this polygon was created in path mode, mark the group as an animation path
+      // If this polygon was created in path mode, mark the group as an animation path and exit path mode
       if (isPolygonPath && polygonGroup) {
         setGroups(prevGroups => 
           prevGroups.map(group => 
@@ -580,6 +580,11 @@ export default function EditorCanvas() {
               : group
           )
         );
+        
+        // Add the polygon group to the animation and exit path mode
+        addPathToAnimation(polygonGroup as unknown as AnimatedCanvasObject);
+        setIsPathMode(false);
+        setAnimationTarget(null);
       }
     }
     

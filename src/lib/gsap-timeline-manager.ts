@@ -468,6 +468,35 @@ export class GSAPTimelineManager {
     }
 
     if (pathElement.type === 'path' && pathElement.pathPoints) {
+             // Check if this is a polygon path (closed path with discrete vertex movement)  
+       const isPolygonPath = 'isPolygonPath' in config && (config as PathAnimationConfig & { isPolygonPath?: boolean }).isPolygonPath;
+      
+      if (isPolygonPath) {
+        // For polygon paths, move sequentially to each vertex (end of each line segment)
+        const pathPoints = pathElement.pathPoints.map((p: {x: number, y: number}) => ({
+          x: pathElement.x + p.x,
+          y: pathElement.y + p.y
+        }));
+
+        const segmentDuration = config.duration / pathPoints.length;
+        const pathStartTime = config.startTime;
+
+        pathPoints.forEach((point, index) => {
+          this.timeline.to(
+            target,
+            {
+              pixi: {
+                x: point.x,
+                y: point.y
+              },
+              duration: segmentDuration,
+              ease: config.ease,
+            },
+            pathStartTime + (segmentDuration * index)
+          );
+        });
+        return;
+      }
              // Convert pathPoints to the format for animation
        const pathPoints = pathElement.pathPoints.map((p: {x: number, y: number}) => ({
          x: pathElement.x + p.x,
