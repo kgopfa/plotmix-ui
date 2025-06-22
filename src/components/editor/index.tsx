@@ -808,11 +808,27 @@ export default function EditorCanvas() {
   };
 
   // Helper function to add path shape to animation
-  const addPathToAnimation = useCallback((pathShape: AnimatedCanvasObject) => {
+  const addPathToAnimation = useCallback((pathShape: AnimatedCanvasObject | CanvasGroup) => {
     const target = animationTarget;
     if (!target) return;
 
     const { elementId, animationId } = target;
+
+    // If pathShape is a group, get the individual line elements
+    let pathElements: AnimatedCanvasObject[];
+    
+    if ('elementIds' in pathShape) {
+      // This is a CanvasGroup - get all line elements in the group
+      const group = pathShape as CanvasGroup;
+      pathElements = canvasObjects.filter(el => group.elementIds.includes(el.id) && el.type === 'line');
+    } else {
+      // This is a single AnimatedCanvasObject
+      pathElements = [pathShape as AnimatedCanvasObject];
+    }
+
+    // For now, use the first path element (could be extended to support multiple paths)
+    const primaryPathElement = pathElements[0];
+    if (!primaryPathElement) return;
 
     setCanvasObjects(prev =>
       prev.map(el => {
@@ -827,14 +843,15 @@ export default function EditorCanvas() {
               ...anim,
               properties: {
                 ...anim.properties,
-                pathElement: pathShape
+                pathElement: primaryPathElement,
+                isPolygonPath: 'elementIds' in pathShape // Mark as polygon if it came from a group
               }
             };
           })
         };
       })
     );
-  }, [animationTarget, setCanvasObjects]);
+  }, [animationTarget, setCanvasObjects, canvasObjects]);
 
 
 
