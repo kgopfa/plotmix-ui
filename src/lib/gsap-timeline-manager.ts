@@ -12,7 +12,9 @@ import {
   isPathAnimationConfig,
   isPhysicsAnimationConfig,
   isGroupAnimationConfig,
-  PathAnimationConfig
+  isPolygonAnimationConfig,
+  PathAnimationConfig,
+  PolygonAnimationConfig
 } from '@/utils/animation-generator';
 
 
@@ -85,7 +87,7 @@ export class GSAPTimelineManager {
               return;
             }
 
-            const config = generateAnimationConfig(character, animation, characterTarget);
+            const config = generateAnimationConfig(character, animation, characterTarget, elements);
 
             if (isColorAnimationConfig(config)) {
               this.timeline.to(
@@ -116,14 +118,14 @@ export class GSAPTimelineManager {
                 angle: config.angle,
                 gravity: config.gravity
               };
-              
+
               // Add optional properties only if they exist
               if (config.acceleration !== undefined) physics2DConfig.acceleration = config.acceleration;
               if (config.accelerationAngle !== undefined) physics2DConfig.accelerationAngle = config.accelerationAngle;
               if (config.friction !== undefined) physics2DConfig.friction = config.friction;
               if (config.xProp) physics2DConfig.xProp = config.xProp;
               if (config.yProp) physics2DConfig.yProp = config.yProp;
-              
+
               this.timeline.to(
                 characterTarget,
                 {
@@ -156,9 +158,9 @@ export class GSAPTimelineManager {
       }
 
       element.animations.forEach((animation) => {
-        const config = generateAnimationConfig(element, animation, target);
+        const config = generateAnimationConfig(element, animation, target, elements);
 
-        if (isPathAnimationConfig(config)) {
+        if (isPathAnimationConfig(config) || isPolygonAnimationConfig(config)) {
           this.addPathAnimation(config, target, element);
         } else if (isColorAnimationConfig(config)) {
           this.timeline.to(
@@ -189,14 +191,14 @@ export class GSAPTimelineManager {
             angle: config.angle,
             gravity: config.gravity
           };
-          
+
           // Add optional properties only if they exist
           if (config.acceleration !== undefined) physics2DConfig.acceleration = config.acceleration;
           if (config.accelerationAngle !== undefined) physics2DConfig.accelerationAngle = config.accelerationAngle;
           if (config.friction !== undefined) physics2DConfig.friction = config.friction;
           if (config.xProp) physics2DConfig.xProp = config.xProp;
           if (config.yProp) physics2DConfig.yProp = config.yProp;
-          
+
           this.timeline.to(
             config.target,
             {
@@ -300,8 +302,10 @@ export class GSAPTimelineManager {
     this.timeline.pause(0);
   }
 
-  private addPathAnimation(config: PathAnimationConfig, target: PIXI.Container, element: AnimatedCanvasObject) {
+  private addPathAnimation(config: PathAnimationConfig | PolygonAnimationConfig, target: PIXI.Container, element: AnimatedCanvasObject) {
     const pathElement = config.pathElement;
+
+    console.log('pathElement: ', JSON.stringify(pathElement));
 
     if (pathElement.type === 'rectangle') {
       const segmentDuration = config.duration / 4;
@@ -468,40 +472,11 @@ export class GSAPTimelineManager {
     }
 
     if (pathElement.type === 'path' && pathElement.pathPoints) {
-             // Check if this is a polygon path (closed path with discrete vertex movement)  
-       const isPolygonPath = 'isPolygonPath' in config && (config as PathAnimationConfig & { isPolygonPath?: boolean }).isPolygonPath;
-      
-      if (isPolygonPath) {
-        // For polygon paths, move sequentially to each vertex (end of each line segment)
-        const pathPoints = pathElement.pathPoints.map((p: {x: number, y: number}) => ({
-          x: pathElement.x + p.x,
-          y: pathElement.y + p.y
-        }));
-
-        const segmentDuration = config.duration / pathPoints.length;
-        const pathStartTime = config.startTime;
-
-        pathPoints.forEach((point, index) => {
-          this.timeline.to(
-            target,
-            {
-              pixi: {
-                x: point.x,
-                y: point.y
-              },
-              duration: segmentDuration,
-              ease: config.ease,
-            },
-            pathStartTime + (segmentDuration * index)
-          );
-        });
-        return;
-      }
-             // Convert pathPoints to the format for animation
-       const pathPoints = pathElement.pathPoints.map((p: {x: number, y: number}) => ({
-         x: pathElement.x + p.x,
-         y: pathElement.y + p.y
-       }));
+      // Convert pathPoints to the format for animation
+      const pathPoints = pathElement.pathPoints.map((p: { x: number, y: number }) => ({
+        x: pathElement.x + p.x,
+        y: pathElement.y + p.y
+      }));
 
       // Use MotionPathPlugin with proper SVG path format
       // Convert points to SVG path string
@@ -532,6 +507,29 @@ export class GSAPTimelineManager {
         },
         config.startTime
       );
+    }
+
+    // Handle polygon animations (from CanvasGroup with line elements)
+    if (isPolygonAnimationConfig(config) && config.properties.pathPoints) {
+      const pathPoints = config.properties.pathPoints;
+
+      const segmentDuration = config.duration / pathPoints.length;
+      const pathStartTime = config.startTime;
+
+      pathPoints.forEach((point: { x: number, y: number }, index: number) => {
+        this.timeline.to(
+          target,
+          {
+            pixi: {
+              x: point.x,
+              y: point.y
+            },
+            duration: segmentDuration,
+            ease: config.ease,
+          },
+          pathStartTime + (segmentDuration * index)
+        );
+      });
     }
   }
 

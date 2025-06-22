@@ -19,11 +19,18 @@ export interface ColorAnimationConfig extends BaseAnimationConfig {
 
 export interface PathAnimationConfig extends BaseAnimationConfig {
   type: 'path';
-  pathElement: AnimatedCanvasObject;
+  pathElement: AnimatedCanvasObject | CanvasGroup;
   targetElement: AnimatedCanvasObject;
   pathTopLeftX: number;
   pathTopLeftY: number;
-  attachDelay: number;
+}
+
+export interface PolygonAnimationConfig extends BaseAnimationConfig {
+  type: 'polygon';
+  pathElement: CanvasGroup;
+  targetElement: AnimatedCanvasObject;
+  pathTopLeftX: number;
+  pathTopLeftY: number;
 }
 
 export interface PhysicsAnimationConfig extends BaseAnimationConfig {
@@ -58,6 +65,35 @@ export function isPhysicsAnimationConfig(config: BaseAnimationConfig): config is
 
 export function isGroupAnimationConfig(config: BaseAnimationConfig): config is GroupAnimationConfig {
   return 'type' in config && config.type === 'group';
+}
+
+export function isPolygonAnimationConfig(config: BaseAnimationConfig): config is PolygonAnimationConfig {
+  return 'type' in config && config.type === 'polygon';
+}
+
+/**
+ * Extracts a path from an array of line elements that form a polygon.
+ * Takes the first line's start point, then all line end points in order.
+ */
+function extractPolygonPath(lineElements: AnimatedCanvasObject[]): Array<{x: number, y: number}> {
+  if (lineElements.length === 0) return [];
+  
+  const path: Array<{x: number, y: number}> = [];
+  
+  // Get the first line's start point
+  const firstLine = lineElements[0];
+  if (!firstLine.lineOptions?.points) return [];
+  
+  path.push(firstLine.lineOptions.points.start);
+  
+  // Push every line's end point
+  for (const line of lineElements) {
+    if (line.lineOptions?.points) {
+      path.push(line.lineOptions.points.end);
+    }
+  }
+  
+  return path;
 }
 
 function generateAnimationProperties(
@@ -150,8 +186,9 @@ function generateGroupAnimationProperties(
 export function generateAnimationConfig(
   element: AnimatedCanvasObject,
   animation: ElementAnimation,
-  target: Container
-): BaseAnimationConfig | ColorAnimationConfig | PathAnimationConfig | PhysicsAnimationConfig {
+  target: Container,
+  allCanvasObjects?: AnimatedCanvasObject[]
+): BaseAnimationConfig | ColorAnimationConfig | PathAnimationConfig | PhysicsAnimationConfig | PolygonAnimationConfig {
   const animationProps = generateAnimationProperties(animation, element);
   const baseConfig = {
     target,
@@ -190,13 +227,12 @@ export function generateAnimationConfig(
   }
 
   if (animation.type === 'path') {
-    const pathElement = (animation.properties as Record<string, unknown>)['pathElement'] as AnimatedCanvasObject;
-    if (pathElement) {
-      console.log(`generateAnimationConfig: pathElement width=${pathElement.width}, height=${pathElement.height} for element ${element.name}`);
+    const pathElement = (animation.properties as Record<string, unknown>)['pathElement'] as AnimatedCanvasObject | CanvasGroup;
+    
+    // Check if it's an AnimatedCanvasObject (doesn't have elementIds property)
+    if (pathElement && !('elementIds' in pathElement)) {
       const pathTopLeftX = pathElement.x - pathElement.width / 2;
       const pathTopLeftY = pathElement.y - pathElement.height / 2;
-      
-      const attachDelay = (animation.properties as Record<string, unknown>)['attachDelay'] as number ?? 0.5;
       
       const updatedProps = {
         ...animationProps,
@@ -211,8 +247,55 @@ export function generateAnimationConfig(
         targetElement: element,
         pathTopLeftX,
         pathTopLeftY,
-        attachDelay,
         properties: updatedProps
+      };
+    }
+    
+    // Handle CanvasGroup (like polygon - bunch of lines in a group)
+    if (pathElement && 'elementIds' in pathElement && pathElement.type === 'polygon') {
+      const group = pathElement as CanvasGroup;
+      
+      // Extract the line elements that make up the polygon
+      let pathPoints: Array<{x: number, y: number}> = [];
+      
+      if (allCanvasObjects) {
+        // Get all line elements in the group
+        const lineElements = allCanvasObjects.filter(obj => 
+          group.elementIds.includes(obj.id) && 
+          obj.type === 'line' && 
+          obj.lineOptions?.points
+        );
+        
+        if (lineElements.length > 0) {
+          // Extract and connect the line endpoints to form a continuous path
+          // For a proper polygon, we need to order the lines to form a connected path
+          pathPoints = extractPolygonPath(lineElements);
+        }
+      }
+      
+      // Use the group's center position as the reference point
+      const pathTopLeftX = pathElement.x;
+      const pathTopLeftY = pathElement.y;
+      
+      const updatedProps = {
+        ...animationProps,
+        x: pathTopLeftX,
+        y: pathTopLeftY,
+        // Add the extracted path points for polygon animation
+        pathPoints: pathPoints.length > 0 ? pathPoints : undefined,
+        // Mark this as a polygon path so the timeline manager handles it differently
+        isPolygonPath: true
+      };
+      
+      return {
+        ...baseConfig,
+        type: 'polygon',
+        pathElement: pathElement,
+        targetElement: element,
+        pathTopLeftX,
+        pathTopLeftY,
+        // Add the isPolygonPath flag and path points to the properties for the timeline manager
+        properties: { ...updatedProps, isPolygonPath: true }
       };
     }
   }

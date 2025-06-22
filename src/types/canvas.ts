@@ -50,8 +50,9 @@ export type AnimatableProperties = {
   pathPoints?: Array<{x: number, y: number}>;
   pathDirection?: 'clockwise' | 'counterclockwise';
   yoyo?: boolean;
-  pathElement?: AnimatedCanvasObject;
+  pathElement?: AnimatedCanvasObject | CanvasGroup;
   attachDelay?: number; // Time to move to the starting corner of the path
+  isPolygonPath?: boolean; // Whether this is a polygon path animation (for handling line segments)
   // Text animation properties
   text?: string;
   fontSize?: number;

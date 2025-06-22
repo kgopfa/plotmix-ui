@@ -814,22 +814,6 @@ export default function EditorCanvas() {
 
     const { elementId, animationId } = target;
 
-    // If pathShape is a group, get the individual line elements
-    let pathElements: AnimatedCanvasObject[];
-    
-    if ('elementIds' in pathShape) {
-      // This is a CanvasGroup - get all line elements in the group
-      const group = pathShape as CanvasGroup;
-      pathElements = canvasObjects.filter(el => group.elementIds.includes(el.id) && el.type === 'line');
-    } else {
-      // This is a single AnimatedCanvasObject
-      pathElements = [pathShape as AnimatedCanvasObject];
-    }
-
-    // For now, use the first path element (could be extended to support multiple paths)
-    const primaryPathElement = pathElements[0];
-    if (!primaryPathElement) return;
-
     setCanvasObjects(prev =>
       prev.map(el => {
         if (el.id !== elementId) return el;
@@ -843,7 +827,7 @@ export default function EditorCanvas() {
               ...anim,
               properties: {
                 ...anim.properties,
-                pathElement: primaryPathElement,
+                pathElement: pathShape, // Use the original pathShape (could be group or single element)
                 isPolygonPath: 'elementIds' in pathShape // Mark as polygon if it came from a group
               }
             };
@@ -864,7 +848,6 @@ export default function EditorCanvas() {
       const updatedAnimations = element.animations.map(animation => {
         if (animation.properties.pathElement?.id === pathElement.id) {
           animationsUpdated++;
-          console.log(`Updating animation for element ${element.name}: old pathElement width=${animation.properties.pathElement.width}, new width=${pathElement.width}`);
           // Update the animation with the new path element data
           return {
             ...animation,
