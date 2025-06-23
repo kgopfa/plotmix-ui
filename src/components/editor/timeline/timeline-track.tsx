@@ -1,5 +1,5 @@
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
-import { SelectionManager } from '@/lib/selection-manager';
+import { useSelectionStore } from '@/stores/useSelectionStore';
 import { AnimationBlock } from './animation-block';
 
 const MAX_DURATION_SECONDS = 120;
@@ -46,6 +46,9 @@ export function TimelineTrack({
   customName,
   onGroupSelect,
 }: TimelineTrackProps) {
+  // Use Zustand store for selection
+  const { select } = useSelectionStore();
+  
   // Determine if this is a group track
   const isGroup = isGroupProp ?? (trackType === 'group' || ('elementIds' in element));
   
@@ -66,7 +69,7 @@ export function TimelineTrack({
         // Characters are not selectable, do nothing
         return;
       }
-      SelectionManager.getInstance().select(animatedElement);
+      select(animatedElement);
     }
   };
 

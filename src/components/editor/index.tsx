@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { TimeManager, type TimeManagerState } from '@/lib/time-manager';
 import { TimelineManager } from '@/lib/timeline-manager';
 import { TimelineState } from '@/types/timeline';
-// SelectionManager removed - now using React state for selection
+import { useSelectionStore } from '@/stores/useSelectionStore';
 import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
 import { SceneExplorer } from './panels/scene-explorer';
 import { Inspector } from './panels/inspector';
@@ -30,8 +30,17 @@ import { OptionsBar } from './options';
 export default function EditorCanvas() {
   const [canvasObjects, setCanvasObjects] = useState<AnimatedCanvasObject[]>([]);
   const [groups, setGroups] = useState<CanvasGroup[]>([]);
-  const [selectedObjects, setSelectedObjects] = useState<AnimatedCanvasObject[]>([]);
-  const [selectedGroups, setSelectedGroups] = useState<CanvasGroup[]>([]);
+  
+  // Use Zustand store for selection state
+  const {
+    selectedElements: selectedObjects,
+    selectedGroups,
+    select: selectElement,
+    selectGroup,
+    selectAll,
+    updateSelectedGroups
+  } = useSelectionStore();
+  
   const [tool, setTool] = useState<ToolType>('select');
   const [maskPos, setMaskPos] = useState<{ x: number, y: number } | null>(null);
   const [lineStartPoint, setLineStartPoint] = useState<{ x: number, y: number } | null>(null);
@@ -311,57 +320,10 @@ export default function EditorCanvas() {
     };
   }, [canvasZoom, containerRef]);
 
-  // Function to detect group selection based on selected elements
-  const updateGroupSelectionFromElements = useCallback((elements: AnimatedCanvasObject[]) => {
-    if (elements.length === 0) {
-      setSelectedGroups([]);
-      return;
-    }
-
-    // Get all unique group IDs from selected elements
-    const groupIds = new Set(elements.map(el => el.groupId).filter(Boolean));
-    
-    // Find groups that match these IDs
-    const candidateGroups = groups.filter(group => groupIds.has(group.id));
-    
-    // Only select a group if ALL its elements are selected (for proper group selection)
-    const selectedGroups = candidateGroups.filter(group => {
-      // Skip default groups - they don't represent real groups
-      if (group.isDefaultGroup) return false;
-      
-      // Check if all elements in the group are selected
-      const selectedElementIds = new Set(elements.map(el => el.id));
-      return group.elementIds.every(elementId => selectedElementIds.has(elementId));
-    });
-
-    setSelectedGroups(selectedGroups);
-  }, [groups]);
-
-  // Selection management functions
-  const selectElement = useCallback((element: AnimatedCanvasObject | AnimatedCanvasObject[] | null, addToSelection = false) => {
-    if (element === null) {
-      setSelectedObjects([]);
-      setSelectedGroups([]);
-    } else if (Array.isArray(element)) {
-      setSelectedObjects([...element]);
-      // Auto-detect group selection when all elements in a group are selected
-      updateGroupSelectionFromElements(element);
-    } else {
-      if (addToSelection && !selectedObjects.some(el => el.id === element.id)) {
-        const newSelection = [...selectedObjects, element];
-        setSelectedObjects(newSelection);
-        updateGroupSelectionFromElements(newSelection);
-      } else if (addToSelection && selectedObjects.some(el => el.id === element.id)) {
-        // Remove from selection if already selected
-        const newSelection = selectedObjects.filter(el => el.id !== element.id);
-        setSelectedObjects(newSelection);
-        updateGroupSelectionFromElements(newSelection);
-      } else {
-        setSelectedObjects([element]);
-        updateGroupSelectionFromElements([element]);
-      }
-    }
-  }, [selectedObjects, updateGroupSelectionFromElements]);
+  // Update groups when groups array changes
+  useEffect(() => {
+    updateSelectedGroups(groups);
+  }, [groups, updateSelectedGroups]);
 
   // Helper functions removed - using direct state management
 
@@ -399,17 +361,15 @@ export default function EditorCanvas() {
     // Clear selection when switching to creation tools to prevent drag conflicts
     // This allows placing new objects on top of previously selected shapes
     if (newTool !== 'select') {
-      setSelectedObjects([]);
-      setSelectedGroups([]);
+      selectElement(null);
     }
-  }, [isLineChaining, exitLineChaining]);
+  }, [isLineChaining, exitLineChaining, selectElement]);
 
   // Handle select all
   const handleSelectAll = useCallback(() => {
     const selectableElements = canvasObjects.filter(el => !el.isAnimationPath);
-    setSelectedObjects(selectableElements);
-    setSelectedGroups([]);
-  }, [canvasObjects]);
+    selectAll(selectableElements);
+  }, [canvasObjects, selectAll]);
 
   useKeyboardShortcuts({
     selectedElements: selectedObjects,
@@ -555,8 +515,8 @@ export default function EditorCanvas() {
 
     // Auto-select the group if requested
     if (autoSelect) {
-      setSelectedObjects(elements);
-      setSelectedGroups([newGroup]);
+      selectAll(elements);
+      selectGroup(newGroup);
     }
 
     return newGroup;
@@ -683,9 +643,9 @@ export default function EditorCanvas() {
           const updatedChainedLineIds = [...chainedLineIds, newElement.id];
           setChainedLineIds(updatedChainedLineIds);
           
-          setCanvasObjects(prev => [...prev, newElement]);
-          setSelectedObjects([newElement]);
-          setSelectedGroups([]);
+            setCanvasObjects(prev => [...prev, newElement]);
+            selectElement([newElement]);
+            updateSelectedGroups([]);
           
           if (shouldCloseShape) {
             // Shape is closed - trigger polygon creation via useEffect
@@ -721,8 +681,8 @@ export default function EditorCanvas() {
           };
           
           setCanvasObjects(prev => [...prev, newElement]);
-          setSelectedObjects([newElement]);
-          setSelectedGroups([]);
+          selectElement([newElement]);
+          updateSelectedGroups([]);
           
           // Reset line start point and switch to select tool
           setLineStartPoint(null);
@@ -756,8 +716,8 @@ export default function EditorCanvas() {
           );
           
           setCanvasObjects(prev => [...prev, imageElement]);
-          setSelectedObjects([imageElement]);
-          setSelectedGroups([]);
+          selectElement([imageElement]);
+          updateSelectedGroups([]);
           setTool('select');
           setMaskPos(null);
           setPendingImageData(null); // Clear pending image data
@@ -775,8 +735,8 @@ export default function EditorCanvas() {
         const snappedPos = snapPoint({ x: e.global.x, y: e.global.y }, e);
         const newElement = createNewObject(tool, snappedPos.x, snappedPos.y, canvasObjects, undefined, isPathMode);
         setCanvasObjects(prev => [...prev, newElement]);
-        setSelectedObjects([newElement]);
-        setSelectedGroups([]);
+        selectElement([newElement]);
+        updateSelectedGroups([]);
         setTool('select');
         setMaskPos(null);
 
@@ -790,8 +750,8 @@ export default function EditorCanvas() {
         const snappedPos = snapPoint({ x: e.global.x, y: e.global.y }, e);
         const newElement = createNewObject('text', snappedPos.x, snappedPos.y, canvasObjects, undefined, isPathMode);
         setCanvasObjects(prev => [...prev, newElement]);
-        setSelectedObjects([newElement]);
-        setSelectedGroups([]);
+        selectElement([newElement]);
+        updateSelectedGroups([]);
         setTool('select');
         setMaskPos(null);
 
@@ -822,15 +782,15 @@ export default function EditorCanvas() {
           setAnimationTarget(null);
         }
       } else {
-        setSelectedObjects([]);
-        setSelectedGroups([]);
+        selectElement(null);
+        updateSelectedGroups([]);
       }
     } else {
       // When clicking on existing shapes with select tool, just clear selection
       // This maintains the existing behavior for selection mode
-      setSelectedObjects([]);
-      setSelectedGroups([]);
-    }
+      selectElement(null);
+      updateSelectedGroups([]);
+    } 
   };
 
   // Helper function to add path shape to animation
@@ -1260,8 +1220,8 @@ export default function EditorCanvas() {
 
         // Also update the selected element reference to ensure the inspector shows the latest values
         if (updatedElement) {
-          setSelectedObjects([updatedElement]);
-          setSelectedGroups([]);
+          selectElement([updatedElement]);
+          updateSelectedGroups([]);
         }
       } else if (prop === 'lineOptions') {
         setCanvasObjects(prevElements => {
@@ -1286,8 +1246,8 @@ export default function EditorCanvas() {
 
         // Also update the selected element reference to ensure the inspector shows the latest values
         if (updatedElement) {
-          setSelectedObjects([updatedElement]);
-          setSelectedGroups([]);
+          selectElement([updatedElement]);
+          updateSelectedGroups([]);
         }
       } else {
         // For regular property changes (width, height, colors, etc.)
@@ -1308,8 +1268,8 @@ export default function EditorCanvas() {
         if (updatedElement) {
           // Use setTimeout to ensure this happens after the state update
           setTimeout(() => {
-            setSelectedObjects([updatedElement!]);
-            setSelectedGroups([]);
+            selectElement([updatedElement!]);
+            updateSelectedGroups([]);
           }, 0);
         }
       }
@@ -1565,12 +1525,12 @@ export default function EditorCanvas() {
     if (id) {
       const element = canvasObjects.find(e => e.id === id);
       if (element) {
-        setSelectedObjects([element]);
-        setSelectedGroups([]);
+        selectElement([element]);
+        updateSelectedGroups([]);
       }
     } else {
-      setSelectedObjects([]);
-      setSelectedGroups([]);
+      selectElement(null);
+      updateSelectedGroups([]);
     }
   }, [canvasObjects]);
 
@@ -1591,8 +1551,8 @@ export default function EditorCanvas() {
   // Simplified element addition handler
   const handleAddElement = useCallback((element: AnimatedCanvasObject) => {
     setCanvasObjects(prev => [...prev, element]);
-    setSelectedObjects([element]);
-    setSelectedGroups([]);
+    selectElement([element]);
+    updateSelectedGroups([]);
 
     // textGroup functionality removed
 
@@ -1642,7 +1602,7 @@ export default function EditorCanvas() {
   useEffect(() => {
     // Auto-detect group selection when all elements in a group are selected
     if (selectedObjects.length === 0) {
-      setSelectedGroups([]);
+      updateSelectedGroups([]);
       return;
     }
 
@@ -1655,7 +1615,7 @@ export default function EditorCanvas() {
       return group.elementIds.every(elementId => selectedElementIds.has(elementId));
     });
 
-    setSelectedGroups(detectedGroups);
+    updateSelectedGroups(detectedGroups);
   }, [selectedObjects, groups]);
 
   return (
@@ -1910,36 +1870,6 @@ export default function EditorCanvas() {
               <SceneExplorer 
                 elements={canvasObjects} 
                 groups={groups} 
-                selectedElements={selectedObjects}
-                selectedGroups={selectedGroups}
-                onElementSelect={(element, addToSelection) => {
-                  if (element === null) {
-                    setSelectedObjects([]);
-                    setSelectedGroups([]);
-                  } else {
-                    if (addToSelection && !selectedObjects.some(el => el.id === element.id)) {
-                      setSelectedObjects([...selectedObjects, element]);
-                    } else if (addToSelection && selectedObjects.some(el => el.id === element.id)) {
-                      setSelectedObjects(selectedObjects.filter(el => el.id !== element.id));
-                    } else {
-                      setSelectedObjects([element]);
-                      setSelectedGroups([]);
-                    }
-                  }
-                }}
-                onGroupSelect={(group, addToSelection) => {
-                  const elementsInGroup = canvasObjects.filter(el => group.elementIds.includes(el.id));
-                  if (addToSelection) {
-                    setSelectedObjects([...selectedObjects, ...elementsInGroup]);
-                  } else {
-                    setSelectedObjects(elementsInGroup);
-                  }
-                  setSelectedGroups([group]);
-                }}
-                onClearSelection={() => {
-                  setSelectedObjects([]);
-                  setSelectedGroups([]);
-                }}
                 onElementVisibilityChange={(elementId, visible) => {
                   setCanvasObjects(prev => 
                     prev.map(el => 
@@ -2000,9 +1930,6 @@ export default function EditorCanvas() {
               style={{ width: `${rightPanelWidth}px` }}
             >
               <Inspector
-                selectedElement={selectedObjects[0] || null}
-                selectedGroup={selectedGroups.length === 1 ? selectedGroups[0] : null}
-                selectedElementsCount={selectedObjects.length}
                 onInspectorChange={handleInspectorChange}
                 onGroupInspectorChange={handleGroupInspectorChange}
               />

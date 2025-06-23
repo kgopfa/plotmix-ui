@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { 
   AnimatedCanvasObject,
   ElementAnimation,
-  CanvasGroup
 } from '@/types/canvas';
 import { PropertiesTab } from './tabs/properties';
 import { AnimationsTab } from './tabs/animations';
@@ -11,11 +10,9 @@ import { GroupAnimationsTab } from './tabs/group-animations';
 import { useAnimationHandlers } from '@/hooks/use-animation-handlers';
 import { useGroupAnimationHandlers } from '@/hooks/use-group-animation-handlers';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
+import { useSelectionStore } from '@/stores/useSelectionStore';
 
 interface InspectorProps {
-  selectedElement: AnimatedCanvasObject | null;
-  selectedGroup: CanvasGroup | null;
-  selectedElementsCount?: number; // Add count to determine if single or multiple selection
   onInspectorChange: (
     prop: string,
     value: string | number | boolean | ElementAnimation[] | NonNullable<AnimatedCanvasObject['lineOptions']> | {
@@ -34,15 +31,18 @@ interface InspectorProps {
 type Tab = 'properties' | 'animations';
 
 export function Inspector({ 
-  selectedElement, 
-  selectedGroup, 
-  selectedElementsCount = 0,
   onInspectorChange, 
   onGroupInspectorChange 
 }: InspectorProps) {
   const [activeTab, setActiveTab] = useState<Tab>('properties');
   const animationSelectionManager = AnimationSelectionManager.getInstance();
   
+  // Get selection state from Zustand store
+  const { selectedElements, selectedGroups, getFirstSelected } = useSelectionStore();
+  const selectedElement = getFirstSelected();
+  const selectedGroup = selectedGroups[0] || null;
+  const selectedElementsCount = selectedElements.length;
+
   const {
     localAnimations,
     handleEnterPathMode,

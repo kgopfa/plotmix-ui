@@ -3,6 +3,7 @@ import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
 import { ContextMenu } from '../canvas/context-menu';
 import { contextMenuManager } from '@/lib/context-menu-manager';
+import { useSelectionStore } from '@/stores/useSelectionStore';
 
 interface ContextMenuPosition {
   x: number;
@@ -14,15 +15,9 @@ interface ContextMenuPosition {
 interface SceneExplorerProps {
   elements: AnimatedCanvasObject[];
   groups: CanvasGroup[];
-  selectedElements: AnimatedCanvasObject[];
-  selectedGroups: CanvasGroup[];
-  onElementSelect: (element: AnimatedCanvasObject | null, addToSelection?: boolean) => void;
-  onGroupSelect: (group: CanvasGroup, addToSelection?: boolean) => void;
-  onClearSelection: () => void;
   onElementVisibilityChange: (elementId: string, visible: boolean) => void;
   onGroupVisibilityChange: (groupId: string, visible: boolean) => void;
   onParentChange: (childId: string, newParentId: string | null, childType: 'element' | 'group') => void;
-  // Context menu action callbacks
   onCopyElement?: (elementId: string) => void;
   onCopyGroup?: (groupId: string) => void;
   onGroupElements?: (elementIds: string[]) => void;
@@ -33,11 +28,6 @@ interface SceneExplorerProps {
 export function SceneExplorer({ 
   elements, 
   groups, 
-  selectedElements, 
-  selectedGroups,
-  onElementSelect,
-  onGroupSelect,
-  onClearSelection,
   onElementVisibilityChange,
   onGroupVisibilityChange,
   onParentChange,
@@ -47,6 +37,17 @@ export function SceneExplorer({
   onMoveToFront,
   onMoveToBack
 }: SceneExplorerProps) {
+  // Use Zustand store for selection state
+  const {
+    selectedElements,
+    selectedGroups,
+    select: onElementSelect,
+    selectGroup: onGroupSelect,
+    clear: onClearSelection,
+    isSelected: isElementSelected,
+    isGroupSelected,
+    updateSelectedGroups
+  } = useSelectionStore();
   // Filter out animation paths and character elements (characters will be shown under their group parent)
   const shapes = elements.filter(element => !element.isAnimationPath && element.type !== 'character');
   const animationSelectionManager = AnimationSelectionManager.getInstance();
@@ -370,17 +371,7 @@ export function SceneExplorer({
   const selectGroup = (group: CanvasGroup, isMultiSelect: boolean = false) => {
     onGroupSelect(group, isMultiSelect);
   };
-
-  // Helper function to check if an element is selected
-  const isElementSelected = (element: AnimatedCanvasObject) => {
-    return selectedElements.some(el => el.id === element.id);
-  };
-
-  // Helper function to check if a group is selected
-  const isGroupSelected = (group: CanvasGroup) => {
-    return selectedGroups.some(g => g.id === group.id);
-  };
-
+  
   // Component to render hierarchical element
   const renderHierarchicalElement = (element: AnimatedCanvasObject, depth: number = 0): React.ReactNode => {
     const hasAnimations = element.animations.length > 0;
