@@ -530,11 +530,36 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       }
     }
 
-    // Prevent interaction with textgroup characters completely
+    // Handle textgroup character clicks - redirect to parent textGroup with double-click support
     if (isTextGroupCharacter(element)) {
-      // If clicking on a character, instead select its parent textGroup
       const parentTextGroup = elements.find(el => el.id === element.parentTextGroupId);
       if (parentTextGroup) {
+        // Check for double-click on character (which should be treated as double-click on textGroup)
+        const currentTime = Date.now();
+        const lastClickTime = textClickTimeRef.current.get(parentTextGroup.id) || 0;
+        const timeDiff = currentTime - lastClickTime;
+
+        console.log('Character click detected, redirecting to textGroup:', { 
+          characterId: id, 
+          textGroupId: parentTextGroup.id, 
+          currentTime, 
+          lastClickTime, 
+          timeDiff 
+        });
+
+        if (timeDiff < 300) { // Double-click detected (within 300ms)
+          console.log('Double-click on character detected, entering edit mode for textGroup:', parentTextGroup.id);
+          setEditingTextId(parentTextGroup.id);
+          onElementSelect(parentTextGroup.id, isMultiSelect);
+          textClickTimeRef.current.delete(parentTextGroup.id); // Clear the click time
+          return;
+        } else {
+          // Single click - store the time and continue with selection logic
+          console.log('Single click on character detected, storing time for textGroup:', parentTextGroup.id);
+          textClickTimeRef.current.set(parentTextGroup.id, currentTime);
+        }
+
+        // Select the parent textGroup instead of the character
         onElementSelect(parentTextGroup.id, isMultiSelect);
         setDraggingId(parentTextGroup.id);
         setDragOffset({ x: pos.x - parentTextGroup.x, y: pos.y - parentTextGroup.y });
