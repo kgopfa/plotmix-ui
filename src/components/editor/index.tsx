@@ -159,6 +159,32 @@ export default function EditorCanvas() {
     ));
   };
 
+  const handleTextGroupChange = (textGroupId: string, newText: string, characterElements: AnimatedCanvasObject[]) => {
+    // Update the textGroup element with new text and characters
+    setCanvasObjects(prev => {
+      const updatedElements = prev.map(el => {
+        if (el.id === textGroupId) {
+          // Update the textGroup element
+          return {
+            ...el,
+            text: newText,
+            characters: newText.split(''),
+            width: characterElements.length > 0 ? Math.max(...characterElements.map(char => char.x)) - Math.min(...characterElements.map(char => char.x)) + (characterElements[0]?.width || 0) : el.width
+          };
+        }
+        return el;
+      });
+
+      // Remove old character elements that belong to this textGroup
+      const withoutOldCharacters = updatedElements.filter(el => 
+        !(el.type === 'character' && el.parentTextGroupId === textGroupId)
+      );
+
+      // Add new character elements
+      return [...withoutOldCharacters, ...characterElements];
+    });
+  };
+
   useEffect(() => {
     if (isResizing) {
       document.addEventListener('mousemove', handleMouseMove);
@@ -1682,6 +1708,11 @@ export default function EditorCanvas() {
         onSnapThresholdChange={(threshold: number) => setElementSnapConfig({ snapThreshold: threshold })}
         isGridSnapTemporarilyDisabled={isSnapTemporarilyDisabled}
         isElementSnapTemporarilyDisabled={isElementSnapDisabled}
+        isPathMode={isPathMode}
+        onExitPathMode={() => {
+          setIsPathMode(false);
+          setAnimationTarget(null);
+        }}
       />
 
       {/* Main Body - Full height canvas with floating panels */}
@@ -1791,6 +1822,7 @@ export default function EditorCanvas() {
                   }}
                   onElementRotate={handleElementRotate}
                   onTextChange={handleTextChange}
+                  onTextGroupChange={handleTextGroupChange}
                   zoom={canvasZoom}
                   onZoomChange={setCanvasZoom}
                   gridConfig={gridConfig}
@@ -1857,10 +1889,6 @@ export default function EditorCanvas() {
             currentTool={tool}
             onToolChange={handleToolChange}
             isPathMode={isPathMode}
-            onExitPathMode={() => {
-              setIsPathMode(false);
-              setAnimationTarget(null);
-            }}
           />
         </div>
 

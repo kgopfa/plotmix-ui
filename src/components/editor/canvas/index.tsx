@@ -15,6 +15,7 @@ import RotationHandles from './rotation-handles';
 import ResizeHandle from './resize-handle';
 import RadiusHandle from './radius-handle';
 import { TextEditor } from './text-editor';
+import { TextGroupEditor } from './textgroup-editor';
 import { CanvasContent } from './canvas-content';
 import { GroupSelection } from './group-selection';
 import { ContextMenu } from './context-menu';
@@ -54,6 +55,7 @@ interface CanvasProps {
   onElementRotate?: (id: string, rotation: number) => void;
   onElementRadiusChange?: (id: string, cornerRadius: number) => void;
   onTextChange?: (id: string, text: string) => void;
+  onTextGroupChange?: (textGroupId: string, newText: string, characterElements: AnimatedCanvasObject[]) => void;
   zoom?: number; // External zoom control
   onZoomChange?: (zoom: number) => void; // Callback when zoom changes
   // Add group drag handler
@@ -128,6 +130,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     onElementRotate,
     onElementRadiusChange,
     onTextChange,
+    onTextGroupChange,
     zoom = 1,
     onZoomChange,
     onGroupDrag,
@@ -896,6 +899,12 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   const handleTextChange = (id: string, text: string) => {
     if (onTextChange) {
       onTextChange(id, text);
+    }
+  };
+
+  const handleTextGroupChange = (textGroupId: string, newText: string, characterElements: AnimatedCanvasObject[]) => {
+    if (onTextGroupChange) {
+      onTextGroupChange(textGroupId, newText, characterElements);
     }
   };
 
@@ -1878,14 +1887,36 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       />
       
       {/* Text Editor Overlay */}
-      {editingTextId && (
-        <TextEditor
-          element={elements.find(el => el.id === editingTextId)!}
-          onTextChange={handleTextChange}
-          onTextEnd={handleTextEditEnd}
-          canvasElement={canvasRef.current}
-        />
-      )}
+      {editingTextId && (() => {
+        const editingElement = elements.find(el => el.id === editingTextId);
+        if (!editingElement) return null;
+
+        if (editingElement.type === 'textGroup') {
+          // Find all character elements that belong to this textGroup
+          const characterElements = elements.filter(el => 
+            el.type === 'character' && el.parentTextGroupId === editingTextId
+          );
+          
+          return (
+            <TextGroupEditor
+              element={editingElement}
+              characterElements={characterElements}
+              onTextGroupChange={handleTextGroupChange}
+              onTextEnd={handleTextEditEnd}
+              canvasElement={canvasRef.current}
+            />
+          );
+        } else {
+          return (
+            <TextEditor
+              element={editingElement}
+              onTextChange={handleTextChange}
+              onTextEnd={handleTextEditEnd}
+              canvasElement={canvasRef.current}
+            />
+          );
+        }
+      })()}
     </>
   );
 });

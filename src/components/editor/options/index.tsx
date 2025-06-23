@@ -33,6 +33,9 @@ interface OptionsBarProps {
   onSnapThresholdChange: (threshold: number) => void;
   isGridSnapTemporarilyDisabled?: boolean;
   isElementSnapTemporarilyDisabled?: boolean;
+  // Path mode props
+  isPathMode?: boolean;
+  onExitPathMode?: () => void;
 }
 
 export const OptionsBar: React.FC<OptionsBarProps> = ({
@@ -60,7 +63,9 @@ export const OptionsBar: React.FC<OptionsBarProps> = ({
   onToggleDistribution,
   onSnapThresholdChange,
   isGridSnapTemporarilyDisabled = false,
-  isElementSnapTemporarilyDisabled = false
+  isElementSnapTemporarilyDisabled = false,
+  isPathMode = false,
+  onExitPathMode
 }) => {
   const [showSnappingOptions, setShowSnappingOptions] = useState(false);
   const snappingButtonRef = useRef<HTMLButtonElement>(null);
@@ -117,6 +122,20 @@ export const OptionsBar: React.FC<OptionsBarProps> = ({
         >
           Import Image
         </button>
+
+        {/* Path mode indicator */}
+        {isPathMode && (
+          <div className="flex items-center gap-2 px-3 py-1 bg-blue-500 text-white rounded text-sm ml-2">
+            <span className="font-medium">Drawing Animation Path</span>
+            <button
+              className="bg-white text-blue-500 px-2 py-0.5 rounded text-xs font-medium hover:bg-gray-100"
+              onClick={onExitPathMode}
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+
         <div className="flex gap-1 ml-2 border-l pl-2">
           <button 
             className={`btn ${leftPanelVisible ? 'bg-blue-100' : ''}`}

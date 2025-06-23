@@ -4,14 +4,12 @@ interface ToolbarProps {
   currentTool: ToolType;
   onToolChange: (tool: ToolType) => void;
   isPathMode?: boolean;
-  onExitPathMode?: () => void;
 }
 
 export function Toolbar({
   currentTool,
   onToolChange,
-  isPathMode,
-  onExitPathMode
+  isPathMode
 }: ToolbarProps) {
   
   const renderVerticalToolbar = () => (
@@ -85,26 +83,6 @@ export function Toolbar({
 
     </div>
   );
-
-  if (isPathMode) {
-    return (
-      <div className="flex flex-col gap-4">
-        {/* Path mode header */}
-        <div className="bg-blue-500 text-white shadow-lg rounded-lg flex gap-2 p-3 items-center justify-between">
-          <span className="font-medium">Drawing Animation Path</span>
-          <button
-            className="bg-white text-blue-500 px-3 py-1 rounded hover:bg-gray-100 text-sm font-medium"
-            onClick={onExitPathMode}
-          >
-            Cancel
-          </button>
-        </div>
-
-        {/* Vertical toolbar */}
-        {renderVerticalToolbar()}
-      </div>
-    );
-  }
 
   return renderVerticalToolbar();
 }
