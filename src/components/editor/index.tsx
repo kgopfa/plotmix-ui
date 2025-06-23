@@ -1783,6 +1783,12 @@ export default function EditorCanvas() {
                   tool={tool}
                   onAddElement={handleAddElement}
                   isPathMode={isPathMode}
+                  animationTarget={animationTarget}
+                  onPathStartClick={(elementId, x, y) => {
+                    // Start the line drawing from the center of the element
+                    setLineStartPoint({ x, y });
+                    setTool('line');
+                  }}
                   onElementRotate={handleElementRotate}
                   onTextChange={handleTextChange}
                   zoom={canvasZoom}

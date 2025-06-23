@@ -10,6 +10,7 @@ import { drawShape } from '@/utils/drawing-utils';
 import { createNewObject } from '@/lib/canvas-object-factory';
 import ObjectSelect from './object-select';
 import HoverOutline from './hover-outline';
+import CenterHighlight from './center-highlight';
 import RotationHandles from './rotation-handles';
 import ResizeHandle from './resize-handle';
 import RadiusHandle from './radius-handle';
@@ -48,6 +49,8 @@ interface CanvasProps {
   tool: string;
   onAddElement?: (element: AnimatedCanvasObject) => void;
   isPathMode?: boolean;
+  animationTarget?: { animationId: string; elementId: string } | null;
+  onPathStartClick?: (elementId: string, x: number, y: number) => void;
   onElementRotate?: (id: string, rotation: number) => void;
   onElementRadiusChange?: (id: string, cornerRadius: number) => void;
   onTextChange?: (id: string, text: string) => void;
@@ -120,6 +123,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     tool,
     onAddElement,
     isPathMode = false,
+    animationTarget,
+    onPathStartClick,
     onElementRotate,
     onElementRadiusChange,
     onTextChange,
@@ -1476,6 +1481,18 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                   <ObjectSelect
                     element={el}
                     scaleFactor={canvasScaleFactor.current}
+                  />
+                )}
+
+                {/* Show center highlight when in path mode and this element is the animation target */}
+                {isPathMode && animationTarget && animationTarget.elementId === el.id && (
+                  <CenterHighlight
+                    isVisible={true}
+                    onCenterClick={() => {
+                      if (onPathStartClick) {
+                        onPathStartClick(el.id, el.x, el.y);
+                      }
+                    }}
                   />
                 )}
               </pixiContainer>
