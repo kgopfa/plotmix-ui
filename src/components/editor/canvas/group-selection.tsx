@@ -62,15 +62,6 @@ export const GroupSelection: React.FC<GroupSelectionProps> = ({
     ));
   };
 
-  // If this is a custom type group, render individual line outlines
-  if (isCustomTypeGroup()) {
-    return (
-      <React.Fragment key="custom-group-selection">
-        {renderCustomGroupOutlines()}
-      </React.Fragment>
-    );
-  }
-
   // Helper function to create a virtual group element for multi-selection
   const createVirtualGroupElement = (elements: AnimatedCanvasObject[]): AnimatedCanvasObject => {
     if (elements.length === 0) {
@@ -160,6 +151,94 @@ export const GroupSelection: React.FC<GroupSelectionProps> = ({
     };
   };
 
+  // If this is a custom type group, render individual line outlines but still enable group dragging
+  if (isCustomTypeGroup()) {
+    const virtualGroupElement = createVirtualGroupElement(selectedElements);
+
+    // Handle drag start on the group selection area
+    const handleGroupDragStart = (e: FederatedPointerEvent) => {
+      e.stopPropagation();
+      if (onGroupDragStart) {
+        onGroupDragStart(virtualGroupElement, e.global.x, e.global.y, allElements, gridConfig);
+      }
+    };
+
+    return (
+      <React.Fragment key="custom-group-selection">
+        {renderCustomGroupOutlines()}
+        
+        {/* Group selection outline and draggable area */}
+        <pixiContainer
+          x={virtualGroupElement.x}
+          y={virtualGroupElement.y}
+          rotation={virtualGroupElement.rotation || 0}
+        >
+          {/* Invisible draggable area */}
+          <pixiGraphics
+            draw={(g) => {
+              g.clear();
+              g.rect(
+                -virtualGroupElement.width / 2,
+                -virtualGroupElement.height / 2,
+                virtualGroupElement.width,
+                virtualGroupElement.height
+              );
+              g.fill({ color: 0x000000, alpha: 0.01 }); // Nearly transparent fill to capture events
+            }}
+            interactive={true}
+            eventMode="static"
+            cursor="move"
+            onPointerDown={handleGroupDragStart}
+          />
+          
+          {/* Group selection outline */}
+          <ObjectSelect
+            element={virtualGroupElement}
+            scaleFactor={scaleFactor}
+          />
+        </pixiContainer>
+        
+        {/* Resize handles for the group */}
+        <ResizeHandle
+          elementX={virtualGroupElement.x}
+          elementY={virtualGroupElement.y}
+          elementWidth={virtualGroupElement.width}
+          elementHeight={virtualGroupElement.height}
+          elementRotation={virtualGroupElement.rotation || 0}
+          corner="tl"
+          elementId={virtualGroupElement.id}
+        />
+        <ResizeHandle
+          elementX={virtualGroupElement.x}
+          elementY={virtualGroupElement.y}
+          elementWidth={virtualGroupElement.width}
+          elementHeight={virtualGroupElement.height}
+          elementRotation={virtualGroupElement.rotation || 0}
+          corner="tr"
+          elementId={virtualGroupElement.id}
+        />
+        <ResizeHandle
+          elementX={virtualGroupElement.x}
+          elementY={virtualGroupElement.y}
+          elementWidth={virtualGroupElement.width}
+          elementHeight={virtualGroupElement.height}
+          elementRotation={virtualGroupElement.rotation || 0}
+          corner="bl"
+          elementId={virtualGroupElement.id}
+        />
+        <ResizeHandle
+          elementX={virtualGroupElement.x}
+          elementY={virtualGroupElement.y}
+          elementWidth={virtualGroupElement.width}
+          elementHeight={virtualGroupElement.height}
+          elementRotation={virtualGroupElement.rotation || 0}
+          corner="br"
+          elementId={virtualGroupElement.id}
+        />
+      </React.Fragment>
+    );
+  }
+
   const virtualGroupElement = createVirtualGroupElement(selectedElements);
 
   // Handle drag start on the group selection area
@@ -202,43 +281,7 @@ export const GroupSelection: React.FC<GroupSelectionProps> = ({
         />
       </pixiContainer>
       
-      {/* Resize handles for the virtual group */}
-      <ResizeHandle
-        elementX={virtualGroupElement.x}
-        elementY={virtualGroupElement.y}
-        elementWidth={virtualGroupElement.width}
-        elementHeight={virtualGroupElement.height}
-        elementRotation={virtualGroupElement.rotation || 0}
-        corner="tl"
-        elementId={virtualGroupElement.id}
-      />
-      <ResizeHandle
-        elementX={virtualGroupElement.x}
-        elementY={virtualGroupElement.y}
-        elementWidth={virtualGroupElement.width}
-        elementHeight={virtualGroupElement.height}
-        elementRotation={virtualGroupElement.rotation || 0}
-        corner="tr"
-        elementId={virtualGroupElement.id}
-      />
-      <ResizeHandle
-        elementX={virtualGroupElement.x}
-        elementY={virtualGroupElement.y}
-        elementWidth={virtualGroupElement.width}
-        elementHeight={virtualGroupElement.height}
-        elementRotation={virtualGroupElement.rotation || 0}
-        corner="bl"
-        elementId={virtualGroupElement.id}
-      />
-      <ResizeHandle
-        elementX={virtualGroupElement.x}
-        elementY={virtualGroupElement.y}
-        elementWidth={virtualGroupElement.width}
-        elementHeight={virtualGroupElement.height}
-        elementRotation={virtualGroupElement.rotation || 0}
-        corner="br"
-        elementId={virtualGroupElement.id}
-      />
+      {/* No resize handles for ungrouped multiselect - only for actual groups */}
     </React.Fragment>
   );
 }; 

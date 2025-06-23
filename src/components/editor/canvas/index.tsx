@@ -5,7 +5,7 @@ import { Application, extend } from '@pixi/react';
 import { Container, Graphics, Rectangle, Text } from 'pixi.js';
 import type { FederatedPointerEvent } from 'pixi.js';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
-import { useImperativeHandle, forwardRef, useState, useRef, useEffect } from 'react';
+import { useImperativeHandle, forwardRef, useState, useRef, useEffect, useCallback } from 'react';
 import { drawShape } from '@/utils/drawing-utils';
 import { createNewObject } from '@/lib/canvas-object-factory';
 import ObjectSelect from './object-select';
@@ -1226,6 +1226,17 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     };
   }, [elements, onElementRotate]);
 
+  const handleSelectElement = useCallback((id: string | null, isMultiSelect = false) => {
+    if (id) {
+      const element = elements.find(e => e.id === id);
+      if (element) {
+        onElementSelect(element.id, isMultiSelect); // Pass element ID, not the full element
+      }
+    } else {
+      onElementSelect(null);
+    }
+  }, [elements, onElementSelect]);
+
   return (
     <>
       <Application
@@ -1271,7 +1282,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
               if (tool === 'draw') {
                 handleCanvasPointerDown(e);
               } else {
-                onElementSelect(null);
+                handleSelectElement(null);
                 onCanvasClick(e);
               }
             }}
