@@ -74,7 +74,6 @@ export function useAnimationHandlers(
             pathPoints: [],
             pathDirection: 'clockwise' as 'clockwise' | 'counterclockwise',
             yoyo: false,
-            attachDelay: 0.5
           },
           typewriter: {
             text: selectedElement!.text || ''
@@ -151,7 +150,6 @@ export function useAnimationHandlers(
         pathPoints: [],
         pathDirection: 'clockwise' as 'clockwise' | 'counterclockwise',
         yoyo: false,
-        attachDelay: 0.5
       },
       typewriter: {
         text: selectedElement.text || ''
