@@ -38,6 +38,7 @@ export default function EditorCanvas() {
     select: selectElement,
     selectGroup,
     selectAll,
+    clearSelections,
     updateSelectedGroups
   } = useSelectionStore();
   
@@ -782,14 +783,12 @@ export default function EditorCanvas() {
           setAnimationTarget(null);
         }
       } else {
-        selectElement(null);
-        updateSelectedGroups([]);
+        clearSelections();
       }
     } else {
       // When clicking on existing shapes with select tool, just clear selection
       // This maintains the existing behavior for selection mode
-      selectElement(null);
-      updateSelectedGroups([]);
+      clearSelections();
     } 
   };
 
@@ -1529,8 +1528,7 @@ export default function EditorCanvas() {
         updateSelectedGroups([]);
       }
     } else {
-      selectElement(null);
-      updateSelectedGroups([]);
+      clearSelections();
     }
   }, [canvasObjects]);
 

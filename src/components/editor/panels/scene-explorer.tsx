@@ -43,7 +43,7 @@ export function SceneExplorer({
     selectedGroups,
     select: onElementSelect,
     selectGroup: onGroupSelect,
-    clear: onClearSelection,
+    clearSelections: onClearSelection,
     isSelected: isElementSelected,
     isGroupSelected,
     updateSelectedGroups
@@ -369,9 +369,13 @@ export function SceneExplorer({
 
   // Helper method to properly select a group
   const selectGroup = (group: CanvasGroup, isMultiSelect: boolean = false) => {
-    onGroupSelect(group, isMultiSelect);
+    // Find all elements that belong to this group
+    const elementsInGroup = elements.filter(el => group.elementIds.includes(el.id));
+    
+    // Use the store's select function - it will automatically detect group selection
+    onElementSelect(elementsInGroup, isMultiSelect);
   };
-  
+
   // Component to render hierarchical element
   const renderHierarchicalElement = (element: AnimatedCanvasObject, depth: number = 0): React.ReactNode => {
     const hasAnimations = element.animations.length > 0;

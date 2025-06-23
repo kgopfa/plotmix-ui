@@ -12,7 +12,7 @@ interface SelectionActions {
   select: (element: AnimatedCanvasObject | AnimatedCanvasObject[] | null, addToSelection?: boolean) => void;
   selectGroup: (group: CanvasGroup, addToSelection?: boolean) => void;
   selectAll: (elements: AnimatedCanvasObject[]) => void;
-  clear: () => void;
+  clearSelections: () => void;
   
   // Utility functions
   isSelected: (element: AnimatedCanvasObject) => boolean;
@@ -92,7 +92,7 @@ export const useSelectionStore = create<SelectionStore>((set, get) => ({
     get().updateSelectedGroupsInternal(get().currentGroups);
   },
 
-  clear: () => {
+  clearSelections: () => {
     set({ selectedElements: [], selectedGroups: [] });
   },
 
