@@ -7,6 +7,7 @@ import { TimelineManager } from '@/lib/timeline-manager';
 import { TimelineState } from '@/types/timeline';
 import { useSelectionStore } from '@/stores/useSelectionStore';
 import { useCanvasElements, useCanvasGroups } from '@/stores/useCanvasStore';
+import { useUIStore } from '@/stores/useUIStore';
 import { useCanvasMigration } from '@/hooks/use-canvas-migration';
 import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
 import { SceneExplorer } from './panels/scene-explorer';
@@ -54,13 +55,18 @@ export default function EditorCanvas() {
     updateSelectedGroups
   } = useSelectionStore();
   
-  const [tool, setTool] = useState<ToolType>('select');
-  const [maskPos, setMaskPos] = useState<{ x: number, y: number } | null>(null);
-  const [lineStartPoint, setLineStartPoint] = useState<{ x: number, y: number } | null>(null);
-  const [isLineChaining, setIsLineChaining] = useState(false);
-  // Track lines created during current chaining session for polygon creation
-  const [chainedLineIds, setChainedLineIds] = useState<string[]>([]);
-  const [isClosingShape, setIsClosingShape] = useState(false);
+  // Use UI store for tool state
+  const toolState = useUIStore((state) => state.tools);
+  const { 
+    setActiveTool,
+    setMaskPos,
+    setLineStartPoint,
+    setLineChaining,
+    addChainedLineId,
+    clearChainedLineIds,
+    setClosingShape,
+  } = useUIStore();
+
   const [timeState, setTimeState] = useState<TimeManagerState>({
     isPlaying: false,
     elapsedTime: 0
@@ -71,24 +77,25 @@ export default function EditorCanvas() {
     duration: 10,
     scale: 100
   });
-  const [isPathMode, setIsPathMode] = useState(false);
-  const [animationTarget, setAnimationTarget] = useState<{
-    animationId: string;
-    elementId: string;
-  } | null>(null);
-    const [showPaths, setShowPaths] = useState(true);
+  // Use UI store for panel state
+  const panelState = useUIStore((state) => state.panels);
+  const { 
+    setLeftPanelWidth, 
+    setRightPanelWidth, 
+    setTimelineHeight,
+    toggleTimelineCollapse,
+    setResizing,
+    toggleLeftPanel,
+    toggleRightPanel
+  } = useUIStore();
   
-  // Image import state
-  const [pendingImageData, setPendingImageData] = useState<string | null>(null);
-
-  // Panel state management
-  const [leftPanelWidth, setLeftPanelWidth] = useState(320); // Default 320px (w-80)
-  const [rightPanelWidth, setRightPanelWidth] = useState(320); // Default 320px (w-80)
-  const [leftPanelVisible, setLeftPanelVisible] = useState(true);
-  const [rightPanelVisible, setRightPanelVisible] = useState(true);
-  const [timelineHeight, setTimelineHeight] = useState(240); // Default 240px (h-60)
-  const [isTimelineCollapsed, setIsTimelineCollapsed] = useState(false);
-  const [isResizing, setIsResizing] = useState<'left' | 'right' | 'timeline' | null>(null);
+  // Use UI store for other tool state
+  const { 
+    togglePathMode,
+    setAnimationTarget,
+    toggleShowPaths,
+    setPendingImageData
+  } = useUIStore();
 
   const MASK_OFFSET_X = 0;
   const MASK_OFFSET_Y = 0;
@@ -146,32 +153,32 @@ export default function EditorCanvas() {
   // Panel resize handlers
   const handleMouseDown = useCallback((panel: 'left' | 'right' | 'timeline') => (e: React.MouseEvent) => {
     e.preventDefault();
-    setIsResizing(panel);
-  }, []);
+    setResizing(panel);
+  }, [setResizing]);
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!isResizing) return;
+    if (!panelState.isResizing) return;
 
     // Use requestAnimationFrame for smooth resizing
     requestAnimationFrame(() => {
-      if (isResizing === 'left') {
+      if (panelState.isResizing === 'left') {
         const newWidth = Math.max(200, Math.min(600, e.clientX)); // Min 200px, max 600px
         setLeftPanelWidth(newWidth);
-      } else if (isResizing === 'right') {
+      } else if (panelState.isResizing === 'right') {
         const newWidth = Math.max(200, Math.min(600, window.innerWidth - e.clientX)); // Min 200px, max 600px
         setRightPanelWidth(newWidth);
-      } else if (isResizing === 'timeline') {
+      } else if (panelState.isResizing === 'timeline') {
         const maxHeight = window.innerHeight * 0.8; // 80% of viewport height
         const minHeight = 32; // Can collapse to just the controls bar
         const newHeight = Math.max(minHeight, Math.min(maxHeight, window.innerHeight - e.clientY)); // Dynamic max height
         setTimelineHeight(newHeight);
       }
     });
-  }, [isResizing]);
+  }, [panelState.isResizing, setLeftPanelWidth, setRightPanelWidth, setTimelineHeight]);
 
   const handleMouseUp = useCallback(() => {
-    setIsResizing(null);
-  }, []);
+    setResizing(null);
+  }, [setResizing]);
 
   const handleElementRotate = (id: string, rotation: number) => {
     updateElement(id, { rotation });
@@ -208,10 +215,10 @@ export default function EditorCanvas() {
   };
 
   useEffect(() => {
-    if (isResizing) {
+    if (panelState.isResizing) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = isResizing === 'timeline' ? 'row-resize' : 'col-resize';
+      document.body.style.cursor = panelState.isResizing === 'timeline' ? 'row-resize' : 'col-resize';
       document.body.style.userSelect = 'none';
 
       return () => {
@@ -221,7 +228,7 @@ export default function EditorCanvas() {
         document.body.style.userSelect = '';
       };
     }
-  }, [isResizing, handleMouseMove, handleMouseUp]);
+  }, [panelState.isResizing, handleMouseMove, handleMouseUp]);
   const gsapManager = useMemo(() => new GSAPTimelineManager(), []);
 
   // Memoize the time manager instance
@@ -349,21 +356,21 @@ export default function EditorCanvas() {
   // Function to exit line chaining mode (for ESC key or tool changes)
   const exitLineChaining = useCallback(() => {
     setLineStartPoint(null);
-    setIsLineChaining(false);
-    setChainedLineIds([]); // Clear chained line IDs
-    setIsClosingShape(false);
-    setTool('select');
+    setLineChaining(false);
+    clearChainedLineIds(); // Clear chained line IDs
+    setClosingShape(false);
+    setActiveTool('select');
     setMaskPos(null);
   }, []);
 
   const handleToolChange = useCallback((newTool: ToolType) => {
     // If we're in line chaining mode and switching away from line tool, exit chaining
-    if (isLineChaining && newTool !== 'line') {
+    if (toolState.isLineChaining && newTool !== 'line') {
       exitLineChaining();
       return;
     }
     
-    setTool(newTool);
+    setActiveTool(newTool);
     setMaskPos(null);
     
     // Clear pending image data if switching away from image tool
@@ -376,7 +383,7 @@ export default function EditorCanvas() {
     if (newTool !== 'select') {
       selectElement(null);
     }
-  }, [isLineChaining, exitLineChaining, selectElement]);
+  }, [toolState.isLineChaining, exitLineChaining, selectElement, setActiveTool, setMaskPos, setPendingImageData]);
 
   // Handle select all
   const handleSelectAll = useCallback(() => {
@@ -389,7 +396,7 @@ export default function EditorCanvas() {
     onDeleteElement: handleDeleteElement,
     onToolChange: handleToolChange,
     onSelectAll: handleSelectAll,
-    isLineChaining,
+    isLineChaining: toolState.isLineChaining,
     onExitLineChaining: exitLineChaining
   });
 
@@ -558,10 +565,10 @@ export default function EditorCanvas() {
 
   // Handle polygon closure when isClosingShape becomes true
   useEffect(() => {
-    if (!isClosingShape || chainedLineIds.length === 0) return;
+    if (!toolState.isClosingShape || toolState.chainedLineIds.length === 0) return;
 
     // Find the chained lines including the last one
-    const chainedLines = canvasObjects.filter(obj => chainedLineIds.includes(obj.id));
+    const chainedLines = canvasObjects.filter(obj => toolState.chainedLineIds.includes(obj.id));
     
     if (chainedLines.length >= 2) {
       // Check if any of the lines in the polygon are dotted (indicating path mode)
@@ -583,35 +590,35 @@ export default function EditorCanvas() {
         
         // Add the polygon group to the animation and exit path mode
         addPathToAnimation(polygonGroup as unknown as AnimatedCanvasObject);
-        setIsPathMode(false);
+        togglePathMode();
         setAnimationTarget(null);
       }
     }
     
     // Clean up line chaining state
     setLineStartPoint(null);
-    setIsLineChaining(false);
-    setChainedLineIds([]);
-    setIsClosingShape(false);
-    setTool('select');
+    setLineChaining(false);
+    clearChainedLineIds();
+    setClosingShape(false);
+    setActiveTool('select');
     setMaskPos(null);
-  }, [isClosingShape, chainedLineIds, canvasObjects, createPolygonGroup]);
+  }, [toolState.isClosingShape, toolState.chainedLineIds, canvasObjects, createPolygonGroup]);
 
   const canvasClickHandler = (e: FederatedPointerEvent) => {
     const isEmptyClick = !(e.target && (e.target as Container).label === 'shape');
     
     // Allow object creation when using creation tools, even on top of existing shapes
-    const isCreationTool = tool !== 'select';
+    const isCreationTool = toolState.activeTool !== 'select';
     const shouldCreateObject = isEmptyClick || isCreationTool;
 
     if (shouldCreateObject) {
-      if (tool === 'line') {
-        if (!lineStartPoint) {
+      if (toolState.activeTool === 'line') {
+        if (!toolState.lineStartPoint) {
           // First click - set start point with snapping
           const snappedStart = snapPoint({ x: e.global.x, y: e.global.y }, e);
           setLineStartPoint(snappedStart);
-          setIsLineChaining(true);
-          setChainedLineIds([]); // Reset chained line IDs for new session
+          setLineChaining(true);
+          clearChainedLineIds(); // Reset chained line IDs for new session
         } else {
           // Second+ click - create line and continue chaining with snapping
           const snappedEnd = snapPoint({ x: e.global.x, y: e.global.y }, e);
@@ -619,9 +626,9 @@ export default function EditorCanvas() {
           // Check if we're trying to close the shape by finding the original start point
           let originalStartPoint = null;
           
-          if (chainedLineIds.length > 0) {
+          if (toolState.chainedLineIds.length > 0) {
             // Find the first chained line to get the original start point
-            const firstChainedLine = canvasObjects.find(obj => obj.id === chainedLineIds[0]);
+            const firstChainedLine = canvasObjects.find(obj => obj.id === toolState.chainedLineIds[0]);
             if (firstChainedLine?.lineOptions?.points?.start) {
               originalStartPoint = firstChainedLine.lineOptions.points.start;
             }
@@ -640,9 +647,9 @@ export default function EditorCanvas() {
             }
           }
           
-          const { start: finalStart, end: finalEnd } = snapLine(lineStartPoint, finalEndPoint, e);
+          const { start: finalStart, end: finalEnd } = snapLine(toolState.lineStartPoint, finalEndPoint, e);
           
-          const newElement = createNewObject('line', finalStart.x, finalStart.y, canvasObjects, undefined, isPathMode);
+          const newElement = createNewObject('line', finalStart.x, finalStart.y, canvasObjects, undefined, toolState.isPathMode);
           // Update line end point
           newElement.lineOptions = {
             points: {
@@ -650,12 +657,11 @@ export default function EditorCanvas() {
               end: finalEnd
             },
             arrow: false,
-            dotted: isPathMode
+            dotted: toolState.isPathMode
           };
 
           // Add this line to the chained lines (including the closing line)
-          const updatedChainedLineIds = [...chainedLineIds, newElement.id];
-          setChainedLineIds(updatedChainedLineIds);
+          addChainedLineId(newElement.id);
           
             setCanvasObjects(prev => [...prev, newElement]);
             selectElement([newElement]);
@@ -663,7 +669,7 @@ export default function EditorCanvas() {
           
           if (shouldCloseShape) {
             // Shape is closed - trigger polygon creation via useEffect
-            setIsClosingShape(true);
+            setClosingShape(true);
           } else {
             // Continue chaining: set the end point as the new start point
             setLineStartPoint(finalEnd);
@@ -673,17 +679,17 @@ export default function EditorCanvas() {
           // Note: For polygon lines in path mode, we don't add individual lines to the animation path
           // Instead, the complete polygon group will be added when the shape is closed
         }
-      } else if (tool === 'simpleLine') {
-        if (!lineStartPoint) {
+      } else if (toolState.activeTool === 'simpleLine') {
+        if (!toolState.lineStartPoint) {
           // First click - set start point with snapping
           const snappedStart = snapPoint({ x: e.global.x, y: e.global.y }, e);
           setLineStartPoint(snappedStart);
         } else {
           // Second click - create line and exit (no chaining)
           const snappedEnd = snapPoint({ x: e.global.x, y: e.global.y }, e);
-          const { start: finalStart, end: finalEnd } = snapLine(lineStartPoint, snappedEnd, e);
+          const { start: finalStart, end: finalEnd } = snapLine(toolState.lineStartPoint, snappedEnd, e);
           
-          const newElement = createNewObject('line', finalStart.x, finalStart.y, canvasObjects, undefined, isPathMode);
+          const newElement = createNewObject('line', finalStart.x, finalStart.y, canvasObjects, undefined, toolState.isPathMode);
           // Update line end point
           newElement.lineOptions = {
             points: {
@@ -691,7 +697,7 @@ export default function EditorCanvas() {
               end: finalEnd
             },
             arrow: false,
-            dotted: isPathMode
+            dotted: toolState.isPathMode
           };
           
           setCanvasObjects(prev => [...prev, newElement]);
@@ -700,17 +706,17 @@ export default function EditorCanvas() {
           
           // Reset line start point and switch to select tool
           setLineStartPoint(null);
-          setTool('select');
+          setActiveTool('select');
           setMaskPos(null);
 
           // If in path mode, exit after creating the path
-          if (isPathMode) {
+          if (toolState.isPathMode) {
             addPathToAnimation(newElement);
-            setIsPathMode(false);
+            togglePathMode();
             setAnimationTarget(null);
           }
         }
-      } else if (tool === 'image' && pendingImageData) {
+      } else if (toolState.activeTool === 'image' && toolState.pendingImageData) {
         // Create image element at click position
         const imageWidth = 100;
         const imageHeight = 100;
@@ -723,8 +729,8 @@ export default function EditorCanvas() {
             snappedPos.y,
             canvasObjects,
             undefined,
-            isPathMode,
-            pendingImageData,
+            toolState.isPathMode,
+            toolState.pendingImageData,
             imageWidth,
             imageHeight
           );
@@ -732,50 +738,50 @@ export default function EditorCanvas() {
           setCanvasObjects(prev => [...prev, imageElement]);
           selectElement([imageElement]);
           updateSelectedGroups([]);
-          setTool('select');
+          setActiveTool('select');
           setMaskPos(null);
           setPendingImageData(null); // Clear pending image data
 
           // If in path mode, exit after creating the path
-          if (isPathMode) {
+          if (toolState.isPathMode) {
             addPathToAnimation(imageElement);
-            setIsPathMode(false);
+            togglePathMode();
             setAnimationTarget(null);
           }
         } catch (error) {
           console.error('Error creating image element:', error);
         }
-      } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle') {
+      } else if (toolState.activeTool === 'rectangle' || toolState.activeTool === 'circle' || toolState.activeTool === 'triangle') {
         const snappedPos = snapPoint({ x: e.global.x, y: e.global.y }, e);
-        const newElement = createNewObject(tool, snappedPos.x, snappedPos.y, canvasObjects, undefined, isPathMode);
+        const newElement = createNewObject(toolState.activeTool, snappedPos.x, snappedPos.y, canvasObjects, undefined, toolState.isPathMode);
         setCanvasObjects(prev => [...prev, newElement]);
         selectElement([newElement]);
         updateSelectedGroups([]);
-        setTool('select');
+        setActiveTool('select');
         setMaskPos(null);
 
         // If in path mode, exit after creating the path
-        if (isPathMode) {
+        if (toolState.isPathMode) {
           addPathToAnimation(newElement);
-          setIsPathMode(false);
+          togglePathMode();
           setAnimationTarget(null);
         }
-      } else if (tool === 'text') {
+      } else if (toolState.activeTool === 'text') {
         const snappedPos = snapPoint({ x: e.global.x, y: e.global.y }, e);
-        const newElement = createNewObject('text', snappedPos.x, snappedPos.y, canvasObjects, undefined, isPathMode);
+        const newElement = createNewObject('text', snappedPos.x, snappedPos.y, canvasObjects, undefined, toolState.isPathMode);
         setCanvasObjects(prev => [...prev, newElement]);
         selectElement([newElement]);
         updateSelectedGroups([]);
-        setTool('select');
+        setActiveTool('select');
         setMaskPos(null);
 
         // If in path mode, exit after creating the path
-        if (isPathMode) {
+        if (toolState.isPathMode) {
           addPathToAnimation(newElement);
-          setIsPathMode(false);
+          togglePathMode();
           setAnimationTarget(null);
         }
-      } else if (tool === 'textGroup') {
+      } else if (toolState.activeTool === 'textGroup') {
         const snappedPos = snapPoint({ x: e.global.x, y: e.global.y }, e);
         const { textGroup, characters } = createTextGroupWithCharacters(
           snappedPos.x, 
@@ -786,13 +792,13 @@ export default function EditorCanvas() {
         // Add both the textGroup and its character elements to the canvas
         setCanvasObjects(prev => [...prev, textGroup, ...characters]);
         
-        setTool('select');
+        setActiveTool('select');
         setMaskPos(null);
 
         // If in path mode, exit after creating the path
-        if (isPathMode) {
+        if (toolState.isPathMode) {
           addPathToAnimation(textGroup);
-          setIsPathMode(false);
+          togglePathMode();
           setAnimationTarget(null);
         }
       } else {
@@ -807,7 +813,7 @@ export default function EditorCanvas() {
 
   // Helper function to add path shape to animation
   const addPathToAnimation = useCallback((pathShape: AnimatedCanvasObject | CanvasGroup) => {
-    const target = animationTarget;
+    const target = toolState.animationTarget;
     if (!target) return;
 
     const { elementId, animationId } = target;
@@ -833,7 +839,7 @@ export default function EditorCanvas() {
         };
       })
     );
-  }, [animationTarget, setCanvasObjects, canvasObjects]);
+  }, [toolState.animationTarget, setCanvasObjects, canvasObjects]);
 
 
 
@@ -1202,7 +1208,7 @@ export default function EditorCanvas() {
     if (prop === 'enterPathMode') {
       // Enter path mode to draw animation path
       const pathTarget = value as { animationId: string; elementId: string };
-      setIsPathMode(true);
+      togglePathMode();
       setAnimationTarget(pathTarget);
       return;
     }
@@ -1479,7 +1485,7 @@ export default function EditorCanvas() {
   useEffect(() => {
     const handleDrawComplete = () => {
       // Exit draw mode when a path is completed
-      setTool('select');
+      setActiveTool('select');
     };
 
     window.addEventListener('draw-complete', handleDrawComplete);
@@ -1566,12 +1572,12 @@ export default function EditorCanvas() {
 
     // textGroup functionality removed
 
-    if (isPathMode && element.type === 'path' && element.isAnimationPath) {
+    if (toolState.isPathMode && element.type === 'path' && element.isAnimationPath) {
       addPathToAnimation(element);
-      setIsPathMode(false);
+      togglePathMode();
       setAnimationTarget(null);
     }
-  }, [isPathMode, addPathToAnimation, setIsPathMode, setAnimationTarget]);
+  }, [toolState.isPathMode, addPathToAnimation, togglePathMode, setAnimationTarget]);
 
   // Simplified group management handlers - now using unified createGroup
   const handleGroupElements = useCallback(() => {
@@ -1636,10 +1642,10 @@ export default function EditorCanvas() {
         selectedGroups={selectedGroups}
         groups={groups}
         canvasZoom={canvasZoom}
-        leftPanelVisible={leftPanelVisible}
-        rightPanelVisible={rightPanelVisible}
-        onToggleLeftPanel={() => setLeftPanelVisible(!leftPanelVisible)}
-        onToggleRightPanel={() => setRightPanelVisible(!rightPanelVisible)}
+        leftPanelVisible={panelState.leftPanelVisible}
+        rightPanelVisible={panelState.rightPanelVisible}
+        onToggleLeftPanel={() => toggleLeftPanel()}
+        onToggleRightPanel={() => toggleRightPanel()}
         onImageImport={() => {
           if (imageFileInputRef.current) {
             imageFileInputRef.current.click();
@@ -1678,9 +1684,9 @@ export default function EditorCanvas() {
         onSnapThresholdChange={(threshold: number) => setElementSnapConfig({ snapThreshold: threshold })}
         isGridSnapTemporarilyDisabled={isSnapTemporarilyDisabled}
         isElementSnapTemporarilyDisabled={isElementSnapDisabled}
-        isPathMode={isPathMode}
+        isPathMode={toolState.isPathMode}
         onExitPathMode={() => {
-          setIsPathMode(false);
+          togglePathMode();
           setAnimationTarget(null);
         }}
       />
@@ -1692,7 +1698,7 @@ export default function EditorCanvas() {
           ref={containerRef}
           className="absolute inset-0 bg-gray-100 overflow-auto"
           onMouseMove={e => {
-            if (tool !== 'select') {
+            if (toolState.activeTool !== 'select') {
               const rect = e.currentTarget.getBoundingClientRect();
               const scrollLeft = e.currentTarget.scrollLeft;
               const scrollTop = e.currentTarget.scrollTop;
@@ -1714,7 +1720,7 @@ export default function EditorCanvas() {
               minHeight: '4000px'
             }}
           >
-              {isPathMode && (
+              {toolState.isPathMode && (
                 <div className="absolute top-0 left-0 w-full py-2 px-4 bg-blue-100 text-blue-800 z-10 flex justify-between items-center">
                   <span>
                     <strong>Path Drawing Mode:</strong> Select a tool and draw a path that your element will follow.
@@ -1722,7 +1728,7 @@ export default function EditorCanvas() {
                   <button
                     className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
                     onClick={() => {
-                      setIsPathMode(false);
+                      togglePathMode();
                       setAnimationTarget(null);
                     }}
                   >
@@ -1736,22 +1742,22 @@ export default function EditorCanvas() {
           {/* Navigation and Path Controls */}
           <div 
             className="absolute bottom-4 z-20 flex flex-col gap-2 transition-all duration-300"
-            style={{ right: `${rightPanelVisible ? rightPanelWidth + 16 : 16}px` }} // Adjust position based on panel visibility
+            style={{ right: `${panelState.rightPanelVisible ? panelState.rightPanelWidth + 16 : 16}px` }} // Adjust position based on panel visibility
           >
             {/* Path visibility toggle - only show if paths exist */}
             {canvasObjects.some(el => el.isAnimationPath) && (
               <button
-                className={`px-3 py-1.5 rounded shadow flex items-center ${showPaths ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'}`}
-                onClick={() => setShowPaths(!showPaths)}
-                title={showPaths ? 'Hide Animation Paths' : 'Show Animation Paths'}
+                className={`px-3 py-1.5 rounded shadow flex items-center ${toolState.showPaths ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'}`}
+                onClick={() => toggleShowPaths()}
+                title={toolState.showPaths ? 'Hide Animation Paths' : 'Show Animation Paths'}
               >
                 <svg className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M3 17.25V21H6.75L17.81 9.94L14.06 6.19L3 17.25Z"
-                    fill={showPaths ? "white" : "currentColor"} />
+                    fill={toolState.showPaths ? "white" : "currentColor"} />
                   <path d="M20.71 7.04C21.1 6.65 21.1 6.02 20.71 5.63L18.37 3.29C17.98 2.9 17.35 2.9 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04Z"
-                    fill={showPaths ? "white" : "currentColor"} />
+                    fill={toolState.showPaths ? "white" : "currentColor"} />
                 </svg>
-                {showPaths ? 'Paths Visible' : 'Paths Hidden'}
+                {toolState.showPaths ? 'Paths Visible' : 'Paths Hidden'}
               </button>
             )}
             
@@ -1774,21 +1780,21 @@ export default function EditorCanvas() {
                     width: Math.max(dimensions.width * 3, 4000), // Canvas fills entire scrollable area
                     height: Math.max(dimensions.height * 3, 4000)
                   }}
-                  elements={showPaths ? canvasObjects : canvasObjects.filter(el => !el.isAnimationPath)}
+                  elements={toolState.showPaths ? canvasObjects : canvasObjects.filter(el => !el.isAnimationPath)}
                   groups={groups}
                   selectedIds={selectedObjects.map(obj => obj.id)}
                   onElementSelect={handleSelectElement}
                   onElementDragEnd={handleElementDragEnd}
                   onGroupDrag={handleGroupDrag}
                   onCanvasClick={canvasClickHandler}
-                  tool={tool}
+                  tool={toolState.activeTool}
                   onAddElement={handleAddElement}
-                  isPathMode={isPathMode}
-                  animationTarget={animationTarget}
+                  isPathMode={toolState.isPathMode}
+                  animationTarget={toolState.animationTarget}
                   onPathStartClick={(elementId, x, y) => {
                     // Start the line drawing from the center of the element
                     setLineStartPoint({ x, y });
-                    setTool('line');
+                    setActiveTool('line');
                   }}
                   onElementRotate={handleElementRotate}
                   onTextChange={handleTextChange}
@@ -1797,9 +1803,9 @@ export default function EditorCanvas() {
                   onZoomChange={setCanvasZoom}
                   gridConfig={gridConfig}
                   snapGuides={elementSnapGuides}
-                  lineStartPoint={lineStartPoint}
-                  isLineChaining={isLineChaining}
-                  chainedLineIds={chainedLineIds}
+                  lineStartPoint={toolState.lineStartPoint}
+                  isLineChaining={toolState.isLineChaining}
+                  chainedLineIds={toolState.chainedLineIds}
                   isPlaying={timeState.isPlaying}
                   onCopyElement={(elementId) => {
                     // Find the element to copy
@@ -1853,29 +1859,29 @@ export default function EditorCanvas() {
         {/* Floating Toolbar - Fixed position outside scrollable area */}
         <div 
           className="absolute top-2/5 -translate-y-1/2 z-50 transition-all duration-300"
-          style={{ left: `${leftPanelVisible ? leftPanelWidth + 16 : 16}px` }}
+          style={{ left: `${panelState.leftPanelVisible ? panelState.leftPanelWidth + 16 : 16}px` }}
         >
           <Toolbar
-            currentTool={tool}
+            currentTool={toolState.activeTool}
             onToolChange={handleToolChange}
-            isPathMode={isPathMode}
+            isPathMode={toolState.isPathMode}
           />
         </div>
 
         {/* Mask Overlay - Fixed position relative to viewport */}
         <MaskOverlay
-          tool={tool}
-          maskPos={maskPos}
+          tool={toolState.activeTool}
+          maskPos={toolState.maskPos}
           maskOffsetX={MASK_OFFSET_X}
           maskOffsetY={MASK_OFFSET_Y}
         />
 
         {/* Floating Left Panel - Scene Explorer */}
-        {leftPanelVisible && (
+        {panelState.leftPanelVisible && (
           <>
             <div
               className="absolute top-0 left-0 h-full bg-gray-50/95 backdrop-blur-sm border-r border-gray-200 overflow-y-auto z-30 shadow-lg transition-transform duration-300"
-              style={{ width: `${leftPanelWidth}px` }}
+              style={{ width: `${panelState.leftPanelWidth}px` }}
             >
               <SceneExplorer 
                 elements={canvasObjects} 
@@ -1926,18 +1932,18 @@ export default function EditorCanvas() {
             {/* Left Resize Handle */}
             <div
               className="absolute top-0 h-full w-1 border-r border-gray-300 hover:bg-blue-500 cursor-col-resize z-40 transition-colors"
-              style={{ left: `${leftPanelWidth}px` }}
+              style={{ left: `${panelState.leftPanelWidth}px` }}
               onMouseDown={handleMouseDown('left')}
             />
           </>
         )}
 
         {/* Floating Right Panel - Inspector */}
-        {rightPanelVisible && (
+        {panelState.rightPanelVisible && (
           <>
             <div
               className="absolute top-0 right-0 h-full bg-gray-50/95 backdrop-blur-sm border-l border-gray-200 overflow-y-auto z-30 shadow-lg transition-transform duration-300"
-              style={{ width: `${rightPanelWidth}px` }}
+              style={{ width: `${panelState.rightPanelWidth}px` }}
             >
               <Inspector
                 onInspectorChange={handleInspectorChange}
@@ -1948,7 +1954,7 @@ export default function EditorCanvas() {
             {/* Right Resize Handle */}
             <div
               className="absolute top-0 h-full w-1 border-l border-gray-300 hover:bg-blue-500 cursor-col-resize z-40 transition-colors"
-              style={{ right: `${rightPanelWidth}px` }}
+              style={{ right: `${panelState.rightPanelWidth}px` }}
               onMouseDown={handleMouseDown('right')}
             />
           </>
@@ -1959,13 +1965,13 @@ export default function EditorCanvas() {
       <div 
         className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50"
         style={{ 
-          height: isTimelineCollapsed ? '32px' : `${timelineHeight}px`,
+          height: panelState.isTimelineCollapsed ? '32px' : `${panelState.timelineHeight}px`,
           minHeight: '32px', // Allow collapsing to 32px (h-8)
           maxHeight: '80vh'
         }}
       >
         {/* Timeline Resize Handle - Visual indicator - only show when not collapsed */}
-        {!isTimelineCollapsed && (
+        {!panelState.isTimelineCollapsed && (
           <div
             className="absolute top-0 left-0 right-0 h-1 border-t-2 border-gray-300 hover:border-blue-500 cursor-row-resize z-40 transition-colors"
             onMouseDown={handleMouseDown('timeline')}
@@ -1981,8 +1987,8 @@ export default function EditorCanvas() {
           onStop={handleStop}
           onAnimationChange={handleAnimationChange}
           onGroupAnimationChange={handleGroupAnimationChange}
-          isCollapsed={isTimelineCollapsed}
-          onToggleCollapse={() => setIsTimelineCollapsed(!isTimelineCollapsed)}
+          isCollapsed={panelState.isTimelineCollapsed}
+          onToggleCollapse={() => toggleTimelineCollapse()}
         />
       </div>
       
