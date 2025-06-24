@@ -39,14 +39,10 @@ export function SceneExplorer({
 }: SceneExplorerProps) {
   // Use Zustand store for selection state
   const {
-    selectedElements,
-    selectedGroups,
     select: onElementSelect,
-    selectGroup: onGroupSelect,
     clearSelections: onClearSelection,
     isSelected: isElementSelected,
     isGroupSelected,
-    updateSelectedGroups
   } = useSelectionStore();
   // Filter out animation paths and character elements (characters will be shown under their group parent)
   const shapes = elements.filter(element => !element.isAnimationPath && element.type !== 'character');
