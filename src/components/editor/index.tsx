@@ -2,12 +2,13 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { TimeManager, type TimeManagerState } from '@/lib/time-manager';
+import { TimeManager } from '@/lib/time-manager';
 import { TimelineManager } from '@/lib/timeline-manager';
-import { TimelineState } from '@/types/timeline';
 import { useSelectionStore } from '@/stores/useSelectionStore';
 import { useCanvasElements, useCanvasGroups } from '@/stores/useCanvasStore';
 import { useUIStore } from '@/stores/useUIStore';
+import { useTimelineStore, useTimelineSync } from '@/stores/useTimelineStore';
+import { useShallow } from 'zustand/react/shallow';
 import { useCanvasMigration } from '@/hooks/use-canvas-migration';
 import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
 import { SceneExplorer } from './panels/scene-explorer';
@@ -67,16 +68,17 @@ export default function EditorCanvas() {
     setClosingShape,
   } = useUIStore();
 
-  const [timeState, setTimeState] = useState<TimeManagerState>({
-    isPlaying: false,
-    elapsedTime: 0
-  });
-  const [timelineState, setTimelineState] = useState<TimelineState>({
-    tracks: [],
-    trackData: [],
-    duration: 10,
-    scale: 100
-  });
+  // Use Timeline store instead of local state
+  const { playback, ui: timelineUI, tracks } = useTimelineStore(
+    useShallow((state) => ({
+      playback: state.playback,
+      ui: state.ui,
+      tracks: state.tracks
+    }))
+  );
+  const { setElements, setGroups: setTimelineGroups } = useTimelineStore();
+  const { initializeSubscriptions, cleanupSubscriptions, buildGSAPTimeline } = useTimelineSync();
+
   // Use UI store for panel state
   const panelState = useUIStore((state) => state.panels);
   const { 
@@ -111,8 +113,9 @@ export default function EditorCanvas() {
     rebuildTimeline
   } = useTimelineIntegration();
 
-  // Selection manager now handled by React state above
-  
+  // Canvas zoom state - will migrate this to UI store in next iteration
+  const [canvasZoom, setCanvasZoom] = useState(1);
+
   // Grid snapping functionality
   const { 
     gridConfig, 
@@ -238,8 +241,19 @@ export default function EditorCanvas() {
   // Use the canvas dimensions hook
   const { dimensions, containerRef } = useCanvasDimensions();
 
-  // Canvas zoom state
-  const [canvasZoom, setCanvasZoom] = useState(1);
+  // Initialize timeline subscriptions on mount
+  useEffect(() => {
+    initializeSubscriptions();
+    return () => {
+      cleanupSubscriptions();
+    };
+  }, [initializeSubscriptions, cleanupSubscriptions]);
+
+  // Sync elements and groups with timeline store
+  useEffect(() => {
+    setElements(canvasObjects);
+    setTimelineGroups(groups);
+  }, [canvasObjects, groups, setElements, setTimelineGroups]);
 
   // Auto-center the scroll view when dimensions are ready
   useEffect(() => {
@@ -403,35 +417,10 @@ export default function EditorCanvas() {
     if (dimensions.width > 0 && canvasObjects.length > 0 && gsapManager) {
       // Small delay to ensure canvas refs are ready
       setTimeout(() => {
-        gsapManager.buildAnimationTimeline(canvasObjects, groups);
+        buildGSAPTimeline();
       }, 10);
     }
-  }, [canvasObjects, groups, dimensions, gsapManager]);
-
-  // Subscribe to time updates
-  useEffect(() => {
-    return timeManager.subscribe(setTimeState);
-  }, [timeManager]);
-
-  // Subscribe to timeline updates
-  useEffect(() => {
-    return timelineManager.subscribe(setTimelineState);
-  }, [timelineManager]);
-
-  // Separate effect for GSAP timeline synchronization - only sync time, not playback state
-  useEffect(() => {
-    return timeManager.subscribe(({ elapsedTime }) => {
-      gsapManager.updateTime(elapsedTime);
-    });
-  }, [timeManager, gsapManager]);
-
-  // Separate effect for GSAP playback state management - only call when isPlaying changes
-  useEffect(() => {
-    gsapManager.handlePlayback(timeState.isPlaying, () => {
-      const currentTime = timeManager.getState().elapsedTime;
-      gsapManager.updateTime(currentTime);
-    });
-  }, [timeState.isPlaying, gsapManager, timeManager]);
+  }, [canvasObjects, groups, dimensions, buildGSAPTimeline]);
 
   // Helper function for calculating element bounds - wrapped in useCallback to avoid dependency issues
   const calculateBounds = useCallback((elements: AnimatedCanvasObject[]): { x: number; y: number; width: number; height: number } => {
@@ -1282,30 +1271,7 @@ export default function EditorCanvas() {
     }
   };
 
-  // Subscribe to time updates
-  useEffect(() => {
-    return timeManager.subscribe(setTimeState);
-  }, [timeManager]);
-
-  // Subscribe to timeline updates
-  useEffect(() => {
-    return timelineManager.subscribe(setTimelineState);
-  }, [timelineManager]);
-
-  // Separate effect for GSAP timeline synchronization - only sync time, not playback state
-  useEffect(() => {
-    return timeManager.subscribe(({ elapsedTime }) => {
-      gsapManager.updateTime(elapsedTime);
-    });
-  }, [timeManager, gsapManager]);
-
-  // Separate effect for GSAP playback state management - only call when isPlaying changes
-  useEffect(() => {
-    gsapManager.handlePlayback(timeState.isPlaying, () => {
-      const currentTime = timeManager.getState().elapsedTime;
-      gsapManager.updateTime(currentTime);
-    });
-  }, [timeState.isPlaying, gsapManager, timeManager]);
+  // Timeline subscriptions are now handled by the timeline store
 
   // Subscribe to selection updates (REMOVED - now using React state)
   // useEffect(() => {
@@ -1541,12 +1507,12 @@ export default function EditorCanvas() {
 
   // Memoize the handlePlayPause function
   const handlePlayPause = useCallback(() => {
-    if (timeState.isPlaying) {
+    if (playback.isPlaying) {
       timeManager.pause();
     } else {
       timeManager.play();
     }
-  }, [timeState.isPlaying, timeManager]);
+  }, [playback.isPlaying, timeManager]);
 
   // Memoize the handleStop function
   const handleStop = useCallback(() => {
@@ -1802,7 +1768,7 @@ export default function EditorCanvas() {
                   lineStartPoint={toolState.lineStartPoint}
                   isLineChaining={toolState.isLineChaining}
                   chainedLineIds={toolState.chainedLineIds}
-                  isPlaying={timeState.isPlaying}
+                  isPlaying={playback.isPlaying}
                   onCopyElement={(elementId) => {
                     // Find the element to copy
                     const elementToCopy = canvasObjects.find(el => el.id === elementId);
@@ -1977,8 +1943,16 @@ export default function EditorCanvas() {
         <Timeline
           elements={canvasObjects.filter(el => !el.isAnimationPath)}
           groups={groups}
-          timelineState={timelineState}
-          timeState={timeState}
+          timelineState={{
+            tracks: [],
+            trackData: tracks,
+            duration: playback.totalDuration,
+            scale: timelineUI.scale
+          }}
+          timeState={{
+            isPlaying: playback.isPlaying,
+            elapsedTime: playback.currentTime
+          }}
           onPlayPause={handlePlayPause}
           onStop={handleStop}
           onAnimationChange={handleAnimationChange}
