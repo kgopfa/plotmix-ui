@@ -22,6 +22,7 @@ import { createNewObject, createTextGroupWithCharacters } from '@/lib/canvas-obj
 import { useCanvasDimensions } from '@/hooks/use-canvas-dimensions';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { ToolType } from '@/types/editor';
+import { useTimelineIntegration } from '@/hooks/use-timeline-integration';
 
 import { useGridSnapping } from '@/hooks/use-grid-snapping';
 import { useElementSnapping } from '@/hooks/use-element-snapping';
@@ -94,6 +95,14 @@ export default function EditorCanvas() {
 
   const canvasRef = useRef<CanvasRef | null>(null);
   const imageFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Timeline store integration
+  const {
+    updateElementAnimation,
+    updateGroupAnimation,
+    setCanvasRef: setTimelineCanvasRef,
+    rebuildTimeline
+  } = useTimelineIntegration();
 
   // Selection manager now handled by React state above
   
@@ -386,12 +395,13 @@ export default function EditorCanvas() {
 
   useEffect(() => {
     gsapManager.setCanvasRef(canvasRef);
+    setTimelineCanvasRef(canvasRef); // Also set for timeline store
 
     // Cleanup on unmount
     return () => {
       gsapManager.clearTimeline();
     };
-  }, [gsapManager]);
+  }, [gsapManager, setTimelineCanvasRef]);
 
   useEffect(() => {
     if (dimensions.width > 0 && canvasObjects.length > 0 && gsapManager) {
@@ -1135,10 +1145,15 @@ export default function EditorCanvas() {
         };
       })
     );
+    
+    // Update timeline store
+    updateElementAnimation(elementId, animationId, update);
+    
     // Use the updated elements for timeline rebuild
     setTimeout(() => {
       setCanvasObjects(currentElements => {
         gsapManager.buildAnimationTimeline(currentElements);
+        rebuildTimeline(); // Also rebuild timeline store
         return currentElements;
       });
     }, 0);
@@ -1167,10 +1182,14 @@ export default function EditorCanvas() {
       // Update timeline with groups
       setTimeout(() => {
         gsapManager.buildAnimationTimeline(canvasObjects, updatedGroups);
+        rebuildTimeline(); // Also rebuild timeline store
       }, 0);
       
       return updatedGroups;
     });
+
+    // Update timeline store
+    updateGroupAnimation(groupId, animationId, update);
   };
 
   const handleInspectorChange = (

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { immer } from 'zustand/middleware/immer';
+import { produce } from 'immer';
 import { useShallow } from 'zustand/react/shallow';
 import { AnimatedCanvasObject, CanvasGroup, ElementAnimation } from '@/types/canvas';
 
@@ -85,7 +85,7 @@ interface CanvasActions {
 type CanvasStore = CanvasState & CanvasActions;
 
 export const useCanvasStore = create<CanvasStore>()(
-  immer((set, get) => ({
+  (set, get) => ({
     // Initial state
     elements: [],
     groups: [],
@@ -98,7 +98,7 @@ export const useCanvasStore = create<CanvasStore>()(
 
     // Element operations
     addElement: (element) => {
-      set((state) => {
+      set(produce((state) => {
         state.elements.push(element);
         
         // Auto-create default group if element doesn't have one
@@ -118,39 +118,39 @@ export const useCanvasStore = create<CanvasStore>()(
           state.groups.push(defaultGroup);
           
           // Update element with group ID
-          const addedElement = state.elements.find(el => el.id === element.id);
+          const addedElement = state.elements.find((el: AnimatedCanvasObject) => el.id === element.id);
           if (addedElement) {
             addedElement.groupId = defaultGroup.id;
           }
         }
-      });
+      }));
     },
 
     updateElement: (id, updates) => {
-      set((state) => {
-        const element = state.elements.find(el => el.id === id);
+      set(produce((state) => {
+        const element = state.elements.find((el: AnimatedCanvasObject) => el.id === id);
         if (element) {
           Object.assign(element, updates);
         }
-      });
+      }));
     },
 
     removeElement: (id) => {
-      set((state) => {
+      set(produce((state) => {
         // Remove element from elements array
-        state.elements = state.elements.filter(el => el.id !== id);
+        state.elements = state.elements.filter((el: AnimatedCanvasObject) => el.id !== id);
         
         // Remove element from any groups and clean up empty groups
-        state.groups = state.groups.map(group => ({
+        state.groups = state.groups.map((group: CanvasGroup) => ({
           ...group,
           elementIds: group.elementIds.filter(elementId => elementId !== id)
-        })).filter(group => group.elementIds.length > 0 || !group.isDefaultGroup);
-      });
+        })).filter((group: CanvasGroup) => group.elementIds.length > 0 || !group.isDefaultGroup);
+      }));
     },
 
     duplicateElement: (id) => {
-      set((state) => {
-        const element = state.elements.find(el => el.id === id);
+      set(produce((state) => {
+        const element = state.elements.find((el: AnimatedCanvasObject) => el.id === id);
         if (element) {
           const duplicatedElement: AnimatedCanvasObject = {
             ...element,
@@ -158,7 +158,7 @@ export const useCanvasStore = create<CanvasStore>()(
             name: `${element.name} Copy`,
             x: element.x + 20,
             y: element.y + 20,
-            animations: element.animations.map(anim => ({
+            animations: element.animations.map((anim: ElementAnimation) => ({
               ...anim,
               id: crypto.randomUUID()
             }))
@@ -181,78 +181,78 @@ export const useCanvasStore = create<CanvasStore>()(
           state.groups.push(newGroup);
           duplicatedElement.groupId = newGroup.id;
         }
-      });
+      }));
     },
 
     moveElement: (id, position) => {
-      set((state) => {
-        const element = state.elements.find(el => el.id === id);
+      set(produce((state) => {
+        const element = state.elements.find((el: AnimatedCanvasObject) => el.id === id);
         if (element) {
           element.x = position.x;
           element.y = position.y;
         }
-      });
+      }));
     },
 
     resizeElement: (id, size) => {
-      set((state) => {
-        const element = state.elements.find(el => el.id === id);
+      set(produce((state) => {
+        const element = state.elements.find((el: AnimatedCanvasObject) => el.id === id);
         if (element) {
           element.width = size.width;
           element.height = size.height;
         }
-      });
+      }));
     },
 
     rotateElement: (id, rotation) => {
-      set((state) => {
-        const element = state.elements.find(el => el.id === id);
+      set(produce((state) => {
+        const element = state.elements.find((el: AnimatedCanvasObject) => el.id === id);
         if (element) {
           element.rotation = rotation;
         }
-      });
+      }));
     },
 
     setElementVisibility: (id, visible) => {
-      set((state) => {
-        const element = state.elements.find(el => el.id === id);
+      set(produce((state) => {
+        const element = state.elements.find((el: AnimatedCanvasObject) => el.id === id);
         if (element) {
           element.visible = visible;
         }
-      });
+      }));
     },
 
     // Group operations
     addGroup: (group) => {
-      set((state) => {
+      set(produce((state) => {
         state.groups.push(group);
-      });
+      }));
     },
 
     updateGroup: (id, updates) => {
-      set((state) => {
-        const group = state.groups.find(g => g.id === id);
+      set(produce((state) => {
+        const group = state.groups.find((g: CanvasGroup) => g.id === id);
         if (group) {
           Object.assign(group, updates);
         }
-      });
+      }));
     },
 
     removeGroup: (id) => {
-      set((state) => {
+      set(produce((state) => {
         // Remove group from groups array
-        state.groups = state.groups.filter(g => g.id !== id);
+        state.groups = state.groups.filter((g: CanvasGroup) => g.id !== id);
         
         // Update elements to remove group reference
-        state.elements = state.elements.map(el => 
+        state.elements = state.elements.map((el: AnimatedCanvasObject) => 
           el.groupId === id ? { ...el, groupId: undefined } : el
         );
-      });
+      }));
     },
 
     moveGroup: (id, position) => {
-      set((state) => {
-        const group = state.groups.find(g => g.id === id);
+      set(produce((state) => {
+        const group = state.groups.find((g: CanvasGroup) => g.id === id);
         if (group) {
           const deltaX = position.x - group.x;
           const deltaY = position.y - group.y;
@@ -261,61 +261,61 @@ export const useCanvasStore = create<CanvasStore>()(
           group.y = position.y;
           
           // Move all elements in the group
-          group.elementIds.forEach(elementId => {
-            const element = state.elements.find(el => el.id === elementId);
+          group.elementIds.forEach((elementId: string) => {
+            const element = state.elements.find((el: AnimatedCanvasObject) => el.id === elementId);
             if (element) {
               element.x += deltaX;
               element.y += deltaY;
             }
           });
         }
-      });
+      }));
     },
 
     setGroupVisibility: (id, visible) => {
-      set((state) => {
-        const group = state.groups.find(g => g.id === id);
+      set(produce((state) => {
+        const group = state.groups.find((g: CanvasGroup) => g.id === id);
         if (group) {
           group.visible = visible;
           
           // Update visibility of all elements in the group
-          group.elementIds.forEach(elementId => {
-            const element = state.elements.find(el => el.id === elementId);
+          group.elementIds.forEach((elementId: string) => {
+            const element = state.elements.find((el: AnimatedCanvasObject) => el.id === elementId);
             if (element) {
               element.visible = visible;
             }
           });
         }
-      });
+      }));
     },
 
     // Element-Group relationship operations
     addElementsToGroup: (elementIds, groupId) => {
-      set((state) => {
-        const group = state.groups.find(g => g.id === groupId);
+      set(produce((state) => {
+        const group = state.groups.find((g: CanvasGroup) => g.id === groupId);
         if (group) {
-          elementIds.forEach(elementId => {
+          elementIds.forEach((elementId: string) => {
             if (!group.elementIds.includes(elementId)) {
               group.elementIds.push(elementId);
             }
             
-            const element = state.elements.find(el => el.id === elementId);
+            const element = state.elements.find((el: AnimatedCanvasObject) => el.id === elementId);
             if (element) {
               element.groupId = groupId;
             }
           });
         }
-      });
+      }));
     },
 
     removeElementsFromGroup: (elementIds, groupId) => {
-      set((state) => {
-        const group = state.groups.find(g => g.id === groupId);
+      set(produce((state) => {
+        const group = state.groups.find((g: CanvasGroup) => g.id === groupId);
         if (group) {
-          group.elementIds = group.elementIds.filter(id => !elementIds.includes(id));
+          group.elementIds = group.elementIds.filter((id: string) => !elementIds.includes(id));
           
-          elementIds.forEach(elementId => {
-            const element = state.elements.find(el => el.id === elementId);
+          elementIds.forEach((elementId: string) => {
+            const element = state.elements.find((el: AnimatedCanvasObject) => el.id === elementId);
             if (element) {
               element.groupId = undefined;
             }
@@ -323,15 +323,15 @@ export const useCanvasStore = create<CanvasStore>()(
           
           // Remove group if it becomes empty and is a default group
           if (group.elementIds.length === 0 && group.isDefaultGroup) {
-            state.groups = state.groups.filter(g => g.id !== groupId);
+            state.groups = state.groups.filter((g: CanvasGroup) => g.id !== groupId);
           }
         }
-      });
+      }));
     },
 
     createGroupFromElements: (elementIds, groupOptions = {}) => {
       const state = get();
-      const elements = elementIds.map(id => state.elements.find(el => el.id === id)).filter(Boolean) as AnimatedCanvasObject[];
+      const elements = elementIds.map((id: string) => state.elements.find((el: AnimatedCanvasObject) => el.id === id)).filter(Boolean) as AnimatedCanvasObject[];
       
       if (elements.length === 0) {
         throw new Error('No valid elements found for grouping');
@@ -362,7 +362,7 @@ export const useCanvasStore = create<CanvasStore>()(
       
       const newGroup: CanvasGroup = {
         id: crypto.randomUUID(),
-        name: `Group ${state.groups.filter(g => !g.isDefaultGroup).length + 1}`,
+        name: `Group ${state.groups.filter((g: CanvasGroup) => !g.isDefaultGroup).length + 1}`,
         elementIds: elementIds,
         x: centerX,
         y: centerY,
@@ -374,36 +374,36 @@ export const useCanvasStore = create<CanvasStore>()(
         ...groupOptions
       };
       
-      set((state) => {
+      set(produce((state) => {
         // Add the new group
         state.groups.push(newGroup);
         
         // Update elements to reference the new group
-        elementIds.forEach(elementId => {
-          const element = state.elements.find(el => el.id === elementId);
+        elementIds.forEach((elementId: string) => {
+          const element = state.elements.find((el: AnimatedCanvasObject) => el.id === elementId);
           if (element) {
             element.groupId = newGroup.id;
           }
         });
         
         // Remove old default groups for these elements
-        state.groups = state.groups.filter(group => {
+        state.groups = state.groups.filter((group: CanvasGroup) => {
           if (!group.isDefaultGroup) return true;
-          const hasElementInNewGroup = group.elementIds.some(id => elementIds.includes(id));
+          const hasElementInNewGroup = group.elementIds.some((id: string) => elementIds.includes(id));
           return !hasElementInNewGroup;
         });
-      });
+      }));
       
       return newGroup;
     },
 
     ungroupElements: (groupId) => {
-      set((state) => {
-        const group = state.groups.find(g => g.id === groupId);
+      set(produce((state) => {
+        const group = state.groups.find((g: CanvasGroup) => g.id === groupId);
         if (group) {
           // Remove group reference from elements and create individual default groups
-          group.elementIds.forEach(elementId => {
-            const element = state.elements.find(el => el.id === elementId);
+          group.elementIds.forEach((elementId: string) => {
+            const element = state.elements.find((el: AnimatedCanvasObject) => el.id === elementId);
             if (element) {
               element.groupId = undefined;
               
@@ -426,26 +426,26 @@ export const useCanvasStore = create<CanvasStore>()(
           });
           
           // Remove the original group
-          state.groups = state.groups.filter(g => g.id !== groupId);
+          state.groups = state.groups.filter((g: CanvasGroup) => g.id !== groupId);
         }
-      });
+      }));
     },
 
     // Animation operations
     addElementAnimation: (elementId, animation) => {
-      set((state) => {
-        const element = state.elements.find(el => el.id === elementId);
+      set(produce((state) => {
+        const element = state.elements.find((el: AnimatedCanvasObject) => el.id === elementId);
         if (element) {
           element.animations.push(animation);
         }
-      });
+      }));
     },
 
     updateElementAnimation: (elementId, animationId, updates) => {
-      set((state) => {
-        const element = state.elements.find(el => el.id === elementId);
+      set(produce((state) => {
+        const element = state.elements.find((el: AnimatedCanvasObject) => el.id === elementId);
         if (element) {
-          const animation = element.animations.find(anim => anim.id === animationId);
+          const animation = element.animations.find((anim: ElementAnimation) => anim.id === animationId);
           if (animation) {
             Object.assign(animation, updates);
             if (updates.properties) {
@@ -453,32 +453,32 @@ export const useCanvasStore = create<CanvasStore>()(
             }
           }
         }
-      });
+      }));
     },
 
     removeElementAnimation: (elementId, animationId) => {
-      set((state) => {
-        const element = state.elements.find(el => el.id === elementId);
+      set(produce((state) => {
+        const element = state.elements.find((el: AnimatedCanvasObject) => el.id === elementId);
         if (element) {
-          element.animations = element.animations.filter(anim => anim.id !== animationId);
+          element.animations = element.animations.filter((anim: ElementAnimation) => anim.id !== animationId);
         }
-      });
+      }));
     },
 
     addGroupAnimation: (groupId, animation) => {
-      set((state) => {
-        const group = state.groups.find(g => g.id === groupId);
+      set(produce((state) => {
+        const group = state.groups.find((g: CanvasGroup) => g.id === groupId);
         if (group) {
           group.animations.push(animation);
         }
-      });
+      }));
     },
 
     updateGroupAnimation: (groupId, animationId, updates) => {
-      set((state) => {
-        const group = state.groups.find(g => g.id === groupId);
+      set(produce((state) => {
+        const group = state.groups.find((g: CanvasGroup) => g.id === groupId);
         if (group) {
-          const animation = group.animations.find(anim => anim.id === animationId);
+          const animation = group.animations.find((anim: ElementAnimation) => anim.id === animationId);
           if (animation) {
             Object.assign(animation, updates);
             if (updates.properties) {
@@ -486,40 +486,40 @@ export const useCanvasStore = create<CanvasStore>()(
             }
           }
         }
-      });
+      }));
     },
 
     removeGroupAnimation: (groupId, animationId) => {
-      set((state) => {
-        const group = state.groups.find(g => g.id === groupId);
+      set(produce((state) => {
+        const group = state.groups.find((g: CanvasGroup) => g.id === groupId);
         if (group) {
-          group.animations = group.animations.filter(anim => anim.id !== animationId);
+          group.animations = group.animations.filter((anim: ElementAnimation) => anim.id !== animationId);
         }
-      });
+      }));
     },
 
     // Bulk operations
     updateMultipleElements: (updates) => {
-      set((state) => {
+      set(produce((state) => {
         updates.forEach(({ id, updates: elementUpdates }) => {
-          const element = state.elements.find(el => el.id === id);
+          const element = state.elements.find((el: AnimatedCanvasObject) => el.id === id);
           if (element) {
             Object.assign(element, elementUpdates);
           }
         });
-      });
+      }));
     },
 
     moveMultipleElements: (movements) => {
-      set((state) => {
+      set(produce((state) => {
         movements.forEach(({ id, x, y }) => {
-          const element = state.elements.find(el => el.id === id);
+          const element = state.elements.find((el: AnimatedCanvasObject) => el.id === id);
           if (element) {
             element.x = x;
             element.y = y;
           }
         });
-      });
+      }));
     },
 
     // Utility operations
@@ -557,48 +557,48 @@ export const useCanvasStore = create<CanvasStore>()(
 
     // State management
     setElements: (elements) => {
-      set((state) => {
+      set(produce((state) => {
         state.elements = elements;
-      });
+      }));
     },
 
     setGroups: (groups) => {
-      set((state) => {
+      set(produce((state) => {
         state.groups = groups;
-      });
+      }));
     },
 
     clearCanvas: () => {
-      set((state) => {
+      set(produce((state) => {
         state.elements = [];
         state.groups = [];
         state.pendingOperations.clear();
-      });
+      }));
     },
 
     // Optimistic updates
     startOptimisticOperation: (operationId) => {
-      set((state) => {
+      set(produce((state) => {
         state.pendingOperations.add(operationId);
-      });
+      }));
     },
 
     completeOptimisticOperation: (operationId) => {
-      set((state) => {
+      set(produce((state) => {
         state.pendingOperations.delete(operationId);
-      });
+      }));
     },
 
     rollbackOptimisticOperation: (operationId) => {
-      set((state) => {
+      set(produce((state) => {
         state.pendingOperations.delete(operationId);
         // TODO: Implement rollback logic based on operation type
-      });
+      }));
     },
 
     // History operations (for future enhancement)
     saveSnapshot: () => {
-      set((state) => {
+      set(produce((state) => {
         const snapshot = {
           elements: JSON.parse(JSON.stringify(state.elements)),
           groups: JSON.parse(JSON.stringify(state.groups))
@@ -610,11 +610,11 @@ export const useCanvasStore = create<CanvasStore>()(
         if (state.history.past.length > 50) {
           state.history.past.shift();
         }
-      });
+      }));
     },
 
     undo: () => {
-      set((state) => {
+      set(produce((state) => {
         if (state.history.past.length > 0) {
           const current = {
             elements: JSON.parse(JSON.stringify(state.elements)),
@@ -626,11 +626,11 @@ export const useCanvasStore = create<CanvasStore>()(
           state.elements = previous.elements;
           state.groups = previous.groups;
         }
-      });
+      }));
     },
 
     redo: () => {
-      set((state) => {
+      set(produce((state) => {
         if (state.history.future.length > 0) {
           const current = {
             elements: JSON.parse(JSON.stringify(state.elements)),
@@ -642,7 +642,7 @@ export const useCanvasStore = create<CanvasStore>()(
           state.elements = next.elements;
           state.groups = next.groups;
         }
-      });
+      }));
     },
 
     canUndo: () => {
@@ -652,7 +652,7 @@ export const useCanvasStore = create<CanvasStore>()(
     canRedo: () => {
       return get().history.future.length > 0;
     }
-  }))
+  })
 );
 
 // Export utility hooks for common operations
