@@ -1,54 +1,230 @@
 import { useEffect } from 'react';
 import { AnimatedCanvasObject } from '@/types/canvas';
-import { ToolType } from '@/types/editor';
+import { useUIStore, useKeyboardShortcutsStore } from '@/stores/useUIStore';
+import { useSelectionStore } from '@/stores/useSelectionStore';
+import { useCanvasOperations } from '@/stores/useCanvasStore';
 
 interface UseKeyboardShortcutsProps {
-  selectedElements: AnimatedCanvasObject[];
-  onDeleteElement: (elementId: string) => void;
-  onToolChange?: (tool: ToolType) => void;
   onSelectAll?: () => void;
-  isLineChaining?: boolean;
-  onExitLineChaining?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  onCopy?: () => void;
+  onPaste?: () => void;
+  onDuplicate?: () => void;
+  onGroup?: () => void;
+  onUngroup?: () => void;
 }
 
-export function useKeyboardShortcuts({ 
-  selectedElements, 
-  onDeleteElement,
-  onToolChange,
+export function useKeyboardShortcuts({
   onSelectAll,
-  isLineChaining = false,
-  onExitLineChaining
-}: UseKeyboardShortcutsProps) {
+  onUndo,
+  onRedo,
+  onCopy,
+  onPaste,
+  onDuplicate,
+  onGroup,
+  onUngroup,
+}: UseKeyboardShortcutsProps = {}) {
+  const { executeShortcut } = useKeyboardShortcutsStore();
+  const { selectedElements } = useSelectionStore();
+  const { removeElement } = useCanvasOperations();
+  const toolState = useUIStore((state) => state.tools);
+  const { setLineChaining, setActiveTool, togglePathMode } = useUIStore();
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if we're in an input field
+      // Ignore if we're in an input field or textarea
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
         return;
       }
 
-      // Select All (Ctrl+A / Cmd+A)
-      if ((e.metaKey || e.ctrlKey) && e.key === 'a' && onSelectAll) {
-        e.preventDefault();
-        onSelectAll();
+      // First try to execute shortcuts from the UI store
+      const handled = executeShortcut(e);
+      if (handled) {
         return;
       }
 
-      // Delete selected elements
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedElements.length > 0) {
-        selectedElements.forEach(element => onDeleteElement(element.id));
-      }
+      // Handle additional shortcuts not in the basic UI store
+      const isCtrl = e.ctrlKey || e.metaKey;
+      const isShift = e.shiftKey;
 
-      // Escape to exit line chaining mode or switch to select tool
-      if (e.key === 'Escape') {
-        if (isLineChaining && onExitLineChaining) {
-          onExitLineChaining();
-        } else if (onToolChange) {
-          onToolChange('select');
-        }
+      switch (e.key.toLowerCase()) {
+        case 'a':
+          if (isCtrl && onSelectAll) {
+            e.preventDefault();
+            onSelectAll();
+          }
+          break;
+
+        case 'z':
+          if (isCtrl && !isShift && onUndo) {
+            e.preventDefault();
+            onUndo();
+          } else if (isCtrl && isShift && onRedo) {
+            e.preventDefault();
+            onRedo();
+          }
+          break;
+
+        case 'y':
+          if (isCtrl && onRedo) {
+            e.preventDefault();
+            onRedo();
+          }
+          break;
+
+        case 'c':
+          if (isCtrl && onCopy && selectedElements.length > 0) {
+            e.preventDefault();
+            onCopy();
+          }
+          break;
+
+        case 'v':
+          if (isCtrl && onPaste) {
+            e.preventDefault();
+            onPaste();
+          }
+          break;
+
+        case 'd':
+          if (isCtrl && onDuplicate && selectedElements.length > 0) {
+            e.preventDefault();
+            onDuplicate();
+          }
+          break;
+
+        case 'g':
+          if (isCtrl && selectedElements.length > 1) {
+            e.preventDefault();
+            if (isShift && onUngroup) {
+              onUngroup();
+            } else if (onGroup) {
+              onGroup();
+            }
+          }
+          break;
+
+        case 'delete':
+        case 'backspace':
+          if (selectedElements.length > 0) {
+            e.preventDefault();
+            selectedElements.forEach((element: AnimatedCanvasObject) => {
+              removeElement(element.id);
+            });
+          }
+          break;
+
+        case 'escape':
+          e.preventDefault();
+          if (toolState.isLineChaining) {
+            setLineChaining(false);
+          } else {
+            setActiveTool('select');
+          }
+          if (toolState.isPathMode) {
+            togglePathMode();
+          }
+          break;
+
+        // Tool shortcuts
+        case '1':
+          if (!isCtrl) {
+            e.preventDefault();
+            setActiveTool('select');
+          }
+          break;
+        case '2':
+          if (!isCtrl) {
+            e.preventDefault();
+            setActiveTool('rectangle');
+          }
+          break;
+        case '3':
+          if (!isCtrl) {
+            e.preventDefault();
+            setActiveTool('circle');
+          }
+          break;
+        case '4':
+          if (!isCtrl) {
+            e.preventDefault();
+            setActiveTool('triangle');
+          }
+          break;
+        case '5':
+          if (!isCtrl) {
+            e.preventDefault();
+            setActiveTool('line');
+          }
+          break;
+        case '6':
+          if (!isCtrl) {
+            e.preventDefault();
+            setActiveTool('text');
+          }
+          break;
+
+        // Arrow keys for nudging selected elements
+        case 'arrowup':
+        case 'arrowdown':
+        case 'arrowleft':
+        case 'arrowright':
+          if (selectedElements.length > 0) {
+            e.preventDefault();
+            const nudgeDistance = isShift ? 10 : 1;
+            const dx = e.key === 'ArrowLeft' ? -nudgeDistance : e.key === 'ArrowRight' ? nudgeDistance : 0;
+            const dy = e.key === 'ArrowUp' ? -nudgeDistance : e.key === 'ArrowDown' ? nudgeDistance : 0;
+            
+            // This would need to be connected to canvas update logic
+            console.log(`Nudge elements by dx:${dx}, dy:${dy}`);
+          }
+          break;
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [selectedElements, onDeleteElement, onToolChange, onSelectAll, isLineChaining, onExitLineChaining]);
+  }, [
+    executeShortcut,
+    selectedElements,
+    removeElement,
+    toolState.isLineChaining,
+    toolState.isPathMode,
+    setLineChaining,
+    setActiveTool,
+    togglePathMode,
+    onSelectAll,
+    onUndo,
+    onRedo,
+    onCopy,
+    onPaste,
+    onDuplicate,
+    onGroup,
+    onUngroup,
+  ]);
+
+  const { getShortcutByAction } = useKeyboardShortcutsStore();
+
+  // Return utility functions for checking shortcuts
+  return {
+    // Check if a specific shortcut is currently active
+    isShortcutActive: (action: string) => {
+      return getShortcutByAction(action) !== undefined;
+    },
+    
+    // Get shortcut display text for UI
+    getShortcutDisplay: (action: string): string => {
+      const shortcut = getShortcutByAction(action);
+      if (!shortcut) return '';
+      
+      let display = '';
+      if (shortcut.ctrlKey) display += 'Ctrl+';
+      if (shortcut.metaKey) display += 'Cmd+';
+      if (shortcut.shiftKey) display += 'Shift+';
+      display += shortcut.key;
+      
+      return display;
+    },
+  };
 } 

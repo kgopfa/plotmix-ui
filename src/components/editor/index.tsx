@@ -21,7 +21,6 @@ import { FederatedPointerEvent, Container } from 'pixi.js';
 import type { CanvasRef } from './canvas';
 import { createNewObject, createTextGroupWithCharacters } from '@/lib/canvas-object-factory';
 import { useCanvasDimensions } from '@/hooks/use-canvas-dimensions';
-import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { ToolType } from '@/types/editor';
 import { useTimelineIntegration } from '@/hooks/use-timeline-integration';
 
@@ -29,6 +28,7 @@ import { useGridSnapping } from '@/hooks/use-grid-snapping';
 import { useElementSnapping } from '@/hooks/use-element-snapping';
 import { applyElementSnapping } from '@/utils/element-snapping';
 import { OptionsBar } from './options';
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 
 
 export default function EditorCanvas() {
@@ -347,11 +347,7 @@ export default function EditorCanvas() {
 
   // Helper functions removed - using direct state management
 
-  // Handle keyboard shortcuts
-  const handleDeleteElement = useCallback((elementId: string) => {
-    setCanvasObjects(elements => elements.filter(el => el.id !== elementId));
-    selectElement(null);
-  }, [selectElement]);
+  // Enhanced keyboard shortcuts now handle deletion internally
 
   // Function to exit line chaining mode (for ESC key or tool changes)
   const exitLineChaining = useCallback(() => {
@@ -391,14 +387,7 @@ export default function EditorCanvas() {
     selectAll(selectableElements);
   }, [canvasObjects, selectAll]);
 
-  useKeyboardShortcuts({
-    selectedElements: selectedObjects,
-    onDeleteElement: handleDeleteElement,
-    onToolChange: handleToolChange,
-    onSelectAll: handleSelectAll,
-    isLineChaining: toolState.isLineChaining,
-    onExitLineChaining: exitLineChaining
-  });
+  // Enhanced keyboard shortcuts hook will be called after handlers are defined
 
   useEffect(() => {
     gsapManager.setCanvasRef(canvasRef);
@@ -1613,6 +1602,13 @@ export default function EditorCanvas() {
       })
     );
   }, [canvasObjects, selectedGroups]);
+
+  // Enhanced keyboard shortcuts integration
+  useKeyboardShortcuts({
+    onSelectAll: handleSelectAll,
+    onGroup: handleGroupElements,
+    onUngroup: handleUngroupElements,
+  });
 
   // Update group selection whenever groups or selected objects change
   useEffect(() => {

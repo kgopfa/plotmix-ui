@@ -503,10 +503,18 @@ export const useSnappingActions = () => useUIStore((state) => ({
   setElementSnapTemporarilyDisabled: state.setElementSnapTemporarilyDisabled,
 }));
 
-export const useKeyboardShortcuts = () => useUIStore((state) => ({
-  shortcuts: state.keyboardShortcuts,
-  executeShortcut: state.executeShortcut,
-  registerShortcut: state.registerShortcut,
-  unregisterShortcut: state.unregisterShortcut,
-  getShortcutByAction: state.getShortcutByAction,
-}));
+export const useKeyboardShortcutsStore = () => {
+  const shortcuts = useUIStore((state) => state.keyboardShortcuts);
+  const executeShortcut = useUIStore((state) => state.executeShortcut);
+  const registerShortcut = useUIStore((state) => state.registerShortcut);
+  const unregisterShortcut = useUIStore((state) => state.unregisterShortcut);
+  const getShortcutByAction = useUIStore((state) => state.getShortcutByAction);
+  
+  return {
+    shortcuts,
+    executeShortcut,
+    registerShortcut,
+    unregisterShortcut,
+    getShortcutByAction,
+  };
+};
