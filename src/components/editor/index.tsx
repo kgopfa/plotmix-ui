@@ -6,6 +6,8 @@ import { TimeManager, type TimeManagerState } from '@/lib/time-manager';
 import { TimelineManager } from '@/lib/timeline-manager';
 import { TimelineState } from '@/types/timeline';
 import { useSelectionStore } from '@/stores/useSelectionStore';
+import { useCanvasElements, useCanvasGroups } from '@/stores/useCanvasStore';
+import { useCanvasMigration } from '@/hooks/use-canvas-migration';
 import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
 import { SceneExplorer } from './panels/scene-explorer';
 import { Inspector } from './panels/inspector';
@@ -28,8 +30,17 @@ import { OptionsBar } from './options';
 
 
 export default function EditorCanvas() {
-  const [canvasObjects, setCanvasObjects] = useState<AnimatedCanvasObject[]>([]);
-  const [groups, setGroups] = useState<CanvasGroup[]>([]);
+  // Use canvas store instead of local state
+  const canvasObjects = useCanvasElements();
+  const groups = useCanvasGroups();
+  const {
+    addElement,
+    updateElement,
+    removeElement,
+    updateMultipleElements,
+    setCanvasObjects,
+    setGroups,
+  } = useCanvasMigration();
   
   // Use Zustand store for selection state
   const {
@@ -154,45 +165,37 @@ export default function EditorCanvas() {
   }, []);
 
   const handleElementRotate = (id: string, rotation: number) => {
-    setCanvasObjects(prev => prev.map(el =>
-      el.id === id
-        ? { ...el, rotation }
-        : el
-    ));
+    updateElement(id, { rotation });
   };
 
   const handleTextChange = (id: string, text: string) => {
-    setCanvasObjects(prev => prev.map(el =>
-      el.id === id
-        ? { ...el, text }
-        : el
-    ));
+    updateElement(id, { text });
   };
 
   const handleTextGroupChange = (textGroupId: string, newText: string, characterElements: AnimatedCanvasObject[]) => {
     // Update the textGroup element with new text and characters
-    setCanvasObjects(prev => {
-      const updatedElements = prev.map(el => {
-        if (el.id === textGroupId) {
-          // Update the textGroup element
-          return {
-            ...el,
-            text: newText,
-            characters: newText.split(''),
-            width: characterElements.length > 0 ? Math.max(...characterElements.map(char => char.x)) - Math.min(...characterElements.map(char => char.x)) + (characterElements[0]?.width || 0) : el.width
-          };
-        }
-        return el;
+    const textGroupElement = canvasObjects.find(el => el.id === textGroupId);
+    if (textGroupElement) {
+      const newWidth = characterElements.length > 0 
+        ? Math.max(...characterElements.map(char => char.x)) - Math.min(...characterElements.map(char => char.x)) + (characterElements[0]?.width || 0) 
+        : textGroupElement.width;
+      
+      updateElement(textGroupId, {
+        text: newText,
+        characters: newText.split(''),
+        width: newWidth
       });
+    }
 
-      // Remove old character elements that belong to this textGroup
-      const withoutOldCharacters = updatedElements.filter(el => 
-        !(el.type === 'character' && el.parentTextGroupId === textGroupId)
-      );
+    // Remove old character elements that belong to this textGroup
+    const oldCharacters = canvasObjects.filter(el => 
+      el.type === 'character' && el.parentTextGroupId === textGroupId
+    );
+    
+    oldCharacters.forEach(char => removeElement(char.id));
 
-      // Add new character elements
-      return [...withoutOldCharacters, ...characterElements];
-    });
+    // Add new character elements
+    characterElements.forEach(char => addElement(char));
   };
 
   useEffect(() => {
@@ -861,81 +864,71 @@ export default function EditorCanvas() {
   }, []);
 
   const handleElementDragEnd = (id: string, x: number, y: number) => {
-    setCanvasObjects(prevElements => {
-      const draggedElement = prevElements.find(el => el.id === id);
-      if (!draggedElement) return prevElements;
+    const draggedElement = canvasObjects.find(el => el.id === id);
+    if (!draggedElement) return;
 
-      // Create a temporary element with the new position for snapping calculation
-      const tempElement = { ...draggedElement, x, y };
+    // Create a temporary element with the new position for snapping calculation
+    const tempElement = { ...draggedElement, x, y };
+    
+    // Apply element snapping first (including grid centers), then grid snapping as fallback
+    const elementSnapResult = snapElement(tempElement, canvasObjects, gridConfig);
+    const snappedPos = snapPoint({ x: elementSnapResult.x, y: elementSnapResult.y });
+
+    // Calculate the movement delta
+    const dx = snappedPos.x - draggedElement.x;
+    const dy = snappedPos.y - draggedElement.y;
+
+    // Update the dragged element
+    if (draggedElement.type === 'line' && draggedElement.lineOptions?.points) {
+      updateElement(id, {
+        x: snappedPos.x,
+        y: snappedPos.y,
+        lineOptions: {
+          ...draggedElement.lineOptions,
+          points: {
+            start: {
+              x: draggedElement.lineOptions.points.start.x + dx,
+              y: draggedElement.lineOptions.points.start.y + dy
+            },
+            end: {
+              x: draggedElement.lineOptions.points.end.x + dx,
+              y: draggedElement.lineOptions.points.end.y + dy
+            }
+          }
+        }
+      });
+    } else {
+      updateElement(id, { x: snappedPos.x, y: snappedPos.y });
+    }
+
+    // If this is a textGroup, also move all its character children
+    if (draggedElement.type === 'textGroup') {
+      const characterChildren = canvasObjects.filter(child => 
+        child.type === 'character' && child.parentTextGroupId === draggedElement.id
+      );
       
-      // Apply element snapping first (including grid centers), then grid snapping as fallback
-      const elementSnapResult = snapElement(tempElement, prevElements, gridConfig);
-      const snappedPos = snapPoint({ x: elementSnapResult.x, y: elementSnapResult.y });
-
-      // Calculate the movement delta
-      const dx = snappedPos.x - draggedElement.x;
-      const dy = snappedPos.y - draggedElement.y;
-
-      const updatedElements = prevElements.map((el) => {
-        if (el.id === id) {
-          // Update the dragged element
-          if (el.type === 'line' && el.lineOptions?.points) {
-            return {
-              ...el,
-              x: snappedPos.x,
-              y: snappedPos.y,
-              lineOptions: {
-                ...el.lineOptions,
-                points: {
-                  start: {
-                    x: el.lineOptions.points.start.x + dx,
-                    y: el.lineOptions.points.start.y + dy
-                  },
-                  end: {
-                    x: el.lineOptions.points.end.x + dx,
-                    y: el.lineOptions.points.end.y + dy
-                  }
-                }
-              }
-            };
-          }
-          return { ...el, x: snappedPos.x, y: snappedPos.y };
-        }
-
-        // If this is a textGroup, also move all its character children
-        if (draggedElement.type === 'textGroup') {
-          const characterChildren = prevElements.filter(child => 
-            child.type === 'character' && child.parentTextGroupId === draggedElement.id
-          );
-          
-          // Check if this element is a character child of the dragged textGroup
-          if (characterChildren.some(child => child.id === el.id)) {
-            return { ...el, x: el.x + dx, y: el.y + dy };
-          }
-        }
-
-        return el;
-      });
-
-      // If this is an animation path element, update related animations
-      const movedElement = updatedElements.find(el => el.id === id);
-      if (movedElement?.isAnimationPath) {
-        const elementsWithUpdatedAnimations = updateAnimationsForPathElement(updatedElements, movedElement);
-        // Rebuild timeline after animation path update
-        setTimeout(() => gsapManager.buildAnimationTimeline(elementsWithUpdatedAnimations), 0);
-        return elementsWithUpdatedAnimations;
+      const characterUpdates = characterChildren.map(child => ({
+        id: child.id,
+        updates: { x: child.x + dx, y: child.y + dy }
+      }));
+      
+      if (characterUpdates.length > 0) {
+        updateMultipleElements(characterUpdates);
       }
+    }
 
-      return updatedElements;
-    });
-
-    // Rebuild timeline for regular element moves - use the updated elements
-    setTimeout(() => {
-      setCanvasObjects(currentElements => {
-        gsapManager.buildAnimationTimeline(currentElements);
-        return currentElements;
-      });
-    }, 0);
+    // Handle animation path updates
+    const movedElement = canvasObjects.find(el => el.id === id);
+    if (movedElement?.isAnimationPath) {
+      const elementsWithUpdatedAnimations = updateAnimationsForPathElement(canvasObjects, movedElement);
+      // Rebuild timeline after animation path update
+      setTimeout(() => gsapManager.buildAnimationTimeline(elementsWithUpdatedAnimations), 0);
+    } else {
+      // Rebuild timeline for regular element moves
+      setTimeout(() => {
+        gsapManager.buildAnimationTimeline(canvasObjects);
+      }, 0);
+    }
   };
 
   // Use a ref to track if we're currently dragging to avoid expensive operations
