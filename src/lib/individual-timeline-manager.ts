@@ -56,10 +56,10 @@ export class IndividualTimelineManager {
   constructor(poolSize = 100) {
     this.masterTimeline = gsap.timeline({ paused: true });
     this.timelinePool = new TimelinePool(poolSize);
-    
+
     // Warm up the pool for better initial performance
     this.timelinePool.warmUp(10);
-    
+
     console.log('IndividualTimelineManager initialized with pool size:', poolSize);
   }
 
@@ -72,12 +72,12 @@ export class IndividualTimelineManager {
    */
   updateElementAnimations(elementId: string, animations: ElementAnimation[], allElements: AnimatedCanvasObject[]) {
     const startTime = performance.now();
-    
+
     try {
       // Get shape reference
       const shapeRefs = this.canvasRef?.current?.getShapeRefs();
       const target = shapeRefs?.[elementId];
-      
+
       if (!target && animations.length > 0) {
         console.warn(`No target found for element ${elementId}`);
         return;
@@ -101,7 +101,7 @@ export class IndividualTimelineManager {
 
       // Create new timeline from pool
       const timeline = this.timelinePool.getTimeline(elementId);
-      
+
       // Special handling for textGroup animations
       if (element.type === 'textGroup' && shapeRefs) {
         this.addTextGroupAnimations(timeline, element, animations, shapeRefs);
@@ -109,7 +109,7 @@ export class IndividualTimelineManager {
         // Add regular element animations
         animations.forEach(animation => {
           const config = generateAnimationConfig(element, animation, target!, allElements);
-          this.addAnimationToTimeline(timeline, config, target!, element);
+          this.addAnimationToTimeline(timeline, config, target!);
         });
       }
 
@@ -120,9 +120,9 @@ export class IndividualTimelineManager {
 
       const duration = performance.now() - startTime;
       this.totalOperations++;
-      
+
       console.log(`Updated element ${elementId} with ${animations.length} animations in ${duration.toFixed(2)}ms`);
-      
+
     } catch (error) {
       console.error(`Error updating element ${elementId}:`, error);
       this.handleTimelineError(elementId);
@@ -134,12 +134,12 @@ export class IndividualTimelineManager {
    */
   updateGroupAnimations(groupId: string, animations: ElementAnimation[], group: CanvasGroup) {
     const startTime = performance.now();
-    
+
     try {
       // Get group container
       const groupContainers = this.canvasRef?.current?.getGroupContainers();
       const groupContainer = groupContainers?.[groupId];
-      
+
       if (!groupContainer && animations.length > 0) {
         console.warn(`No group container found for group ${groupId}`);
         return;
@@ -156,7 +156,7 @@ export class IndividualTimelineManager {
 
       // Create new timeline from pool
       const timeline = this.timelinePool.getTimeline(groupId);
-      
+
       // Add group animations
       animations.forEach(animation => {
         const config = generateGroupAnimationConfig(group, animation, [groupContainer!]);
@@ -170,9 +170,9 @@ export class IndividualTimelineManager {
 
       const duration = performance.now() - startTime;
       this.totalOperations++;
-      
+
       console.log(`Updated group ${groupId} with ${animations.length} animations in ${duration.toFixed(2)}ms`);
-      
+
     } catch (error) {
       console.error(`Error updating group ${groupId}:`, error);
       this.handleTimelineError(groupId);
@@ -183,13 +183,13 @@ export class IndividualTimelineManager {
    * Batch update for performance
    */
   batchUpdateElements(updates: Array<{
-    elementId: string, 
+    elementId: string,
     animations: ElementAnimation[]
   }>, allElements: AnimatedCanvasObject[]) {
-    
+
     console.log(`Starting batch update for ${updates.length} elements`);
     const batchStartTime = performance.now();
-    
+
     // Temporarily pause master timeline during batch updates
     const wasPlaying = !this.masterTimeline.paused();
     if (wasPlaying) this.masterTimeline.pause();
@@ -216,7 +216,7 @@ export class IndividualTimelineManager {
   }>) {
     console.log(`Starting batch group update for ${updates.length} groups`);
     const batchStartTime = performance.now();
-    
+
     const wasPlaying = !this.masterTimeline.paused();
     if (wasPlaying) this.masterTimeline.pause();
 
@@ -262,8 +262,8 @@ export class IndividualTimelineManager {
    * Add text group animations (special handling for character children)
    */
   private addTextGroupAnimations(
-    timeline: gsap.core.Timeline, 
-    element: AnimatedCanvasObject, 
+    timeline: gsap.core.Timeline,
+    element: AnimatedCanvasObject,
     animations: ElementAnimation[],
     shapeRefs: Record<string, any>
   ) {
@@ -280,7 +280,7 @@ export class IndividualTimelineManager {
         if (!target || target.destroyed || !target.parent) return;
 
         const config = generateAnimationConfig(element, animation, target, [element]);
-        this.addAnimationToTimeline(timeline, config, target, element);
+        this.addAnimationToTimeline(timeline, config, target);
       } else {
         // Apply to each character child
         characterChildren.forEach((character: any) => {
@@ -288,7 +288,7 @@ export class IndividualTimelineManager {
           if (!characterTarget || characterTarget.destroyed || !characterTarget.parent) return;
 
           const config = generateAnimationConfig(element, animation, characterTarget, [element]);
-          this.addAnimationToTimeline(timeline, config, characterTarget, element);
+          this.addAnimationToTimeline(timeline, config, characterTarget);
         });
       }
     });
@@ -299,12 +299,11 @@ export class IndividualTimelineManager {
    */
   private addAnimationToTimeline(
     timeline: gsap.core.Timeline,
-    config: any, 
-    target: any, 
-    element: AnimatedCanvasObject
+    config: any,
+    target: any
   ) {
     if (isPathAnimationConfig(config) || isPolygonAnimationConfig(config)) {
-      this.addPathAnimation(timeline, config, target, element);
+      this.addPathAnimation(timeline, config, target);
     } else if (isColorAnimationConfig(config)) {
       timeline.to(
         config.oldChild,
@@ -368,8 +367,8 @@ export class IndividualTimelineManager {
    */
   private addGroupAnimationToTimeline(
     timeline: gsap.core.Timeline,
-    config: any, 
-    groupContainer: any, 
+    config: any,
+    groupContainer: any,
     animation: ElementAnimation
   ) {
     if (!isGroupAnimationConfig(config)) return;
@@ -436,9 +435,8 @@ export class IndividualTimelineManager {
    */
   private addPathAnimation(
     timeline: gsap.core.Timeline,
-    config: PathAnimationConfig | PolygonAnimationConfig, 
-    target: any, 
-    _element: AnimatedCanvasObject
+    config: PathAnimationConfig | PolygonAnimationConfig,
+    target: any
   ) {
     const pathElement = config.pathElement;
 
@@ -481,7 +479,7 @@ export class IndividualTimelineManager {
   getPerformanceStats(): IndividualTimelineStats {
     const poolStats = this.timelinePool.getPoolStats();
     const totalAnimations = Array.from(this.animationCounts.values()).reduce((sum, count) => sum + count, 0);
-    
+
     return {
       activeElements: this.elementTimelines.size,
       activeGroups: this.groupTimelines.size,
@@ -530,7 +528,7 @@ export class IndividualTimelineManager {
 
   clearTimeline() {
     console.log('Clearing all timelines');
-    
+
     // Clear all element timelines
     this.elementTimelines.forEach((timeline, elementId) => {
       this.timelinePool.releaseTimeline(elementId);
@@ -555,7 +553,7 @@ export class IndividualTimelineManager {
    */
   private handleTimelineError(elementId?: string) {
     console.error('Timeline error detected', elementId ? `for element ${elementId}` : '');
-    
+
     if (elementId) {
       // Clear specific element timeline
       this.removeElementTimeline(elementId);
@@ -579,7 +577,7 @@ export class IndividualTimelineManager {
   generatePerformanceReport(): string {
     const stats = this.getPerformanceStats();
     const poolReport = this.timelinePool.generateReport();
-    
+
     return `
 Individual Timeline Manager Performance Report:
 - Active Element Timelines: ${stats.activeElements}
