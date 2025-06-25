@@ -2,13 +2,12 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { TimeManager } from '@/lib/time-manager';
 import { TimelineManager } from '@/lib/timeline-manager';
 import { useSelectionStore } from '@/stores/useSelectionStore';
 import { useCanvasElements, useCanvasGroups } from '@/stores/useCanvasStore';
 import { useUIStore } from '@/stores/useUIStore';
 import { useTimelineStore, useTimelineSync } from '@/stores/useTimelineStore';
-import { useShallow } from 'zustand/react/shallow';
+
 import { useCanvasMigration } from '@/hooks/use-canvas-migration';
 import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
 import { SceneExplorer } from './panels/scene-explorer';
@@ -69,13 +68,7 @@ export default function EditorCanvas() {
   } = useUIStore();
 
   // Use Timeline store instead of local state
-  const { playback, ui: timelineUI, tracks } = useTimelineStore(
-    useShallow((state) => ({
-      playback: state.playback,
-      ui: state.ui,
-      tracks: state.tracks
-    }))
-  );
+  // Note: Timeline state is now accessed directly by Timeline component
   const { setElements, setGroups: setTimelineGroups } = useTimelineStore();
   const { initializeSubscriptions, cleanupSubscriptions, buildGSAPTimeline } = useTimelineSync();
 
@@ -85,10 +78,7 @@ export default function EditorCanvas() {
     setLeftPanelWidth, 
     setRightPanelWidth, 
     setTimelineHeight,
-    toggleTimelineCollapse,
-    setResizing,
-    toggleLeftPanel,
-    toggleRightPanel
+    setResizing
   } = useUIStore();
   
   // Use UI store for other tool state
@@ -107,24 +97,17 @@ export default function EditorCanvas() {
 
   // Timeline store integration
   const {
-    updateElementAnimation,
-    updateGroupAnimation,
     setCanvasRef: setTimelineCanvasRef,
-    rebuildTimeline
   } = useTimelineIntegration();
 
   // Canvas zoom state - will migrate this to UI store in next iteration
   const [canvasZoom, setCanvasZoom] = useState(1);
 
-  // Grid snapping functionality
+  // Grid snapping functionality - only keep what's needed for canvas operations
   const { 
-    gridConfig, 
-    setGridConfig, 
-    toggleGrid, 
-    toggleSnapEnabled, 
+    gridConfig,
     snapPoint, 
-    snapLine,
-    isSnapTemporarilyDisabled 
+    snapLine
   } = useGridSnapping({
     size: 10,
     enabled: true,
@@ -132,19 +115,13 @@ export default function EditorCanvas() {
     snapThreshold: 8
   });
 
-  // Element snapping functionality
+  // Element snapping functionality - only keep what's needed for canvas operations
   const {
     config: elementSnapConfig,
-    setConfig: setElementSnapConfig,
-    toggleEnabled: toggleElementSnap,
-    toggleGuides: toggleElementSnapGuides,
-    toggleSpacing: toggleElementSpacing,
-    toggleDistribution: toggleElementDistribution,
     snapElement,
     currentGuides: elementSnapGuides,
     setCurrentGuides: setElementSnapGuides,
     clearGuides: clearElementSnapGuides,
-    isSnapTemporarilyDisabled: isElementSnapDisabled
   } = useElementSnapping({
     enabled: true,
     snapThreshold: 10,
@@ -234,8 +211,7 @@ export default function EditorCanvas() {
   }, [panelState.isResizing, handleMouseMove, handleMouseUp]);
   const gsapManager = useMemo(() => new GSAPTimelineManager(), []);
 
-  // Memoize the time manager instance
-  const timeManager = useMemo(() => TimeManager.getInstance(), []);
+  // Memoize the timeline manager instance
   const timelineManager = useMemo(() => TimelineManager.getInstance(), []);
 
   // Use the canvas dimensions hook
@@ -1082,77 +1058,6 @@ export default function EditorCanvas() {
     }, 100); // Debounce expensive operations by 100ms
   };
 
-  const handleAnimationChange = (
-    elementId: string,
-    animationId: string,
-    update: Partial<ElementAnimation>
-  ) => {
-    setCanvasObjects(prev =>
-      prev.map(el => {
-        if (el.id !== elementId) return el;
-        return {
-          ...el,
-          animations: el.animations.map(anim => {
-            if (anim.id !== animationId) return anim;
-            return {
-              ...anim,
-              ...update,
-              properties: update.properties ? {
-                ...anim.properties,
-                ...update.properties
-              } : anim.properties
-            };
-          })
-        };
-      })
-    );
-    
-    // Update timeline store
-    updateElementAnimation(elementId, animationId, update);
-    
-    // Use the updated elements for timeline rebuild
-    setTimeout(() => {
-      setCanvasObjects(currentElements => {
-        gsapManager.buildAnimationTimeline(currentElements);
-        rebuildTimeline(); // Also rebuild timeline store
-        return currentElements;
-      });
-    }, 0);
-  };
-
-  const handleGroupAnimationChange = (
-    groupId: string,
-    animationId: string,
-    update: { startTime: number; duration: number }
-  ) => {
-    setGroups(prevGroups => {
-      const updatedGroups = prevGroups.map(group => {
-        if (group.id === groupId) {
-          return {
-            ...group,
-            animations: group.animations.map(anim =>
-              anim.id === animationId
-                ? { ...anim, startTime: update.startTime, duration: update.duration }
-                : anim
-            )
-          };
-        }
-        return group;
-      });
-      
-      // Update timeline with groups
-      setTimeout(() => {
-        gsapManager.buildAnimationTimeline(canvasObjects, updatedGroups);
-        rebuildTimeline(); // Also rebuild timeline store
-      }, 0);
-      
-      return updatedGroups;
-    });
-
-    // Update timeline store
-    updateGroupAnimation(groupId, animationId, update);
-  };
-
   const handleInspectorChange = (
     prop: string,
     value: string | number | boolean | ElementAnimation[] | NonNullable<AnimatedCanvasObject['lineOptions']> | {
@@ -1482,20 +1387,6 @@ export default function EditorCanvas() {
     }
   }, [canvasObjects]);
 
-  // Memoize the handlePlayPause function
-  const handlePlayPause = useCallback(() => {
-    if (playback.isPlaying) {
-      timeManager.pause();
-    } else {
-      timeManager.play();
-    }
-  }, [playback.isPlaying, timeManager]);
-
-  // Memoize the handleStop function
-  const handleStop = useCallback(() => {
-    timeManager.stop();
-  }, [timeManager]);
-
   // Simplified element addition handler
   const handleAddElement = useCallback((element: AnimatedCanvasObject) => {
     setCanvasObjects(prev => [...prev, element]);
@@ -1577,14 +1468,7 @@ export default function EditorCanvas() {
     <div className="h-screen w-screen flex flex-col">
       {/* Options Bar */}
       <OptionsBar
-        selectedObjects={selectedObjects}
-        selectedGroups={selectedGroups}
-        groups={groups}
         canvasZoom={canvasZoom}
-        leftPanelVisible={panelState.leftPanelVisible}
-        rightPanelVisible={panelState.rightPanelVisible}
-        onToggleLeftPanel={() => toggleLeftPanel()}
-        onToggleRightPanel={() => toggleRightPanel()}
         onImageImport={() => {
           if (imageFileInputRef.current) {
             imageFileInputRef.current.click();
@@ -1611,23 +1495,6 @@ export default function EditorCanvas() {
         }}
         onGroupElements={handleGroupElements}
         onUngroupElements={handleUngroupElements}
-        gridConfig={gridConfig}
-        onToggleGrid={toggleGrid}
-        onToggleGridSnap={toggleSnapEnabled}
-        onGridSizeChange={(size: number) => setGridConfig({ size })}
-        elementSnapConfig={elementSnapConfig}
-        onToggleElementSnap={toggleElementSnap}
-        onToggleGuides={toggleElementSnapGuides}
-        onToggleSpacing={toggleElementSpacing}
-        onToggleDistribution={toggleElementDistribution}
-        onSnapThresholdChange={(threshold: number) => setElementSnapConfig({ snapThreshold: threshold })}
-        isGridSnapTemporarilyDisabled={isSnapTemporarilyDisabled}
-        isElementSnapTemporarilyDisabled={isElementSnapDisabled}
-        isPathMode={toolState.isPathMode}
-        onExitPathMode={() => {
-          togglePathMode();
-          setAnimationTarget(null);
-        }}
       />
 
       {/* Main Body - Full height canvas with floating panels */}
@@ -1745,7 +1612,7 @@ export default function EditorCanvas() {
                   lineStartPoint={toolState.lineStartPoint}
                   isLineChaining={toolState.isLineChaining}
                   chainedLineIds={toolState.chainedLineIds}
-                  isPlaying={playback.isPlaying}
+                  isPlaying={false} // TODO: Connect to timeline store playback state if needed
                   onCopyElement={(elementId) => {
                     // Find the element to copy
                     const elementToCopy = canvasObjects.find(el => el.id === elementId);
@@ -1913,26 +1780,7 @@ export default function EditorCanvas() {
           />
         )}
         
-        <Timeline
-          elements={canvasObjects.filter(el => !el.isAnimationPath)}
-          groups={groups}
-          timelineState={{
-            tracks: [],
-            trackData: tracks,
-            duration: playback.totalDuration,
-            scale: timelineUI.scale
-          }}
-          timeState={{
-            isPlaying: playback.isPlaying,
-            elapsedTime: playback.currentTime
-          }}
-          onPlayPause={handlePlayPause}
-          onStop={handleStop}
-          onAnimationChange={handleAnimationChange}
-          onGroupAnimationChange={handleGroupAnimationChange}
-          isCollapsed={panelState.isTimelineCollapsed}
-          onToggleCollapse={() => toggleTimelineCollapse()}
-        />
+        <Timeline />
       </div>
       
       {/* Hidden file input for image upload - temporarily disabled */}

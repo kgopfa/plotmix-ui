@@ -1,35 +1,46 @@
 import { useRef, useState, useMemo } from 'react';
 import { TimelineTrack } from '@/components/editor/timeline/timeline-track';
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
-import { TimelineState } from '@/types/timeline';
-import { TimeManagerState } from '@/lib/time-manager';
+import { useCanvasElements, useCanvasGroups } from '@/stores/useCanvasStore';
+import { useTimelineStore } from '@/stores/useTimelineStore';
+import { usePanelState, usePanelActions } from '@/stores/useUIStore';
+import { useShallow } from 'zustand/react/shallow';
 
+// Remove all props - Timeline is now self-contained!
+export function Timeline() {
+  // Get data directly from stores
+  const elements = useCanvasElements().filter(el => !el.isAnimationPath);
+  const groups = useCanvasGroups();
+  
+  // Get timeline state and actions
+  const { playback, ui: timelineUI, tracks } = useTimelineStore(
+    useShallow((state) => ({
+      playback: state.playback,
+      ui: state.ui,
+      tracks: state.tracks
+    }))
+  );
+  
+  const { play, pause, stop } = useTimelineStore(
+    useShallow((state) => ({
+      play: state.play,
+      pause: state.pause,
+      stop: state.stop
+    }))
+  );
+  
+  // Get panel state for collapse functionality
+  const { isTimelineCollapsed } = usePanelState();
+  const { toggleTimelineCollapse } = usePanelActions();
+  
+  // Get animation update handlers from canvas store
+  const { updateElement, setGroups } = useTimelineStore(
+    useShallow((state) => ({
+      updateElement: state.updateAnimation, // This will need to be connected to canvas store
+      setGroups: state.setGroups
+    }))
+  );
 
-interface TimelineProps {
-  elements: AnimatedCanvasObject[];
-  groups?: CanvasGroup[];
-  timelineState: TimelineState;
-  timeState: TimeManagerState;
-  onPlayPause: () => void;
-  onStop: () => void;
-  onAnimationChange: (elementId: string, animationId: string, update: { startTime: number; duration: number }) => void;
-  onGroupAnimationChange?: (groupId: string, animationId: string, update: { startTime: number; duration: number }) => void;
-  isCollapsed?: boolean;
-  onToggleCollapse?: () => void;
-}
-
-export function Timeline({
-  elements,
-  groups = [],
-  timelineState,
-  timeState,
-  onPlayPause,
-  onStop,
-  onAnimationChange,
-  onGroupAnimationChange,
-  isCollapsed = false,
-  onToggleCollapse,
-}: TimelineProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [scrollLeft, setScrollLeft] = useState(0);
   const [expandedElements, setExpandedElements] = useState<Set<string>>(new Set());
@@ -57,6 +68,31 @@ export function Timeline({
       }
       return newSet;
     });
+  };
+
+  // Handle play/pause toggle
+  const handlePlayPause = () => {
+    if (playback.isPlaying) {
+      pause();
+    } else {
+      play();
+    }
+  };
+
+  // Handle stop
+  const handleStop = () => {
+    stop();
+  };
+
+  // Handle animation changes (these will need to be connected to the appropriate store actions)
+  const handleAnimationChange = (elementId: string, animationId: string, update: { startTime: number; duration: number }) => {
+    // This will need to be properly connected to canvas store update actions
+    console.log('Animation change:', { elementId, animationId, update });
+  };
+
+  const handleGroupAnimationChange = (groupId: string, animationId: string, update: { startTime: number; duration: number }) => {
+    // This will need to be properly connected to canvas store update actions  
+    console.log('Group animation change:', { groupId, animationId, update });
   };
 
   // Memoize expensive filtering operations for performance
@@ -187,16 +223,16 @@ export function Timeline({
     Array.from({ length: 121 }).map((_, i) => ({
       index: i,
       isMajor: i % 5 === 0,
-      left: i * timelineState.scale,
+      left: i * timelineUI.scale,
       time: formatTime(i)
     })),
-    [timelineState.scale]
+    [timelineUI.scale]
   );
 
   return (
     <div 
       className={`bg-white transition-all duration-200 ${
-        isCollapsed 
+        isTimelineCollapsed 
           ? 'h-8' 
           : 'h-full flex flex-col'
       }`}
@@ -205,28 +241,28 @@ export function Timeline({
       <div className="h-8 border-b border-gray-200 flex items-center px-4 justify-between">
         <div className="flex items-center gap-4">
           <button
-            onClick={onPlayPause}
+            onClick={handlePlayPause}
             className="w-20 h-6 flex items-center justify-center bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
           >
-            {timeState.isPlaying ? 'Pause' : 'Play'}
+            {playback.isPlaying ? 'Pause' : 'Play'}
           </button>
           <button
-            onClick={onStop}
+            onClick={handleStop}
             className="w-20 h-6 flex items-center justify-center bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
           >
             Stop
           </button>
           <div className="text-sm font-mono text-gray-700 w-32">
-            {formatTime(timeState.elapsedTime)}
+            {formatTime(playback.currentTime)}
           </div>
         </div>
         
         <button
-          onClick={onToggleCollapse}
+          onClick={() => toggleTimelineCollapse()}
           className="flex items-center justify-center w-6 h-6 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
-          title={isCollapsed ? 'Expand Timeline' : 'Collapse Timeline'}
+          title={isTimelineCollapsed ? 'Expand Timeline' : 'Collapse Timeline'}
         >
-          {isCollapsed ? (
+          {isTimelineCollapsed ? (
             <span className="text-sm">▲</span>
           ) : (
             <span className="text-sm">▼</span>
@@ -235,11 +271,11 @@ export function Timeline({
       </div>
 
       {/* Scrollable timeline container (ruler + tracks) - only visible when not collapsed */}
-      {!isCollapsed && (
+      {!isTimelineCollapsed && (
         <div className="flex-1 overflow-y-auto">
           <div
             className="relative w-max"
-            style={{ width: `${timelineState.scale * 120 + 128}px` }} // 128 = w-32 name column
+            style={{ width: `${timelineUI.scale * 120 + 128}px` }} // 128 = w-32 name column
             ref={scrollContainerRef}
             onScroll={handleScroll}
           >
@@ -268,12 +304,12 @@ export function Timeline({
                 key={track.id}
                 element={track.item}
                 trackType={track.type}
-                scale={timelineState.scale}
-                currentTime={timeState.elapsedTime}
+                scale={timelineUI.scale}
+                currentTime={playback.currentTime}
                 isSelected={track.isSelected}
-                onAnimationChange={track.type === 'group' && onGroupAnimationChange 
-                  ? onGroupAnimationChange 
-                  : onAnimationChange
+                onAnimationChange={track.type === 'group' 
+                  ? handleGroupAnimationChange 
+                  : handleAnimationChange
                 }
                 isGroup={track.isGroup}
                 isExpanded={track.isExpanded}
