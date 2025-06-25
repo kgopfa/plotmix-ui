@@ -186,12 +186,13 @@ function drawElement(graphics: Graphics, shape: AnimatedCanvasObject) {
         const endY = -halfHeight;
         
         // Arc curves downward to bottom edge
-        // Control points positioned to create smooth downward curve
-        const controlOffset = shape.height * 0.75; // Adjust this factor for arc shape
+        // For the arc to touch the bottom edge, we need to calculate control points
+        // such that the bezier curve's lowest point reaches y = halfHeight
+        // Using symmetric control points that extend downward from the endpoints
         const control1X = startX;
-        const control1Y = startY + controlOffset;
+        const control1Y = halfHeight; // Control point at bottom edge
         const control2X = endX;
-        const control2Y = startY + controlOffset;
+        const control2Y = halfHeight; // Control point at bottom edge
         
         // Draw the bezier curve
         graphics.moveTo(startX, startY);
@@ -454,11 +455,11 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasObject) {
              const endY = -halfHeight;
              
              // Arc curves downward to bottom edge
-             const controlOffset = shape.height * 0.75;
+             // Control points positioned to make the arc touch the bottom edge
              const control1X = startX;
-             const control1Y = startY + controlOffset;
+             const control1Y = halfHeight; // Control point at bottom edge
              const control2X = endX;
-             const control2Y = startY + controlOffset;
+             const control2Y = halfHeight; // Control point at bottom edge
              
              // Use native graphics bezier curve with manual dash approximation
              graphics.moveTo(startX, startY);
