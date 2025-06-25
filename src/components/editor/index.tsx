@@ -22,7 +22,7 @@ import { FederatedPointerEvent, Container } from 'pixi.js';
 import type { CanvasRef } from './canvas';
 import { createNewObject, createTextGroupWithCharacters } from '@/lib/canvas-object-factory';
 import { useCanvasDimensions } from '@/hooks/use-canvas-dimensions';
-import { ToolType } from '@/types/editor';
+
 import { useTimelineIntegration } from '@/hooks/use-timeline-integration';
 
 import { useGridSnapping } from '@/hooks/use-grid-snapping';
@@ -363,37 +363,14 @@ export default function EditorCanvas() {
 
   // Enhanced keyboard shortcuts now handle deletion internally
 
-  // Function to exit line chaining mode (for ESC key or tool changes)
-  const exitLineChaining = useCallback(() => {
-    setLineStartPoint(null);
-    setLineChaining(false);
-    clearChainedLineIds(); // Clear chained line IDs
-    setClosingShape(false);
-    setActiveTool('select');
-    setMaskPos(null);
-  }, []);
-
-  const handleToolChange = useCallback((newTool: ToolType) => {
-    // If we're in line chaining mode and switching away from line tool, exit chaining
-    if (toolState.isLineChaining && newTool !== 'line') {
-      exitLineChaining();
-      return;
-    }
-    
-    setActiveTool(newTool);
-    setMaskPos(null);
-    
-    // Clear pending image data if switching away from image tool
-    if (newTool !== 'image') {
-      setPendingImageData(null);
-    }
-    
+  // Handle side effects when tool changes - clear selection when switching to creation tools
+  useEffect(() => {
     // Clear selection when switching to creation tools to prevent drag conflicts
     // This allows placing new objects on top of previously selected shapes
-    if (newTool !== 'select') {
+    if (toolState.activeTool !== 'select') {
       selectElement(null);
     }
-  }, [toolState.isLineChaining, exitLineChaining, selectElement, setActiveTool, setMaskPos, setPendingImageData]);
+  }, [toolState.activeTool, selectElement]);
 
   // Handle select all
   const handleSelectAll = useCallback(() => {
@@ -1823,11 +1800,7 @@ export default function EditorCanvas() {
           className="absolute top-2/5 -translate-y-1/2 z-50 transition-all duration-300"
           style={{ left: `${panelState.leftPanelVisible ? panelState.leftPanelWidth + 16 : 16}px` }}
         >
-          <Toolbar
-            currentTool={toolState.activeTool}
-            onToolChange={handleToolChange}
-            isPathMode={toolState.isPathMode}
-          />
+          <Toolbar />
         </div>
 
         {/* Mask Overlay - Fixed position relative to viewport */}

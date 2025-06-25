@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { produce } from 'immer';
+import { useShallow } from 'zustand/react/shallow';
 import { ToolType } from '@/types/editor';
 import { GridConfig } from '@/utils/grid-utils';
 import { ElementSnappingConfig } from '@/hooks/use-element-snapping';
@@ -259,11 +260,27 @@ export const useUIStore = create<UIStore>((set, get) => ({
   // Tool Actions
   setActiveTool: (tool: ToolType) => {
     set(produce((state) => {
-      state.tools.activeTool = tool;
-      // Reset path mode when switching tools
-      if (tool !== 'select') {
-        state.tools.isPathMode = false;
+      // If we're in line chaining mode and switching away from line tool, exit chaining
+      if (state.tools.isLineChaining && tool !== 'line') {
+        state.tools.isLineChaining = false;
+        state.tools.lineStartPoint = null;
+        state.tools.chainedLineIds = [];
+        state.tools.isClosingShape = false;
+        return; // Exit early if we're exiting line chaining
       }
+      
+      state.tools.activeTool = tool;
+      
+      // Clear mask position when changing tools
+      state.tools.maskPos = null;
+      
+      // Clear pending image data if switching away from image tool
+      if (tool !== 'image') {
+        state.tools.pendingImageData = null;
+      }
+      
+      // Note: Path mode should only be exited manually, not when switching tools
+      // Note: Selection clearing will be handled by the main component since it needs access to canvas state
     }));
   },
 
@@ -472,36 +489,42 @@ export const useSnappingState = () => useUIStore((state) => state.snapping);
 export const useUserPreferences = () => useUIStore((state) => state.preferences);
 
 // Action hooks
-export const usePanelActions = () => useUIStore((state) => ({
-  toggleLeftPanel: state.toggleLeftPanel,
-  toggleRightPanel: state.toggleRightPanel,
-  setLeftPanelWidth: state.setLeftPanelWidth,
-  setRightPanelWidth: state.setRightPanelWidth,
-  setTimelineHeight: state.setTimelineHeight,
-  toggleTimelineCollapse: state.toggleTimelineCollapse,
-  setResizing: state.setResizing,
-}));
+export const usePanelActions = () => useUIStore(
+  useShallow((state) => ({
+    toggleLeftPanel: state.toggleLeftPanel,
+    toggleRightPanel: state.toggleRightPanel,
+    setLeftPanelWidth: state.setLeftPanelWidth,
+    setRightPanelWidth: state.setRightPanelWidth,
+    setTimelineHeight: state.setTimelineHeight,
+    toggleTimelineCollapse: state.toggleTimelineCollapse,
+    setResizing: state.setResizing,
+  }))
+);
 
-export const useToolActions = () => useUIStore((state) => ({
-  setActiveTool: state.setActiveTool,
-  togglePathMode: state.togglePathMode,
-  setLineChaining: state.setLineChaining,
-  setLineStartPoint: state.setLineStartPoint,
-  addChainedLineId: state.addChainedLineId,
-  clearChainedLineIds: state.clearChainedLineIds,
-  setClosingShape: state.setClosingShape,
-  setMaskPos: state.setMaskPos,
-  setAnimationTarget: state.setAnimationTarget,
-  toggleShowPaths: state.toggleShowPaths,
-  setPendingImageData: state.setPendingImageData,
-}));
+export const useToolActions = () => useUIStore(
+  useShallow((state) => ({
+    setActiveTool: state.setActiveTool,
+    togglePathMode: state.togglePathMode,
+    setLineChaining: state.setLineChaining,
+    setLineStartPoint: state.setLineStartPoint,
+    addChainedLineId: state.addChainedLineId,
+    clearChainedLineIds: state.clearChainedLineIds,
+    setClosingShape: state.setClosingShape,
+    setMaskPos: state.setMaskPos,
+    setAnimationTarget: state.setAnimationTarget,
+    toggleShowPaths: state.toggleShowPaths,
+    setPendingImageData: state.setPendingImageData,
+  }))
+);
 
-export const useSnappingActions = () => useUIStore((state) => ({
-  updateGridConfig: state.updateGridConfig,
-  updateElementSnapConfig: state.updateElementSnapConfig,
-  setGridSnapTemporarilyDisabled: state.setGridSnapTemporarilyDisabled,
-  setElementSnapTemporarilyDisabled: state.setElementSnapTemporarilyDisabled,
-}));
+export const useSnappingActions = () => useUIStore(
+  useShallow((state) => ({
+    updateGridConfig: state.updateGridConfig,
+    updateElementSnapConfig: state.updateElementSnapConfig,
+    setGridSnapTemporarilyDisabled: state.setGridSnapTemporarilyDisabled,
+    setElementSnapTemporarilyDisabled: state.setElementSnapTemporarilyDisabled,
+  }))
+);
 
 export const useKeyboardShortcutsStore = () => {
   const shortcuts = useUIStore((state) => state.keyboardShortcuts);
