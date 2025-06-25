@@ -187,6 +187,30 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           const clickDistance = Math.hypot(e.global.x - startPoint.x, e.global.y - startPoint.y);
           
           if (clickDistance <= 30) { // Within 30px of start point - close the polygon
+            // Create the final closing line from current position to the origin
+            const finalLine = createNewObject(
+              'line', 
+              0, 0, // Position will be calculated in createLine
+              elements,
+              undefined, // pathPoints
+              isPathMode, // isPath
+              undefined, // imageData
+              undefined, // width
+              undefined, // height
+              undefined, // text
+              lineStartPoint!, // Start from current line start point
+              startPoint // End at the polygon's origin point
+            );
+            
+            // If in path mode, mark it as a path
+            if (isPathMode) {
+              finalLine.isAnimationPath = true;
+            }
+
+            addElement(finalLine);
+            addChainedLineId(finalLine.id);
+            
+            // Now trigger polygon closure
             setClosingShape(true);
             return;
           }
