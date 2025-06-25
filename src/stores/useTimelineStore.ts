@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { produce } from 'immer';
 import { useShallow } from 'zustand/react/shallow';
 import { TimeManager, TimeManagerState } from '@/lib/time-manager';
-import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
+import { GSAPTimelineManagerEnhanced } from '@/lib/gsap-timeline-manager-enhanced';
 import { TimelineManager } from '@/lib/timeline-manager';
 import { AnimatedCanvasObject, CanvasGroup, ElementAnimation } from '@/types/canvas';
 import { TimelineTrackData } from '@/types/timeline';
@@ -42,7 +42,7 @@ interface TimelineStoreState {
   
   // Timeline managers
   timeManager: TimeManager;
-  gsapManager: GSAPTimelineManager;
+  gsapManager: GSAPTimelineManagerEnhanced;
   timelineManager: TimelineManager;
   
   // Real-time subscription state
@@ -108,6 +108,11 @@ interface TimelineStoreActions {
   getTotalDuration: () => number;
   getTimeAtPosition: (position: number) => number;
   getPositionAtTime: (time: number) => number;
+  
+     // Enhanced performance monitoring
+   getAnimationPerformance: () => object;
+   getCacheStatistics: () => object;
+   generatePerformanceReport: () => string;
 }
 
 type TimelineStore = TimelineStoreState & TimelineStoreActions;
@@ -142,7 +147,7 @@ export const useTimelineStore = create<TimelineStore>()(
       playback: initialPlaybackState,
       ui: initialUIState,
       timeManager: TimeManager.getInstance(),
-      gsapManager: new GSAPTimelineManager(),
+      gsapManager: new GSAPTimelineManagerEnhanced(),
       timelineManager: TimelineManager.getInstance(),
       subscriptions: {
         timeManager: null,
@@ -571,6 +576,22 @@ export const useTimelineStore = create<TimelineStore>()(
       getPositionAtTime: (time: number) => {
         const { ui } = get();
         return time * ui.scale;
+      },
+
+      // Enhanced performance monitoring
+      getAnimationPerformance: () => {
+        const { gsapManager } = get();
+        return gsapManager.getPerformanceMetrics();
+      },
+
+      getCacheStatistics: () => {
+        const { gsapManager } = get();
+        return gsapManager.getCacheStats();
+      },
+
+      generatePerformanceReport: () => {
+        const { gsapManager } = get();
+        return gsapManager.generatePerformanceReport();
       },
     })
 );
