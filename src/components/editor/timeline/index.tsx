@@ -13,11 +13,10 @@ export function Timeline() {
   const groups = useCanvasGroups();
   
   // Get timeline state and actions
-  const { playback, ui: timelineUI, tracks } = useTimelineStore(
+  const { playback, ui: timelineUI } = useTimelineStore(
     useShallow((state) => ({
       playback: state.playback,
-      ui: state.ui,
-      tracks: state.tracks
+      ui: state.ui
     }))
   );
   
@@ -33,13 +32,6 @@ export function Timeline() {
   const { isTimelineCollapsed } = usePanelState();
   const { toggleTimelineCollapse } = usePanelActions();
   
-  // Get animation update handlers from canvas store
-  const { updateElement, setGroups } = useTimelineStore(
-    useShallow((state) => ({
-      updateElement: state.updateAnimation, // This will need to be connected to canvas store
-      setGroups: state.setGroups
-    }))
-  );
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [scrollLeft, setScrollLeft] = useState(0);
@@ -95,15 +87,6 @@ export function Timeline() {
     console.log('Group animation change:', { groupId, animationId, update });
   };
 
-  // Memoize expensive filtering operations for performance
-  const elementsNotInTypedGroups = useMemo(() => 
-    elements.filter(el => {
-      // Include elements that are in default groups or not in any typed group
-      const group = groups.find(g => g.elementIds.includes(el.id));
-      return !group || group.isDefaultGroup;
-    }),
-    [elements, groups]
-  );
 
   // Create hierarchical track structure - memoized for performance
   const hierarchicalTracks = useMemo(() => {
@@ -216,7 +199,7 @@ export function Timeline() {
       });
 
     return tracks;
-  }, [elementsNotInTypedGroups, elements, groups, expandedElements]);
+  }, [elements, groups, expandedElements]);
 
   // Memoize ruler ticks for performance
   const rulerTicks = useMemo(() => 

@@ -4,7 +4,7 @@ import React from 'react';
 import { Application, extend } from '@pixi/react';
 import { Container, Graphics, Rectangle, Text } from 'pixi.js';
 import type { FederatedPointerEvent } from 'pixi.js';
-import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
+import type { AnimatedCanvasObject } from '@/types/canvas';
 import { useImperativeHandle, forwardRef, useState, useRef, useEffect, useCallback } from 'react';
 import { drawShape } from '@/utils/drawing-utils';
 import { createNewObject } from '@/lib/canvas-object-factory';
@@ -27,6 +27,10 @@ import { SnapGuide } from '../../../utils/element-snapping';
 import { eventManager } from '@/lib/event-manager';
 import { contextMenuManager } from '@/lib/context-menu-manager';
 
+// Import Zustand stores
+import { useCanvasElements, useCanvasGroups, useCanvasOperations } from '@/stores/useCanvasStore';
+import { useSelectionStore } from '@/stores/useSelectionStore';
+import { useUIStore } from '@/stores/useUIStore';
 
 extend({ Container, Graphics, Text });
 
@@ -39,44 +43,12 @@ interface ContextMenuPosition {
 
 interface CanvasProps {
   dimensions: { width: number; height: number };
-  elements: AnimatedCanvasObject[];
-  groups?: CanvasGroup[];
-  selectedIds: string[];
-  onElementSelect: (id: string | null, isMultiSelect?: boolean) => void;
-  onElementDragEnd: (id: string, x: number, y: number) => void;
-  onCanvasClick: (e: FederatedPointerEvent) => void;
-  onLineEndpointDrag?: (id: string, endpoint: 'start' | 'end', x: number, y: number) => void;
-  onElementResize?: (id: string, width: number, height: number) => void;
-  tool: string;
-  onAddElement?: (element: AnimatedCanvasObject) => void;
-  isPathMode?: boolean;
-  animationTarget?: { animationId: string; elementId: string } | null;
-  onPathStartClick?: (elementId: string, x: number, y: number) => void;
-  onElementRotate?: (id: string, rotation: number) => void;
-  onElementRadiusChange?: (id: string, cornerRadius: number) => void;
-  onTextChange?: (id: string, text: string) => void;
-  onTextGroupChange?: (textGroupId: string, newText: string, characterElements: AnimatedCanvasObject[]) => void;
   zoom?: number; // External zoom control
   onZoomChange?: (zoom: number) => void; // Callback when zoom changes
-  // Add group drag handler
-  onGroupDrag?: (elementPositions: Array<{ id: string; x: number; y: number }>) => void;
   // Add grid configuration
   gridConfig?: GridConfig;
   // Add snap guides
   snapGuides?: SnapGuide[];
-  // Add line preview
-  lineStartPoint?: { x: number; y: number } | null;
-  // Add line chaining state
-  isLineChaining?: boolean;
-  // Add chained line IDs for polygon closing detection
-  chainedLineIds?: string[];
-  // Add animation playback state
-  isPlaying?: boolean;
-  // Context menu action callbacks
-  onCopyElement?: (elementId: string) => void;
-  onGroupElements?: (elementIds: string[]) => void;
-  onMoveToFront?: (elementId: string) => void;
-  onMoveToBack?: (elementId: string) => void;
 }
 
 export interface CanvasRef {
@@ -114,39 +86,40 @@ const setCursor = (cursor: string) => {
 export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   {
     dimensions,
-    elements,
-    groups = [],
-    selectedIds,
-    onElementSelect,
-    onElementDragEnd,
-    onCanvasClick,
-    onLineEndpointDrag,
-    onElementResize,
-    tool,
-    onAddElement,
-    isPathMode = false,
-    animationTarget,
-    onPathStartClick,
-    onElementRotate,
-    onElementRadiusChange,
-    onTextChange,
-    onTextGroupChange,
     zoom = 1,
     onZoomChange,
-    onGroupDrag,
     gridConfig,
     snapGuides = [],
-    lineStartPoint,
-    isLineChaining = false,
-    chainedLineIds = [],
-    isPlaying = false,
-    onCopyElement,
-    onGroupElements,
-    onMoveToFront,
-    onMoveToBack,
   },
   ref
 ) {
+  // Get data from stores instead of props
+  const elements = useCanvasElements();
+  const groups = useCanvasGroups();
+  const { addElement, updateElement, moveElement, resizeElement, rotateElement, moveMultipleElements } = useCanvasOperations();
+  
+  // Selection store
+  const { 
+    selectedElements, 
+    select: selectElement, 
+    clearSelections 
+  } = useSelectionStore();
+  const selectedIds = selectedElements.map(el => el.id);
+  
+  // UI store
+  const toolState = useUIStore(state => state.tools);
+  const { 
+    activeTool: tool, 
+    isPathMode, 
+    animationTarget, 
+    lineStartPoint, 
+    isLineChaining, 
+    chainedLineIds 
+  } = toolState;
+
+  // Animation playback state - placeholder for now
+  const isPlaying = false;
+
   const shapeRefs = useRef<Record<string, Container>>({});
   const groupContainers = useRef<Record<string, Container>>({});
   const viewportRef = useRef<Viewport | null>(null);
@@ -192,6 +165,173 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       }
     });
   }, [groups]);
+
+  // Canvas click handler - handles tool-specific actions
+  const handleCanvasClick = useCallback((e: FederatedPointerEvent) => {
+    const { setActiveTool, setMaskPos, setLineStartPoint, setLineChaining, addChainedLineId, setClosingShape } = useUIStore.getState();
+    
+    if (tool === 'select') {
+      clearSelections();
+      return;
+    }
+
+    // Handle creation tools
+    if (['rectangle', 'circle', 'triangle', 'line', 'simpleLine', 'text', 'textGroup'].includes(tool)) {
+      const newElement = createNewObject(tool === 'simpleLine' ? 'line' : tool as 'rectangle' | 'circle' | 'triangle' | 'line' | 'text' | 'textGroup', e.global.x, e.global.y, elements);
+      
+      // If in path mode, mark it as a path
+      if (isPathMode) {
+        newElement.isAnimationPath = true;
+      }
+
+      // Handle line chaining for polygon creation
+      if (tool === 'line' && isLineChaining && chainedLineIds.length > 0) {
+        // Check if we're clicking on the start point of the first line to close the shape
+        const firstLineId = chainedLineIds[0];
+        const firstLine = elements.find(el => el.id === firstLineId);
+        
+        if (firstLine?.lineOptions?.points) {
+          const startPoint = firstLine.lineOptions.points.start;
+          const clickDistance = Math.hypot(e.global.x - startPoint.x, e.global.y - startPoint.y);
+          
+          if (clickDistance <= 30) { // Within 30px of start point
+            setClosingShape(true);
+            return;
+          }
+        }
+        
+        // Add this line to the chain
+        addChainedLineId(newElement.id);
+      } else if (tool === 'line') {
+        // Start new line chain
+        setLineChaining(true);
+        addChainedLineId(newElement.id);
+      }
+
+      // Set line start point for chaining
+      if (tool === 'line' || tool === 'simpleLine') {
+        if (newElement.lineOptions?.points) {
+          setLineStartPoint(newElement.lineOptions.points.end);
+        }
+      }
+
+      addElement(newElement);
+      selectElement([newElement]);
+      
+      // Switch to select tool after creating non-line elements
+      if (!['line', 'simpleLine'].includes(tool)) {
+        setActiveTool('select');
+        setMaskPos(null);
+      }
+    }
+  }, [tool, isPathMode, isLineChaining, chainedLineIds, elements, addElement, selectElement, clearSelections]);
+
+  // Element selection handler
+  const onElementSelect = useCallback((id: string | null, isMultiSelect?: boolean) => {
+    if (id) {
+      const element = elements.find(e => e.id === id);
+      if (element) {
+        selectElement(isMultiSelect ? [element] : [element], isMultiSelect);
+      }
+    } else {
+      clearSelections();
+    }
+  }, [elements, selectElement, clearSelections]);
+
+  // Element drag end handler
+  const onElementDragEnd = useCallback((id: string, x: number, y: number) => {
+    moveElement(id, { x, y });
+  }, [moveElement]);
+
+  // Group drag handler
+  const onGroupDrag = useCallback((elementPositions: Array<{ id: string; x: number; y: number }>) => {
+    moveMultipleElements(elementPositions.map(pos => ({ id: pos.id, x: pos.x, y: pos.y })));
+  }, [moveMultipleElements]);
+
+  // Line endpoint drag handler
+  const onLineEndpointDrag = useCallback((id: string, endpoint: 'start' | 'end', x: number, y: number) => {
+    const element = elements.find(el => el.id === id);
+    if (element?.lineOptions?.points) {
+      const updatedPoints = {
+        ...element.lineOptions.points,
+        [endpoint]: { x, y }
+      };
+      updateElement(id, {
+        lineOptions: {
+          ...element.lineOptions,
+          points: updatedPoints
+        }
+      });
+    }
+  }, [elements, updateElement]);
+
+  // Element resize handler
+  const onElementResize = useCallback((id: string, width: number, height: number) => {
+    resizeElement(id, { width, height });
+  }, [resizeElement]);
+
+  // Element rotate handler
+  const onElementRotate = useCallback((id: string, rotation: number) => {
+    rotateElement(id, rotation);
+  }, [rotateElement]);
+
+  // Element radius change handler
+  const onElementRadiusChange = useCallback((id: string, cornerRadius: number) => {
+    updateElement(id, { cornerRadius });
+  }, [updateElement]);
+
+  // Text change handlers
+  const onTextChange = useCallback((id: string, text: string) => {
+    updateElement(id, { text });
+  }, [updateElement]);
+
+  const onTextGroupChange = useCallback((textGroupId: string, newText: string, characterElements: AnimatedCanvasObject[]) => {
+    // Update the textGroup element
+    updateElement(textGroupId, { text: newText });
+    
+    // Update character elements
+    characterElements.forEach(char => {
+      updateElement(char.id, char);
+    });
+  }, [updateElement]);
+
+  // Path start click handler
+  const onPathStartClick = useCallback((elementId: string, x: number, y: number) => {
+    const { setLineStartPoint } = useUIStore.getState();
+    setLineStartPoint({ x, y });
+  }, []);
+
+  // Context menu action handlers
+  const onCopyElement = useCallback((elementId: string) => {
+    const element = elements.find(el => el.id === elementId);
+    if (element) {
+      // Create a copy with new ID and offset position
+      const copiedElement = {
+        ...element,
+        id: crypto.randomUUID(),
+        name: `${element.name} Copy`,
+        x: element.x + 20,
+        y: element.y + 20,
+      };
+      addElement(copiedElement);
+      selectElement([copiedElement]);
+    }
+  }, [elements, addElement, selectElement]);
+
+  const onGroupElements = useCallback((elementIds: string[]) => {
+    // This would need to be implemented with the group creation logic
+    console.log('Group elements:', elementIds);
+  }, []);
+
+  const onMoveToFront = useCallback((elementId: string) => {
+    // This would need to be implemented with z-index management
+    console.log('Move to front:', elementId);
+  }, []);
+
+  const onMoveToBack = useCallback((elementId: string) => {
+    // This would need to be implemented with z-index management
+    console.log('Move to back:', elementId);
+  }, []);
 
   useImperativeHandle(ref, () => ({
     getShapeRefs: () => shapeRefs.current,
@@ -497,7 +637,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     // to create new objects on top of existing shapes
     if (tool !== 'select') {
       e.stopPropagation();
-      onCanvasClick(e);
+      handleCanvasClick(e);
       return;
     }
 
@@ -525,7 +665,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         clickY >= start.y - halfSize && clickY <= start.y + halfSize) {
         // Close the shape by connecting to the start point
         e.stopPropagation();
-        onCanvasClick(e); // This will trigger the shape closing logic
+        handleCanvasClick(e); // This will trigger the shape closing logic
         return;
       }
     }
@@ -550,7 +690,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         if (timeDiff < 300) { // Double-click detected (within 300ms)
           console.log('Double-click on character detected, entering edit mode for textGroup:', parentTextGroup.id);
           setEditingTextId(parentTextGroup.id);
-          onElementSelect(parentTextGroup.id, isMultiSelect);
+          selectElement([parentTextGroup], isMultiSelect);
           textClickTimeRef.current.delete(parentTextGroup.id); // Clear the click time
           return;
         } else {
@@ -560,7 +700,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         }
 
         // Select the parent textGroup instead of the character
-        onElementSelect(parentTextGroup.id, isMultiSelect);
+        selectElement([parentTextGroup], isMultiSelect);
         setDraggingId(parentTextGroup.id);
         setDragOffset({ x: pos.x - parentTextGroup.x, y: pos.y - parentTextGroup.y });
         setIsDraggingGroup(false);
@@ -611,7 +751,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     }
 
     // Then check for line endpoint handling (same as before)
-    if (element?.type === 'line' && element.lineOptions?.points && onLineEndpointDrag) {
+    if (element?.type === 'line' && element.lineOptions?.points) {
       const { start, end } = element.lineOptions.points;
       const clickX = pos.x;
       const clickY = pos.y;
@@ -706,9 +846,9 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
             newElement.isAnimationPath = true;
           }
 
-          onElementSelect(newElement.id, false);
-          if (onAddElement) {
-            onAddElement(newElement);
+          selectElement([newElement]);
+          if (addElement) {
+            addElement(newElement);
 
             // Signal to parent that drawing is complete and we should exit draw mode
             const customEvent = new CustomEvent('draw-complete', {
@@ -1230,12 +1370,12 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     if (id) {
       const element = elements.find(e => e.id === id);
       if (element) {
-        onElementSelect(element.id, isMultiSelect); // Pass element ID, not the full element
+        selectElement(isMultiSelect ? [element] : [element], isMultiSelect);
       }
     } else {
-      onElementSelect(null);
+      clearSelections();
     }
-  }, [elements, onElementSelect]);
+  }, [elements, selectElement, clearSelections]);
 
   return (
     <>
@@ -1283,7 +1423,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                 handleCanvasPointerDown(e);
               } else {
                 handleSelectElement(null);
-                onCanvasClick(e);
+                handleCanvasClick(e);
               }
             }}
             onPointerMove={handleCanvasPointerMove}

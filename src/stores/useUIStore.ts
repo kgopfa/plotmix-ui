@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { produce } from 'immer';
 import { useShallow } from 'zustand/react/shallow';
-import { ToolType } from '@/types/editor';
+import { ToolType } from '@/types/tool';
 import { GridConfig } from '@/utils/grid-utils';
 import { ElementSnappingConfig } from '@/hooks/use-element-snapping';
 

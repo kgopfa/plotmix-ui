@@ -1,5 +1,5 @@
 import React from 'react';
-import { ToolType } from '@/types/editor';
+import { ToolType } from '@/types/tool';
 
 interface MaskOverlayProps {
   tool: ToolType;
