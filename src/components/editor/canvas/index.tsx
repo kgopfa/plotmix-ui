@@ -725,9 +725,18 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
     // When using creation tools (not select), call the canvas click handler directly
     // to create new objects on top of existing shapes
-    if (tool !== 'select') {
+    // Exception: draw tool should allow drawing over existing elements
+    if (tool !== 'select' && tool !== 'draw') {
       e.stopPropagation();
       handleCanvasClick(e);
+      return;
+    }
+
+    // For draw tool, allow drawing to start on existing elements
+    if (tool === 'draw') {
+      // Let the drawing behavior happen, don't stop propagation
+      // This allows the drawing to start at the element's position
+      handleCanvasPointerDown(e);
       return;
     }
 
