@@ -1,11 +1,11 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { useCanvasStore } from '@/stores/useCanvasStore';
-import {
-  useTimelineStore,
-  useTimelineSync,
-  useTimelinePlayback,
+import { 
+  useTimelineStore, 
+  useTimelineSync, 
+  useTimelinePlayback, 
   useTimelineTracks,
-  useTimelineAnimations
+  useTimelineAnimations 
 } from '@/stores/useTimelineStore';
 import { ElementAnimation } from '@/types/canvas';
 import type { CanvasRef } from '@/components/editor/canvas';
@@ -44,13 +44,41 @@ export function useTimelineIntegration() {
     setGroups(groups);
   }, [elements, groups, setElements, setGroups]);
 
-  // Canvas ref integration for both managers
+  // Enhanced canvas ref setup with automatic timeline building
   const setCanvasRef = useCallback((ref: React.RefObject<CanvasRef | null>) => {
     const state = useTimelineStore.getState();
+    const managerType = state.getCurrentManagerType();
+    
+    // Set canvas ref for both managers
     state.gsapManager.setCanvasRef(ref);
     state.individualManager.setCanvasRef(ref);
-    buildGSAPTimeline();
-  }, [buildGSAPTimeline]);
+    
+    // Build initial timeline with all elements based on current manager
+    if (managerType === 'individual') {
+      // Use Individual Timeline Manager for initial build
+      state.individualManager.clearTimeline();
+      
+      const elementUpdates = elements.map(element => ({
+        elementId: element.id,
+        animations: element.animations || []
+      }));
+      
+      const groupUpdates = groups.map(group => ({
+        groupId: group.id,
+        animations: group.animations || [],
+        group
+      }));
+      
+      state.individualManager.batchUpdateElements(elementUpdates, elements);
+      state.individualManager.batchUpdateGroups(groupUpdates);
+      
+      console.log(`🎬 Individual Timeline Manager initialized with ${elementUpdates.length} elements and ${groupUpdates.length} groups`);
+    } else {
+      // Use Enhanced Timeline Manager for initial build
+      buildGSAPTimeline();
+      console.log(`🎬 Enhanced Timeline Manager initialized with ${elements.length} elements and ${groups.length} groups`);
+    }
+  }, [elements, groups, buildGSAPTimeline]);
 
   // Enhanced animation handlers that sync with both stores
   const addElementAnimation = useCallback((elementId: string, animation: ElementAnimation) => {
@@ -218,6 +246,24 @@ export function useTimelineIntegration() {
     return state.generatePerformanceReport();
   }, []);
 
+  // Performance monitoring hook - updates every second
+  const [animationStats, setAnimationStats] = useState<object | null>(null);
+  
+  useEffect(() => {
+    const updateStats = () => {
+      const stats = getAnimationStats();
+      setAnimationStats(stats);
+    };
+
+    // Initial stats
+    updateStats();
+
+    // Update stats every second
+    const interval = setInterval(updateStats, 1000);
+
+    return () => clearInterval(interval);
+  }, [getAnimationStats]);
+
   return {
     // Playback controls
     playback: playbackControls.playback,
@@ -247,6 +293,9 @@ export function useTimelineIntegration() {
     // Canvas integration
     setCanvasRef,
     rebuildTimeline,
+    
+    // Performance monitoring
+    animationStats,
 
     // State
     isLoading,
