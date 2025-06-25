@@ -3,6 +3,7 @@ import { produce } from 'immer';
 import { useShallow } from 'zustand/react/shallow';
 import { TimeManager, TimeManagerState } from '@/lib/time-manager';
 import { GSAPTimelineManagerEnhanced } from '@/lib/gsap-timeline-manager-enhanced';
+import { IndividualTimelineManager } from '@/lib/individual-timeline-manager';
 import { TimelineManager } from '@/lib/timeline-manager';
 import { AnimatedCanvasObject, CanvasGroup, ElementAnimation } from '@/types/canvas';
 import { TimelineTrackData } from '@/types/timeline';
@@ -43,12 +44,14 @@ interface TimelineStoreState {
   // Timeline managers
   timeManager: TimeManager;
   gsapManager: GSAPTimelineManagerEnhanced;
+  individualManager: IndividualTimelineManager;
   timelineManager: TimelineManager;
+  currentManagerType: 'enhanced' | 'individual';
   
   // Real-time subscription state
   subscriptions: {
     timeManager: (() => void) | null;
-    timelineManager: (() => void) | null;
+    gsapManager: (() => void) | null;
   };
   
   // Loading and error state
@@ -115,7 +118,22 @@ interface TimelineStoreActions {
    generatePerformanceReport: () => string;
 }
 
-type TimelineStore = TimelineStoreState & TimelineStoreActions;
+interface TimelineStoreActionsExtended {
+  // Individual Timeline Manager methods
+  updateElementAnimations: (elementId: string, animations: ElementAnimation[], allElements: AnimatedCanvasObject[]) => void;
+  updateGroupAnimations: (groupId: string, animations: ElementAnimation[], group: CanvasGroup) => void;
+  batchUpdateElements: (updates: Array<{elementId: string, animations: ElementAnimation[]}>, allElements: AnimatedCanvasObject[]) => void;
+  batchUpdateGroups: (updates: Array<{groupId: string, animations: ElementAnimation[], group: CanvasGroup}>) => void;
+  
+  // Manager selection
+  setAnimationManager: (useIndividual: boolean) => void;
+  getCurrentManagerType: () => 'enhanced' | 'individual';
+  
+  // Enhanced performance monitoring for Phase 2
+  getIndividualTimelineStats: () => object;
+}
+
+type TimelineStore = TimelineStoreState & TimelineStoreActions & TimelineStoreActionsExtended;
 
 const initialPlaybackState: PlaybackState = {
   isPlaying: false,
@@ -148,10 +166,12 @@ export const useTimelineStore = create<TimelineStore>()(
       ui: initialUIState,
       timeManager: TimeManager.getInstance(),
       gsapManager: new GSAPTimelineManagerEnhanced(),
+      individualManager: new IndividualTimelineManager(),
       timelineManager: TimelineManager.getInstance(),
+      currentManagerType: 'enhanced',
       subscriptions: {
         timeManager: null,
-        timelineManager: null,
+        gsapManager: null,
       },
       isLoading: false,
       error: null,
@@ -446,7 +466,7 @@ export const useTimelineStore = create<TimelineStore>()(
           });
           
           // Subscribe to TimelineManager updates
-          state.subscriptions.timelineManager = timelineManager.subscribe((timelineState) => {
+          state.subscriptions.gsapManager = timelineManager.subscribe((timelineState) => {
             set(produce((state) => {
               state.tracks = timelineState.trackData;
               state.playback.totalDuration = timelineState.duration;
@@ -464,13 +484,13 @@ export const useTimelineStore = create<TimelineStore>()(
         if (subscriptions.timeManager) {
           subscriptions.timeManager();
         }
-        if (subscriptions.timelineManager) {
-          subscriptions.timelineManager();
+        if (subscriptions.gsapManager) {
+          subscriptions.gsapManager();
         }
         
         set(produce((state) => {
           state.subscriptions.timeManager = null;
-          state.subscriptions.timelineManager = null;
+          state.subscriptions.gsapManager = null;
         }));
       },
 
@@ -580,18 +600,157 @@ export const useTimelineStore = create<TimelineStore>()(
 
       // Enhanced performance monitoring
       getAnimationPerformance: () => {
-        const { gsapManager } = get();
-        return gsapManager.getPerformanceMetrics();
+        const state = get();
+        const managerType = state.getCurrentManagerType();
+        
+        if (managerType === 'individual') {
+          return state.individualManager.getPerformanceStats();
+        } else {
+          return state.gsapManager.getPerformanceMetrics();
+        }
       },
 
       getCacheStatistics: () => {
-        const { gsapManager } = get();
-        return gsapManager.getCacheStats();
+        const state = get();
+        const managerType = state.getCurrentManagerType();
+        
+        if (managerType === 'individual') {
+          const stats = state.individualManager.getPerformanceStats();
+          return {
+            type: 'individual',
+            poolStats: stats.poolStats,
+            activeElements: stats.activeElements,
+            activeGroups: stats.activeGroups,
+            totalAnimations: stats.totalAnimations
+          };
+        } else {
+          return state.gsapManager.getCacheStats();
+        }
       },
 
       generatePerformanceReport: () => {
-        const { gsapManager } = get();
-        return gsapManager.generatePerformanceReport();
+        const state = get();
+        const managerType = state.getCurrentManagerType();
+        
+        if (managerType === 'individual') {
+          return state.individualManager.generatePerformanceReport();
+        } else {
+          return state.gsapManager.generatePerformanceReport();
+        }
+      },
+
+      buildTimeline: (elements: AnimatedCanvasObject[], groups: CanvasGroup[], useIndividualManager = false) => {
+        const state = get();
+        
+        try {
+          if (useIndividualManager) {
+            console.log('Building timeline with Individual Timeline Manager');
+            
+            // Use Individual Timeline Manager (Phase 2)
+            const individualManager = state.individualManager;
+            
+            // Clear existing timelines
+            individualManager.clearTimeline();
+            
+            // Batch update all elements
+            const elementUpdates = elements.map(element => ({
+              elementId: element.id,
+              animations: element.animations || []
+            }));
+            
+            const groupUpdates = groups.map(group => ({
+              groupId: group.id,
+              animations: group.animations || [],
+              group
+            }));
+            
+            individualManager.batchUpdateElements(elementUpdates, elements);
+            individualManager.batchUpdateGroups(groupUpdates);
+            
+            console.log('Individual Timeline Manager build complete');
+          } else {
+            console.log('Building timeline with Enhanced Timeline Manager');
+            
+            // Use Enhanced Timeline Manager (Phase 1)
+            state.gsapManager.buildAnimationTimeline(elements, groups);
+            
+            console.log('Enhanced Timeline Manager build complete');
+          }
+          
+          // Update store state
+          set(produce((draft) => {
+            draft.elements = elements;
+            draft.groups = groups;
+          }));
+          
+        } catch (error) {
+          console.error('Error building timeline:', error);
+        }
+      },
+
+      // Individual Timeline Manager methods
+      updateElementAnimations: (elementId, animations, allElements) => {
+        const state = get();
+        try {
+          state.individualManager.updateElementAnimations(elementId, animations, allElements);
+          console.log(`Updated animations for element ${elementId}`);
+        } catch (error) {
+          console.error(`Error updating element ${elementId}:`, error);
+        }
+      },
+
+      updateGroupAnimations: (groupId, animations, group) => {
+        const state = get();
+        try {
+          state.individualManager.updateGroupAnimations(groupId, animations, group);
+          console.log(`Updated animations for group ${groupId}`);
+        } catch (error) {
+          console.error(`Error updating group ${groupId}:`, error);
+        }
+      },
+
+      batchUpdateElements: (updates, allElements) => {
+        const state = get();
+        try {
+          state.individualManager.batchUpdateElements(updates, allElements);
+          console.log(`Batch updated ${updates.length} elements`);
+        } catch (error) {
+          console.error('Error in batch element update:', error);
+        }
+      },
+
+      batchUpdateGroups: (updates) => {
+        const state = get();
+        try {
+          state.individualManager.batchUpdateGroups(updates);
+          console.log(`Batch updated ${updates.length} groups`);
+        } catch (error) {
+          console.error('Error in batch group update:', error);
+        }
+      },
+
+      // Manager selection
+      setAnimationManager: (useIndividual) => {
+        set(produce((draft) => {
+          if (useIndividual) {
+            console.log('Switching to Individual Timeline Manager (Phase 2)');
+            draft.currentManagerType = 'individual';
+          } else {
+            console.log('Switching to Enhanced Timeline Manager (Phase 1)');
+            draft.currentManagerType = 'enhanced';
+          }
+        }));
+      },
+
+      getCurrentManagerType: () => {
+        const state = get();
+        return state.currentManagerType || 'enhanced';
+      },
+
+      // Enhanced performance monitoring for Phase 2
+      getIndividualTimelineStats: () => {
+        const state = get();
+        return state.individualManager.getPerformanceStats();
       },
     })
 );
