@@ -1,11 +1,11 @@
 import { useEffect, useCallback } from 'react';
 import { useCanvasStore } from '@/stores/useCanvasStore';
-import { 
-  useTimelineStore, 
-  useTimelineSync, 
-  useTimelinePlayback, 
+import {
+  useTimelineStore,
+  useTimelineSync,
+  useTimelinePlayback,
   useTimelineTracks,
-  useTimelineAnimations 
+  useTimelineAnimations
 } from '@/stores/useTimelineStore';
 import { ElementAnimation } from '@/types/canvas';
 import type { CanvasRef } from '@/components/editor/canvas';
@@ -16,14 +16,14 @@ import type { CanvasRef } from '@/components/editor/canvas';
  */
 export function useTimelineIntegration() {
   const { elements, groups } = useCanvasStore();
-  const { 
-    initializeSubscriptions, 
-    cleanupSubscriptions, 
+  const {
+    initializeSubscriptions,
+    cleanupSubscriptions,
     buildGSAPTimeline,
     isLoading,
-    error 
+    error
   } = useTimelineSync();
-  
+
   const playbackControls = useTimelinePlayback();
   const { setElements, setGroups, updateTracks } = useTimelineTracks();
   const animationControls = useTimelineAnimations();
@@ -31,7 +31,7 @@ export function useTimelineIntegration() {
   // Initialize timeline subscriptions when the hook mounts
   useEffect(() => {
     initializeSubscriptions();
-    
+
     // Cleanup subscriptions on unmount
     return () => {
       cleanupSubscriptions();
@@ -44,10 +44,11 @@ export function useTimelineIntegration() {
     setGroups(groups);
   }, [elements, groups, setElements, setGroups]);
 
-  // Canvas ref integration
+  // Canvas ref integration for both managers
   const setCanvasRef = useCallback((ref: React.RefObject<CanvasRef | null>) => {
-    const gsapManager = useTimelineStore.getState().gsapManager;
-    gsapManager.setCanvasRef(ref);
+    const state = useTimelineStore.getState();
+    state.gsapManager.setCanvasRef(ref);
+    state.individualManager.setCanvasRef(ref);
     buildGSAPTimeline();
   }, [buildGSAPTimeline]);
 
@@ -59,8 +60,8 @@ export function useTimelineIntegration() {
   }, []);
 
   const updateElementAnimation = useCallback((
-    elementId: string, 
-    animationId: string, 
+    elementId: string,
+    animationId: string,
     updates: Partial<ElementAnimation>
   ) => {
     // Update canvas store
@@ -81,8 +82,8 @@ export function useTimelineIntegration() {
   }, []);
 
   const updateGroupAnimation = useCallback((
-    groupId: string, 
-    animationId: string, 
+    groupId: string,
+    animationId: string,
     updates: Partial<ElementAnimation>
   ) => {
     // Update canvas store
@@ -123,11 +124,99 @@ export function useTimelineIntegration() {
     playbackControls.seek(time);
   }, [playbackControls]);
 
-  // Force rebuild GSAP timeline (useful after major changes)
+  // Force rebuild timeline (supports both managers)
   const rebuildTimeline = useCallback(() => {
-    updateTracks();
-    buildGSAPTimeline();
-  }, [updateTracks, buildGSAPTimeline]);
+    const state = useTimelineStore.getState();
+    const managerType = state.getCurrentManagerType();
+
+    if (managerType === 'individual') {
+      // Use Individual Timeline Manager for rebuild
+      state.individualManager.clearTimeline();
+      const elementUpdates = elements.map(element => ({
+        elementId: element.id,
+        animations: element.animations || []
+      }));
+      const groupUpdates = groups.map(group => ({
+        groupId: group.id,
+        animations: group.animations || [],
+        group
+      }));
+      state.individualManager.batchUpdateElements(elementUpdates, elements);
+      state.individualManager.batchUpdateGroups(groupUpdates);
+    } else {
+      updateTracks();
+      buildGSAPTimeline();
+    }
+  }, [elements, groups, updateTracks, buildGSAPTimeline]);
+
+  // Enhanced Phase 2 methods for Individual Timeline Manager
+  const updateElementAnimationOptimized = useCallback((
+    elementId: string,
+    animationId: string,
+    updates: Partial<ElementAnimation>
+  ) => {
+    const state = useTimelineStore.getState();
+    const managerType = state.getCurrentManagerType();
+
+    // Update canvas store first
+    useCanvasStore.getState().updateElementAnimation(elementId, animationId, updates);
+
+    if (managerType === 'individual') {
+      // Get updated element and update only its timeline
+      const element = useCanvasStore.getState().elements.find(el => el.id === elementId);
+      if (element) {
+        state.updateElementAnimations(elementId, element.animations, state.elements);
+      }
+    } else {
+      // Fallback to full rebuild for enhanced manager
+      rebuildTimeline();
+    }
+  }, [rebuildTimeline]);
+
+  const batchUpdateAnimations = useCallback((
+    updates: Array<{ elementId: string, animationId: string, updates: Partial<ElementAnimation> }>
+  ) => {
+    const state = useTimelineStore.getState();
+    const managerType = state.getCurrentManagerType();
+
+    // Update canvas store first
+    updates.forEach(({ elementId, animationId, updates: animUpdates }) => {
+      useCanvasStore.getState().updateElementAnimation(elementId, animationId, animUpdates);
+    });
+
+    if (managerType === 'individual') {
+      // Batch update timelines efficiently
+      const elementUpdates = updates.map(({ elementId }) => {
+        const element = useCanvasStore.getState().elements.find(el => el.id === elementId);
+        return {
+          elementId,
+          animations: element?.animations || []
+        };
+      });
+
+      state.batchUpdateElements(elementUpdates, state.elements);
+    } else {
+      // Fallback to full rebuild for enhanced manager
+      rebuildTimeline();
+    }
+  }, [rebuildTimeline]);
+
+  // Manager selection and performance monitoring
+  const setAnimationManager = useCallback((useIndividual: boolean) => {
+    const state = useTimelineStore.getState();
+    state.setAnimationManager(useIndividual);
+    rebuildTimeline();
+  }, [rebuildTimeline]);
+
+  const getAnimationStats = useCallback(() => {
+    const state = useTimelineStore.getState();
+    return state.getAnimationPerformance();
+  }, []);
+
+  const generatePerformanceReport = useCallback(() => {
+    const state = useTimelineStore.getState();
+    return state.generatePerformanceReport();
+  }, []);
 
   return {
     // Playback controls
@@ -147,6 +236,13 @@ export function useTimelineIntegration() {
     removeGroupAnimation,
     duplicateElementAnimation,
     duplicateGroupAnimation,
+
+    // Phase 2 Enhanced methods
+    updateElementAnimationOptimized,
+    batchUpdateAnimations,
+    setAnimationManager,
+    getAnimationStats,
+    generatePerformanceReport,
 
     // Canvas integration
     setCanvasRef,
@@ -175,7 +271,7 @@ export function useTimelineUI() {
     ui: state.ui,
     tracks: state.tracks,
     playback: state.playback,
-    
+
     // UI controls
     setScale: state.setScale,
     setScrollPosition: state.setScrollPosition,
@@ -187,7 +283,7 @@ export function useTimelineUI() {
     toggleSnapToGrid: state.toggleSnapToGrid,
     setGridSize: state.setGridSize,
     clearSelection: state.clearSelection,
-    
+
     // Utility functions
     getTrackById: state.getTrackById,
     getTrackDuration: state.getTrackDuration,
