@@ -92,7 +92,6 @@ export function SceneExplorer({
       });
       return isRoot;
     });
-    console.log('Root elements:', rootElements.map(e => e.name));
     return rootElements;
   };
 
