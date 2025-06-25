@@ -18,6 +18,7 @@ import { MaskOverlay } from './canvas/mask-overlay';
 import { AnimatedCanvasObject, ElementAnimation, CanvasGroup } from '@/types/canvas';
 import { Canvas } from './canvas';
 import type { CanvasRef } from './canvas';
+import { createNewObject } from '@/lib/canvas-object-factory';
 import { useCanvasDimensions } from '@/hooks/use-canvas-dimensions';
 import { useTimelineIntegration } from '@/hooks/use-timeline-integration';
 import { useElementSnapping } from '@/hooks/use-element-snapping';
@@ -909,6 +910,62 @@ export default function EditorCanvas() {
     updateSelectedGroups(detectedGroups);
   }, [selectedObjects, groups, updateSelectedGroups]);
 
+  // Handle image file upload
+  const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check if file is an image
+    if (!file.type.startsWith('image/')) {
+      alert('Please select a valid image file.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const imageData = event.target?.result as string;
+      if (imageData) {
+        // Create image object at canvas center
+        const containerElement = containerRef.current;
+        if (containerElement) {
+          const rect = containerElement.getBoundingClientRect();
+          const scrollLeft = containerElement.scrollLeft;
+          const scrollTop = containerElement.scrollTop;
+          
+          // Calculate center position relative to the canvas
+          const centerX = scrollLeft + rect.width / 2;
+          const centerY = scrollTop + rect.height / 2;
+          
+          // Create new image element
+          const newImage = createNewObject(
+            'image',
+            centerX,
+            centerY,
+            canvasObjects,
+            undefined, // pathPoints
+            false, // isPath
+            imageData,
+            200, // default width
+            150  // default height
+          );
+
+          // Add to canvas and select
+          setCanvasObjects(prev => [...prev, newImage]);
+          selectElement([newImage]);
+        }
+      }
+    };
+
+    reader.onerror = () => {
+      alert('Error reading image file.');
+    };
+
+    reader.readAsDataURL(file);
+    
+    // Clear the input so same file can be uploaded again
+    e.target.value = '';
+  }, [canvasObjects, setCanvasObjects, selectElement, containerRef]);
+
   return (
     <div className="h-screen w-screen flex flex-col">
       {/* Options Bar */}
@@ -1157,13 +1214,13 @@ export default function EditorCanvas() {
         <Timeline />
       </div>
 
-      {/* Hidden file input for image upload - temporarily disabled */}
+      {/* Hidden file input for image upload */}
       <input
         ref={imageFileInputRef}
         type="file"
         accept="image/*"
         style={{ display: 'none' }}
-        onChange={() => {/* Image import temporarily disabled */ }}
+        onChange={handleImageUpload}
       />
     </div>
   );
