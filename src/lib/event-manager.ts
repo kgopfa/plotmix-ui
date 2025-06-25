@@ -76,7 +76,6 @@ class EventManager {
           target.removeEventListener(eventType, boundHandler as EventListener);
           this.boundHandlers.delete(eventType);
           this.listeners.delete(eventType);
-          console.log(`EventManager: Removed global listener for ${eventType}`);
         }
       }
     }
