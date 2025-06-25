@@ -43,7 +43,7 @@ export default function EditorCanvas() {
     setCanvasObjects,
     setGroups,
   } = useCanvasMigration();
-  
+
   // Use Zustand store for selection state
   const {
     selectedElements: selectedObjects,
@@ -54,10 +54,10 @@ export default function EditorCanvas() {
     clearSelections,
     updateSelectedGroups
   } = useSelectionStore();
-  
+
   // Use UI store for tool state
   const toolState = useUIStore((state) => state.tools);
-  const { 
+  const {
     setActiveTool,
     setMaskPos,
     setLineStartPoint,
@@ -74,15 +74,15 @@ export default function EditorCanvas() {
 
   // Use UI store for panel state
   const panelState = useUIStore((state) => state.panels);
-  const { 
-    setLeftPanelWidth, 
-    setRightPanelWidth, 
+  const {
+    setLeftPanelWidth,
+    setRightPanelWidth,
     setTimelineHeight,
     setResizing
   } = useUIStore();
-  
+
   // Use UI store for other tool state
-  const { 
+  const {
     togglePathMode,
     setAnimationTarget,
     toggleShowPaths,
@@ -104,9 +104,9 @@ export default function EditorCanvas() {
   const [canvasZoom, setCanvasZoom] = useState(1);
 
   // Grid snapping functionality - only keep what's needed for canvas operations
-  const { 
+  const {
     gridConfig,
-    snapPoint, 
+    snapPoint,
     snapLine
   } = useGridSnapping({
     size: 10,
@@ -172,10 +172,10 @@ export default function EditorCanvas() {
     // Update the textGroup element with new text and characters
     const textGroupElement = canvasObjects.find(el => el.id === textGroupId);
     if (textGroupElement) {
-      const newWidth = characterElements.length > 0 
-        ? Math.max(...characterElements.map(char => char.x)) - Math.min(...characterElements.map(char => char.x)) + (characterElements[0]?.width || 0) 
+      const newWidth = characterElements.length > 0
+        ? Math.max(...characterElements.map(char => char.x)) - Math.min(...characterElements.map(char => char.x)) + (characterElements[0]?.width || 0)
         : textGroupElement.width;
-      
+
       updateElement(textGroupId, {
         text: newText,
         characters: newText.split(''),
@@ -184,10 +184,10 @@ export default function EditorCanvas() {
     }
 
     // Remove old character elements that belong to this textGroup
-    const oldCharacters = canvasObjects.filter(el => 
+    const oldCharacters = canvasObjects.filter(el =>
       el.type === 'character' && el.parentTextGroupId === textGroupId
     );
-    
+
     oldCharacters.forEach(char => removeElement(char.id));
 
     // Add new character elements
@@ -255,10 +255,10 @@ export default function EditorCanvas() {
     const handleWheel = (e: WheelEvent) => {
       if (e.metaKey || e.ctrlKey) { // Cmd on Mac, Ctrl on Windows/Linux
         e.preventDefault();
-        
+
         const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1; // Scroll down = zoom out, scroll up = zoom in
         const newZoom = Math.min(Math.max(canvasZoom * zoomFactor, 0.1), 5); // Clamp between 0.1x and 5x
-        
+
         // Use the canvas's center-based zoom instead of just setting state
         if (canvasRef.current) {
           canvasRef.current.setZoom(newZoom);
@@ -274,7 +274,7 @@ export default function EditorCanvas() {
         const touch1 = e.touches[0];
         const touch2 = e.touches[1];
         lastPinchDistance = Math.sqrt(
-          Math.pow(touch2.clientX - touch1.clientX, 2) + 
+          Math.pow(touch2.clientX - touch1.clientX, 2) +
           Math.pow(touch2.clientY - touch1.clientY, 2)
         );
       }
@@ -283,11 +283,11 @@ export default function EditorCanvas() {
     const handleTouchMove = (e: TouchEvent) => {
       if (e.touches.length === 2) {
         e.preventDefault(); // Prevent default pinch behavior
-        
+
         const touch1 = e.touches[0];
         const touch2 = e.touches[1];
         const currentDistance = Math.sqrt(
-          Math.pow(touch2.clientX - touch1.clientX, 2) + 
+          Math.pow(touch2.clientX - touch1.clientX, 2) +
           Math.pow(touch2.clientY - touch1.clientY, 2)
         );
 
@@ -296,7 +296,7 @@ export default function EditorCanvas() {
           // Dampen the pinch sensitivity - only apply 30% of the raw scale change
           const pinchScale = 1 + (rawPinchScale - 1) * 0.1;
           const newZoom = Math.min(Math.max(canvasZoom * pinchScale, 0.1), 5);
-          
+
           // Use the canvas's center-based zoom instead of just setting state
           if (canvasRef.current) {
             canvasRef.current.setZoom(newZoom);
@@ -425,7 +425,7 @@ export default function EditorCanvas() {
 
     const bounds = calculateBounds(elements);
     const groupId = customId || `group-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
+
     const groupName = name || (() => {
       switch (type) {
         case 'custom':
@@ -453,7 +453,7 @@ export default function EditorCanvas() {
     };
 
     // Update elements to have group IDs
-    setCanvasObjects(prevElements => 
+    setCanvasObjects(prevElements =>
       prevElements.map(el => {
         if (elements.some(groupEl => groupEl.id === el.id)) {
           return { ...el, groupId: groupId };
@@ -500,32 +500,32 @@ export default function EditorCanvas() {
 
     // Find the chained lines including the last one
     const chainedLines = canvasObjects.filter(obj => toolState.chainedLineIds.includes(obj.id));
-    
+
     if (chainedLines.length >= 2) {
       // Check if any of the lines in the polygon are dotted (indicating path mode)
       const isPolygonPath = chainedLines.some(line => line.lineOptions?.dotted === true);
-      
+
       // Create a polygon group using the typed group system
       // Note: createPolygonGroup already handles all state updates including setGroups and setCanvasObjects
       const polygonGroup = createPolygonGroup(chainedLines, true); // true = closed polygon
-      
+
       // If this polygon was created in path mode, mark the group as an animation path and exit path mode
       if (isPolygonPath && polygonGroup) {
-        setGroups(prevGroups => 
-          prevGroups.map(group => 
-            group.id === polygonGroup.id 
+        setGroups(prevGroups =>
+          prevGroups.map(group =>
+            group.id === polygonGroup.id
               ? { ...group, isAnimationPath: true }
               : group
           )
         );
-        
+
         // Add the polygon group to the animation and exit path mode
         addPathToAnimation(polygonGroup as unknown as AnimatedCanvasObject);
         togglePathMode();
         setAnimationTarget(null);
       }
     }
-    
+
     // Clean up line chaining state
     setLineStartPoint(null);
     setLineChaining(false);
@@ -537,7 +537,7 @@ export default function EditorCanvas() {
 
   const canvasClickHandler = (e: FederatedPointerEvent) => {
     const isEmptyClick = !(e.target && (e.target as Container).label === 'shape');
-    
+
     // Allow object creation when using creation tools, even on top of existing shapes
     const isCreationTool = toolState.activeTool !== 'select';
     const shouldCreateObject = isEmptyClick || isCreationTool;
@@ -553,10 +553,10 @@ export default function EditorCanvas() {
         } else {
           // Second+ click - create line and continue chaining with snapping
           const snappedEnd = snapPoint({ x: e.global.x, y: e.global.y }, e);
-          
+
           // Check if we're trying to close the shape by finding the original start point
           let originalStartPoint = null;
-          
+
           if (toolState.chainedLineIds.length > 0) {
             // Find the first chained line to get the original start point
             const firstChainedLine = canvasObjects.find(obj => obj.id === toolState.chainedLineIds[0]);
@@ -564,22 +564,22 @@ export default function EditorCanvas() {
               originalStartPoint = firstChainedLine.lineOptions.points.start;
             }
           }
-          
+
           let shouldCloseShape = false;
           let finalEndPoint = snappedEnd;
-          
+
           if (originalStartPoint) {
             const distanceToOriginalStart = Math.hypot(snappedEnd.x - originalStartPoint.x, snappedEnd.y - originalStartPoint.y);
-            
+
             // Use a larger threshold for easier polygon closing - 30px instead of 20px
             if (distanceToOriginalStart <= 30) {
               shouldCloseShape = true;
               finalEndPoint = originalStartPoint; // Snap exactly to the original start point
             }
           }
-          
+
           const { start: finalStart, end: finalEnd } = snapLine(toolState.lineStartPoint, finalEndPoint, e);
-          
+
           const newElement = createNewObject('line', finalStart.x, finalStart.y, canvasObjects, undefined, toolState.isPathMode);
           // Update line end point
           newElement.lineOptions = {
@@ -593,11 +593,11 @@ export default function EditorCanvas() {
 
           // Add this line to the chained lines (including the closing line)
           addChainedLineId(newElement.id);
-          
-            setCanvasObjects(prev => [...prev, newElement]);
-            selectElement([newElement]);
-            updateSelectedGroups([]);
-          
+
+          setCanvasObjects(prev => [...prev, newElement]);
+          selectElement([newElement]);
+          updateSelectedGroups([]);
+
           if (shouldCloseShape) {
             // Shape is closed - trigger polygon creation via useEffect
             setClosingShape(true);
@@ -619,7 +619,7 @@ export default function EditorCanvas() {
           // Second click - create line and exit (no chaining)
           const snappedEnd = snapPoint({ x: e.global.x, y: e.global.y }, e);
           const { start: finalStart, end: finalEnd } = snapLine(toolState.lineStartPoint, snappedEnd, e);
-          
+
           const newElement = createNewObject('line', finalStart.x, finalStart.y, canvasObjects, undefined, toolState.isPathMode);
           // Update line end point
           newElement.lineOptions = {
@@ -630,11 +630,11 @@ export default function EditorCanvas() {
             arrow: false,
             dotted: toolState.isPathMode
           };
-          
+
           setCanvasObjects(prev => [...prev, newElement]);
           selectElement([newElement]);
           updateSelectedGroups([]);
-          
+
           // Reset line start point and switch to select tool
           setLineStartPoint(null);
           setActiveTool('select');
@@ -651,7 +651,7 @@ export default function EditorCanvas() {
         // Create image element at click position
         const imageWidth = 100;
         const imageHeight = 100;
-        
+
         try {
           const snappedPos = snapPoint({ x: e.global.x, y: e.global.y }, e);
           const imageElement = createNewObject(
@@ -665,7 +665,7 @@ export default function EditorCanvas() {
             imageWidth,
             imageHeight
           );
-          
+
           setCanvasObjects(prev => [...prev, imageElement]);
           selectElement([imageElement]);
           updateSelectedGroups([]);
@@ -715,14 +715,14 @@ export default function EditorCanvas() {
       } else if (toolState.activeTool === 'textGroup') {
         const snappedPos = snapPoint({ x: e.global.x, y: e.global.y }, e);
         const { textGroup, characters } = createTextGroupWithCharacters(
-          snappedPos.x, 
-          snappedPos.y, 
+          snappedPos.x,
+          snappedPos.y,
           canvasObjects
         );
-        
+
         // Add both the textGroup and its character elements to the canvas
         setCanvasObjects(prev => [...prev, textGroup, ...characters]);
-        
+
         setActiveTool('select');
         setMaskPos(null);
 
@@ -739,7 +739,7 @@ export default function EditorCanvas() {
       // When clicking on existing shapes with select tool, just clear selection
       // This maintains the existing behavior for selection mode
       clearSelections();
-    } 
+    }
   };
 
   // Helper function to add path shape to animation
@@ -816,7 +816,7 @@ export default function EditorCanvas() {
 
     // Create a temporary element with the new position for snapping calculation
     const tempElement = { ...draggedElement, x, y };
-    
+
     // Apply element snapping first (including grid centers), then grid snapping as fallback
     const elementSnapResult = snapElement(tempElement, canvasObjects, gridConfig);
     const snappedPos = snapPoint({ x: elementSnapResult.x, y: elementSnapResult.y });
@@ -850,15 +850,15 @@ export default function EditorCanvas() {
 
     // If this is a textGroup, also move all its character children
     if (draggedElement.type === 'textGroup') {
-      const characterChildren = canvasObjects.filter(child => 
+      const characterChildren = canvasObjects.filter(child =>
         child.type === 'character' && child.parentTextGroupId === draggedElement.id
       );
-      
+
       const characterUpdates = characterChildren.map(child => ({
         id: child.id,
         updates: { x: child.x + dx, y: child.y + dy }
       }));
-      
+
       if (characterUpdates.length > 0) {
         updateMultipleElements(characterUpdates);
       }
@@ -884,7 +884,7 @@ export default function EditorCanvas() {
 
   const handleGroupDrag = (elementPositions: Array<{ id: string; x: number; y: number }>) => {
     isGroupDraggingRef.current = true;
-    
+
     // Clear any existing timeout
     if (groupDragTimeoutRef.current) {
       clearTimeout(groupDragTimeoutRef.current);
@@ -892,13 +892,13 @@ export default function EditorCanvas() {
 
     // Apply snapping to the group movement
     let snappedPositions = elementPositions;
-    
+
     if (elementPositions.length > 0) {
       // Create a virtual group element from the new positions for snapping calculation
-      const selectedElements = canvasObjects.filter(el => 
+      const selectedElements = canvasObjects.filter(el =>
         elementPositions.some(pos => pos.id === el.id)
       );
-      
+
       if (selectedElements.length > 0) {
         // Calculate the new group center from the drag positions
         const positions = elementPositions.map(pos => ({ x: pos.x, y: pos.y }));
@@ -908,9 +908,9 @@ export default function EditorCanvas() {
         const maxY = Math.max(...positions.map(p => p.y));
         const groupCenterX = (minX + maxX) / 2;
         const groupCenterY = (minY + maxY) / 2;
-        
+
         // Note: We use the current dragged positions for snapping, not the original positions
-        
+
         // Create a virtual group element for snapping
         const virtualGroupElement = {
           id: 'virtual-group-drag',
@@ -929,32 +929,32 @@ export default function EditorCanvas() {
           animations: [],
           cornerRadius: 0
         };
-        
+
         // Apply element snapping to the virtual group using the lower-level function for more control
         const { x: snappedX, y: snappedY, guides } = applyElementSnapping(
-          virtualGroupElement, 
-          canvasObjects, 
+          virtualGroupElement,
+          canvasObjects,
           elementSnapConfig.snapThreshold,
           gridConfig,
           elementSnapConfig.enableSpacing,
           elementSnapConfig.enableDistribution
         );
         const snappedGroupPos = snapPoint({ x: snappedX, y: snappedY });
-        
+
         // Update the guides if show guides is enabled and we have guides to show
         if (elementSnapConfig.showGuides && guides.length > 0) {
           setElementSnapGuides(guides);
         } else {
           clearElementSnapGuides();
         }
-        
+
         // Calculate the offset from the original group center to the snapped position
         const offsetX = snappedGroupPos.x - groupCenterX;
         const offsetY = snappedGroupPos.y - groupCenterY;
-        
+
         // Check if any actual snapping occurred
         const actuallySnapped = Math.abs(offsetX) > 0.5 || Math.abs(offsetY) > 0.5;
-        
+
         if (actuallySnapped) {
           // Apply the offset to all element positions
           snappedPositions = elementPositions.map(pos => ({
@@ -976,13 +976,13 @@ export default function EditorCanvas() {
         const newPosition = snappedPositions.find(pos => pos.id === el.id);
         if (!newPosition) {
           // Check if this element is a character child of a textGroup being moved
-          const parentTextGroup = prevElements.find(parent => 
-            parent.type === 'textGroup' && 
-            el.type === 'character' && 
+          const parentTextGroup = prevElements.find(parent =>
+            parent.type === 'textGroup' &&
+            el.type === 'character' &&
             el.parentTextGroupId === parent.id &&
             snappedPositions.some(pos => pos.id === parent.id)
           );
-          
+
           if (parentTextGroup) {
             const parentNewPosition = snappedPositions.find(pos => pos.id === parentTextGroup.id);
             if (parentNewPosition) {
@@ -991,7 +991,7 @@ export default function EditorCanvas() {
               return { ...el, x: el.x + dx, y: el.y + dy };
             }
           }
-          
+
           return el;
         }
 
@@ -1027,7 +1027,7 @@ export default function EditorCanvas() {
     // Delay expensive operations (animation updates) until drag ends
     groupDragTimeoutRef.current = setTimeout(() => {
       if (!isGroupDraggingRef.current) return;
-      
+
       setCanvasObjects(currentElements => {
         // Check if any moved elements are animation paths and update related animations
         const hasAnimationPaths = elementPositions.some(pos => {
@@ -1053,7 +1053,7 @@ export default function EditorCanvas() {
 
         return currentElements;
       });
-      
+
       isGroupDraggingRef.current = false;
     }, 100); // Debounce expensive operations by 100ms
   };
@@ -1194,7 +1194,7 @@ export default function EditorCanvas() {
       if (prop === 'animations') {
         // Update timeline track data
         timelineManager.setTrackData(canvasObjects, updatedGroups);
-        
+
         // Rebuild timeline after group animation changes
         setTimeout(() => {
           gsapManager.buildAnimationTimeline(canvasObjects, updatedGroups);
@@ -1408,7 +1408,7 @@ export default function EditorCanvas() {
       console.warn('Cannot group elements: need at least 2 selected elements');
       return;
     }
-    
+
     createGroup({
       elements: selectedObjects,
       type: 'custom'
@@ -1420,14 +1420,14 @@ export default function EditorCanvas() {
       console.warn('Cannot ungroup elements: need exactly one group selected');
       return;
     }
-    
+
     const groupToUngroup = selectedGroups[0];
-    
+
     // Remove the group
     setGroups(prev => prev.filter(g => g.id !== groupToUngroup.id));
-    
+
     // Update canvas objects to remove group IDs
-    setCanvasObjects(prev => 
+    setCanvasObjects(prev =>
       prev.map(el => {
         if (groupToUngroup.elementIds.includes(el.id)) {
           return { ...el, groupId: undefined };
@@ -1454,7 +1454,7 @@ export default function EditorCanvas() {
 
     const groupIds = new Set(selectedObjects.map(el => el.groupId).filter(Boolean));
     const candidateGroups = groups.filter(group => groupIds.has(group.id));
-    
+
     const detectedGroups = candidateGroups.filter(group => {
       if (group.isDefaultGroup) return false;
       const selectedElementIds = new Set(selectedObjects.map(el => el.id));
@@ -1516,154 +1516,154 @@ export default function EditorCanvas() {
           }}
           onMouseLeave={() => setMaskPos(null)}
         >
-                    {/* Full canvas area - clean infinite canvas */}
-          <div 
+          {/* Full canvas area - clean infinite canvas */}
+          <div
             className="relative bg-white"
-            style={{ 
+            style={{
               width: '300vw', // 3x viewport width for more space
               height: '300vh', // 3x viewport height for more space
               minWidth: '4000px', // Larger minimum size
               minHeight: '4000px'
             }}
           >
-              {toolState.isPathMode && (
-                <div className="absolute top-0 left-0 w-full py-2 px-4 bg-blue-100 text-blue-800 z-10 flex justify-between items-center">
-                  <span>
-                    <strong>Path Drawing Mode:</strong> Select a tool and draw a path that your element will follow.
-                  </span>
-                  <button
-                    className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-                    onClick={() => {
-                      togglePathMode();
-                      setAnimationTarget(null);
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              )}
-
-          
-
-          {/* Navigation and Path Controls */}
-          <div 
-            className="absolute bottom-4 z-20 flex flex-col gap-2 transition-all duration-300"
-            style={{ right: `${panelState.rightPanelVisible ? panelState.rightPanelWidth + 16 : 16}px` }} // Adjust position based on panel visibility
-          >
-            {/* Path visibility toggle - only show if paths exist */}
-            {canvasObjects.some(el => el.isAnimationPath) && (
-              <button
-                className={`px-3 py-1.5 rounded shadow flex items-center ${toolState.showPaths ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'}`}
-                onClick={() => toggleShowPaths()}
-                title={toolState.showPaths ? 'Hide Animation Paths' : 'Show Animation Paths'}
-              >
-                <svg className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M3 17.25V21H6.75L17.81 9.94L14.06 6.19L3 17.25Z"
-                    fill={toolState.showPaths ? "white" : "currentColor"} />
-                  <path d="M20.71 7.04C21.1 6.65 21.1 6.02 20.71 5.63L18.37 3.29C17.98 2.9 17.35 2.9 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04Z"
-                    fill={toolState.showPaths ? "white" : "currentColor"} />
-                </svg>
-                {toolState.showPaths ? 'Paths Visible' : 'Paths Hidden'}
-              </button>
+            {toolState.isPathMode && (
+              <div className="absolute top-0 left-0 w-full py-2 px-4 bg-blue-100 text-blue-800 z-10 flex justify-between items-center">
+                <span>
+                  <strong>Path Drawing Mode:</strong> Select a tool and draw a path that your element will follow.
+                </span>
+                <button
+                  className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                  onClick={() => {
+                    togglePathMode();
+                    setAnimationTarget(null);
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
             )}
-            
-            {/* Navigation Help */}
-            <div className="bg-black/75 text-white text-xs rounded p-2 max-w-[200px]">
-              <div className="font-semibold mb-1">Navigation:</div>
-              <div>• Drag to pan</div>
-              <div>• Wheel to scroll up/down</div>
-              <div>• Shift+Wheel for left/right</div>
-              <div>• Ctrl+Wheel to zoom</div>
-              <div>• Arrow keys to navigate</div>
-              <div>• Spacebar to center</div>
-            </div>
-          </div>
 
-                          {dimensions.width > 0 && dimensions.height > 0 && (
-                <Canvas
-                  ref={canvasRef}
-                  dimensions={{
-                    width: Math.max(dimensions.width * 3, 4000), // Canvas fills entire scrollable area
-                    height: Math.max(dimensions.height * 3, 4000)
-                  }}
-                  elements={toolState.showPaths ? canvasObjects : canvasObjects.filter(el => !el.isAnimationPath)}
-                  groups={groups}
-                  selectedIds={selectedObjects.map(obj => obj.id)}
-                  onElementSelect={handleSelectElement}
-                  onElementDragEnd={handleElementDragEnd}
-                  onGroupDrag={handleGroupDrag}
-                  onCanvasClick={canvasClickHandler}
-                  tool={toolState.activeTool}
-                  onAddElement={handleAddElement}
-                  isPathMode={toolState.isPathMode}
-                  animationTarget={toolState.animationTarget}
-                  onPathStartClick={(elementId, x, y) => {
-                    // Start the line drawing from the center of the element
-                    setLineStartPoint({ x, y });
-                    setActiveTool('line');
-                  }}
-                  onElementRotate={handleElementRotate}
-                  onTextChange={handleTextChange}
-                  onTextGroupChange={handleTextGroupChange}
-                  zoom={canvasZoom}
-                  onZoomChange={setCanvasZoom}
-                  gridConfig={gridConfig}
-                  snapGuides={elementSnapGuides}
-                  lineStartPoint={toolState.lineStartPoint}
-                  isLineChaining={toolState.isLineChaining}
-                  chainedLineIds={toolState.chainedLineIds}
-                  isPlaying={false} // TODO: Connect to timeline store playback state if needed
-                  onCopyElement={(elementId) => {
-                    // Find the element to copy
-                    const elementToCopy = canvasObjects.find(el => el.id === elementId);
-                    if (elementToCopy) {
-                      // Create a copy with new ID and slight offset
-                      const newElement = {
-                        ...elementToCopy,
-                        id: `copy-${Date.now()}`,
-                        name: `${elementToCopy.name} Copy`,
-                        x: elementToCopy.x + 20,
-                        y: elementToCopy.y + 20
-                      };
-                      setCanvasObjects(prev => [...prev, newElement]);
-                      selectElement([newElement]);
-                    }
-                  }}
-                  onGroupElements={(elementIds) => {
-                    const elementsToGroup = canvasObjects.filter(el => elementIds.includes(el.id));
-                    if (elementsToGroup.length > 0) {
-                      handleGroupElements();
-                    }
-                  }}
-                  onMoveToFront={(elementId) => {
-                    // Move element to front by updating z-index or reordering
-                    setCanvasObjects(prev => {
-                      const element = prev.find(el => el.id === elementId);
-                      if (element) {
-                        const otherElements = prev.filter(el => el.id !== elementId);
-                        return [...otherElements, element]; // Move to end (front)
-                      }
-                      return prev;
-                    });
-                  }}
-                  onMoveToBack={(elementId) => {
-                    // Move element to back by updating z-index or reordering  
-                    setCanvasObjects(prev => {
-                      const element = prev.find(el => el.id === elementId);
-                      if (element) {
-                        const otherElements = prev.filter(el => el.id !== elementId);
-                        return [element, ...otherElements]; // Move to beginning (back)
-                      }
-                      return prev;
-                    });
-                  }}
-                />
+
+
+            {/* Navigation and Path Controls */}
+            <div
+              className="absolute bottom-4 z-20 flex flex-col gap-2 transition-all duration-300"
+              style={{ right: `${panelState.rightPanelVisible ? panelState.rightPanelWidth + 16 : 16}px` }} // Adjust position based on panel visibility
+            >
+              {/* Path visibility toggle - only show if paths exist */}
+              {canvasObjects.some(el => el.isAnimationPath) && (
+                <button
+                  className={`px-3 py-1.5 rounded shadow flex items-center ${toolState.showPaths ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'}`}
+                  onClick={() => toggleShowPaths()}
+                  title={toolState.showPaths ? 'Hide Animation Paths' : 'Show Animation Paths'}
+                >
+                  <svg className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 17.25V21H6.75L17.81 9.94L14.06 6.19L3 17.25Z"
+                      fill={toolState.showPaths ? "white" : "currentColor"} />
+                    <path d="M20.71 7.04C21.1 6.65 21.1 6.02 20.71 5.63L18.37 3.29C17.98 2.9 17.35 2.9 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04Z"
+                      fill={toolState.showPaths ? "white" : "currentColor"} />
+                  </svg>
+                  {toolState.showPaths ? 'Paths Visible' : 'Paths Hidden'}
+                </button>
               )}
+
+              {/* Navigation Help */}
+              <div className="bg-black/75 text-white text-xs rounded p-2 max-w-[200px]">
+                <div className="font-semibold mb-1">Navigation:</div>
+                <div>• Drag to pan</div>
+                <div>• Wheel to scroll up/down</div>
+                <div>• Shift+Wheel for left/right</div>
+                <div>• Ctrl+Wheel to zoom</div>
+                <div>• Arrow keys to navigate</div>
+                <div>• Spacebar to center</div>
+              </div>
             </div>
+
+            {dimensions.width > 0 && dimensions.height > 0 && (
+              <Canvas
+                ref={canvasRef}
+                dimensions={{
+                  width: Math.max(dimensions.width * 3, 4000), // Canvas fills entire scrollable area
+                  height: Math.max(dimensions.height * 3, 4000)
+                }}
+                elements={toolState.showPaths ? canvasObjects : canvasObjects.filter(el => !el.isAnimationPath)}
+                groups={groups}
+                selectedIds={selectedObjects.map(obj => obj.id)}
+                onElementSelect={handleSelectElement}
+                onElementDragEnd={handleElementDragEnd}
+                onGroupDrag={handleGroupDrag}
+                onCanvasClick={canvasClickHandler}
+                tool={toolState.activeTool}
+                onAddElement={handleAddElement}
+                isPathMode={toolState.isPathMode}
+                animationTarget={toolState.animationTarget}
+                onPathStartClick={(elementId, x, y) => {
+                  // Start the line drawing from the center of the element
+                  setLineStartPoint({ x, y });
+                  setActiveTool('line');
+                }}
+                onElementRotate={handleElementRotate}
+                onTextChange={handleTextChange}
+                onTextGroupChange={handleTextGroupChange}
+                zoom={canvasZoom}
+                onZoomChange={setCanvasZoom}
+                gridConfig={gridConfig}
+                snapGuides={elementSnapGuides}
+                lineStartPoint={toolState.lineStartPoint}
+                isLineChaining={toolState.isLineChaining}
+                chainedLineIds={toolState.chainedLineIds}
+                isPlaying={false} // TODO: Connect to timeline store playback state if needed
+                onCopyElement={(elementId) => {
+                  // Find the element to copy
+                  const elementToCopy = canvasObjects.find(el => el.id === elementId);
+                  if (elementToCopy) {
+                    // Create a copy with new ID and slight offset
+                    const newElement = {
+                      ...elementToCopy,
+                      id: `copy-${Date.now()}`,
+                      name: `${elementToCopy.name} Copy`,
+                      x: elementToCopy.x + 20,
+                      y: elementToCopy.y + 20
+                    };
+                    setCanvasObjects(prev => [...prev, newElement]);
+                    selectElement([newElement]);
+                  }
+                }}
+                onGroupElements={(elementIds) => {
+                  const elementsToGroup = canvasObjects.filter(el => elementIds.includes(el.id));
+                  if (elementsToGroup.length > 0) {
+                    handleGroupElements();
+                  }
+                }}
+                onMoveToFront={(elementId) => {
+                  // Move element to front by updating z-index or reordering
+                  setCanvasObjects(prev => {
+                    const element = prev.find(el => el.id === elementId);
+                    if (element) {
+                      const otherElements = prev.filter(el => el.id !== elementId);
+                      return [...otherElements, element]; // Move to end (front)
+                    }
+                    return prev;
+                  });
+                }}
+                onMoveToBack={(elementId) => {
+                  // Move element to back by updating z-index or reordering  
+                  setCanvasObjects(prev => {
+                    const element = prev.find(el => el.id === elementId);
+                    if (element) {
+                      const otherElements = prev.filter(el => el.id !== elementId);
+                      return [element, ...otherElements]; // Move to beginning (back)
+                    }
+                    return prev;
+                  });
+                }}
+              />
+            )}
+          </div>
         </main>
 
         {/* Floating Toolbar - Fixed position outside scrollable area */}
-        <div 
+        <div
           className="absolute top-2/5 -translate-y-1/2 z-50 transition-all duration-300"
           style={{ left: `${panelState.leftPanelVisible ? panelState.leftPanelWidth + 16 : 16}px` }}
         >
@@ -1685,23 +1685,23 @@ export default function EditorCanvas() {
               className="absolute top-0 left-0 h-full bg-gray-50/95 backdrop-blur-sm border-r border-gray-200 overflow-y-auto z-30 shadow-lg transition-transform duration-300"
               style={{ width: `${panelState.leftPanelWidth}px` }}
             >
-              <SceneExplorer 
-                elements={canvasObjects} 
-                groups={groups} 
+              <SceneExplorer
+                elements={canvasObjects}
+                groups={groups}
                 onElementVisibilityChange={(elementId, visible) => {
-                  setCanvasObjects(prev => 
-                    prev.map(el => 
-                      el.id === elementId 
-                        ? { ...el, visible } 
+                  setCanvasObjects(prev =>
+                    prev.map(el =>
+                      el.id === elementId
+                        ? { ...el, visible }
                         : el
                     )
                   );
                 }}
                 onGroupVisibilityChange={(groupId, visible) => {
-                  setGroups(prev => 
-                    prev.map(group => 
-                      group.id === groupId 
-                        ? { ...group, visible } 
+                  setGroups(prev =>
+                    prev.map(group =>
+                      group.id === groupId
+                        ? { ...group, visible }
                         : group
                     )
                   );
@@ -1710,19 +1710,19 @@ export default function EditorCanvas() {
                   console.log('onParentChange called:', { childId, newParentId, childType });
                   if (childType === 'element') {
                     setCanvasObjects(prev => {
-                      const updated = prev.map(el => 
-                        el.id === childId 
-                          ? { ...el, parent: newParentId } 
+                      const updated = prev.map(el =>
+                        el.id === childId
+                          ? { ...el, parent: newParentId }
                           : el
                       );
                       console.log('Updated canvas objects:', updated.find(el => el.id === childId));
                       return updated;
                     });
                   } else {
-                    setGroups(prev => 
-                      prev.map(group => 
-                        group.id === childId 
-                          ? { ...group, parent: newParentId } 
+                    setGroups(prev =>
+                      prev.map(group =>
+                        group.id === childId
+                          ? { ...group, parent: newParentId }
                           : group
                       )
                     );
@@ -1730,7 +1730,7 @@ export default function EditorCanvas() {
                 }}
               />
             </div>
-            
+
             {/* Left Resize Handle */}
             <div
               className="absolute top-0 h-full w-1 border-r border-gray-300 hover:bg-blue-500 cursor-col-resize z-40 transition-colors"
@@ -1752,7 +1752,7 @@ export default function EditorCanvas() {
                 onGroupInspectorChange={handleGroupInspectorChange}
               />
             </div>
-            
+
             {/* Right Resize Handle */}
             <div
               className="absolute top-0 h-full w-1 border-l border-gray-300 hover:bg-blue-500 cursor-col-resize z-40 transition-colors"
@@ -1764,9 +1764,9 @@ export default function EditorCanvas() {
       </div>
 
       {/* Floating Timeline - positioned fixed at bottom, floats over content */}
-      <div 
+      <div
         className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50"
-        style={{ 
+        style={{
           height: panelState.isTimelineCollapsed ? '32px' : `${panelState.timelineHeight}px`,
           minHeight: '32px', // Allow collapsing to 32px (h-8)
           maxHeight: '80vh'
@@ -1779,17 +1779,17 @@ export default function EditorCanvas() {
             onMouseDown={handleMouseDown('timeline')}
           />
         )}
-        
+
         <Timeline />
       </div>
-      
+
       {/* Hidden file input for image upload - temporarily disabled */}
       <input
         ref={imageFileInputRef}
         type="file"
         accept="image/*"
         style={{ display: 'none' }}
-        onChange={() => {/* Image import temporarily disabled */}}
+        onChange={() => {/* Image import temporarily disabled */ }}
       />
     </div>
   );
