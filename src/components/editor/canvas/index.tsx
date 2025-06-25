@@ -16,6 +16,7 @@ import ResizeHandle from './resize-handle';
 import RadiusHandle from './radius-handle';
 import { TextEditor } from './text-editor';
 import { TextGroupEditor } from './textgroup-editor';
+import { AnimatedTextGroup } from './animated-text-group';
 import { CanvasContent } from './canvas-content';
 import { GroupSelection } from './group-selection';
 import { ContextMenu } from './context-menu';
@@ -343,14 +344,46 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   }, [updateElement]);
 
   const onTextGroupChange = useCallback((textGroupId: string, newText: string, characterElements: AnimatedCanvasObject[]) => {
-    // Update the textGroup element
-    updateElement(textGroupId, { text: newText });
+    // Get the textGroup element to access its properties
+    const textGroupElement = elements.find(el => el.id === textGroupId);
+    if (!textGroupElement) return;
+    
+    // Calculate the new characters array and width
+    const newCharacters = newText.split('');
+    const fontSize = textGroupElement.fontSize || 16;
+    const letterSpacing = textGroupElement.letterSpacing || 0;
+    const fontFamily = textGroupElement.fontFamily || 'Arial, sans-serif';
+    
+    // Calculate total width using canvas measurement (matching TextGroupEditor logic)
+    let totalWidth = 0;
+    newCharacters.forEach((char) => {
+      // Use canvas measurement for accurate width calculation
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      if (context) {
+        context.font = `${fontSize}px ${fontFamily}`;
+        const metrics = context.measureText(char);
+        totalWidth += metrics.width + letterSpacing;
+      } else {
+        // Fallback
+        totalWidth += fontSize * 0.6 + letterSpacing;
+      }
+      canvas.remove();
+    });
+    const newTextWidth = Math.max(totalWidth - letterSpacing, fontSize);
+    
+    // Update the textGroup element with all necessary properties
+    updateElement(textGroupId, { 
+      text: newText,
+      characters: newCharacters,
+      width: newTextWidth
+    });
     
     // Update character elements
     characterElements.forEach(char => {
       updateElement(char.id, char);
     });
-  }, [updateElement]);
+  }, [updateElement, elements]);
 
   // Path start click handler
   const onPathStartClick = useCallback((elementId: string, x: number, y: number) => {
@@ -1596,7 +1629,10 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                   />
                 )}
 
-                {/* Note: textGroup elements don't render directly - only their child characters do */}
+                {/* Render textGroup elements using AnimatedTextGroup component */}
+                {el.type === 'textGroup' && editingTextId !== el.id && (
+                  <AnimatedTextGroup element={el} />
+                )}
 
                                       {/* Show hover outline when hovered but not selected (but not for textgroup characters or elements in custom/polygon groups) */}
                 {hoveredId === el.id && !selectedIds.includes(el.id) && !isTextGroupCharacter(el) && !isElementInCustomOrPolygonGroup(el) && (
@@ -1609,8 +1645,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                     element={el}
                     scaleFactor={canvasScaleFactor.current}
                   />
-                )}
-                    </pixiContainer>
+                                  )}
+                      </pixiContainer>
                   );
                 })}
               </pixiContainer>
@@ -1711,7 +1747,10 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                   />
                 )}
 
-                {/* Note: textGroup elements don't render directly - only their child characters do */}
+                {/* Render textGroup elements using AnimatedTextGroup component */}
+                {el.type === 'textGroup' && editingTextId !== el.id && (
+                  <AnimatedTextGroup element={el} />
+                )}
 
                                       {/* Show hover outline when hovered but not selected (but not for textgroup characters or elements in custom/polygon groups) */}
                 {hoveredId === el.id && !selectedIds.includes(el.id) && !isTextGroupCharacter(el) && !isElementInCustomOrPolygonGroup(el) && (
