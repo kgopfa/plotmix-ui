@@ -150,7 +150,7 @@ export const drawLine = (
   }
 };
 
-function drawShapePath(graphics: Graphics, shape: AnimatedCanvasObject) {
+function drawElement(graphics: Graphics, shape: AnimatedCanvasObject) {
   switch (shape.type) {
     case 'rectangle':
       // Draw rectangle centered around origin with pixel-aligned coordinates
@@ -218,7 +218,7 @@ function drawShapeAsPath(graphics: Graphics, shape: AnimatedCanvasObject) {
   
   if (shape.type === 'line' || shape.type === 'path') {
     graphics.clear(); // Make sure to clear before drawing
-    drawShapePath(graphics, shape);
+    drawElement(graphics, shape);
     const dashLine = new AnimationPath(graphics, {
       dash: [5, 3],
       width: 2,
@@ -241,7 +241,7 @@ function drawShapeAsPath(graphics: Graphics, shape: AnimatedCanvasObject) {
       }
     }
   } else {
-    drawShapePath(graphics, shape);
+    drawElement(graphics, shape);
     graphics.fill({ color: '0xFFFFFF', alpha: 0.15 });
     
     const dashLine = new AnimationPath(graphics, {
@@ -306,7 +306,7 @@ export function createShapeGraphics(shape: AnimatedCanvasObject, color?: string 
   }
 
   if (shape.type === 'line' || shape.type === 'path') {
-    drawShapePath(graphics, shape);
+    drawElement(graphics, shape);
     graphics.stroke({ 
       color: fillColor, 
       width: shape.strokeWidth || 2, 
@@ -316,7 +316,7 @@ export function createShapeGraphics(shape: AnimatedCanvasObject, color?: string 
       join: 'round'    // Smooth rounded line joins
     });
   } else {
-    drawShapePath(graphics, shape);
+    drawElement(graphics, shape);
     graphics.fill({ color: fillColor, alpha: shape.opacity ?? 1 });
   }
   
@@ -382,7 +382,7 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasObject) {
       }
     } else {
       // For other shapes (rectangle, circle, triangle), use dotted stroke and semi-transparent fill
-      drawShapePath(graphics, shape);
+      drawElement(graphics, shape);
       graphics.fill({ 
         color: shape.fill, 
         alpha: 0.15 // Very transparent fill
@@ -432,7 +432,7 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasObject) {
       drawLine(graphics, shape);
     } else {
       const width = shape.type === 'path' ? 2 : 1;
-      drawShapePath(graphics, shape);
+      drawElement(graphics, shape);
 
       if (shape.type !== 'path') {
         graphics.fill({ color: shape.fill, alpha: shape.opacity });
