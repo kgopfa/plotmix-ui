@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { AnimatedCanvasObject, CanvasGroup, ElementAnimation } from '@/types/canvas';
-import { GSAPTimelineManager } from './gsap-timeline-manager';
+import { GSAPTimelineManager, type TimelinePerformanceMetrics } from './gsap-timeline-manager';
 
 /**
  * Performance metrics interface
@@ -57,7 +57,7 @@ export class GSAPTimelineManagerEnhanced extends GSAPTimelineManager {
    */
   buildAnimationTimeline(elements: AnimatedCanvasObject[], groups?: CanvasGroup[]) {
     const startTime = performance.now();
-    
+
     try {
       // Performance check - skip if no animations and already optimized
       if (!this.hasAnimations(elements, groups) && this.timeline.duration() === 0) {
@@ -92,7 +92,7 @@ export class GSAPTimelineManagerEnhanced extends GSAPTimelineManager {
       // Update performance metrics
       const rebuildTime = performance.now() - startTime;
       this.updateMetrics(rebuildTime);
-      
+
       console.log(`Timeline rebuilt in ${rebuildTime.toFixed(2)}ms`);
 
     } catch (error) {
@@ -139,7 +139,7 @@ export class GSAPTimelineManagerEnhanced extends GSAPTimelineManager {
    */
   private hashAnimations(animations: ElementAnimation[]): string {
     if (animations.length === 0) return '';
-    
+
     return JSON.stringify(animations.map(anim => ({
       id: anim.id,
       type: anim.type,
@@ -160,7 +160,7 @@ export class GSAPTimelineManagerEnhanced extends GSAPTimelineManager {
     const hasGroupAnimations = groups?.some(group =>
       !group.isDefaultGroup && group.animations && group.animations.length > 0
     ) ?? false;
-    
+
     return hasElementAnimations || hasGroupAnimations;
   }
 
@@ -171,7 +171,7 @@ export class GSAPTimelineManagerEnhanced extends GSAPTimelineManager {
     return elements.filter(element => {
       const cached = this.elementCache.get(element.id);
       if (!cached) return true;
-      
+
       const currentHash = this.hashAnimations(element.animations);
       return cached.animationHash !== currentHash;
     });
@@ -184,7 +184,7 @@ export class GSAPTimelineManagerEnhanced extends GSAPTimelineManager {
     return groups.filter(group => {
       const cached = this.groupCache.get(group.id);
       if (!cached) return true;
-      
+
       const currentHash = this.hashAnimations(group.animations);
       return cached.animationHash !== currentHash;
     });
@@ -195,7 +195,7 @@ export class GSAPTimelineManagerEnhanced extends GSAPTimelineManager {
    */
   private cleanExpiredCache() {
     const now = Date.now();
-    
+
     // Clean element cache
     for (const [key, entry] of this.elementCache.entries()) {
       if (now - entry.lastUpdate > this.CACHE_TTL || this.elementCache.size > this.maxCacheSize) {
@@ -218,7 +218,7 @@ export class GSAPTimelineManagerEnhanced extends GSAPTimelineManager {
     this.metrics.totalRebuilds++;
     this.metrics.lastRebuildTime = rebuildTime;
     this.metrics.averageRebuildTime = (
-      (this.metrics.averageRebuildTime * (this.metrics.totalRebuilds - 1) + rebuildTime) / 
+      (this.metrics.averageRebuildTime * (this.metrics.totalRebuilds - 1) + rebuildTime) /
       this.metrics.totalRebuilds
     );
   }
@@ -242,10 +242,17 @@ export class GSAPTimelineManagerEnhanced extends GSAPTimelineManager {
   }
 
   /**
-   * Get performance metrics
+   * Get performance metrics (compatible with base class interface)
    */
-  getPerformanceMetrics(): PerformanceMetrics {
-    return { ...this.metrics };
+  getPerformanceMetrics(): TimelinePerformanceMetrics {
+    return {
+      totalBuilds: this.metrics.totalRebuilds,
+      averageBuildTime: this.metrics.averageRebuildTime,
+      lastBuildTime: this.metrics.lastRebuildTime,
+      elementsProcessed: this.metrics.elementsProcessed,
+      groupsProcessed: this.metrics.groupsProcessed,
+      animationsCreated: this.metrics.elementsProcessed + this.metrics.groupsProcessed // Approximate total
+    };
   }
 
   /**
@@ -282,12 +289,12 @@ export class GSAPTimelineManagerEnhanced extends GSAPTimelineManager {
   generatePerformanceReport(): string {
     const metrics = this.getPerformanceMetrics();
     const cacheStats = this.getCacheStats();
-    
+
     return `
 Animation Performance Report:
-- Total Rebuilds: ${metrics.totalRebuilds}
-- Average Rebuild Time: ${metrics.averageRebuildTime.toFixed(2)}ms
-- Last Rebuild Time: ${metrics.lastRebuildTime.toFixed(2)}ms
+- Total Rebuilds: ${metrics.totalBuilds}
+- Average Rebuild Time: ${metrics.averageBuildTime.toFixed(2)}ms
+- Last Rebuild Time: ${metrics.lastBuildTime.toFixed(2)}ms
 - Cache Hit Rate: ${(cacheStats.cacheHitRate * 100).toFixed(1)}%
 - Elements Processed: ${metrics.elementsProcessed}
 - Groups Processed: ${metrics.groupsProcessed}

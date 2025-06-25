@@ -1,5 +1,5 @@
 import { gsap } from 'gsap';
-import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
+import type { AnimatedCanvasObject, CanvasGroup, ElementAnimation } from '@/types/canvas';
 import type { CanvasRef } from '@/components/editor/canvas';
 import { PixiPlugin } from "gsap/PixiPlugin";
 import { Physics2DPlugin } from "gsap/Physics2DPlugin";
@@ -14,531 +14,484 @@ import {
   isGroupAnimationConfig,
   isPolygonAnimationConfig,
   PathAnimationConfig,
-  PolygonAnimationConfig
+  PolygonAnimationConfig,
+  ColorAnimationConfig,
+  PhysicsAnimationConfig,
+  GroupAnimationConfig
 } from '@/utils/animation-generator';
-
+import type { BaseAnimationConfig } from '@/types/canvas';
 
 gsap.registerPlugin(PixiPlugin, Physics2DPlugin, MotionPathPlugin);
 PixiPlugin.registerPIXI(PIXI);
 
+/**
+ * Performance metrics for timeline operations
+ */
+export interface TimelinePerformanceMetrics {
+  totalBuilds: number;
+  averageBuildTime: number;
+  lastBuildTime: number;
+  elementsProcessed: number;
+  groupsProcessed: number;
+  animationsCreated: number;
+}
+
+/**
+ * Enhanced GSAP Timeline Manager
+ * 
+ * This is the modernized version of the basic timeline manager with:
+ * - Performance monitoring
+ * - Better error handling  
+ * - Optimized animation processing
+ * - Phase 2 architecture compatibility
+ */
 export class GSAPTimelineManager {
-  private timeline: gsap.core.Timeline;
-  private canvasRef: React.RefObject<CanvasRef | null> | null = null;
+  protected timeline: gsap.core.Timeline;
+  protected canvasRef: React.RefObject<CanvasRef | null> | null = null;
+  
+  // Performance tracking
+  private performanceMetrics: TimelinePerformanceMetrics = {
+    totalBuilds: 0,
+    averageBuildTime: 0,
+    lastBuildTime: 0,
+    elementsProcessed: 0,
+    groupsProcessed: 0,
+    animationsCreated: 0
+  };
 
   constructor() {
     this.timeline = gsap.timeline({ paused: true });
+    console.log('GSAPTimelineManager initialized');
   }
 
   setCanvasRef(ref: React.RefObject<CanvasRef | null>) {
     this.canvasRef = ref;
   }
 
+  /**
+   * Build animation timeline with performance monitoring
+   */
   buildAnimationTimeline(elements: AnimatedCanvasObject[], groups?: CanvasGroup[]) {
-    // Performance optimization: Check if any animations exist before building timeline
-    const hasElementAnimations = elements.some(el =>
-      !el.isAnimationPath && el.animations && el.animations.length > 0
-    );
-    const hasGroupAnimations = groups?.some(group =>
-      !group.isDefaultGroup && group.animations && group.animations.length > 0
-    );
+    const buildStartTime = performance.now();
+    
+    try {
+      // Performance optimization: Check if any animations exist before building timeline
+      const hasElementAnimations = elements.some(el =>
+        !el.isAnimationPath && el.animations && el.animations.length > 0
+      );
+      const hasGroupAnimations = groups?.some(group =>
+        !group.isDefaultGroup && group.animations && group.animations.length > 0
+      );
 
-    // Skip timeline building if no animations exist
-    if (!hasElementAnimations && !hasGroupAnimations) {
-      console.log('Skipping timeline build - no animations found');
-      // Clear any existing timeline to ensure clean state
-      this.timeline.kill();
-      this.timeline.clear();
-      this.timeline = gsap.timeline({ paused: true });
-      return;
-    }
-
-    const shapeRefs = this.canvasRef?.current?.getShapeRefs();
-    if (!shapeRefs) {
-      return;
-    }
-
-    // Kill all existing tweens and clear timeline
-    this.timeline.kill();
-    this.timeline.clear();
-    this.timeline = gsap.timeline({ paused: true });
-
-    // Process element animations - only for elements that have animations
-    elements.forEach((element) => {
-      if (element.isAnimationPath) return;
-
-      // Special handling for textGroup animations - apply to all character children
-      if (element.type === 'textGroup') {
-        if (element.animations.length === 0) return;
-
-        // Find all character children for this textGroup
-        const characterChildren = elements.filter(el =>
-          el.type === 'character' && el.parentTextGroupId === element.id
-        );
-
-        if (characterChildren.length === 0) {
-          return;
-        }
-
-        element.animations.forEach((animation) => {
-          // Apply the animation to each character child
-          characterChildren.forEach((character) => {
-            const characterTarget = shapeRefs[character.id];
-            if (!characterTarget || characterTarget.destroyed || !characterTarget.parent) {
-              return;
-            }
-
-            const config = generateAnimationConfig(character, animation, characterTarget, elements);
-
-            if (isColorAnimationConfig(config)) {
-              this.timeline.to(
-                config.oldChild,
-                {
-                  pixi: { alpha: 0 },
-                  duration: config.duration,
-                  ease: config.ease,
-                },
-                config.startTime
-              );
-
-              this.timeline.to(
-                config.newChild,
-                {
-                  pixi: { alpha: 1 },
-                  duration: config.duration,
-                  ease: config.ease,
-                  onInterrupt: () => {
-                    characterTarget.removeChild(config.newChild);
-                  }
-                },
-                config.startTime
-              );
-            } else if (isPhysicsAnimationConfig(config)) {
-              const physics2DConfig: Record<string, string | number> = {
-                velocity: config.velocity,
-                angle: config.angle,
-                gravity: config.gravity
-              };
-
-              // Add optional properties only if they exist
-              if (config.acceleration !== undefined) physics2DConfig.acceleration = config.acceleration;
-              if (config.accelerationAngle !== undefined) physics2DConfig.accelerationAngle = config.accelerationAngle;
-              if (config.friction !== undefined) physics2DConfig.friction = config.friction;
-              if (config.xProp) physics2DConfig.xProp = config.xProp;
-              if (config.yProp) physics2DConfig.yProp = config.yProp;
-
-              this.timeline.to(
-                characterTarget,
-                {
-                  physics2D: physics2DConfig,
-                  duration: config.duration,
-                  ease: config.ease,
-                },
-                config.startTime
-              );
-            } else {
-              this.timeline.to(
-                config.target,
-                {
-                  pixi: config.properties,
-                  duration: config.duration,
-                  ease: config.ease,
-                },
-                config.startTime
-              );
-            }
-          });
-        });
-
-        return; // Skip regular processing for textGroup
-      }
-
-      const target = shapeRefs[element.id];
-      if (!target || target.destroyed || !target.parent) {
+      // Skip timeline building if no animations exist
+      if (!hasElementAnimations && !hasGroupAnimations) {
+        console.log('⚡ Skipping timeline build - no animations found');
+        this.clearTimeline();
+        this.updatePerformanceMetrics(buildStartTime, 0, 0, 0);
         return;
       }
 
-      element.animations.forEach((animation) => {
-        const config = generateAnimationConfig(element, animation, target, elements);
+      const shapeRefs = this.canvasRef?.current?.getShapeRefs();
+      if (!shapeRefs) {
+        console.warn('⚠️ No shape refs available, skipping timeline build');
+        return;
+      }
 
-        if (isPathAnimationConfig(config) || isPolygonAnimationConfig(config)) {
-          this.addPathAnimation(config, target, element);
-        } else if (isColorAnimationConfig(config)) {
-          this.timeline.to(
-            config.oldChild,
-            {
-              pixi: { alpha: 0 },
-              duration: config.duration,
-              ease: config.ease,
-            },
-            config.startTime
-          );
+      // Clear existing timeline
+      this.clearTimeline();
 
-          this.timeline.to(
-            config.newChild,
-            {
-              pixi: { alpha: 1 },
-              duration: config.duration,
-              ease: config.ease,
-              onInterrupt: () => {
-                target.removeChild(config.newChild);
-              }
-            },
-            config.startTime
-          );
-        } else if (isPhysicsAnimationConfig(config)) {
-          const physics2DConfig: Record<string, string | number> = {
-            velocity: config.velocity,
-            angle: config.angle,
-            gravity: config.gravity
-          };
+      let animationsCreated = 0;
+      let elementsProcessed = 0;
+      let groupsProcessed = 0;
 
-          // Add optional properties only if they exist
-          if (config.acceleration !== undefined) physics2DConfig.acceleration = config.acceleration;
-          if (config.accelerationAngle !== undefined) physics2DConfig.accelerationAngle = config.accelerationAngle;
-          if (config.friction !== undefined) physics2DConfig.friction = config.friction;
-          if (config.xProp) physics2DConfig.xProp = config.xProp;
-          if (config.yProp) physics2DConfig.yProp = config.yProp;
+      // Process element animations
+      elements.forEach((element) => {
+        if (element.isAnimationPath || !element.animations || element.animations.length === 0) {
+          return;
+        }
 
-          this.timeline.to(
-            config.target,
-            {
-              physics2D: physics2DConfig,
-              duration: config.duration,
-              ease: config.ease,
-            },
-            config.startTime
-          );
+        elementsProcessed++;
+
+        // Special handling for textGroup animations
+        if (element.type === 'textGroup') {
+          animationsCreated += this.processTextGroupAnimations(element, elements, shapeRefs);
         } else {
-          this.timeline.to(
-            config.target,
-            {
-              pixi: config.properties,
-              duration: config.duration,
-              ease: config.ease,
-            },
-            config.startTime
-          );
+          animationsCreated += this.processElementAnimations(element, elements, shapeRefs);
+        }
+      });
+
+      // Process group animations
+      if (groups) {
+        const groupContainers = this.canvasRef?.current?.getGroupContainers();
+        if (groupContainers) {
+          groups.forEach((group) => {
+            if (!group.isDefaultGroup && group.animations && group.animations.length > 0) {
+              groupsProcessed++;
+              animationsCreated += this.processGroupAnimations(group, groupContainers);
+            }
+          });
+        }
+      }
+
+      this.timeline.pause(0);
+      
+      // Update performance metrics
+      this.updatePerformanceMetrics(buildStartTime, elementsProcessed, groupsProcessed, animationsCreated);
+      
+      console.log(`🎬 Timeline built: ${elementsProcessed} elements, ${groupsProcessed} groups, ${animationsCreated} animations in ${this.performanceMetrics.lastBuildTime.toFixed(2)}ms`);
+      
+    } catch (error) {
+      console.error('❌ Error building timeline:', error);
+      this.clearTimeline();
+    }
+  }
+
+  /**
+   * Process text group animations (apply to character children)
+   */
+  private processTextGroupAnimations(
+    element: AnimatedCanvasObject, 
+    elements: AnimatedCanvasObject[], 
+    shapeRefs: Record<string, PIXI.Container>
+  ): number {
+    let animationsCreated = 0;
+
+    // Find all character children for this textGroup
+    const characterChildren = elements.filter(el =>
+      el.type === 'character' && el.parentTextGroupId === element.id
+    );
+
+    if (characterChildren.length === 0) {
+      return 0;
+    }
+
+    element.animations.forEach((animation) => {
+      characterChildren.forEach((character) => {
+        const characterTarget = shapeRefs[character.id];
+        if (!characterTarget || characterTarget.destroyed || !characterTarget.parent) {
+          return;
+        }
+
+        try {
+          const config = generateAnimationConfig(character, animation, characterTarget, elements);
+          this.addAnimationToTimeline(config, characterTarget);
+          animationsCreated++;
+        } catch (error) {
+          console.warn(`⚠️ Error processing character animation for ${character.id}:`, error);
         }
       });
     });
 
-    // Process group animations using group containers
-    const groupContainers = this.canvasRef?.current?.getGroupContainers();
-    if (groups && groupContainers) {
-      groups.forEach((group) => {
-        if (group.isDefaultGroup || group.animations.length === 0) return;
-
-        const groupContainer = groupContainers[group.id];
-        if (!groupContainer) return;
-
-        group.animations.forEach((animation) => {
-          const config = generateGroupAnimationConfig(group, animation, [groupContainer]);
-
-          if (isGroupAnimationConfig(config)) {
-            const baseConfig = {
-              duration: config.duration,
-              ease: config.ease,
-            };
-
-            if (animation.type === 'move') {
-              // Animate the container position directly
-              const targetX = config.properties.x || group.x;
-              const targetY = config.properties.y || group.y;
-
-              this.timeline.to(
-                groupContainer,
-                {
-                  pixi: { x: targetX, y: targetY },
-                  ...baseConfig,
-                },
-                config.startTime
-              );
-            } else if (animation.type === 'rotate') {
-              // Animate container rotation - use degrees directly (same as individual elements)
-              const targetRotation = config.properties.rotation || 0;
-
-              this.timeline.to(
-                groupContainer,
-                {
-                  pixi: { rotation: targetRotation },
-                  ...baseConfig,
-                },
-                config.startTime
-              );
-            } else if (animation.type === 'scale') {
-              // Animate container scale
-              const targetScaleX = config.properties.scaleX || 1;
-              const targetScaleY = config.properties.scaleY || 1;
-
-              this.timeline.to(
-                groupContainer,
-                {
-                  pixi: {
-                    scaleX: targetScaleX,
-                    scaleY: targetScaleY
-                  },
-                  ...baseConfig,
-                },
-                config.startTime
-              );
-            } else if (animation.type === 'fade') {
-              // Animate container alpha
-              const targetAlpha = config.properties.alpha || 1;
-
-              this.timeline.to(
-                groupContainer,
-                {
-                  pixi: { alpha: targetAlpha },
-                  ...baseConfig,
-                },
-                config.startTime
-              );
-            }
-          }
-        });
-      });
-    }
-
-    this.timeline.pause(0);
+    return animationsCreated;
   }
 
-  private addPathAnimation(config: PathAnimationConfig | PolygonAnimationConfig, target: PIXI.Container, element: AnimatedCanvasObject) {
-    const pathElement = config.pathElement;
-
-    console.log('pathElement: ', JSON.stringify(pathElement));
-
-    if (pathElement.type === 'rectangle') {
-      const segmentDuration = config.duration / 4;
-      const pathStartTime = config.startTime;
-
-      // 1. Move from top-left to top-right (right: add width)
-      this.timeline.to(
-        target,
-        {
-          pixi: {
-            x: "+=" + pathElement.width
-          },
-          duration: segmentDuration,
-          ease: config.ease,
-        },
-        pathStartTime
-      );
-
-      // 2. Move from top-right to bottom-right (down: add height)
-      this.timeline.to(
-        target,
-        {
-          pixi: {
-            y: "+=" + pathElement.height
-          },
-          duration: segmentDuration,
-          ease: config.ease,
-        },
-        pathStartTime + segmentDuration
-      );
-
-      // 3. Move from bottom-right to bottom-left (left: subtract width)
-      this.timeline.to(
-        target,
-        {
-          pixi: {
-            x: "-=" + pathElement.width
-          },
-          duration: segmentDuration,
-          ease: config.ease,
-        },
-        pathStartTime + (segmentDuration * 2)
-      );
-
-      // 4. Move from bottom-left to top-left (up: subtract height)
-      this.timeline.to(
-        target,
-        {
-          pixi: {
-            y: "-=" + pathElement.height
-          },
-          duration: segmentDuration,
-          ease: config.ease,
-        },
-        pathStartTime + (segmentDuration * 3)
-      );
+  /**
+   * Process regular element animations
+   */
+  private processElementAnimations(
+    element: AnimatedCanvasObject, 
+    elements: AnimatedCanvasObject[], 
+    shapeRefs: Record<string, PIXI.Container>
+  ): number {
+    let animationsCreated = 0;
+    
+    const target = shapeRefs[element.id];
+    if (!target || target.destroyed || !target.parent) {
+      return 0;
     }
 
-    if (pathElement.type === 'triangle') {
-      const segmentDuration = config.duration / 3;
-      const height = pathElement.height;
-      const width = pathElement.width;
-      const halfWidth = width / 2;
+    element.animations.forEach((animation) => {
+      try {
+        const config = generateAnimationConfig(element, animation, target, elements);
+        this.addAnimationToTimeline(config, target);
+        animationsCreated++;
+      } catch (error) {
+        console.warn(`⚠️ Error processing animation for element ${element.id}:`, error);
+      }
+    });
 
-      // Calculate triangle vertices relative to center
-      const topPoint = { x: pathElement.x, y: pathElement.y - height / 2 };
-      const bottomLeft = { x: pathElement.x - halfWidth, y: pathElement.y + height / 2 };
-      const bottomRight = { x: pathElement.x + halfWidth, y: pathElement.y + height / 2 };
+    return animationsCreated;
+  }
 
-      const pathStartTime = config.startTime;
+  /**
+   * Process group animations
+   */
+  private processGroupAnimations(group: CanvasGroup, groupContainers: Record<string, PIXI.Container>): number {
+    let animationsCreated = 0;
+    
+    const groupContainer = groupContainers[group.id];
+    if (!groupContainer) return 0;
 
-      // 1. Move from top to bottom-right
+    group.animations.forEach((animation) => {
+      try {
+        const config = generateGroupAnimationConfig(group, animation, [groupContainer]);
+        this.addGroupAnimationToTimeline(config, groupContainer, animation);
+        animationsCreated++;
+      } catch (error) {
+        console.warn(`⚠️ Error processing group animation for ${group.id}:`, error);
+      }
+    });
+
+    return animationsCreated;
+  }
+
+  /**
+   * Add animation to timeline with proper error handling
+   */
+  private addAnimationToTimeline(
+    config: BaseAnimationConfig | ColorAnimationConfig | PathAnimationConfig | PhysicsAnimationConfig | PolygonAnimationConfig, 
+    target: PIXI.Container,
+  ) {
+    if (isPathAnimationConfig(config) || isPolygonAnimationConfig(config)) {
+      this.addPathAnimation(config, target);
+    } else if (isColorAnimationConfig(config)) {
       this.timeline.to(
-        target,
+        config.oldChild,
         {
-          pixi: {
-            x: bottomRight.x,
-            y: bottomRight.y
-          },
-          duration: segmentDuration,
-          ease: config.ease,
-        },
-        pathStartTime
-      );
-
-      // 2. Move from bottom-right to bottom-left
-      this.timeline.to(
-        target,
-        {
-          pixi: {
-            x: bottomLeft.x,
-            y: bottomLeft.y
-          },
-          duration: segmentDuration,
-          ease: config.ease,
-        },
-        pathStartTime + segmentDuration
-      );
-
-      // 3. Move from bottom-left back to top
-      this.timeline.to(
-        target,
-        {
-          pixi: {
-            x: topPoint.x,
-            y: topPoint.y
-          },
-          duration: segmentDuration,
-          ease: config.ease,
-        },
-        pathStartTime + (segmentDuration * 2)
-      );
-    }
-
-    if (pathElement.type === 'circle') {
-      // For circles, we'll use angle interpolation for smooth circular motion
-      const radius = pathElement.radius || pathElement.width / 2;
-      const state = { angle: -Math.PI / 2 }; // Start at 12 o'clock position (top)
-
-      this.timeline.to(
-        state,
-        {
-          angle: Math.PI * 1.5, // Full circle from -π/2 to 3π/2
+          pixi: { alpha: 0 },
           duration: config.duration,
           ease: config.ease,
-          onUpdate: () => {
-            // Get the current target from the GSAP timeline
-            if (target && target.parent && !target.destroyed) {
-              // Calculate position based on current angle
-              const x = element.x + radius * Math.cos(state.angle);
-              const y = element.y + radius * Math.sin(state.angle);
+        },
+        config.startTime
+      );
 
-              // Set the position directly
-              target.x = x;
-              target.y = y;
+      this.timeline.to(
+        config.newChild,
+        {
+          pixi: { alpha: 1 },
+          duration: config.duration,
+          ease: config.ease,
+          onInterrupt: () => {
+            try {
+              target.removeChild(config.newChild);
+            } catch (e) {
+              console.warn('Error removing child on interrupt:', e);
             }
           }
         },
         config.startTime
       );
-    }
+    } else if (isPhysicsAnimationConfig(config)) {
+      const physics2DConfig: Record<string, string | number> = {
+        velocity: config.velocity,
+        angle: config.angle,
+        gravity: config.gravity
+      };
 
-    if (pathElement.type === 'line') {
-      // For lines, we need to animate from start point to end point
-      if (!pathElement.lineOptions || !pathElement.lineOptions.points) {
-        return;
-      }
+      if (config.acceleration !== undefined) physics2DConfig.acceleration = config.acceleration;
+      if (config.accelerationAngle !== undefined) physics2DConfig.accelerationAngle = config.accelerationAngle;
+      if (config.friction !== undefined) physics2DConfig.friction = config.friction;
+      if (config.xProp) physics2DConfig.xProp = config.xProp;
+      if (config.yProp) physics2DConfig.yProp = config.yProp;
 
-      const { end } = pathElement.lineOptions.points;
-
-      // Animate from start to end point
       this.timeline.to(
-        target,
+        config.target,
         {
-          pixi: {
-            x: end.x,
-            y: end.y
-          },
+          physics2D: physics2DConfig,
+          duration: config.duration,
+          ease: config.ease,
+        },
+        config.startTime
+      );
+    } else {
+      this.timeline.to(
+        config.target,
+        {
+          pixi: config.properties,
           duration: config.duration,
           ease: config.ease,
         },
         config.startTime
       );
     }
+  }
 
-    if (pathElement.type === 'path' && pathElement.pathPoints) {
-      // Convert pathPoints to the format for animation
-      const pathPoints = pathElement.pathPoints.map((p: { x: number, y: number }) => ({
-        x: pathElement.x + p.x,
-        y: pathElement.y + p.y
-      }));
+  /**
+   * Add group animation to timeline
+   */
+  private addGroupAnimationToTimeline(config: GroupAnimationConfig, groupContainer: PIXI.Container, animation: ElementAnimation) {
+    if (!isGroupAnimationConfig(config)) return;
 
-      // Use MotionPathPlugin with proper SVG path format
-      // Convert points to SVG path string
-      let svgPath = `M${pathPoints[0].x},${pathPoints[0].y} `;
+    const baseConfig = {
+      duration: config.duration,
+      ease: config.ease,
+    };
 
-      for (let i = 1; i < pathPoints.length; i++) {
-        svgPath += `L${pathPoints[i].x},${pathPoints[i].y} `;
-      }
-
-      // Create a proxy object that MotionPathPlugin can animate
-      const proxy = { x: 0, y: 0 };
-
-      this.timeline.to(
-        proxy,
-        {
-          motionPath: {
-            path: svgPath,
-            autoRotate: false,
-          },
-          duration: config.duration,
-          ease: config.ease,
-          onUpdate: () => {
-            if (target && target.parent && !target.destroyed) {
-              target.x = proxy.x;
-              target.y = proxy.y;
-            }
-          }
-        },
-        config.startTime
-      );
-    }
-
-    // Handle polygon animations (from CanvasGroup with line elements)
-    if (isPolygonAnimationConfig(config) && config.properties.pathPoints) {
-      const pathPoints = config.properties.pathPoints;
-
-      const segmentDuration = config.duration / pathPoints.length;
-      const pathStartTime = config.startTime;
-
-      pathPoints.forEach((point: { x: number, y: number }, index: number) => {
+    switch (animation.type) {
+      case 'move':
         this.timeline.to(
-          target,
+          groupContainer,
+          {
+            pixi: { 
+              x: config.properties.x || groupContainer.x, 
+              y: config.properties.y || groupContainer.y 
+            },
+            ...baseConfig,
+          },
+          config.startTime
+        );
+        break;
+
+      case 'rotate':
+        this.timeline.to(
+          groupContainer,
+          {
+            pixi: { rotation: config.properties.rotation || 0 },
+            ...baseConfig,
+          },
+          config.startTime
+        );
+        break;
+
+      case 'scale':
+        this.timeline.to(
+          groupContainer,
           {
             pixi: {
-              x: point.x,
-              y: point.y
+              scaleX: config.properties.scaleX || 1,
+              scaleY: config.properties.scaleY || 1
             },
-            duration: segmentDuration,
-            ease: config.ease,
+            ...baseConfig,
           },
-          pathStartTime + (segmentDuration * index)
+          config.startTime
         );
-      });
+        break;
+
+      case 'fade':
+        this.timeline.to(
+          groupContainer,
+          {
+            pixi: { alpha: config.properties.alpha || 1 },
+            ...baseConfig,
+          },
+          config.startTime
+        );
+        break;
     }
+  }
+
+  /**
+   * Enhanced path animation handling
+   */
+  protected addPathAnimation(config: PathAnimationConfig | PolygonAnimationConfig, target: PIXI.Container) {
+    const pathElement = config.pathElement;
+
+    try {
+      switch (pathElement.type) {
+        case 'line':
+          this.addLinePathAnimation(config, target, pathElement);
+          break;
+        case 'path':
+          this.addCustomPathAnimation(config, target, pathElement);
+          break;
+        default:
+          if (isPolygonAnimationConfig(config)) {
+            this.addPolygonPathAnimation(config, target);
+          }
+      }
+    } catch (error) {
+      console.warn(`⚠️ Error adding path animation for ${pathElement.type}:`, error);
+    }
+  }
+
+  private addLinePathAnimation(config: PathAnimationConfig | PolygonAnimationConfig, target: PIXI.Container, pathElement: AnimatedCanvasObject | CanvasGroup) {
+    if (!('lineOptions' in pathElement) || !pathElement.lineOptions?.points?.end) return;
+
+    const { end } = pathElement.lineOptions.points;
+    this.timeline.to(target, {
+      pixi: { x: end.x, y: end.y },
+      duration: config.duration,
+      ease: config.ease,
+    }, config.startTime);
+  }
+
+  private addCustomPathAnimation(config: PathAnimationConfig | PolygonAnimationConfig, target: PIXI.Container, pathElement: AnimatedCanvasObject | CanvasGroup) {
+    if (!('pathPoints' in pathElement) || !pathElement.pathPoints) return;
+
+    const pathPoints = pathElement.pathPoints.map((p: { x: number, y: number }) => ({
+      x: pathElement.x + p.x,
+      y: pathElement.y + p.y
+    }));
+
+    let svgPath = `M${pathPoints[0].x},${pathPoints[0].y} `;
+    for (let i = 1; i < pathPoints.length; i++) {
+      svgPath += `L${pathPoints[i].x},${pathPoints[i].y} `;
+    }
+
+    const proxy = { x: 0, y: 0 };
+    this.timeline.to(proxy, {
+      motionPath: { path: svgPath, autoRotate: false },
+      duration: config.duration,
+      ease: config.ease,
+      onUpdate: () => {
+        if (target && target.parent && !target.destroyed) {
+          target.x = proxy.x;
+          target.y = proxy.y;
+        }
+      }
+    }, config.startTime);
+  }
+
+  private addPolygonPathAnimation(config: PolygonAnimationConfig, target: PIXI.Container) {
+    if (!config.properties.pathPoints) return;
+
+    const pathPoints = config.properties.pathPoints;
+    const segmentDuration = config.duration / pathPoints.length;
+
+    pathPoints.forEach((point: { x: number, y: number }, index: number) => {
+      this.timeline.to(target, {
+        pixi: { x: point.x, y: point.y },
+        duration: segmentDuration,
+        ease: config.ease,
+      }, config.startTime + (segmentDuration * index));
+    });
+  }
+
+  /**
+   * Update performance metrics
+   */
+  private updatePerformanceMetrics(startTime: number, elements: number, groups: number, animations: number) {
+    const buildTime = performance.now() - startTime;
+    
+    this.performanceMetrics.totalBuilds++;
+    this.performanceMetrics.lastBuildTime = buildTime;
+    this.performanceMetrics.averageBuildTime = 
+      (this.performanceMetrics.averageBuildTime * (this.performanceMetrics.totalBuilds - 1) + buildTime) / 
+      this.performanceMetrics.totalBuilds;
+    this.performanceMetrics.elementsProcessed = elements;
+    this.performanceMetrics.groupsProcessed = groups;
+    this.performanceMetrics.animationsCreated = animations;
+  }
+
+  /**
+   * Get performance metrics
+   */
+  getPerformanceMetrics(): TimelinePerformanceMetrics {
+    return { ...this.performanceMetrics };
+  }
+
+  /**
+   * Generate performance report
+   */
+  generatePerformanceReport(): string {
+    const metrics = this.performanceMetrics;
+    return `
+GSAP Timeline Manager Performance Report:
+- Total Builds: ${metrics.totalBuilds}
+- Average Build Time: ${metrics.averageBuildTime.toFixed(2)}ms
+- Last Build Time: ${metrics.lastBuildTime.toFixed(2)}ms
+- Elements Processed: ${metrics.elementsProcessed}
+- Groups Processed: ${metrics.groupsProcessed}
+- Animations Created: ${metrics.animationsCreated}
+- Build Efficiency: ${metrics.animationsCreated > 0 ? (metrics.animationsCreated / metrics.lastBuildTime * 1000).toFixed(2) : 0} animations/sec
+    `;
   }
 
   updateTime(elapsedTime: number) {
     try {
       this.timeline.time(elapsedTime);
     } catch (error) {
-      console.warn('Error updating timeline:', error);
-      // Clear the timeline if it's corrupted
+      console.warn('⚠️ Error updating timeline:', error);
       this.clearTimeline();
     }
   }
@@ -560,5 +513,6 @@ export class GSAPTimelineManager {
   destroy() {
     this.timeline.kill();
     gsap.ticker.remove(this.updateTime);
+    console.log('GSAPTimelineManager destroyed');
   }
 } 
