@@ -8,7 +8,7 @@ import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { useImperativeHandle, forwardRef, useState, useRef, useEffect, useCallback } from 'react';
 import { drawShape } from '@/utils/drawing-utils';
 import { createNewObject } from '@/lib/canvas-object-factory';
-import ObjectSelect from './object-select';
+import ElementSelect from './element-select';
 import HoverOutline from './hover-outline';
 import CenterHighlight from './center-highlight';
 import RotationHandles from './rotation-handles';
@@ -1408,7 +1408,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
                 {/* Show selection outline for all selected elements (but not for textgroup characters or elements in custom/polygon groups) */}
                 {selectedIds.includes(el.id) && !isTextGroupCharacter(el) && !isElementInCustomOrPolygonGroup(el) && (
-                  <ObjectSelect
+                  <ElementSelect
                     element={el}
                     scaleFactor={canvasScaleFactor.current}
                   />
@@ -1523,7 +1523,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
                 {/* Show selection outline for all selected elements (but not for textgroup characters or elements in custom/polygon groups) */}
                 {selectedIds.includes(el.id) && !isTextGroupCharacter(el) && !isElementInCustomOrPolygonGroup(el) && (
-                  <ObjectSelect
+                  <ElementSelect
                     element={el}
                     scaleFactor={canvasScaleFactor.current}
                   />

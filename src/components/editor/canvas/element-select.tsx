@@ -6,12 +6,12 @@ import type { AnimatedCanvasObject } from '@/types/canvas';
 
 extend({ Container, Graphics });
 
-interface ObjectSelectProps {
+interface ElementSelectProps {
   element: AnimatedCanvasObject;
   scaleFactor?: number;
 }
 
-const ObjectSelect: React.FC<ObjectSelectProps> = ({
+const ElementSelect: React.FC<ElementSelectProps> = ({
   element,
 }) => {
   // State for tracking resize dimensions
@@ -150,4 +150,4 @@ const ObjectSelect: React.FC<ObjectSelectProps> = ({
   );
 };
 
-export default ObjectSelect;
+export default ElementSelect;

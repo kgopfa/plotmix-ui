@@ -1,7 +1,7 @@
 import React from 'react';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import type { FederatedPointerEvent } from 'pixi.js';
-import ObjectSelect from './object-select';
+import ElementSelect from './element-select';
 import ResizeHandle from './resize-handle';
 import type { GridConfig } from '@/utils/grid-utils';
 
@@ -54,7 +54,7 @@ export const GroupSelection: React.FC<GroupSelectionProps> = ({
         y={element.y}
         rotation={element.rotation || 0}
       >
-        <ObjectSelect
+        <ElementSelect
           element={element}
           scaleFactor={scaleFactor}
         />
@@ -192,7 +192,7 @@ export const GroupSelection: React.FC<GroupSelectionProps> = ({
           />
           
           {/* Group selection outline */}
-          <ObjectSelect
+          <ElementSelect
             element={virtualGroupElement}
             scaleFactor={scaleFactor}
           />
@@ -275,7 +275,7 @@ export const GroupSelection: React.FC<GroupSelectionProps> = ({
           onPointerDown={handleGroupDragStart}
         />
         
-        <ObjectSelect
+        <ElementSelect
           element={virtualGroupElement}
           scaleFactor={scaleFactor}
         />
