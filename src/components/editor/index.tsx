@@ -281,10 +281,11 @@ export default function EditorCanvas() {
   useEffect(() => {
     // Clear selection when switching to creation tools to prevent drag conflicts
     // This allows placing new objects on top of previously selected shapes
-    if (toolState.activeTool !== 'select') {
+    // Exception: In path mode, keep the target element selected so user knows which element they're creating paths for
+    if (toolState.activeTool !== 'select' && !toolState.isPathMode) {
       selectElement(null);
     }
-  }, [toolState.activeTool, selectElement]);
+  }, [toolState.activeTool, toolState.isPathMode, selectElement]);
 
   // Handle select all
   const handleSelectAll = useCallback(() => {

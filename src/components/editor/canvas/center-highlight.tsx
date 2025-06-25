@@ -2,6 +2,7 @@ import React from 'react';
 import { extend } from '@pixi/react';
 import { Container, Graphics } from 'pixi.js';
 import * as PIXI from 'pixi.js';
+import { useUIStore } from '@/stores/useUIStore';
 
 extend({ Container, Graphics });
 
@@ -14,6 +15,8 @@ const CenterHighlight: React.FC<CenterHighlightProps> = ({
   isVisible, 
   onCenterClick 
 }) => {
+  const { activeTool } = useUIStore(state => state.tools);
+
   const drawCenterHighlight = (graphics: PIXI.Graphics) => {
     graphics.clear();
     
@@ -54,6 +57,13 @@ const CenterHighlight: React.FC<CenterHighlightProps> = ({
         eventMode="static"
         cursor="pointer"
         onPointerDown={(e: PIXI.FederatedPointerEvent) => {
+          // For draw tool, don't stop propagation - let the canvas handle the drawing
+          if (activeTool === 'draw') {
+            // Don't stop propagation, let the event bubble up to the canvas
+            return;
+          }
+          
+          // For line tools, stop propagation and handle the click
           e.stopPropagation();
           if (onCenterClick) {
             onCenterClick();
