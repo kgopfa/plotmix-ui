@@ -172,12 +172,6 @@ export function useKeyboardShortcuts({
         case 'arrowright':
           if (selectedElements.length > 0) {
             e.preventDefault();
-            const nudgeDistance = isShift ? 10 : 1;
-            const dx = e.key === 'ArrowLeft' ? -nudgeDistance : e.key === 'ArrowRight' ? nudgeDistance : 0;
-            const dy = e.key === 'ArrowUp' ? -nudgeDistance : e.key === 'ArrowDown' ? nudgeDistance : 0;
-            
-            // This would need to be connected to canvas update logic
-            console.log(`Nudge elements by dx:${dx}, dy:${dy}`);
           }
           break;
       }

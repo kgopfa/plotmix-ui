@@ -54,7 +54,6 @@ class EventManager {
       
       // Add the actual DOM event listener
       target.addEventListener(eventType, boundHandler as EventListener, { passive: false });
-      console.log(`EventManager: Added global listener for ${eventType}`);
     }
 
     // Add the handler to our set

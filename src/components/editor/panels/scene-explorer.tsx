@@ -84,12 +84,6 @@ export function SceneExplorer({
     const rootElements = shapes.filter(element => {
       const group = groups.find(g => g.elementIds.includes(element.id));
       const isRoot = (!group || group.isDefaultGroup) && !element.parent;
-      console.log(`Element ${element.name} (${element.id}):`, { 
-        hasParent: !!element.parent, 
-        parent: element.parent, 
-        isRoot,
-        inGroup: !!group && !group.isDefaultGroup 
-      });
       return isRoot;
     });
     return rootElements;
@@ -347,7 +341,6 @@ export function SceneExplorer({
     e.preventDefault();
     e.stopPropagation(); // Prevent event from bubbling to parent container
     if (draggedItem && canDropOnTarget(draggedItem.id, draggedItem.type, targetId, targetType)) {
-      console.log('Setting parent:', { childId: draggedItem.id, parentId: targetId, childType: draggedItem.type });
       onParentChange(draggedItem.id, targetId, draggedItem.type);
     }
     setDraggedItem(null);
