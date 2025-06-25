@@ -169,6 +169,7 @@ const defaultUserPreferences: UserPreferences = {
     'rectangle': 'r',
     'circle': 'c',
     'triangle': 't',
+    'arc': 'shift+a',
     'line': 'l',
     'text': 'a',
     'delete': 'Delete',
@@ -186,6 +187,7 @@ const defaultKeyboardShortcuts: KeyboardShortcut[] = [
   { key: 'r', action: 'rectangle', description: 'Rectangle Tool' },
   { key: 'c', action: 'circle', description: 'Circle Tool' },
   { key: 't', action: 'triangle', description: 'Triangle Tool' },
+  { key: 'a', shiftKey: true, action: 'arc', description: 'Arc Tool' },
   { key: 'l', action: 'line', description: 'Line Tool' },
   { key: 'a', action: 'text', description: 'Text Tool' },
   { key: 'Delete', action: 'delete', description: 'Delete Selected' },
@@ -450,6 +452,9 @@ export const useUIStore = create<UIStore>((set, get) => ({
           break;
         case 'triangle':
           state.setActiveTool('triangle');
+          break;
+        case 'arc':
+          state.setActiveTool('arc');
           break;
         case 'line':
           state.setActiveTool('line');

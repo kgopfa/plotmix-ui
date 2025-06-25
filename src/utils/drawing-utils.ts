@@ -173,6 +173,32 @@ function drawElement(graphics: Graphics, shape: AnimatedCanvasObject) {
       graphics.ellipse(0, 0, radius, radius);
       break;
       
+        case 'arc':
+      if (shape.arcOptions) {
+        // Constrained arc: endpoints at left/right edges, lowest point at bottom edge
+        const halfWidth = roundToPixel(shape.width / 2);
+        const halfHeight = roundToPixel(shape.height / 2);
+        
+        // Arc endpoints: left and right edges, top of element
+        const startX = -halfWidth;
+        const startY = -halfHeight;
+        const endX = halfWidth;
+        const endY = -halfHeight;
+        
+        // Arc curves downward to bottom edge
+        // Control points positioned to create smooth downward curve
+        const controlOffset = shape.height * 0.75; // Adjust this factor for arc shape
+        const control1X = startX;
+        const control1Y = startY + controlOffset;
+        const control2X = endX;
+        const control2Y = startY + controlOffset;
+        
+        // Draw the bezier curve
+        graphics.moveTo(startX, startY);
+        graphics.bezierCurveTo(control1X, control1Y, control2X, control2Y, endX, endY);
+      }
+      break;
+      
     case 'triangle':
       // Draw triangle to fit within the specified width and height bounds, pixel-aligned
       const height = roundToPixel(shape.height);
@@ -414,6 +440,66 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasObject) {
             shape.height / 2
           );
           break;
+          
+                 case 'arc':
+           if (shape.arcOptions) {
+             // Constrained arc animation path: endpoints at left/right edges, curves to bottom
+             const halfWidth = shape.width / 2;
+             const halfHeight = shape.height / 2;
+             
+             // Arc endpoints: left and right edges, top of element
+             const startX = -halfWidth;
+             const startY = -halfHeight;
+             const endX = halfWidth;
+             const endY = -halfHeight;
+             
+             // Arc curves downward to bottom edge
+             const controlOffset = shape.height * 0.75;
+             const control1X = startX;
+             const control1Y = startY + controlOffset;
+             const control2X = endX;
+             const control2Y = startY + controlOffset;
+             
+             // Use native graphics bezier curve with manual dash approximation
+             graphics.moveTo(startX, startY);
+             
+             // Sample fewer points for better performance
+             const steps = 20;
+             
+             for (let i = 1; i <= steps; i++) {
+               const t = i / steps;
+               
+               // Cubic bezier formula
+               const invT = 1 - t;
+               const invT2 = invT * invT;
+               const invT3 = invT2 * invT;
+               const t2 = t * t;
+               const t3 = t2 * t;
+               
+               const x = invT3 * startX + 
+                        3 * invT2 * t * control1X + 
+                        3 * invT * t2 * control2X + 
+                        t3 * endX;
+               const y = invT3 * startY + 
+                        3 * invT2 * t * control1Y + 
+                        3 * invT * t2 * control2Y + 
+                        t3 * endY;
+               
+               // Draw dash pattern manually - alternate between drawing and skipping
+               if (Math.floor(i / 2) % 2 === 0) {
+                 graphics.lineTo(x, y);
+               } else {
+                 graphics.moveTo(x, y);
+               }
+             }
+             
+             graphics.stroke({ 
+               color: grayColor, 
+               width: 2, 
+               alpha: 0.7
+             });
+           }
+           break;
           
         case 'triangle':
           const height = shape.height;

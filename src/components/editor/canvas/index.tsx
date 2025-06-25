@@ -267,8 +267,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     }
 
     // Handle other creation tools (non-line tools)
-    if (['rectangle', 'circle', 'triangle', 'text', 'textGroup'].includes(tool)) {
-      const newElement = createNewObject(tool as 'rectangle' | 'circle' | 'triangle' | 'text' | 'textGroup', e.global.x, e.global.y, elements);
+    if (['rectangle', 'circle', 'triangle', 'arc', 'text', 'textGroup'].includes(tool)) {
+      const newElement = createNewObject(tool as 'rectangle' | 'circle' | 'triangle' | 'arc' | 'text' | 'textGroup', e.global.x, e.global.y, elements);
       
       // If in path mode, mark it as a path
       if (isPathMode) {
@@ -926,7 +926,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         setCursor(LINE_CURSOR);
       } else if (tool === 'text' || tool === 'textGroup') {
         setCursor(TEXT_CURSOR);
-      } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle') {
+      } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle' || tool === 'arc') {
         setCursor(CROSS_CURSOR);
       } else {
         setCursor(DEFAULT_CURSOR);
@@ -1152,7 +1152,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         setCursor(LINE_CURSOR);
       } else if (tool === 'text' || tool === 'textGroup') {
         setCursor(TEXT_CURSOR);
-      } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle') {
+      } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle' || tool === 'arc') {
         setCursor(CROSS_CURSOR);
       } else {
         setCursor(DEFAULT_CURSOR);
@@ -1346,7 +1346,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           setCursor(LINE_CURSOR);
         } else if (tool === 'text') {
           setCursor(TEXT_CURSOR);
-        } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle') {
+        } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle' || tool === 'arc') {
           setCursor(CROSS_CURSOR);
         } else {
           setCursor(DEFAULT_CURSOR);
@@ -1373,7 +1373,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           setCursor(LINE_CURSOR);
         } else if (tool === 'text') {
           setCursor(TEXT_CURSOR);
-        } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle') {
+        } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle' || tool === 'arc') {
           setCursor(CROSS_CURSOR);
         } else {
           setCursor(DEFAULT_CURSOR);
@@ -1410,7 +1410,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       setCursor(LINE_CURSOR);
     } else if (tool === 'text' || tool === 'textGroup') {
       setCursor(TEXT_CURSOR);
-    } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle') {
+    } else if (tool === 'rectangle' || tool === 'circle' || tool === 'triangle' || tool === 'arc') {
       setCursor(CROSS_CURSOR);
     } else {
       setCursor(DEFAULT_CURSOR);

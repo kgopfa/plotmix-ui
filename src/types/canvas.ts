@@ -96,7 +96,7 @@ export interface BaseAnimationConfig {
 export interface AnimatedCanvasObject {
   id: string;
   name: string;
-  type: 'rectangle' | 'circle' | 'triangle' | 'line' | 'path' | 'image' | 'text' | 'textGroup' | 'character';
+  type: 'rectangle' | 'circle' | 'triangle' | 'arc' | 'line' | 'path' | 'image' | 'text' | 'textGroup' | 'character';
   x: number;
   y: number;
   width: number;
@@ -124,6 +124,8 @@ export interface AnimatedCanvasObject {
   };
   pathPoints?: Array<{x: number, y: number}>;
   imageData?: string;
+  // Arc-specific properties  
+  arcOptions?: Record<string, never>; // Empty object - arc shape determined by width/height
   animations: ElementAnimation[];
   isAnimationPath?: boolean;
   // Text-specific properties

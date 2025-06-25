@@ -26,7 +26,7 @@ function getCharWidthPixi(char: string, fontSize: number = 16, fontFamily: strin
   return bounds.width;
 }
 
-type ShapeType = 'rectangle' | 'circle' | 'triangle' | 'line' | 'path' | 'image' | 'text' | 'textGroup' | 'character';
+type ShapeType = 'rectangle' | 'circle' | 'triangle' | 'arc' | 'line' | 'path' | 'image' | 'text' | 'textGroup' | 'character';
 
 interface BaseObjectProps {
   x: number;
@@ -69,6 +69,8 @@ function generateCommonAttributes(
     rectangle: 'Rectangle',
     circle: 'Circle',
     triangle: 'Triangle',
+    arc: 'Arc',
+    bezier: 'Bezier',
     line: 'Line',
     path: 'Path',
     image: 'Image',
@@ -157,6 +159,29 @@ function createTriangle(props: BaseObjectProps): AnimatedCanvasObject {
     y: props.y,
     pivotX: width / 2,
     pivotY: height / 2,
+    isAnimationPath: props.isPath || false,
+    cornerRadius: 0,
+  };
+}
+
+function createArc(props: BaseObjectProps): AnimatedCanvasObject {
+  // Constrained arc: shape determined by element dimensions
+  // Arc spans from left to right edge and curves to bottom edge
+  const defaultWidth = 100;
+  const defaultHeight = 80;
+  
+  return {
+    ...generateCommonAttributes('arc', props),
+    type: 'arc',
+    width: defaultWidth,
+    height: defaultHeight,
+    radius: 50, // Keep for backward compatibility
+    lineOptions: undefined,
+    arcOptions: {}, // Empty object - shape determined by width/height
+    x: props.x,
+    y: props.y,
+    pivotX: defaultWidth / 2,
+    pivotY: defaultHeight / 2,
     isAnimationPath: props.isPath || false,
     cornerRadius: 0,
   };
@@ -390,6 +415,8 @@ export function createNewObject(
       return createCircle(props);
     case 'triangle':
       return createTriangle(props);
+    case 'arc':
+      return createArc(props);
     case 'line':
       return createLine({ ...props, startPoint, endPoint });
     case 'path':

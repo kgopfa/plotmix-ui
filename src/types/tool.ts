@@ -3,6 +3,7 @@ export type ToolType =
   | 'rectangle' 
   | 'circle' 
   | 'triangle' 
+  | 'arc'
   | 'line' 
   | 'simpleLine'
   | 'draw' 

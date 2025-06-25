@@ -63,6 +63,14 @@ export function Toolbar() {
         <span className="text-xl text-black">△</span>
       </button>
       <button
+        className={getButtonClass('arc')}
+        onClick={() => handleToolClick('arc')}
+        title={isToolDisabled('arc') ? "Arc (disabled in path mode)" : "Arc"}
+        disabled={isToolDisabled('arc')}
+      >
+        <span className="text-xl">◐</span>
+      </button>
+      <button
         className={getButtonClass('line')}
         onClick={() => handleToolClick('line')}
         title="Line"

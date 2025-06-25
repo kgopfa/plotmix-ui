@@ -172,6 +172,7 @@ export function SceneExplorer({
       'rectangle': '▭',
       'circle': '○',
       'triangle': '△',
+      'arc': '◐',
       'line': '—',
       'path': '〰️',
       'image': '🖼️',
