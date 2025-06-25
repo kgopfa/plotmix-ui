@@ -499,9 +499,17 @@ GSAP Timeline Manager Performance Report:
   handlePlayback(isPlaying: boolean, updateTick: () => void) {
     if (isPlaying) {
       gsap.ticker.add(updateTick);
+      this.timeline.play();
     } else {
       gsap.ticker.remove(updateTick);
+      this.timeline.pause();
     }
+  }
+
+  stop() {
+    gsap.ticker.remove(() => {});
+    this.timeline.pause();
+    this.timeline.time(0);
   }
 
   clearTimeline() {

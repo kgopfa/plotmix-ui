@@ -214,7 +214,11 @@ export const useTimelineStore = create<TimelineStore>()(
         }));
         
         timeManager.stop();
-        gsapManager.handlePlayback(false, () => {});
+        if ('stop' in gsapManager && typeof gsapManager.stop === 'function') {
+          gsapManager.stop();
+        } else {
+          gsapManager.handlePlayback(false, () => {});
+        }
       },
 
       seek: (time: number) => {
