@@ -260,13 +260,12 @@ export const useUIStore = create<UIStore>((set, get) => ({
   // Tool Actions
   setActiveTool: (tool: ToolType) => {
     set(produce((state) => {
-      // If we're in line chaining mode and switching away from line tool, exit chaining
-      if (state.tools.isLineChaining && tool !== 'line') {
+      // If we're in line drawing mode and switching away from line tool, exit line mode
+      if ((state.tools.isLineChaining || state.tools.lineStartPoint) && tool !== 'line') {
         state.tools.isLineChaining = false;
         state.tools.lineStartPoint = null;
         state.tools.chainedLineIds = [];
         state.tools.isClosingShape = false;
-        return; // Exit early if we're exiting line chaining
       }
       
       state.tools.activeTool = tool;
@@ -459,8 +458,12 @@ export const useUIStore = create<UIStore>((set, get) => ({
           state.setActiveTool('text');
           break;
         case 'escape':
-          if (state.tools.isLineChaining) {
+          if (state.tools.isLineChaining || state.tools.lineStartPoint) {
+            // Exit line drawing mode completely
             state.setLineChaining(false);
+            state.setLineStartPoint(null);
+            state.clearChainedLineIds();
+            state.setClosingShape(false);
           } else {
             state.setActiveTool('select');
           }

@@ -162,16 +162,34 @@ function createTriangle(props: BaseObjectProps): AnimatedCanvasObject {
   };
 }
 
-function createLine(props: BaseObjectProps): AnimatedCanvasObject {
+function createLine(props: BaseObjectProps & { startPoint?: { x: number; y: number }; endPoint?: { x: number; y: number } }): AnimatedCanvasObject {
+  // For line creation, we can have specific start and end points
+  const startPoint = props.startPoint || { x: props.x, y: props.y };
+  const endPoint = props.endPoint || { x: props.x + 100, y: props.y + 100 }; // Default endpoint if not specified
+
+  // Calculate the bounding box for the line
+  const minX = Math.min(startPoint.x, endPoint.x);
+  const maxX = Math.max(startPoint.x, endPoint.x);
+  const minY = Math.min(startPoint.y, endPoint.y);
+  const maxY = Math.max(startPoint.y, endPoint.y);
+  const width = Math.max(maxX - minX, 1); // Ensure minimum width of 1
+  const height = Math.max(maxY - minY, 1); // Ensure minimum height of 1
+  
+  // Calculate center position
+  const centerX = (startPoint.x + endPoint.x) / 2;
+  const centerY = (startPoint.y + endPoint.y) / 2;
+
   return {
     ...generateCommonAttributes('line', props),
     type: 'line',
-    width: 100,
-    height: 100,
+    x: centerX,
+    y: centerY,
+    width,
+    height,
     lineOptions: {
-      points: { start: { x: props.x, y: props.y }, end: { x: props.x + 100, y: props.y + 100 } },
+      points: { start: startPoint, end: endPoint },
       arrow: false,
-      dotted: false,
+      dotted: props.isPath || false, // Make dotted if it's an animation path
     },
     isAnimationPath: props.isPath || false,
     cornerRadius: 0,
@@ -359,7 +377,9 @@ export function createNewObject(
   imageData?: string,
   width?: number,
   height?: number,
-  text?: string
+  text?: string,
+  startPoint?: { x: number; y: number },
+  endPoint?: { x: number; y: number }
 ): AnimatedCanvasObject {
   const props: BaseObjectProps = { x, y, elements: canvasObjects, pathPoints, isPath, imageData, width, height, text };
 
@@ -371,7 +391,7 @@ export function createNewObject(
     case 'triangle':
       return createTriangle(props);
     case 'line':
-      return createLine(props);
+      return createLine({ ...props, startPoint, endPoint });
     case 'path':
       return createPath(props);
     case 'image':

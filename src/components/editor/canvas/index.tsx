@@ -175,18 +175,10 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       return;
     }
 
-    // Handle creation tools
-    if (['rectangle', 'circle', 'triangle', 'line', 'simpleLine', 'text', 'textGroup'].includes(tool)) {
-      const newElement = createNewObject(tool === 'simpleLine' ? 'line' : tool as 'rectangle' | 'circle' | 'triangle' | 'line' | 'text' | 'textGroup', e.global.x, e.global.y, elements);
-      
-      // If in path mode, mark it as a path
-      if (isPathMode) {
-        newElement.isAnimationPath = true;
-      }
-
-      // Handle line chaining for polygon creation
-      if (tool === 'line' && isLineChaining && chainedLineIds.length > 0) {
-        // Check if we're clicking on the start point of the first line to close the shape
+    // Handle line and polygon drawing with two-click system
+    if (tool === 'line' || tool === 'simpleLine') {
+      // Check if we're in polygon chaining mode and trying to close the shape
+      if (isLineChaining && chainedLineIds.length > 0) {
         const firstLineId = chainedLineIds[0];
         const firstLine = elements.find(el => el.id === firstLineId);
         
@@ -194,37 +186,78 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           const startPoint = firstLine.lineOptions.points.start;
           const clickDistance = Math.hypot(e.global.x - startPoint.x, e.global.y - startPoint.y);
           
-          if (clickDistance <= 30) { // Within 30px of start point
+          if (clickDistance <= 30) { // Within 30px of start point - close the polygon
             setClosingShape(true);
             return;
           }
         }
-        
-        // Add this line to the chain
-        addChainedLineId(newElement.id);
-      } else if (tool === 'line') {
-        // Start new line chain
-        setLineChaining(true);
-        addChainedLineId(newElement.id);
       }
 
-      // Set line start point for chaining
-      if (tool === 'line' || tool === 'simpleLine') {
-        if (newElement.lineOptions?.points) {
-          setLineStartPoint(newElement.lineOptions.points.end);
+      if (!lineStartPoint) {
+        // First click: Set the start point
+        setLineStartPoint({ x: e.global.x, y: e.global.y });
+        if (tool === 'line') {
+          setLineChaining(true);
         }
+      } else {
+        // Second click: Create the line from start to end point
+        const startPoint = lineStartPoint;
+        const endPoint = { x: e.global.x, y: e.global.y };
+        
+        const newElement = createNewObject(
+          'line', 
+          0, 0, // Position will be calculated in createLine
+          elements,
+          undefined, // pathPoints
+          isPathMode, // isPath
+          undefined, // imageData
+          undefined, // width
+          undefined, // height
+          undefined, // text
+          startPoint,
+          endPoint
+        );
+        
+        // If in path mode, mark it as a path
+        if (isPathMode) {
+          newElement.isAnimationPath = true;
+        }
+
+        addElement(newElement);
+        selectElement([newElement]);
+
+        // Handle line chaining for polygon creation
+        if (tool === 'line') {
+          addChainedLineId(newElement.id);
+          // Set the end point as the new start point for the next line
+          setLineStartPoint(endPoint);
+        } else {
+          // For simpleLine, complete the line and exit
+          setLineStartPoint(null);
+          setActiveTool('select');
+          setMaskPos(null);
+        }
+      }
+      return;
+    }
+
+    // Handle other creation tools (non-line tools)
+    if (['rectangle', 'circle', 'triangle', 'text', 'textGroup'].includes(tool)) {
+      const newElement = createNewObject(tool as 'rectangle' | 'circle' | 'triangle' | 'text' | 'textGroup', e.global.x, e.global.y, elements);
+      
+      // If in path mode, mark it as a path
+      if (isPathMode) {
+        newElement.isAnimationPath = true;
       }
 
       addElement(newElement);
       selectElement([newElement]);
       
-      // Switch to select tool after creating non-line elements
-      if (!['line', 'simpleLine'].includes(tool)) {
-        setActiveTool('select');
-        setMaskPos(null);
-      }
+      // Switch to select tool after creating elements
+      setActiveTool('select');
+      setMaskPos(null);
     }
-  }, [tool, isPathMode, isLineChaining, chainedLineIds, elements, addElement, selectElement, clearSelections]);
+  }, [tool, isPathMode, isLineChaining, chainedLineIds, lineStartPoint, elements, addElement, selectElement, clearSelections]);
 
   // Element selection handler
   const onElementSelect = useCallback((id: string | null, isMultiSelect?: boolean) => {
@@ -984,7 +1017,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   };
 
   const handleCanvasPointerMove = (e: FederatedPointerEvent) => {
-    // Always update mouse position for line preview, regardless of what's being hovered
+    // Always update mouse position for line preview and drawing tools
     setMousePos({ x: e.global.x, y: e.global.y });
 
     if (isDrawing && tool === 'draw') {
@@ -1712,38 +1745,13 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                 let canCloseShape = false;
                 let snapToPoint = mousePos;
 
-                if (isLineChaining) {
-                  // Find the very first line created in this chain by looking for lines that start near our original starting point
-                  // We need to find the actual first line in the chain to get the true original start point
-                  const chainedLines = elements.filter(obj => obj.type === 'line' && obj.lineOptions?.points);
-
-                  // Find the line whose start point is closest to our original lineStartPoint
-                  // This should be one of the first lines in our chain
-                  let originalStartPoint = null;
-                  let minDistance = Infinity;
-
-                  for (const line of chainedLines) {
-                    if (line.lineOptions?.points?.start) {
-                      const distance = Math.hypot(
-                        line.lineOptions.points.start.x - lineStartPoint.x,
-                        line.lineOptions.points.start.y - lineStartPoint.y
-                      );
-                      if (distance < minDistance && distance < 10) {
-                        minDistance = distance;
-                        originalStartPoint = line.lineOptions.points.start;
-                      }
-                    }
-                  }
-
-                  // If we couldn't find through chain, use first line
-                  if (!originalStartPoint && chainedLines.length > 0) {
-                    const firstLine = chainedLines[0];
-                    if (firstLine.lineOptions?.points?.start) {
-                      originalStartPoint = firstLine.lineOptions.points.start;
-                    }
-                  }
-
-                  if (originalStartPoint) {
+                if (isLineChaining && chainedLineIds.length > 0) {
+                  // Find the first line in the chain by its ID
+                  const firstLineId = chainedLineIds[0];
+                  const firstLine = elements.find(el => el.id === firstLineId);
+                  
+                  if (firstLine?.lineOptions?.points?.start) {
+                    const originalStartPoint = firstLine.lineOptions.points.start;
                     const distanceToOriginalStart = Math.hypot(mousePos.x - originalStartPoint.x, mousePos.y - originalStartPoint.y);
 
                     // Use same threshold as closing logic - 30px for easier polygon closing
