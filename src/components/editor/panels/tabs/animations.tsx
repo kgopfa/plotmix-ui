@@ -1,39 +1,39 @@
 import { 
   AnimatedCanvasObject, 
-  ElementAnimation
+  ElementAnimation,
+  AnimationType,
+  GsapEase
 } from '@/types/canvas';
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import debounce from 'lodash/debounce';
+import { useState, useEffect } from 'react';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
 import { useTimelineStore } from '@/stores/useTimelineStore';
+import { useCanvasStore } from '@/stores/useCanvasStore';
+import { calculateEffectiveDuration } from '@/utils/animation-utils';
 
 interface AnimationsTabProps {
   selectedElement: AnimatedCanvasObject;
   localAnimations: ElementAnimation[];
-  onAddAnimation: () => void;
-  onDeleteAnimation: (id: string) => void;
-  onAnimationChange: (id: string, field: string, value: string | number | boolean) => void;
   onEnterPathMode: (id: string) => void;
 }
 
 export function AnimationsTab({ 
   selectedElement,
   localAnimations,
-  onAddAnimation,
-  onDeleteAnimation,
-  onAnimationChange,
   onEnterPathMode
 }: AnimationsTabProps) {
-  // Local state for animations
+  // Local state is the single source of truth for this component
   const [animations, setAnimations] = useState<ElementAnimation[]>(localAnimations);
   const [selectedAnimationId, setSelectedAnimationId] = useState<string | null>(null);
   const animationSelectionManager = AnimationSelectionManager.getInstance();
-  const { updateAnimationDuration, updateAnimationRepeat, getEffectiveDuration } = useTimelineStore();
+  
+  // Get stores for direct updates
+  const canvasStore = useCanvasStore();
+  const { updateAnimationDuration, updateAnimationRepeat } = useTimelineStore();
 
-  // Update local state when props change
+  // Sync local state when props change (initial load or element switch)
   useEffect(() => {
     setAnimations(localAnimations);
-  }, [localAnimations]);
+  }, [localAnimations, selectedElement.id]); // Reset when element changes
 
   // Listen for animation selections
   useEffect(() => {
@@ -46,68 +46,145 @@ export function AnimationsTab({
     });
   }, [animationSelectionManager, selectedElement.id]);
 
-  // Debounced function to sync with parent
-  const debouncedOnAnimationChange = useCallback((id: string, field: string, value: string | number | boolean) => {
-    onAnimationChange(id, field, value);
-  }, [onAnimationChange]);
-
-  const debouncedHandler = useMemo(
-    () => debounce(debouncedOnAnimationChange, 300),
-    [debouncedOnAnimationChange]
-  );
-
-  // Handle local state changes
-  const handleAnimationChange = (id: string, field: string, value: string | number | boolean) => {
-    if (field === 'duration') {
-      updateAnimationDuration(id, selectedElement.id, Number(value));
-    } else if (field === 'repeat') {
-      const currentAnimation = animations.find(a => a.id === id);
-      updateAnimationRepeat(id, selectedElement.id, Number(value), currentAnimation?.repeatDelay, currentAnimation?.yoyo);
-    } else if (field === 'repeatDelay') {
-      const currentAnimation = animations.find(a => a.id === id);
-      updateAnimationRepeat(id, selectedElement.id, currentAnimation?.repeat ?? 0, Number(value), currentAnimation?.yoyo);
-    } else if (field === 'yoyo') {
-      const currentAnimation = animations.find(a => a.id === id);
-      updateAnimationRepeat(id, selectedElement.id, currentAnimation?.repeat ?? 0, currentAnimation?.repeatDelay, Boolean(value));
-    }
-    setAnimations(prevAnimations => 
-      prevAnimations.map(anim => {
-        if (anim.id !== id) return anim;
-        
-        if (field.includes('.')) {
-          // Handle nested properties (e.g., 'properties.x')
-          const [parent, child] = field.split('.');
-          const parentKey = parent as keyof ElementAnimation;
-          const parentValue = anim[parentKey];
-          
-          if (typeof parentValue === 'object' && parentValue !== null) {
-            return {
-              ...anim,
-              [parent]: {
-                ...parentValue,
-                [child]: value
-              }
-            };
-          }
-          return anim;
+  // Immediate sync to stores for specific properties
+  const syncToStores = (updatedAnimations: ElementAnimation[], changedField?: string, animationId?: string) => {
+    // For repeat-related changes, use Timeline Store methods for consistency
+    if (changedField && animationId && ['repeat', 'repeatDelay', 'yoyo'].includes(changedField)) {
+      const animation = updatedAnimations.find(a => a.id === animationId);
+      if (animation) {
+        if (changedField === 'repeat') {
+          updateAnimationRepeat(animationId, selectedElement.id, animation.repeat ?? 0, animation.repeatDelay, animation.yoyo);
+        } else if (changedField === 'repeatDelay') {
+          updateAnimationRepeat(animationId, selectedElement.id, animation.repeat ?? 0, animation.repeatDelay, animation.yoyo);
+        } else if (changedField === 'yoyo') {
+          updateAnimationRepeat(animationId, selectedElement.id, animation.repeat ?? 0, animation.repeatDelay, animation.yoyo);
         }
-        
-        return {
-          ...anim,
-          [field]: value
-        };
-      })
-    );
+      }
+    } else if (changedField === 'duration' && animationId) {
+      const animation = updatedAnimations.find(a => a.id === animationId);
+      if (animation) {
+        updateAnimationDuration(animationId, selectedElement.id, animation.duration);
+      }
+    } else {
+      // For other changes, update Canvas Store directly
+      canvasStore.updateElement(selectedElement.id, { animations: updatedAnimations });
+    }
+  };
 
-    // Sync with parent state
-    debouncedHandler(id, field, value);
+  // Handle adding animations internally
+  const handleAddAnimationInternal = () => {
+    const type: AnimationType = 'rotate';
+    const defaultProperties = {
+      rotate: { rotation: 0 },
+      scale: { scaleX: 1, scaleY: 1 },
+      move: { x: 0, y: 0 },
+      color: { fillColor: selectedElement.fill },
+      fade: { alpha: selectedElement.opacity ?? 1 },
+      path: { 
+        pathPoints: [],
+        pathDirection: 'clockwise' as 'clockwise' | 'counterclockwise',
+        yoyo: false,
+      },
+      physics: {
+        velocity: 400,
+        angle: 60,
+        gravity: 800,
+        acceleration: undefined,
+        accelerationAngle: undefined,
+        friction: undefined,
+        xProp: '',
+        yProp: ''
+      }
+    };
+
+    const newAnimation: ElementAnimation = {
+      id: `${type}-${animations.length + 1}`,
+      type,
+      startTime: 0,
+      duration: 2,
+      properties: defaultProperties[type],
+      easing: 'power1.inOut' as GsapEase,
+      repeat: 0,
+      repeatDelay: 0,
+      yoyo: false
+    };
+
+    const updatedAnimations = [...animations, newAnimation];
+    
+    // Update local state immediately
+    setAnimations(updatedAnimations);
+    
+    // Sync to stores
+    syncToStores(updatedAnimations);
+  };
+
+  // Handle deleting animations internally
+  const handleDeleteAnimationInternal = (animationId: string) => {
+    const updatedAnimations = animations.filter(anim => anim.id !== animationId);
+    
+    // Update local state immediately
+    setAnimations(updatedAnimations);
+    
+    // Sync to stores
+    syncToStores(updatedAnimations);
+  };
+
+  // Handle all animation changes through local state
+  const handleAnimationChange = (id: string, field: string, value: string | number | boolean) => {
+    console.log(`Animation change: ${field} = ${value} for animation ${id}`);
+    
+    const updatedAnimations = animations.map(anim => {
+      if (anim.id !== id) return anim;
+      
+      if (field.includes('.')) {
+        // Handle nested properties (e.g., 'properties.rotation')
+        const [parent, child] = field.split('.');
+        const parentKey = parent as keyof ElementAnimation;
+        const parentValue = anim[parentKey];
+        
+        if (typeof parentValue === 'object' && parentValue !== null) {
+          return {
+            ...anim,
+            [parent]: {
+              ...parentValue,
+              [child]: value
+            }
+          };
+        }
+        return anim;
+      }
+      
+      // Handle direct properties
+      if (field === 'repeat') {
+        return { ...anim, repeat: Number(value) };
+      } else if (field === 'repeatDelay') {
+        return { ...anim, repeatDelay: Number(value) };
+      } else if (field === 'yoyo') {
+        return { ...anim, yoyo: Boolean(value) };
+      } else if (field === 'duration') {
+        return { ...anim, duration: Number(value) };
+      } else {
+        return { ...anim, [field]: value };
+      }
+    });
+
+    // Update local state immediately
+    setAnimations(updatedAnimations);
+    
+    // Sync to stores based on field type
+    syncToStores(updatedAnimations, field, id);
+  };
+
+  // Calculate effective duration locally for immediate UI feedback
+  const getLocalEffectiveDuration = (animation: ElementAnimation) => {
+    return calculateEffectiveDuration(animation);
   };
 
   return (
     <div className="flex flex-col gap-2">
       <button
         type="button"
-        onClick={onAddAnimation}
+        onClick={handleAddAnimationInternal}
         className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
       >
         + Add Animation
@@ -120,7 +197,7 @@ export function AnimationsTab({
             <div className="flex justify-between items-center mb-2 border-b pb-2">
               <span className="font-medium text-blue-600">{animation.type}</span>
               <button
-                onClick={() => onDeleteAnimation(animation.id)}
+                onClick={() => handleDeleteAnimationInternal(animation.id)}
                 className="text-red-500 hover:text-red-700"
                 title="Delete animation"
               >
@@ -200,7 +277,10 @@ export function AnimationsTab({
                       type="number"
                       min="-1"
                       value={animation.repeat ?? 0}
-                      onChange={e => handleAnimationChange(animation.id, 'repeat', e.target.value)}
+                      onChange={e => {
+                        console.log(`Setting repeat for ${animation.id} to ${e.target.value}`);
+                        handleAnimationChange(animation.id, 'repeat', e.target.value);
+                      }}
                       className="w-full"
                       placeholder="0 = no repeat, -1 = infinite"
                       title="0 = no repeat, -1 = infinite loop, positive numbers = specific count"
@@ -460,7 +540,7 @@ export function AnimationsTab({
               </div>
               {(animation.repeat ?? 0) !== 0 && (
                 <div className="mt-1 text-xs text-gray-600">
-                  Effective duration: {getEffectiveDuration(animation.id).toFixed(1)}s
+                  Effective duration: {getLocalEffectiveDuration(animation).toFixed(1)}s
                 </div>
               )}
             </div>

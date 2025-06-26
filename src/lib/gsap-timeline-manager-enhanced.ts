@@ -154,6 +154,16 @@ export class GSAPTimelineManagerEnhanced extends GSAPTimelineManager {
    * Check if any animations exist in elements or groups
    */
   private hasAnimations(elements: AnimatedCanvasObject[], groups?: CanvasGroup[]): boolean {
+    console.log('GSAP Enhanced: Checking for animations...');
+    console.log('GSAP Enhanced: Elements:', elements.map(el => ({
+      id: el.id,
+      name: el.name,
+      isAnimationPath: el.isAnimationPath,
+      hasAnimationsArray: !!el.animations,
+      animationCount: el.animations?.length || 0,
+      animations: el.animations
+    })));
+    
     const hasElementAnimations = elements.some(el =>
       !el.isAnimationPath && el.animations && el.animations.length > 0
     );
@@ -161,7 +171,12 @@ export class GSAPTimelineManagerEnhanced extends GSAPTimelineManager {
       !group.isDefaultGroup && group.animations && group.animations.length > 0
     ) ?? false;
 
-    return hasElementAnimations || hasGroupAnimations;
+    console.log('GSAP Enhanced: hasElementAnimations:', hasElementAnimations);
+    console.log('GSAP Enhanced: hasGroupAnimations:', hasGroupAnimations);
+    const result = hasElementAnimations || hasGroupAnimations;
+    console.log('GSAP Enhanced: Final hasAnimations result:', result);
+    
+    return result;
   }
 
   /**

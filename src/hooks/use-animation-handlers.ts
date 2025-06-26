@@ -30,7 +30,7 @@ export function useAnimationHandlers(
     } else {
       setLocalAnimations([]);
     }
-  }, [selectedElement]);
+  }, [selectedElement, selectedElement?.animations]);
 
   const getAnimationProperty = (path: string, value: string | number): Partial<AnimatableProperties> => {
     const parts = path.split('.');
@@ -59,6 +59,46 @@ export function useAnimationHandlers(
   ) => {
     const updatedAnimations = localAnimations.map(anim => {
       if (anim.id !== animationId) return anim;
+
+      // For properties changes, preserve existing repeat settings that might have been updated via Timeline Store
+      if (field.startsWith('properties.')) {
+        const currentAnimation = selectedElement?.animations.find(a => a.id === animationId);
+        const preservedRepeatSettings = {
+          repeat: currentAnimation?.repeat ?? anim.repeat ?? 0,
+          repeatDelay: currentAnimation?.repeatDelay ?? anim.repeatDelay ?? 0,
+          yoyo: currentAnimation?.yoyo ?? anim.yoyo ?? false
+        };
+        
+        if (field === 'properties.yoyo') {
+          return {
+            ...anim,
+            ...preservedRepeatSettings,
+            properties: {
+              ...anim.properties,
+              yoyo: value as boolean
+            }
+          };
+        } else if (field === 'properties.pathDirection') {
+          return {
+            ...anim,
+            ...preservedRepeatSettings,
+            properties: {
+              ...anim.properties,
+              pathDirection: value as 'clockwise' | 'counterclockwise'
+            }
+          };
+        } else {
+          const animationProperty = getAnimationProperty(field, value as string | number);
+          return {
+            ...anim,
+            ...preservedRepeatSettings,
+            properties: {
+              ...anim.properties,
+              ...animationProperty
+            }
+          };
+        }
+      }
 
       if (field === 'easing') {
         return { ...anim, easing: value as GsapEase };
@@ -107,33 +147,6 @@ export function useAnimationHandlers(
         };
       } else if (field === 'startTime' || field === 'duration') {
         return { ...anim, [field]: Number(value) };
-      } else if (field.startsWith('properties.')) {
-        if (field === 'properties.yoyo') {
-          return {
-            ...anim,
-            properties: {
-              ...anim.properties,
-              yoyo: value as boolean
-            }
-          };
-        } else if (field === 'properties.pathDirection') {
-          return {
-            ...anim,
-            properties: {
-              ...anim.properties,
-              pathDirection: value as 'clockwise' | 'counterclockwise'
-            }
-          };
-        } else {
-          const animationProperty = getAnimationProperty(field, value as string | number);
-          return {
-            ...anim,
-            properties: {
-              ...anim.properties,
-              ...animationProperty
-            }
-          };
-        }
       }
       return anim;
     });

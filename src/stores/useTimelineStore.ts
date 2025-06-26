@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { produce } from 'immer';
+import { produce, enableMapSet } from 'immer';
 import { useShallow } from 'zustand/react/shallow';
 import { TimeManager, TimeManagerState } from '@/lib/time-manager';
 import { GSAPTimelineManagerEnhanced } from '@/lib/gsap-timeline-manager-enhanced';
@@ -8,6 +8,10 @@ import { TimelineManager } from '@/lib/timeline-manager';
 import { AnimatedCanvasObject, CanvasGroup, ElementAnimation } from '@/types/canvas';
 import { TimelineTrackData } from '@/types/timeline';
 import { calculateEffectiveEndTime, calculateEffectiveDuration } from '@/utils/animation-utils';
+import { useCanvasStore } from '@/stores/useCanvasStore';
+
+// Enable Immer MapSet plugin for Map support
+enableMapSet();
 
 interface PlaybackState {
   isPlaying: boolean;
@@ -277,6 +281,12 @@ export const useTimelineStore = create<TimelineStore>()(
 
       updateTracks: () => {
         const { elements, groups, timelineManager } = get();
+        
+        // Skip if elements are empty (might be in transition)
+        if (!elements || elements.length === 0) {
+          console.warn('Timeline Store: Skipping updateTracks - no elements available');
+          return;
+        }
         
         // Update the timeline manager with current data
         timelineManager.setTrackData(elements, groups);
@@ -784,7 +794,7 @@ export const useTimelineStore = create<TimelineStore>()(
       // Animation duration management
       updateAnimationDuration: (animationId: string, elementId: string, baseDuration: number) => {
         set(produce((state) => {
-          // Update the actual animation object
+          // Update Timeline Store first
           const element = state.elements.find((el: AnimatedCanvasObject) => el.id === elementId);
           if (element) {
             const animation = element.animations.find((anim: ElementAnimation) => anim.id === animationId);
@@ -810,11 +820,18 @@ export const useTimelineStore = create<TimelineStore>()(
             }
           }
         }));
+        
+        // Update the canvas store second (to maintain consistency)
+        const canvasStore = useCanvasStore.getState();
+        canvasStore.updateElementAnimation(elementId, animationId, { duration: baseDuration });
+        
+        // Update tracks after both stores are consistent
         get().updateTracks();
       },
 
       updateAnimationRepeat: (animationId: string, elementId: string, repeat: number, repeatDelay = 0, yoyo = false) => {
         set(produce((state) => {
+          // Update Timeline Store first
           const element = state.elements.find((el: AnimatedCanvasObject) => el.id === elementId);
           if (element) {
             const animation = element.animations.find((anim: ElementAnimation) => anim.id === animationId);
@@ -831,10 +848,25 @@ export const useTimelineStore = create<TimelineStore>()(
                 animState.yoyo = yoyo;
                 animState.effectiveDuration = calculateEffectiveDuration(animation);
                 animState.effectiveEndTime = animation.startTime + animState.effectiveDuration;
+              } else {
+                state.animationStates.set(animationId, {
+                  baseDuration: animation.duration,
+                  repeat,
+                  repeatDelay,
+                  yoyo,
+                  effectiveDuration: calculateEffectiveDuration(animation),
+                  effectiveEndTime: animation.startTime + calculateEffectiveDuration(animation)
+                });
               }
             }
           }
         }));
+        
+        // Update the canvas store second (to maintain consistency)
+        const canvasStore = useCanvasStore.getState();
+        canvasStore.updateElementAnimation(elementId, animationId, { repeat, repeatDelay, yoyo });
+        
+        // Update tracks after both stores are consistent
         get().updateTracks();
       },
 

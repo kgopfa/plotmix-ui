@@ -56,9 +56,7 @@ export default function EditorCanvas() {
     setClosingShape,
   } = useUIStore();
 
-  // Use Timeline store instead of local state
-  // Note: Timeline state is now accessed directly by Timeline component
-  const { setElements, setGroups: setTimelineGroups } = useTimelineStore();
+  // Timeline integration is handled by useTimelineIntegration hook
   const { initializeSubscriptions, cleanupSubscriptions, buildGSAPTimeline } = useTimelineSync();
 
   // Use UI store for panel state
@@ -164,11 +162,7 @@ export default function EditorCanvas() {
     };
   }, [initializeSubscriptions, cleanupSubscriptions]);
 
-  // Sync elements and groups with timeline store
-  useEffect(() => {
-    setElements(canvasObjects);
-    setTimelineGroups(groups);
-  }, [canvasObjects, groups, setElements, setTimelineGroups]);
+  // Timeline sync is handled by the useTimelineIntegration hook
 
   // Auto-center the scroll view when dimensions are ready
   useEffect(() => {

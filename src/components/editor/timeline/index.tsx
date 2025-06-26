@@ -1,4 +1,4 @@
-import { useRef, useState, useMemo } from 'react';
+import { useRef, useState, useMemo, useEffect } from 'react';
 import { TimelineTrack } from '@/components/editor/timeline/timeline-track';
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { useCanvasElements, useCanvasGroups } from '@/stores/useCanvasStore';
@@ -11,6 +11,27 @@ export function Timeline() {
   // Get data directly from stores
   const elements = useCanvasElements().filter(el => !el.isAnimationPath);
   const groups = useCanvasGroups();
+  
+  // Debug: Log elements and their animations
+  useEffect(() => {
+    const elementsWithAnimations = elements.filter(el => el.animations && el.animations.length > 0);
+    if (elementsWithAnimations.length > 0) {
+      console.log('Timeline Debug - Elements with animations:', elementsWithAnimations.map(el => ({
+        id: el.id, 
+        name: el.name, 
+        animationCount: el.animations?.length || 0,
+        animations: el.animations
+      })));
+      
+      // Log first animation in detail
+      const firstElement = elementsWithAnimations[0];
+      if (firstElement.animations && firstElement.animations.length > 0) {
+        console.log('Timeline Debug - First animation details:', firstElement.animations[0]);
+      }
+    } else {
+      console.log('Timeline Debug - No elements with animations found');
+    }
+  }, [elements, groups]);
   
   // Get timeline state and actions
   const { playback, ui: timelineUI } = useTimelineStore(
