@@ -268,6 +268,23 @@ export const useTimelineStore = create<TimelineStore>()(
       setElements: (elements: AnimatedCanvasObject[]) => {
         set(produce((state) => {
           state.elements = elements;
+          
+          // Initialize animation states for all element animations
+          elements.forEach(element => {
+            element.animations.forEach(animation => {
+              if (!state.animationStates.has(animation.id)) {
+                const effectiveDuration = calculateEffectiveDuration(animation);
+                state.animationStates.set(animation.id, {
+                  baseDuration: animation.duration,
+                  repeat: animation.repeat,
+                  repeatDelay: animation.repeatDelay,
+                  yoyo: animation.yoyo,
+                  effectiveDuration,
+                  effectiveEndTime: animation.startTime + effectiveDuration
+                });
+              }
+            });
+          });
         }));
         get().updateTracks();
       },
@@ -275,6 +292,23 @@ export const useTimelineStore = create<TimelineStore>()(
       setGroups: (groups: CanvasGroup[]) => {
         set(produce((state) => {
           state.groups = groups;
+          
+          // Initialize animation states for all group animations
+          groups.forEach(group => {
+            group.animations.forEach(animation => {
+              if (!state.animationStates.has(animation.id)) {
+                const effectiveDuration = calculateEffectiveDuration(animation);
+                state.animationStates.set(animation.id, {
+                  baseDuration: animation.duration,
+                  repeat: animation.repeat,
+                  repeatDelay: animation.repeatDelay,
+                  yoyo: animation.yoyo,
+                  effectiveDuration,
+                  effectiveEndTime: animation.startTime + effectiveDuration
+                });
+              }
+            });
+          });
         }));
         get().updateTracks();
       },
@@ -318,18 +352,32 @@ export const useTimelineStore = create<TimelineStore>()(
               group.animations.push(animation);
             }
           }
+
+          // Initialize animation state cache for immediate timeline display
+          const effectiveDuration = calculateEffectiveDuration(animation);
+          state.animationStates.set(animation.id, {
+            baseDuration: animation.duration,
+            repeat: animation.repeat,
+            repeatDelay: animation.repeatDelay,
+            yoyo: animation.yoyo,
+            effectiveDuration,
+            effectiveEndTime: animation.startTime + effectiveDuration
+          });
         }));
         get().updateTracks();
       },
 
       updateAnimation: (trackId: string, animationId: string, updates: Partial<ElementAnimation>, trackType: 'element' | 'group') => {
         set(produce((state) => {
+          let updatedAnimation: ElementAnimation | undefined;
+          
           if (trackType === 'element') {
             const element = state.elements.find((el: AnimatedCanvasObject) => el.id === trackId);
             if (element) {
               const animation = element.animations.find((anim: ElementAnimation) => anim.id === animationId);
               if (animation) {
                 Object.assign(animation, updates);
+                updatedAnimation = animation;
               }
             }
           } else {
@@ -338,7 +386,34 @@ export const useTimelineStore = create<TimelineStore>()(
               const animation = group.animations.find((anim: ElementAnimation) => anim.id === animationId);
               if (animation) {
                 Object.assign(animation, updates);
+                updatedAnimation = animation;
               }
+            }
+          }
+
+          // Update animation state cache if animation was found and updated
+          if (updatedAnimation) {
+            const effectiveDuration = calculateEffectiveDuration(updatedAnimation);
+            const existingState = state.animationStates.get(animationId);
+            
+            if (existingState) {
+              // Update existing state
+              existingState.baseDuration = updatedAnimation.duration;
+              existingState.repeat = updatedAnimation.repeat;
+              existingState.repeatDelay = updatedAnimation.repeatDelay;
+              existingState.yoyo = updatedAnimation.yoyo;
+              existingState.effectiveDuration = effectiveDuration;
+              existingState.effectiveEndTime = updatedAnimation.startTime + effectiveDuration;
+            } else {
+              // Create new state if it doesn't exist
+              state.animationStates.set(animationId, {
+                baseDuration: updatedAnimation.duration,
+                repeat: updatedAnimation.repeat,
+                repeatDelay: updatedAnimation.repeatDelay,
+                yoyo: updatedAnimation.yoyo,
+                effectiveDuration,
+                effectiveEndTime: updatedAnimation.startTime + effectiveDuration
+              });
             }
           }
         }));
@@ -360,6 +435,8 @@ export const useTimelineStore = create<TimelineStore>()(
           }
           // Remove from selection if selected
           state.ui.selectedAnimationIds.delete(animationId);
+          // Clean up animation state cache
+          state.animationStates.delete(animationId);
         }));
         get().updateTracks();
       },
@@ -394,6 +471,17 @@ export const useTimelineStore = create<TimelineStore>()(
                 group.animations.push(duplicatedAnimation);
               }
             }
+
+            // Initialize animation state cache for the duplicated animation
+            const effectiveDuration = calculateEffectiveDuration(duplicatedAnimation);
+            state.animationStates.set(duplicatedAnimation.id, {
+              baseDuration: duplicatedAnimation.duration,
+              repeat: duplicatedAnimation.repeat,
+              repeatDelay: duplicatedAnimation.repeatDelay,
+              yoyo: duplicatedAnimation.yoyo,
+              effectiveDuration,
+              effectiveEndTime: duplicatedAnimation.startTime + effectiveDuration
+            });
           }
         }));
         get().updateTracks();
@@ -910,7 +998,55 @@ export const useTimelineStore = create<TimelineStore>()(
 
       getEffectiveDuration: (animationId: string) => {
         const state = get().animationStates.get(animationId);
-        return state?.effectiveDuration ?? 0;
+        if (state) {
+          return state.effectiveDuration;
+        }
+
+        // Fallback: Find the animation in elements/groups and calculate duration
+        const { elements, groups } = get();
+        
+        // Search in elements
+        for (const element of elements) {
+          const animation = element.animations.find(anim => anim.id === animationId);
+          if (animation) {
+            const effectiveDuration = calculateEffectiveDuration(animation);
+            
+            // Cache the result for future calls
+            get().animationStates.set(animationId, {
+              baseDuration: animation.duration,
+              repeat: animation.repeat,
+              repeatDelay: animation.repeatDelay,
+              yoyo: animation.yoyo,
+              effectiveDuration,
+              effectiveEndTime: animation.startTime + effectiveDuration
+            });
+            
+            return effectiveDuration;
+          }
+        }
+        
+        // Search in groups
+        for (const group of groups) {
+          const animation = group.animations.find(anim => anim.id === animationId);
+          if (animation) {
+            const effectiveDuration = calculateEffectiveDuration(animation);
+            
+            // Cache the result for future calls
+            get().animationStates.set(animationId, {
+              baseDuration: animation.duration,
+              repeat: animation.repeat,
+              repeatDelay: animation.repeatDelay,
+              yoyo: animation.yoyo,
+              effectiveDuration,
+              effectiveEndTime: animation.startTime + effectiveDuration
+            });
+            
+            return effectiveDuration;
+          }
+        }
+        
+        // Default fallback if animation not found
+        return 2; // Default 2-second duration
       },
 
       getAnimationState: (animationId: string) => {

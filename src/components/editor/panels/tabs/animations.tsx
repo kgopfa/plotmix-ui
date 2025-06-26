@@ -28,12 +28,37 @@ export function AnimationsTab({
   
   // Get stores for direct updates
   const canvasStore = useCanvasStore();
-  const { updateAnimationDuration, updateAnimationRepeat } = useTimelineStore();
+  const { updateAnimationDuration, updateAnimationRepeat, updateTracks, buildGSAPTimeline } = useTimelineStore();
 
   // Sync local state when props change (initial load or element switch)
   useEffect(() => {
     setAnimations(localAnimations);
   }, [localAnimations, selectedElement.id]); // Reset when element changes
+
+  // Auto-rebuild timeline when animations change
+  useEffect(() => {
+    if (animations.length > 0 || localAnimations.length !== animations.length) {
+      console.log(`🎬 Animations changed for element ${selectedElement.id}, rebuilding timeline...`);
+      
+      // Update Canvas Store first
+      canvasStore.updateElement(selectedElement.id, { animations });
+      
+      // Force Timeline Store to sync with Canvas Store
+      const canvasElements = canvasStore.getAllElements();
+      const canvasGroups = canvasStore.getAllGroups();
+      const timelineStore = useTimelineStore.getState();
+      
+      // Update Timeline Store with latest data
+      timelineStore.setElements(canvasElements);
+      timelineStore.setGroups(canvasGroups);
+      
+      // Force rebuild timeline tracks and GSAP timeline
+      setTimeout(() => {
+        updateTracks();
+        buildGSAPTimeline();
+      }, 0);
+    }
+  }, [animations, selectedElement.id, canvasStore, updateTracks, buildGSAPTimeline]);
 
   // Listen for animation selections
   useEffect(() => {
@@ -46,7 +71,7 @@ export function AnimationsTab({
     });
   }, [animationSelectionManager, selectedElement.id]);
 
-  // Immediate sync to stores for specific properties
+  // Simplified sync to stores (Timeline rebuild handled by useEffect above)
   const syncToStores = (updatedAnimations: ElementAnimation[], changedField?: string, animationId?: string) => {
     // For repeat-related changes, use Timeline Store methods for consistency
     if (changedField && animationId && ['repeat', 'repeatDelay', 'yoyo'].includes(changedField)) {
@@ -65,10 +90,8 @@ export function AnimationsTab({
       if (animation) {
         updateAnimationDuration(animationId, selectedElement.id, animation.duration);
       }
-    } else {
-      // For other changes, update Canvas Store directly
-      canvasStore.updateElement(selectedElement.id, { animations: updatedAnimations });
     }
+    // Note: Canvas Store update and timeline rebuild handled by useEffect
   };
 
   // Handle adding animations internally

@@ -6,8 +6,7 @@ import { TimelineManager } from '@/lib/timeline-manager';
 import { useSelectionStore } from '@/stores/useSelectionStore';
 import { useCanvasElements, useCanvasGroups } from '@/stores/useCanvasStore';
 import { useUIStore } from '@/stores/useUIStore';
-import { useTimelineStore, useTimelineSync } from '@/stores/useTimelineStore';
-
+import { useTimelineSync } from '@/stores/useTimelineStore';
 import { useCanvasMigration } from '@/hooks/use-canvas-migration';
 import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
 import { SceneExplorer } from './panels/scene-explorer';

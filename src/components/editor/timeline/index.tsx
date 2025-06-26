@@ -12,40 +12,21 @@ export function Timeline() {
   const elements = useCanvasElements().filter(el => !el.isAnimationPath);
   const groups = useCanvasGroups();
   
-  // Debug: Log elements and their animations
-  useEffect(() => {
-    const elementsWithAnimations = elements.filter(el => el.animations && el.animations.length > 0);
-    if (elementsWithAnimations.length > 0) {
-      console.log('Timeline Debug - Elements with animations:', elementsWithAnimations.map(el => ({
-        id: el.id, 
-        name: el.name, 
-        animationCount: el.animations?.length || 0,
-        animations: el.animations
-      })));
-      
-      // Log first animation in detail
-      const firstElement = elementsWithAnimations[0];
-      if (firstElement.animations && firstElement.animations.length > 0) {
-        console.log('Timeline Debug - First animation details:', firstElement.animations[0]);
-      }
-    } else {
-      console.log('Timeline Debug - No elements with animations found');
-    }
-  }, [elements, groups]);
-  
   // Get timeline state and actions
-  const { playback, ui: timelineUI } = useTimelineStore(
+  const { playback, ui: timelineUI, getEffectiveDuration } = useTimelineStore(
     useShallow((state) => ({
       playback: state.playback,
-      ui: state.ui
+      ui: state.ui,
+      getEffectiveDuration: state.getEffectiveDuration
     }))
   );
   
-  const { play, pause, stop } = useTimelineStore(
+  const { play, pause, stop, updateAnimation } = useTimelineStore(
     useShallow((state) => ({
       play: state.play,
       pause: state.pause,
-      stop: state.stop
+      stop: state.stop,
+      updateAnimation: state.updateAnimation
     }))
   );
   
@@ -53,10 +34,23 @@ export function Timeline() {
   const { isTimelineCollapsed } = usePanelState();
   const { toggleTimelineCollapse } = usePanelActions();
   
-
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [scrollLeft, setScrollLeft] = useState(0);
   const [expandedElements, setExpandedElements] = useState<Set<string>>(new Set());
+
+  // Pre-warm animation durations for newly detected animations
+  useEffect(() => {
+    const allAnimations = [
+      ...elements.flatMap(el => el.animations),
+      ...groups.flatMap(g => g.animations)
+    ];
+    
+    // Pre-warm the getEffectiveDuration cache by calling it for each animation
+    // This triggers the fallback logic which initializes the cache
+    allAnimations.forEach(animation => {
+      getEffectiveDuration(animation.id);
+    });
+  }, [elements, groups, getEffectiveDuration]);
 
   const handleScroll = () => {
     if (scrollContainerRef.current) {
@@ -99,13 +93,11 @@ export function Timeline() {
 
   // Handle animation changes (these will need to be connected to the appropriate store actions)
   const handleAnimationChange = (elementId: string, animationId: string, update: { startTime: number; duration: number }) => {
-    // This will need to be properly connected to canvas store update actions
-    console.log('Animation change:', { elementId, animationId, update });
+    updateAnimation(elementId, animationId, update, 'element');
   };
 
   const handleGroupAnimationChange = (groupId: string, animationId: string, update: { startTime: number; duration: number }) => {
-    // This will need to be properly connected to canvas store update actions  
-    console.log('Group animation change:', { groupId, animationId, update });
+    updateAnimation(groupId, animationId, update, 'group');
   };
 
 
