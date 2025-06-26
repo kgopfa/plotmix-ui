@@ -85,7 +85,6 @@ export class GSAPTimelineManager {
 
       // Skip timeline building if no animations exist
       if (!hasElementAnimations && !hasGroupAnimations) {
-        console.log('⚡ Skipping timeline build - no animations found');
         this.clearTimeline();
         this.updatePerformanceMetrics(buildStartTime, 0, 0, 0);
         return;
@@ -93,7 +92,6 @@ export class GSAPTimelineManager {
 
       const shapeRefs = this.canvasRef?.current?.getShapeRefs();
       if (!shapeRefs) {
-        console.warn('⚠️ No shape refs available, skipping timeline build');
         return;
       }
 
@@ -138,10 +136,7 @@ export class GSAPTimelineManager {
       // Update performance metrics
       this.updatePerformanceMetrics(buildStartTime, elementsProcessed, groupsProcessed, animationsCreated);
 
-      console.log(`🎬 Timeline built: ${elementsProcessed} elements, ${groupsProcessed} groups, ${animationsCreated} animations in ${this.performanceMetrics.lastBuildTime.toFixed(2)}ms`);
-
-    } catch (error) {
-      console.error('❌ Error building timeline:', error);
+    } catch {
       this.clearTimeline();
     }
   }
@@ -309,7 +304,11 @@ export class GSAPTimelineManager {
   /**
    * Add group animation to timeline
    */
-  private addGroupAnimationToTimeline(config: GroupAnimationConfig, groupContainer: PIXI.Container, animation: ElementAnimation) {
+  private addGroupAnimationToTimeline(
+    config: GroupAnimationConfig, 
+    groupContainer: PIXI.Container, 
+    animation: ElementAnimation
+  ) {
     if (!isGroupAnimationConfig(config)) return;
 
     const baseConfig = {
@@ -521,6 +520,5 @@ GSAP Timeline Manager Performance Report:
   destroy() {
     this.timeline.kill();
     gsap.ticker.remove(this.updateTime);
-    console.log('GSAPTimelineManager destroyed');
   }
 } 
