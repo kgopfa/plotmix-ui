@@ -937,7 +937,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       if (currentPath.length > 1) {
         if (tool === 'draw') {
           // Create a new path element
-          // Pass 0,0 as position since the element factory now calculates the correct center position
           const newElement = createNewObject('path', 0, 0, elements, currentPath);
 
           // If in path mode, mark it as a path
@@ -1071,14 +1070,9 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     if (tool === 'draw') {
       setIsDrawing(true);
       const newPoint = { x: e.global.x, y: e.global.y };
+      
+      // Initialize path state
       setCurrentPath([newPoint]);
-
-      if (drawingRef.current) {
-        const graphics = drawingRef.current;
-        graphics.clear();
-        graphics.moveTo(newPoint.x, newPoint.y);
-        graphics.stroke({ width: 2, color: 0x000000, alpha: 1 });
-      }
     }
   };
 
@@ -1088,18 +1082,19 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
     if (isDrawing && tool === 'draw') {
       const newPoint = { x: e.global.x, y: e.global.y };
-      setCurrentPath(prev => [...prev, newPoint]);
-
-      if (drawingRef.current) {
-        const graphics = drawingRef.current;
-        graphics.clear();
-        graphics.moveTo(currentPath[0].x, currentPath[0].y);
-        currentPath.forEach(point => {
-          graphics.lineTo(point.x, point.y);
-        });
-        graphics.lineTo(newPoint.x, newPoint.y);
-        graphics.stroke({ width: 2, color: 0x000000, alpha: 1 });
-      }
+      
+      // Update React state for visual feedback - let the draw function handle rendering
+      setCurrentPath(prev => {
+        const lastPoint = prev[prev.length - 1];
+        if (lastPoint) {
+          const distance = Math.hypot(newPoint.x - lastPoint.x, newPoint.y - lastPoint.y);
+          // Only add point if moved at least 1 pixel for smoother lines
+          if (distance >= 1) {
+            return [...prev, newPoint];
+          }
+        }
+        return prev;
+      });
     }
   };
 
@@ -1800,7 +1795,13 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                   currentPath.slice(1).forEach(point => {
                     g.lineTo(point.x, point.y);
                   });
-                  g.stroke({ width: 2, color: 0x000000, alpha: 1 });
+                  g.stroke({ 
+                    width: 2, 
+                    color: 0x000000, 
+                    alpha: 1,
+                    cap: 'round',
+                    join: 'round'
+                  });
                 }
               }}
             />
