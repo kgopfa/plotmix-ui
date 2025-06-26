@@ -240,7 +240,7 @@ export class GSAPTimelineManager {
     // Build repeat configuration from BaseAnimationConfig
     const repeatConfig: Record<string, number | boolean> = {};
     if (config.repeat !== undefined && config.repeat !== 0) {
-      repeatConfig.repeat = config.repeat; // -1 for infinite, positive numbers for count
+      repeatConfig.repeat = config.repeat;
     }
     if (config.repeatDelay !== undefined) {
       repeatConfig.repeatDelay = config.repeatDelay;
@@ -425,16 +425,41 @@ export class GSAPTimelineManager {
   private addLinePathAnimation(config: PathAnimationConfig | PolygonAnimationConfig, target: PIXI.Container, pathElement: AnimatedCanvasObject | CanvasGroup) {
     if (!('lineOptions' in pathElement) || !pathElement.lineOptions?.points?.end) return;
 
+    // Build repeat configuration
+    const repeatConfig: Record<string, number | boolean> = {};
+    if (config.repeat !== undefined && config.repeat !== 0) {
+      repeatConfig.repeat = config.repeat;
+    }
+    if (config.repeatDelay !== undefined) {
+      repeatConfig.repeatDelay = config.repeatDelay;
+    }
+    if (config.yoyo !== undefined) {
+      repeatConfig.yoyo = config.yoyo;
+    }
+
     const { end } = pathElement.lineOptions.points;
     this.timeline.to(target, {
       pixi: { x: end.x, y: end.y },
       duration: config.duration,
       ease: config.ease,
+      ...repeatConfig
     }, config.startTime);
   }
 
   private addCustomPathAnimation(config: PathAnimationConfig | PolygonAnimationConfig, target: PIXI.Container, pathElement: AnimatedCanvasObject | CanvasGroup) {
     if (!('pathPoints' in pathElement) || !pathElement.pathPoints) return;
+
+    // Build repeat configuration
+    const repeatConfig: Record<string, number | boolean> = {};
+    if (config.repeat !== undefined && config.repeat !== 0) {
+      repeatConfig.repeat = config.repeat;
+    }
+    if (config.repeatDelay !== undefined) {
+      repeatConfig.repeatDelay = config.repeatDelay;
+    }
+    if (config.yoyo !== undefined) {
+      repeatConfig.yoyo = config.yoyo;
+    }
 
     const pathPoints = pathElement.pathPoints.map((p: { x: number, y: number }) => ({
       x: pathElement.x + p.x,
@@ -451,6 +476,7 @@ export class GSAPTimelineManager {
       motionPath: { path: svgPath, autoRotate: false },
       duration: config.duration,
       ease: config.ease,
+      ...repeatConfig,
       onUpdate: () => {
         if (target && target.parent && !target.destroyed) {
           target.x = proxy.x;
