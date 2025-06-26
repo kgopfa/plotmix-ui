@@ -5,6 +5,7 @@ import {
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import debounce from 'lodash/debounce';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
+import { useTimelineStore } from '@/stores/useTimelineStore';
 
 interface AnimationsTabProps {
   selectedElement: AnimatedCanvasObject;
@@ -27,6 +28,7 @@ export function AnimationsTab({
   const [animations, setAnimations] = useState<ElementAnimation[]>(localAnimations);
   const [selectedAnimationId, setSelectedAnimationId] = useState<string | null>(null);
   const animationSelectionManager = AnimationSelectionManager.getInstance();
+  const { updateAnimationDuration, updateAnimationRepeat, getEffectiveDuration } = useTimelineStore();
 
   // Update local state when props change
   useEffect(() => {
@@ -56,6 +58,18 @@ export function AnimationsTab({
 
   // Handle local state changes
   const handleAnimationChange = (id: string, field: string, value: string | number | boolean) => {
+    if (field === 'duration') {
+      updateAnimationDuration(id, selectedElement.id, Number(value));
+    } else if (field === 'repeat') {
+      const currentAnimation = animations.find(a => a.id === id);
+      updateAnimationRepeat(id, selectedElement.id, Number(value), currentAnimation?.repeatDelay, currentAnimation?.yoyo);
+    } else if (field === 'repeatDelay') {
+      const currentAnimation = animations.find(a => a.id === id);
+      updateAnimationRepeat(id, selectedElement.id, currentAnimation?.repeat ?? 0, Number(value), currentAnimation?.yoyo);
+    } else if (field === 'yoyo') {
+      const currentAnimation = animations.find(a => a.id === id);
+      updateAnimationRepeat(id, selectedElement.id, currentAnimation?.repeat ?? 0, currentAnimation?.repeatDelay, Boolean(value));
+    }
     setAnimations(prevAnimations => 
       prevAnimations.map(anim => {
         if (anim.id !== id) return anim;
@@ -444,6 +458,11 @@ export function AnimationsTab({
                   )}
                 </div>
               </div>
+              {(animation.repeat ?? 0) !== 0 && (
+                <div className="mt-1 text-xs text-gray-600">
+                  Effective duration: {getEffectiveDuration(animation.id).toFixed(1)}s
+                </div>
+              )}
             </div>
           </div>
         ))}

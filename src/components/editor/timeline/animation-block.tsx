@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { ElementAnimation } from '@/types/canvas';
-import { calculateEffectiveDuration } from '@/utils/animation-utils';
+import { useTimelineStore } from '@/stores/useTimelineStore';
 
 interface AnimationBlockProps {
   animation: ElementAnimation;
@@ -28,6 +28,7 @@ export const AnimationBlock: React.FC<AnimationBlockProps> = ({
   onClick,
   onChange,
 }) => {
+  const { getEffectiveDuration, updateAnimationFromTimeline } = useTimelineStore();
   const isDragging = useRef(false);
   const isResizing = useRef(false);
   const dragStartX = useRef(0);
@@ -35,7 +36,7 @@ export const AnimationBlock: React.FC<AnimationBlockProps> = ({
   const initialWidth = useRef(0);
 
   const left = animation.startTime * scale;
-  const width = calculateEffectiveDuration(animation) * scale; // Use effective duration for width
+  const width = getEffectiveDuration(animation.id) * scale; // Get from Zustand
 
   // Get color based on animation number
   const colorIndex = parseInt(animation.id.split('-')[1]) - 1;
@@ -79,14 +80,11 @@ export const AnimationBlock: React.FC<AnimationBlockProps> = ({
     if (!isResizing.current) return;
     const delta = e.clientX - dragStartX.current;
     const newWidth = Math.max(20, initialWidth.current + delta);
-
-    // Snap to nearest second (min 1s)
-    const snappedDuration = Math.max(1, Math.round(newWidth / scale));
-
-    onChange?.({
-      startTime: animation.startTime,
-      duration: Math.min(snappedDuration, 120 - animation.startTime),
-    });
+    
+    const newEffectiveDuration = Math.max(0.1, newWidth / scale);
+    
+    // Update through Zustand instead of onChange callback
+    updateAnimationFromTimeline(animation.id, "elementId", newEffectiveDuration, animation.startTime);
   };
 
   const handleMouseUp = () => {

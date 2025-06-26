@@ -7,7 +7,7 @@ import { IndividualTimelineManager } from '@/lib/individual-timeline-manager';
 import { TimelineManager } from '@/lib/timeline-manager';
 import { AnimatedCanvasObject, CanvasGroup, ElementAnimation } from '@/types/canvas';
 import { TimelineTrackData } from '@/types/timeline';
-import { calculateEffectiveEndTime } from '@/utils/animation-utils';
+import { calculateEffectiveEndTime, calculateEffectiveDuration } from '@/utils/animation-utils';
 
 interface PlaybackState {
   isPlaying: boolean;
@@ -28,6 +28,18 @@ interface TimelineUIState {
   showGrid: boolean;
   snapToGrid: boolean;
   gridSize: number;
+}
+
+interface AnimationState {
+  // Source of truth
+  baseDuration: number;
+  repeat?: number;
+  repeatDelay?: number;
+  yoyo?: boolean;
+  
+  // Computed/cached values
+  effectiveDuration: number;
+  effectiveEndTime: number;
 }
 
 interface TimelineStoreState {
@@ -58,6 +70,9 @@ interface TimelineStoreState {
   // Loading and error state
   isLoading: boolean;
   error: string | null;
+  
+  // Animation duration management
+  animationStates: Map<string, AnimationState>; // keyed by animationId
 }
 
 interface TimelineStoreActions {
@@ -132,6 +147,13 @@ interface TimelineStoreActionsExtended {
   
   // Enhanced performance monitoring for Phase 2
   getIndividualTimelineStats: () => object;
+  
+  // Animation duration management
+  updateAnimationDuration: (animationId: string, elementId: string, baseDuration: number) => void;
+  updateAnimationRepeat: (animationId: string, elementId: string, repeat: number, repeatDelay?: number, yoyo?: boolean) => void;
+  updateAnimationFromTimeline: (animationId: string, elementId: string, newEffectiveDuration: number, startTime: number) => void;
+  getEffectiveDuration: (animationId: string) => number;
+  getAnimationState: (animationId: string) => AnimationState | null;
 }
 
 type TimelineStore = TimelineStoreState & TimelineStoreActions & TimelineStoreActionsExtended;
@@ -176,6 +198,7 @@ export const useTimelineStore = create<TimelineStore>()(
       },
       isLoading: false,
       error: null,
+      animationStates: new Map(),
 
       // Playback controls
       play: () => {
@@ -756,6 +779,110 @@ export const useTimelineStore = create<TimelineStore>()(
       getIndividualTimelineStats: () => {
         const state = get();
         return state.individualManager.getPerformanceStats();
+      },
+
+      // Animation duration management
+      updateAnimationDuration: (animationId: string, elementId: string, baseDuration: number) => {
+        set(produce((state) => {
+          // Update the actual animation object
+          const element = state.elements.find((el: AnimatedCanvasObject) => el.id === elementId);
+          if (element) {
+            const animation = element.animations.find((anim: ElementAnimation) => anim.id === animationId);
+            if (animation) {
+              animation.duration = baseDuration;
+              
+              // Update cached state
+              const animState = state.animationStates.get(animationId);
+              if (animState) {
+                animState.baseDuration = baseDuration;
+                animState.effectiveDuration = calculateEffectiveDuration(animation);
+                animState.effectiveEndTime = animation.startTime + animState.effectiveDuration;
+              } else {
+                state.animationStates.set(animationId, {
+                  baseDuration,
+                  repeat: animation.repeat,
+                  repeatDelay: animation.repeatDelay,
+                  yoyo: animation.yoyo,
+                  effectiveDuration: calculateEffectiveDuration(animation),
+                  effectiveEndTime: animation.startTime + calculateEffectiveDuration(animation)
+                });
+              }
+            }
+          }
+        }));
+        get().updateTracks();
+      },
+
+      updateAnimationRepeat: (animationId: string, elementId: string, repeat: number, repeatDelay = 0, yoyo = false) => {
+        set(produce((state) => {
+          const element = state.elements.find((el: AnimatedCanvasObject) => el.id === elementId);
+          if (element) {
+            const animation = element.animations.find((anim: ElementAnimation) => anim.id === animationId);
+            if (animation) {
+              animation.repeat = repeat;
+              animation.repeatDelay = repeatDelay;
+              animation.yoyo = yoyo;
+              
+              // Update cached state
+              const animState = state.animationStates.get(animationId);
+              if (animState) {
+                animState.repeat = repeat;
+                animState.repeatDelay = repeatDelay;
+                animState.yoyo = yoyo;
+                animState.effectiveDuration = calculateEffectiveDuration(animation);
+                animState.effectiveEndTime = animation.startTime + animState.effectiveDuration;
+              }
+            }
+          }
+        }));
+        get().updateTracks();
+      },
+
+      updateAnimationFromTimeline: (animationId: string, elementId: string, newEffectiveDuration: number, startTime: number) => {
+        set(produce((state) => {
+          const element = state.elements.find((el: AnimatedCanvasObject) => el.id === elementId);
+          if (element) {
+            const animation = element.animations.find((anim: ElementAnimation) => anim.id === animationId);
+            if (animation) {
+              // Strategy: If no repeats, adjust base duration
+              // If has repeats, we need to decide what to adjust
+              if ((animation.repeat ?? 0) === 0) {
+                // No repeats - simple case
+                animation.duration = newEffectiveDuration;
+                animation.startTime = startTime;
+              } else {
+                // Has repeats - multiple strategies possible:
+                // Strategy A: Adjust base duration proportionally
+                const currentEffective = calculateEffectiveDuration(animation);
+                const ratio = newEffectiveDuration / currentEffective;
+                animation.duration = Math.max(0.1, animation.duration * ratio);
+                animation.startTime = startTime;
+                
+                // Strategy B: Keep base duration, adjust repeat count
+                // const repeatCount = Math.max(0, Math.floor((newEffectiveDuration - animation.duration) / (animation.duration + (animation.repeatDelay ?? 0))));
+                // animation.repeat = repeatCount;
+              }
+              
+              // Update cached state
+              const animState = state.animationStates.get(animationId);
+              if (animState) {
+                animState.baseDuration = animation.duration;
+                animState.effectiveDuration = calculateEffectiveDuration(animation);
+                animState.effectiveEndTime = animation.startTime + animState.effectiveDuration;
+              }
+            }
+          }
+        }));
+        get().updateTracks();
+      },
+
+      getEffectiveDuration: (animationId: string) => {
+        const state = get().animationStates.get(animationId);
+        return state?.effectiveDuration ?? 0;
+      },
+
+      getAnimationState: (animationId: string) => {
+        return get().animationStates.get(animationId) ?? null;
       },
     })
 );
