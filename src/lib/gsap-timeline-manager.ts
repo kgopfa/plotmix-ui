@@ -48,7 +48,7 @@ export interface TimelinePerformanceMetrics {
 export class GSAPTimelineManager {
   protected timeline: gsap.core.Timeline;
   protected canvasRef: React.RefObject<CanvasRef | null> | null = null;
-  
+
   // Performance tracking
   private performanceMetrics: TimelinePerformanceMetrics = {
     totalBuilds: 0,
@@ -73,7 +73,7 @@ export class GSAPTimelineManager {
    */
   buildAnimationTimeline(elements: AnimatedCanvasObject[], groups?: CanvasGroup[]) {
     const buildStartTime = performance.now();
-    
+
     try {
       // Performance optimization: Check if any animations exist before building timeline
       const hasElementAnimations = elements.some(el =>
@@ -134,12 +134,12 @@ export class GSAPTimelineManager {
       }
 
       this.timeline.pause(0);
-      
+
       // Update performance metrics
       this.updatePerformanceMetrics(buildStartTime, elementsProcessed, groupsProcessed, animationsCreated);
-      
+
       console.log(`🎬 Timeline built: ${elementsProcessed} elements, ${groupsProcessed} groups, ${animationsCreated} animations in ${this.performanceMetrics.lastBuildTime.toFixed(2)}ms`);
-      
+
     } catch (error) {
       console.error('❌ Error building timeline:', error);
       this.clearTimeline();
@@ -150,8 +150,8 @@ export class GSAPTimelineManager {
    * Process text group animations (apply to character children)
    */
   private processTextGroupAnimations(
-    element: AnimatedCanvasObject, 
-    elements: AnimatedCanvasObject[], 
+    element: AnimatedCanvasObject,
+    elements: AnimatedCanvasObject[],
     shapeRefs: Record<string, PIXI.Container>
   ): number {
     let animationsCreated = 0;
@@ -189,12 +189,12 @@ export class GSAPTimelineManager {
    * Process regular element animations
    */
   private processElementAnimations(
-    element: AnimatedCanvasObject, 
-    elements: AnimatedCanvasObject[], 
+    element: AnimatedCanvasObject,
+    elements: AnimatedCanvasObject[],
     shapeRefs: Record<string, PIXI.Container>
   ): number {
     let animationsCreated = 0;
-    
+
     const target = shapeRefs[element.id];
     if (!target || target.destroyed || !target.parent) {
       return 0;
@@ -218,7 +218,7 @@ export class GSAPTimelineManager {
    */
   private processGroupAnimations(group: CanvasGroup, groupContainers: Record<string, PIXI.Container>): number {
     let animationsCreated = 0;
-    
+
     const groupContainer = groupContainers[group.id];
     if (!groupContainer) return 0;
 
@@ -239,7 +239,7 @@ export class GSAPTimelineManager {
    * Add animation to timeline with proper error handling
    */
   private addAnimationToTimeline(
-    config: BaseAnimationConfig | ColorAnimationConfig | PathAnimationConfig | PhysicsAnimationConfig | PolygonAnimationConfig, 
+    config: BaseAnimationConfig | ColorAnimationConfig | PathAnimationConfig | PhysicsAnimationConfig | PolygonAnimationConfig,
     target: PIXI.Container,
   ) {
     if (isPathAnimationConfig(config) || isPolygonAnimationConfig(config)) {
@@ -322,9 +322,9 @@ export class GSAPTimelineManager {
         this.timeline.to(
           groupContainer,
           {
-            pixi: { 
-              x: config.properties.x || groupContainer.x, 
-              y: config.properties.y || groupContainer.y 
+            pixi: {
+              x: config.properties.x || groupContainer.x,
+              y: config.properties.y || groupContainer.y
             },
             ...baseConfig,
           },
@@ -452,11 +452,11 @@ export class GSAPTimelineManager {
    */
   private updatePerformanceMetrics(startTime: number, elements: number, groups: number, animations: number) {
     const buildTime = performance.now() - startTime;
-    
+
     this.performanceMetrics.totalBuilds++;
     this.performanceMetrics.lastBuildTime = buildTime;
-    this.performanceMetrics.averageBuildTime = 
-      (this.performanceMetrics.averageBuildTime * (this.performanceMetrics.totalBuilds - 1) + buildTime) / 
+    this.performanceMetrics.averageBuildTime =
+      (this.performanceMetrics.averageBuildTime * (this.performanceMetrics.totalBuilds - 1) + buildTime) /
       this.performanceMetrics.totalBuilds;
     this.performanceMetrics.elementsProcessed = elements;
     this.performanceMetrics.groupsProcessed = groups;
@@ -507,7 +507,7 @@ GSAP Timeline Manager Performance Report:
   }
 
   stop() {
-    gsap.ticker.remove(() => {});
+    gsap.ticker.remove(() => { });
     this.timeline.pause();
     this.timeline.time(0);
   }
