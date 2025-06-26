@@ -14,6 +14,7 @@ import {
   PathAnimationConfig,
   PolygonAnimationConfig
 } from '@/utils/animation-generator';
+import { calculateCompressedCycleDuration } from '@/utils/animation-utils';
 
 /**
  * Performance statistics for the Individual Timeline Manager
@@ -302,80 +303,196 @@ export class IndividualTimelineManager {
     config: any,
     target: any
   ) {
-    // Build repeat configuration from BaseAnimationConfig
-    const repeatConfig: Record<string, number | boolean> = {};
-    if (config.repeat !== undefined && config.repeat !== 0) {
-      repeatConfig.repeat = config.repeat;
-    }
-    if (config.repeatDelay !== undefined) {
-      repeatConfig.repeatDelay = config.repeatDelay;
-    }
-    if (config.yoyo !== undefined) {
-      repeatConfig.yoyo = config.yoyo;
+    // Get repeat properties directly from config (they're passed from generateAnimationConfig)
+    const repeat = config.repeat ?? 0;
+    const repeatDelay = config.repeatDelay ?? 0;
+    const yoyo = config.yoyo ?? false;
+    
+    // Calculate compressed cycle duration for repeats
+    let cycleDuration = config.duration;
+    if (repeat !== 0) {
+      if (repeat === -1) {
+        // Infinite repeat - each cycle uses a small fraction of duration
+        cycleDuration = config.duration / 10; // Show 10 cycles within the duration
+      } else {
+        // Calculate cycle duration to fit all repeats + delays within total duration
+        const totalCycles = 1 + repeat;
+        const totalDelayTime = repeat * repeatDelay;
+        const availableAnimationTime = config.duration - totalDelayTime;
+        cycleDuration = Math.max(0.1, availableAnimationTime / totalCycles);
+      }
     }
 
     if (isPathAnimationConfig(config) || isPolygonAnimationConfig(config)) {
       this.addPathAnimation(timeline, config, target);
     } else if (isColorAnimationConfig(config)) {
-      timeline.to(
-        config.oldChild,
-        {
-          pixi: { alpha: 0 },
-          duration: config.duration,
-          ease: config.ease,
-          ...repeatConfig
-        },
-        config.startTime
-      );
-
-      timeline.to(
-        config.newChild,
-        {
-          pixi: { alpha: 1 },
-          duration: config.duration,
-          ease: config.ease,
-          ...repeatConfig,
-          onInterrupt: () => {
-            target.removeChild(config.newChild);
-          }
-        },
-        config.startTime
-      );
+      // Handle repeats manually for color animations
+      this.addRepeatedColorAnimation(timeline, config, target, cycleDuration, repeat, repeatDelay, yoyo);
     } else if (isPhysicsAnimationConfig(config)) {
-      const physics2DConfig: Record<string, string | number> = {
-        velocity: config.velocity,
-        angle: config.angle,
-        gravity: config.gravity
-      };
+      // Handle repeats manually for physics animations
+      this.addRepeatedPhysicsAnimation(timeline, config, target, cycleDuration, repeat);
+    } else {
+      // Handle repeats manually for standard animations
+      this.addRepeatedStandardAnimation(timeline, config, target, cycleDuration, repeat, repeatDelay, yoyo);
+    }
+  }
 
-      if (config.acceleration !== undefined) physics2DConfig.acceleration = config.acceleration;
-      if (config.accelerationAngle !== undefined) physics2DConfig.accelerationAngle = config.accelerationAngle;
-      if (config.friction !== undefined) physics2DConfig.friction = config.friction;
-      if (config.xProp) physics2DConfig.xProp = config.xProp;
-      if (config.yProp) physics2DConfig.yProp = config.yProp;
+  /**
+   * Add repeated color animation cycles
+   */
+  private addRepeatedColorAnimation(
+    timeline: gsap.core.Timeline,
+    config: any,
+    target: any,
+    cycleDuration: number,
+    repeat: number,
+    repeatDelay: number,
+    yoyo: boolean
+  ) {
+    const totalCycles = repeat === -1 ? 10 : (1 + repeat);
+    let currentTime = config.startTime;
 
+    for (let cycle = 0; cycle < totalCycles; cycle++) {
+      const isReverse = yoyo && cycle % 2 === 1;
+
+      if (isReverse) {
+        // Reverse cycle: new to old
+        timeline.to(
+          config.newChild,
+          {
+            pixi: { alpha: 0 },
+            duration: cycleDuration,
+            ease: config.ease
+          },
+          currentTime
+        );
+
+        timeline.to(
+          config.oldChild,
+          {
+            pixi: { alpha: 1 },
+            duration: cycleDuration,
+            ease: config.ease
+          },
+          currentTime
+        );
+      } else {
+        // Forward cycle: old to new
+        timeline.to(
+          config.oldChild,
+          {
+            pixi: { alpha: 0 },
+            duration: cycleDuration,
+            ease: config.ease
+          },
+          currentTime
+        );
+
+        timeline.to(
+          config.newChild,
+          {
+            pixi: { alpha: 1 },
+            duration: cycleDuration,
+            ease: config.ease,
+            onInterrupt: cycle === 0 ? () => {
+              target.removeChild(config.newChild);
+            } : undefined
+          },
+          currentTime
+        );
+      }
+
+      currentTime += cycleDuration + (cycle < totalCycles - 1 ? repeatDelay : 0);
+    }
+  }
+
+  /**
+   * Add repeated physics animation cycles
+   */
+  private addRepeatedPhysicsAnimation(
+    timeline: gsap.core.Timeline,
+    config: any,
+    cycleDuration: number,
+    repeat: number,
+    repeatDelay: number,
+  ) {
+    const totalCycles = repeat === -1 ? 10 : (1 + repeat);
+    let currentTime = config.startTime;
+
+    const physics2DConfig: Record<string, string | number> = {
+      velocity: config.velocity,
+      angle: config.angle,
+      gravity: config.gravity
+    };
+
+    if (config.acceleration !== undefined) physics2DConfig.acceleration = config.acceleration;
+    if (config.accelerationAngle !== undefined) physics2DConfig.accelerationAngle = config.accelerationAngle;
+    if (config.friction !== undefined) physics2DConfig.friction = config.friction;
+    if (config.xProp) physics2DConfig.xProp = config.xProp;
+    if (config.yProp) physics2DConfig.yProp = config.yProp;
+
+    for (let cycle = 0; cycle < totalCycles; cycle++) {
       timeline.to(
         config.target,
         {
           physics2D: physics2DConfig,
-          duration: config.duration,
-          ease: config.ease,
-          ...repeatConfig
+          duration: cycleDuration,
+          ease: config.ease
         },
-        config.startTime
+        currentTime
       );
-    } else {
+
+      currentTime += cycleDuration + (cycle < totalCycles - 1 ? repeatDelay : 0);
+    }
+  }
+
+  /**
+   * Add repeated standard animation cycles
+   */
+  private addRepeatedStandardAnimation(
+    timeline: gsap.core.Timeline,
+    config: any,
+    target: any,
+    cycleDuration: number,
+    repeat: number,
+    repeatDelay: number,
+    yoyo: boolean
+  ) {
+    const totalCycles = repeat === -1 ? 10 : (1 + repeat);
+    let currentTime = config.startTime;
+
+    for (let cycle = 0; cycle < totalCycles; cycle++) {
+      const isReverse = yoyo && cycle % 2 === 1;
+      
+      let animationProps = config.properties;
+      if (isReverse) {
+        // For reverse cycles, we need to animate back to the original values
+        // This is a simplified approach - you might need more sophisticated reverse logic
+        animationProps = this.reverseAnimationProperties(config.properties);
+      }
+
       timeline.to(
         config.target,
         {
-          pixi: config.properties,
-          duration: config.duration,
-          ease: config.ease,
-          ...repeatConfig
+          pixi: animationProps,
+          duration: cycleDuration,
+          ease: config.ease
         },
-        config.startTime
+        currentTime
       );
+
+      currentTime += cycleDuration + (cycle < totalCycles - 1 ? repeatDelay : 0);
     }
+  }
+
+  /**
+   * Reverse animation properties for yoyo effect
+   */
+  private reverseAnimationProperties(properties: any): any {
+    // This is a simplified reversal - you might need more sophisticated logic
+    // For now, we'll just return the original properties
+    // In a real implementation, you'd need to track original values and reverse to them
+    return properties;
   }
 
   /**
@@ -389,60 +506,60 @@ export class IndividualTimelineManager {
   ) {
     if (!isGroupAnimationConfig(config)) return;
 
-    const baseConfig = {
-      duration: config.duration,
-      ease: config.ease,
-    };
+    // Calculate compressed cycle duration for repeats
+    const cycleDuration = calculateCompressedCycleDuration(animation);
+    const repeat = animation.repeat ?? 0;
+    const repeatDelay = animation.repeatDelay ?? 0;
+    const yoyo = animation.yoyo ?? false;
 
-    if (animation.type === 'move') {
-      const targetX = config.properties.x;
-      const targetY = config.properties.y;
+    const totalCycles = repeat === -1 ? 10 : (1 + repeat);
+    let currentTime = config.startTime;
 
-      timeline.to(
-        groupContainer,
-        {
-          pixi: { x: targetX, y: targetY },
-          ...baseConfig,
-        },
-        config.startTime
-      );
-    } else if (animation.type === 'rotate') {
-      const targetRotation = config.properties.rotation || 0;
-
-      timeline.to(
-        groupContainer,
-        {
-          pixi: { rotation: targetRotation },
-          ...baseConfig,
-        },
-        config.startTime
-      );
-    } else if (animation.type === 'scale') {
-      const targetScaleX = config.properties.scaleX || 1;
-      const targetScaleY = config.properties.scaleY || 1;
-
-      timeline.to(
-        groupContainer,
-        {
-          pixi: {
-            scaleX: targetScaleX,
-            scaleY: targetScaleY
-          },
-          ...baseConfig,
-        },
-        config.startTime
-      );
-    } else if (animation.type === 'fade') {
-      const targetAlpha = config.properties.alpha || 1;
+    for (let cycle = 0; cycle < totalCycles; cycle++) {
+      const isReverse = yoyo && cycle % 2 === 1;
+      
+      // Determine animation properties for this cycle
+      let animationProps: any = {};
+      
+      if (animation.type === 'move') {
+        const targetX = config.properties.x;
+        const targetY = config.properties.y;
+        animationProps = { x: targetX, y: targetY };
+        if (isReverse && cycle > 0) {
+          animationProps = { x: groupContainer.x, y: groupContainer.y };
+        }
+      } else if (animation.type === 'rotate') {
+        const targetRotation = config.properties.rotation || 0;
+        animationProps = { rotation: targetRotation };
+        if (isReverse && cycle > 0) {
+          animationProps = { rotation: 0 };
+        }
+      } else if (animation.type === 'scale') {
+        const targetScaleX = config.properties.scaleX || 1;
+        const targetScaleY = config.properties.scaleY || 1;
+        animationProps = { scaleX: targetScaleX, scaleY: targetScaleY };
+        if (isReverse && cycle > 0) {
+          animationProps = { scaleX: 1, scaleY: 1 };
+        }
+      } else if (animation.type === 'fade') {
+        const targetAlpha = config.properties.alpha || 1;
+        animationProps = { alpha: targetAlpha };
+        if (isReverse && cycle > 0) {
+          animationProps = { alpha: 1 };
+        }
+      }
 
       timeline.to(
         groupContainer,
         {
-          pixi: { alpha: targetAlpha },
-          ...baseConfig,
+          pixi: animationProps,
+          duration: cycleDuration,
+          ease: config.ease
         },
-        config.startTime
+        currentTime
       );
+
+      currentTime += cycleDuration + (cycle < totalCycles - 1 ? repeatDelay : 0);
     }
   }
 

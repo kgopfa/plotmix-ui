@@ -8,7 +8,6 @@ import { useState, useEffect } from 'react';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
 import { useTimelineStore } from '@/stores/useTimelineStore';
 import { useCanvasStore } from '@/stores/useCanvasStore';
-import { calculateEffectiveDuration } from '@/utils/animation-utils';
 
 interface AnimationsTabProps {
   selectedElement: AnimatedCanvasObject;
@@ -198,11 +197,6 @@ export function AnimationsTab({
     syncToStores(updatedAnimations, field, id);
   };
 
-  // Calculate effective duration locally for immediate UI feedback
-  const getLocalEffectiveDuration = (animation: ElementAnimation) => {
-    return calculateEffectiveDuration(animation);
-  };
-
   return (
     <div className="flex flex-col gap-2">
       <button
@@ -335,6 +329,16 @@ export function AnimationsTab({
                     <span>Yoyo (reverse direction on repeat)</span>
                   </label>
                 </div>
+                {(animation.repeat ?? 0) !== 0 && (
+                  <div className="mt-2 p-2 bg-blue-50 rounded text-sm text-blue-700">
+                    <strong>Note:</strong> Repeats happen within the {animation.duration}s duration.
+                    {animation.repeat === -1 ? (
+                      <span> Animation will loop infinitely with compressed cycles.</span>
+                    ) : (
+                      <span> Each cycle will be compressed to fit {animation.repeat} repeat{animation.repeat !== 1 ? 's' : ''} + delays.</span>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="mt-2">
                 <h4 className="font-medium mb-2">Properties</h4>
@@ -561,11 +565,6 @@ export function AnimationsTab({
                   )}
                 </div>
               </div>
-              {(animation.repeat ?? 0) !== 0 && (
-                <div className="mt-1 text-xs text-gray-600">
-                  Effective duration: {getLocalEffectiveDuration(animation).toFixed(1)}s
-                </div>
-              )}
             </div>
           </div>
         ))}

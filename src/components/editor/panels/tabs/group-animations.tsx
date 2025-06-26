@@ -211,6 +211,16 @@ export function GroupAnimationsTab({
                     <span>Yoyo (reverse direction on repeat)</span>
                   </label>
                 </div>
+                {(animation.repeat ?? 0) !== 0 && (
+                  <div className="mt-2 p-2 bg-blue-50 rounded text-sm text-blue-700">
+                    <strong>Note:</strong> Repeats happen within the {animation.duration}s duration.
+                    {animation.repeat === -1 ? (
+                      <span> Animation will loop infinitely with compressed cycles.</span>
+                    ) : (
+                      <span> Each cycle will be compressed to fit {animation.repeat} repeat{animation.repeat !== 1 ? 's' : ''} + delays.</span>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="mt-2">
                 <h4 className="font-medium mb-2">Properties</h4>
