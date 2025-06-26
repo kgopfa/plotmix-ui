@@ -231,12 +231,24 @@ export class GSAPTimelineManager {
   }
 
   /**
-   * Add animation to timeline with proper error handling
+   * Add animation to timeline with proper error handling and repeat support
    */
   private addAnimationToTimeline(
     config: BaseAnimationConfig | ColorAnimationConfig | PathAnimationConfig | PhysicsAnimationConfig | PolygonAnimationConfig,
     target: PIXI.Container,
   ) {
+    // Build repeat configuration from BaseAnimationConfig
+    const repeatConfig: Record<string, number | boolean> = {};
+    if (config.repeat !== undefined && config.repeat !== 0) {
+      repeatConfig.repeat = config.repeat; // -1 for infinite, positive numbers for count
+    }
+    if (config.repeatDelay !== undefined) {
+      repeatConfig.repeatDelay = config.repeatDelay;
+    }
+    if (config.yoyo !== undefined) {
+      repeatConfig.yoyo = config.yoyo;
+    }
+
     if (isPathAnimationConfig(config) || isPolygonAnimationConfig(config)) {
       this.addPathAnimation(config, target);
     } else if (isColorAnimationConfig(config)) {
@@ -246,6 +258,7 @@ export class GSAPTimelineManager {
           pixi: { alpha: 0 },
           duration: config.duration,
           ease: config.ease,
+          ...repeatConfig
         },
         config.startTime
       );
@@ -256,6 +269,7 @@ export class GSAPTimelineManager {
           pixi: { alpha: 1 },
           duration: config.duration,
           ease: config.ease,
+          ...repeatConfig,
           onInterrupt: () => {
             try {
               target.removeChild(config.newChild);
@@ -285,6 +299,7 @@ export class GSAPTimelineManager {
           physics2D: physics2DConfig,
           duration: config.duration,
           ease: config.ease,
+          ...repeatConfig
         },
         config.startTime
       );
@@ -295,6 +310,7 @@ export class GSAPTimelineManager {
           pixi: config.properties,
           duration: config.duration,
           ease: config.ease,
+          ...repeatConfig
         },
         config.startTime
       );
@@ -302,7 +318,7 @@ export class GSAPTimelineManager {
   }
 
   /**
-   * Add group animation to timeline
+   * Add group animation to timeline with repeat support
    */
   private addGroupAnimationToTimeline(
     config: GroupAnimationConfig, 
@@ -311,9 +327,22 @@ export class GSAPTimelineManager {
   ) {
     if (!isGroupAnimationConfig(config)) return;
 
+    // Build repeat configuration
+    const repeatConfig: Record<string, number | boolean> = {};
+    if (config.repeat !== undefined && config.repeat !== 0) {
+      repeatConfig.repeat = config.repeat;
+    }
+    if (config.repeatDelay !== undefined) {
+      repeatConfig.repeatDelay = config.repeatDelay;
+    }
+    if (config.yoyo !== undefined) {
+      repeatConfig.yoyo = config.yoyo;
+    }
+
     const baseConfig = {
       duration: config.duration,
       ease: config.ease,
+      ...repeatConfig
     };
 
     switch (animation.type) {
