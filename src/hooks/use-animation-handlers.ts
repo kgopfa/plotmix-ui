@@ -62,6 +62,12 @@ export function useAnimationHandlers(
 
       if (field === 'easing') {
         return { ...anim, easing: value as GsapEase };
+      } else if (field === 'repeat') {
+        return { ...anim, repeat: Number(value) };
+      } else if (field === 'repeatDelay') {
+        return { ...anim, repeatDelay: Number(value) };
+      } else if (field === 'yoyo') {
+        return { ...anim, yoyo: value as boolean };
       } else if (field === 'type') {
         const newType = value as AnimationType;
         const defaultProperties = {
@@ -176,7 +182,10 @@ export function useAnimationHandlers(
       startTime: 0,
       duration: 2,
       properties: defaultProperties[type],
-      easing: 'power1.inOut' as GsapEase
+      easing: 'power1.inOut' as GsapEase,
+      repeat: 0,
+      repeatDelay: 0,
+      yoyo: false
     };
 
     const updatedAnimations = [...localAnimations, newAnimation];

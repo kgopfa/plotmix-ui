@@ -178,6 +178,48 @@ export function AnimationsTab({
                 </select>
               </label>
               <div className="mt-2">
+                <h4 className="font-medium mb-2">Repeat Settings</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  <label>
+                    Repeat Count:
+                    <input
+                      type="number"
+                      min="-1"
+                      value={animation.repeat ?? 0}
+                      onChange={e => handleAnimationChange(animation.id, 'repeat', e.target.value)}
+                      className="w-full"
+                      placeholder="0 = no repeat, -1 = infinite"
+                      title="0 = no repeat, -1 = infinite loop, positive numbers = specific count"
+                    />
+                  </label>
+                  <label>
+                    Repeat Delay (seconds):
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={animation.repeatDelay ?? 0}
+                      onChange={e => handleAnimationChange(animation.id, 'repeatDelay', e.target.value)}
+                      className="w-full"
+                      placeholder="0"
+                      disabled={!animation.repeat || animation.repeat === 0}
+                    />
+                  </label>
+                </div>
+                <div className="mt-2">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={animation.yoyo || false}
+                      onChange={e => handleAnimationChange(animation.id, 'yoyo', e.target.checked)}
+                      className="mr-2"
+                      disabled={!animation.repeat || animation.repeat === 0}
+                    />
+                    <span>Yoyo (reverse direction on repeat)</span>
+                  </label>
+                </div>
+              </div>
+              <div className="mt-2">
                 <h4 className="font-medium mb-2">Properties</h4>
                 <div className="grid grid-cols-2 gap-2">
                   {animation.type === 'rotate' && (
