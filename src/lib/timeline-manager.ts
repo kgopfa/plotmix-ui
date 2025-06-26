@@ -1,5 +1,6 @@
-import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
+import { AnimatedCanvasObject, CanvasGroup, ElementAnimation } from '@/types/canvas';
 import { TimelineState, TimelineTrackData } from '../types/timeline';
+import { calculateEffectiveEndTime } from '@/utils/animation-utils';
 
 type TimelineUpdateListener = (state: TimelineState) => void;
 
@@ -98,7 +99,7 @@ export class TimelineManager {
     // Check element animations
     this.state.tracks.forEach(track => {
       track.animations.forEach(animation => {
-        const endTime = animation.startTime + animation.duration;
+        const endTime = calculateEffectiveEndTime(animation);
         maxDuration = Math.max(maxDuration, endTime);
       });
     });
@@ -106,7 +107,7 @@ export class TimelineManager {
     // Check group animations
     this.state.trackData.forEach(trackData => {
       trackData.animations.forEach(animation => {
-        const endTime = animation.startTime + animation.duration;
+        const endTime = calculateEffectiveEndTime(animation as ElementAnimation);
         maxDuration = Math.max(maxDuration, endTime);
       });
     });

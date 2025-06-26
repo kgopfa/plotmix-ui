@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { ElementAnimation } from '@/types/canvas';
+import { calculateEffectiveDuration } from '@/utils/animation-utils';
 
 interface AnimationBlockProps {
   animation: ElementAnimation;
@@ -34,9 +35,9 @@ export const AnimationBlock: React.FC<AnimationBlockProps> = ({
   const initialWidth = useRef(0);
 
   const left = animation.startTime * scale;
-  const width = animation.duration * scale;
+  const width = calculateEffectiveDuration(animation) * scale; // Use effective duration for width
 
-  // Get color based on animation number (e.g., "anim-1" -> 0, "anim-2" -> 1)
+  // Get color based on animation number
   const colorIndex = parseInt(animation.id.split('-')[1]) - 1;
   const blockColor = BLOCK_COLORS[colorIndex % BLOCK_COLORS.length];
 
@@ -70,7 +71,7 @@ export const AnimationBlock: React.FC<AnimationBlockProps> = ({
 
     onChange?.({
       startTime: Math.min(snappedStartTime, 120 - animation.duration),
-      duration: animation.duration,
+      duration: animation.duration, // Keep base duration unchanged
     });
   };
 

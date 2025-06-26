@@ -7,6 +7,7 @@ import { IndividualTimelineManager } from '@/lib/individual-timeline-manager';
 import { TimelineManager } from '@/lib/timeline-manager';
 import { AnimatedCanvasObject, CanvasGroup, ElementAnimation } from '@/types/canvas';
 import { TimelineTrackData } from '@/types/timeline';
+import { calculateEffectiveEndTime } from '@/utils/animation-utils';
 
 interface PlaybackState {
   isPlaying: boolean;
@@ -573,7 +574,7 @@ export const useTimelineStore = create<TimelineStore>()(
         
         let maxEndTime = 0;
         track.animations.forEach(animation => {
-          const endTime = animation.startTime + animation.duration;
+          const endTime = calculateEffectiveEndTime(animation as ElementAnimation);
           maxEndTime = Math.max(maxEndTime, endTime);
         });
         
@@ -589,7 +590,7 @@ export const useTimelineStore = create<TimelineStore>()(
           maxDuration = Math.max(maxDuration, trackDuration);
         });
         
-        return Math.max(10, maxDuration); // Minimum 10 seconds
+        return Math.max(10, maxDuration);
       },
 
       getTimeAtPosition: (position: number) => {
