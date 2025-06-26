@@ -79,10 +79,13 @@ export type AnimationType = 'rotate' | 'scale' | 'move' | 'color' | 'fade' | 'pa
 export interface ElementAnimation {
   id: string;
   type: AnimationType;
-  startTime: number; // seconds
-  duration: number; // seconds
+  startTime: number;
+  duration: number;
   properties: AnimatableProperties;
   easing?: GsapEase;
+  repeat?: number;
+  repeatDelay?: number;
+  yoyo?: boolean;
 }
 
 export interface BaseAnimationConfig {
@@ -91,6 +94,9 @@ export interface BaseAnimationConfig {
   duration: number;
   startTime: number;
   ease: string;
+  repeat?: number;
+  repeatDelay?: number;
+  yoyo?: boolean;
 }
 
 export interface AnimatedCanvasObject {

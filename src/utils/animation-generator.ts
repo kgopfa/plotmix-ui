@@ -194,7 +194,10 @@ export function generateAnimationConfig(
     target,
     duration: animation.duration,
     startTime: animation.startTime,
-    ease: animation.easing ?? 'power1.out'
+    ease: animation.easing ?? 'power1.out',
+    repeat: animation.repeat,
+    repeatDelay: animation.repeatDelay,
+    yoyo: animation.yoyo
   };
 
   /**
@@ -340,12 +343,15 @@ export function generateGroupAnimationConfig(
   
   return {
     type: 'group',
-    target: elementTargets[0], // We'll apply to all targets in the timeline manager
+    target: elementTargets[0],
     elementTargets,
     group,
     duration: animation.duration,
     startTime: animation.startTime,
     ease: animation.easing ?? 'power1.out',
+    repeat: animation.repeat,
+    repeatDelay: animation.repeatDelay,
+    yoyo: animation.yoyo,
     properties: animationProps
   };
 } 
