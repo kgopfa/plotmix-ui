@@ -330,7 +330,7 @@ export class IndividualTimelineManager {
       this.addRepeatedColorAnimation(timeline, config, target, cycleDuration, repeat, repeatDelay, yoyo);
     } else if (isPhysicsAnimationConfig(config)) {
       // Handle repeats manually for physics animations
-      this.addRepeatedPhysicsAnimation(timeline, config, target, cycleDuration, repeat);
+      this.addRepeatedPhysicsAnimation(timeline, config, target, cycleDuration, repeat, repeatDelay);
     } else {
       // Handle repeats manually for standard animations
       this.addRepeatedStandardAnimation(timeline, config, target, cycleDuration, repeat, repeatDelay, yoyo);
@@ -412,6 +412,7 @@ export class IndividualTimelineManager {
   private addRepeatedPhysicsAnimation(
     timeline: gsap.core.Timeline,
     config: any,
+    target: any,
     cycleDuration: number,
     repeat: number,
     repeatDelay: number,
@@ -461,15 +462,42 @@ export class IndividualTimelineManager {
     const totalCycles = repeat === -1 ? 10 : (1 + repeat);
     let currentTime = config.startTime;
 
+    // Store original values for yoyo effect
+    const originalValues: any = {};
+    if (yoyo) {
+      Object.keys(config.properties).forEach(key => {
+        const currentValue = target[key];
+        
+        if (currentValue !== undefined) {
+          originalValues[key] = currentValue;
+        } else {
+          // Set sensible defaults for missing properties
+          if (key === 'scaleX' || key === 'scaleY') {
+            originalValues[key] = 1;
+          } else if (key === 'alpha') {
+            originalValues[key] = 1;
+          } else if (key === 'rotation') {
+            originalValues[key] = 0;
+          } else if (key === 'pivotX' || key === 'pivotY') {
+            // For pivot, use the target element's properties or defaults
+            originalValues[key] = currentValue || 0;
+          } else {
+            originalValues[key] = 0;
+          }
+        }
+      });
+    }
+
     for (let cycle = 0; cycle < totalCycles; cycle++) {
       const isReverse = yoyo && cycle % 2 === 1;
       
       let animationProps = config.properties;
       if (isReverse) {
-        // For reverse cycles, we need to animate back to the original values
-        // This is a simplified approach - you might need more sophisticated reverse logic
-        animationProps = this.reverseAnimationProperties(config.properties);
+        // For reverse cycles, animate back to original values
+        animationProps = originalValues;
       }
+
+
 
       timeline.to(
         config.target,
@@ -488,11 +516,33 @@ export class IndividualTimelineManager {
   /**
    * Reverse animation properties for yoyo effect
    */
-  private reverseAnimationProperties(properties: any): any {
-    // This is a simplified reversal - you might need more sophisticated logic
-    // For now, we'll just return the original properties
-    // In a real implementation, you'd need to track original values and reverse to them
-    return properties;
+  private reverseAnimationProperties(properties: any, target: any): any {
+    const reversed: any = {};
+    
+    // Get current values from target to reverse to
+    Object.keys(properties).forEach(key => {
+      if (key === 'x' || key === 'y') {
+        // For position, reverse to current position (before animation started)
+        reversed[key] = target[key] || 0;
+      } else if (key === 'scaleX' || key === 'scaleY') {
+        // For scale, reverse to 1 (default scale)
+        reversed[key] = 1;
+      } else if (key === 'rotation') {
+        // For rotation, reverse to 0
+        reversed[key] = 0;
+      } else if (key === 'alpha') {
+        // For alpha, reverse to 1 (fully opaque)
+        reversed[key] = 1;
+      } else if (key === 'width' || key === 'height') {
+        // For dimensions, reverse to original size (we'll approximate)
+        reversed[key] = target[key] || properties[key];
+      } else {
+        // For other properties, try to reverse to current value
+        reversed[key] = target[key] !== undefined ? target[key] : properties[key];
+      }
+    });
+    
+    return reversed;
   }
 
   /**
@@ -515,6 +565,22 @@ export class IndividualTimelineManager {
     const totalCycles = repeat === -1 ? 10 : (1 + repeat);
     let currentTime = config.startTime;
 
+    // Store original values for yoyo effect
+    const originalValues: any = {};
+    if (yoyo) {
+      if (animation.type === 'move') {
+        originalValues.x = groupContainer.x;
+        originalValues.y = groupContainer.y;
+      } else if (animation.type === 'rotate') {
+        originalValues.rotation = groupContainer.rotation || 0;
+      } else if (animation.type === 'scale') {
+        originalValues.scaleX = groupContainer.scaleX || 1;
+        originalValues.scaleY = groupContainer.scaleY || 1;
+      } else if (animation.type === 'fade') {
+        originalValues.alpha = groupContainer.alpha || 1;
+      }
+    }
+
     for (let cycle = 0; cycle < totalCycles; cycle++) {
       const isReverse = yoyo && cycle % 2 === 1;
       
@@ -522,30 +588,28 @@ export class IndividualTimelineManager {
       let animationProps: any = {};
       
       if (animation.type === 'move') {
-        const targetX = config.properties.x;
-        const targetY = config.properties.y;
-        animationProps = { x: targetX, y: targetY };
-        if (isReverse && cycle > 0) {
-          animationProps = { x: groupContainer.x, y: groupContainer.y };
+        if (isReverse) {
+          animationProps = { x: originalValues.x, y: originalValues.y };
+        } else {
+          animationProps = { x: config.properties.x, y: config.properties.y };
         }
       } else if (animation.type === 'rotate') {
-        const targetRotation = config.properties.rotation || 0;
-        animationProps = { rotation: targetRotation };
-        if (isReverse && cycle > 0) {
-          animationProps = { rotation: 0 };
+        if (isReverse) {
+          animationProps = { rotation: originalValues.rotation };
+        } else {
+          animationProps = { rotation: config.properties.rotation || 0 };
         }
       } else if (animation.type === 'scale') {
-        const targetScaleX = config.properties.scaleX || 1;
-        const targetScaleY = config.properties.scaleY || 1;
-        animationProps = { scaleX: targetScaleX, scaleY: targetScaleY };
-        if (isReverse && cycle > 0) {
-          animationProps = { scaleX: 1, scaleY: 1 };
+        if (isReverse) {
+          animationProps = { scaleX: originalValues.scaleX, scaleY: originalValues.scaleY };
+        } else {
+          animationProps = { scaleX: config.properties.scaleX || 1, scaleY: config.properties.scaleY || 1 };
         }
       } else if (animation.type === 'fade') {
-        const targetAlpha = config.properties.alpha || 1;
-        animationProps = { alpha: targetAlpha };
-        if (isReverse && cycle > 0) {
-          animationProps = { alpha: 1 };
+        if (isReverse) {
+          animationProps = { alpha: originalValues.alpha };
+        } else {
+          animationProps = { alpha: config.properties.alpha || 1 };
         }
       }
 

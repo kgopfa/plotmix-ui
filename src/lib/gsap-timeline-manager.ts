@@ -398,14 +398,37 @@ export class GSAPTimelineManager {
     const totalCycles = repeat === -1 ? 10 : (1 + repeat);
     let currentTime = config.startTime;
 
+    // Store original values for yoyo effect
+    const originalValues: Record<string, unknown> = {};
+    if (yoyo) {
+      Object.keys(config.properties).forEach(key => {
+        const currentValue = (target as unknown as Record<string, unknown>)[key];
+        if (currentValue !== undefined) {
+          originalValues[key] = currentValue;
+        } else {
+          // Set sensible defaults for missing properties
+          if (key === 'scaleX' || key === 'scaleY') {
+            originalValues[key] = 1;
+          } else if (key === 'alpha') {
+            originalValues[key] = 1;
+          } else if (key === 'rotation') {
+            originalValues[key] = 0;
+          } else if (key === 'pivotX' || key === 'pivotY') {
+            originalValues[key] = currentValue || 0;
+          } else {
+            originalValues[key] = 0;
+          }
+        }
+      });
+    }
+
     for (let cycle = 0; cycle < totalCycles; cycle++) {
       const isReverse = yoyo && cycle % 2 === 1;
       
       let animationProps = config.properties;
       if (isReverse) {
-        // For reverse cycles, we need to animate back to the original values
-        // This is a simplified approach - you might need more sophisticated reverse logic
-        animationProps = this.reverseAnimationProperties(config.properties);
+        // For reverse cycles, animate back to original values
+        animationProps = originalValues;
       }
 
       this.timeline.to(
@@ -451,6 +474,22 @@ export class GSAPTimelineManager {
     const totalCycles = repeat === -1 ? 10 : (1 + repeat);
     let currentTime = config.startTime;
 
+    // Store original values for yoyo effect
+    const originalValues: Record<string, number> = {};
+    if (yoyo) {
+      if (animation.type === 'move') {
+        originalValues.x = groupContainer.x;
+        originalValues.y = groupContainer.y;
+      } else if (animation.type === 'rotate') {
+        originalValues.rotation = groupContainer.rotation || 0;
+      } else if (animation.type === 'scale') {
+        originalValues.scaleX = (groupContainer as unknown as Record<string, number>).scaleX || 1;
+        originalValues.scaleY = (groupContainer as unknown as Record<string, number>).scaleY || 1;
+      } else if (animation.type === 'fade') {
+        originalValues.alpha = groupContainer.alpha || 1;
+      }
+    }
+
     for (let cycle = 0; cycle < totalCycles; cycle++) {
       const isReverse = yoyo && cycle % 2 === 1;
       
@@ -459,37 +498,40 @@ export class GSAPTimelineManager {
       
       switch (animation.type) {
         case 'move':
-          animationProps = {
-            x: config.properties.x || groupContainer.x,
-            y: config.properties.y || groupContainer.y
-          };
-          if (isReverse && cycle > 0) {
-            // Return to original position
-            animationProps = { x: groupContainer.x, y: groupContainer.y };
+          if (isReverse) {
+            animationProps = { x: originalValues.x, y: originalValues.y };
+          } else {
+            animationProps = {
+              x: config.properties.x || groupContainer.x,
+              y: config.properties.y || groupContainer.y
+            };
           }
           break;
 
         case 'rotate':
-          animationProps = { rotation: config.properties.rotation || 0 };
-          if (isReverse && cycle > 0) {
-            animationProps = { rotation: 0 };
+          if (isReverse) {
+            animationProps = { rotation: originalValues.rotation };
+          } else {
+            animationProps = { rotation: config.properties.rotation || 0 };
           }
           break;
 
         case 'scale':
-          animationProps = {
-            scaleX: config.properties.scaleX || 1,
-            scaleY: config.properties.scaleY || 1
-          };
-          if (isReverse && cycle > 0) {
-            animationProps = { scaleX: 1, scaleY: 1 };
+          if (isReverse) {
+            animationProps = { scaleX: originalValues.scaleX, scaleY: originalValues.scaleY };
+          } else {
+            animationProps = {
+              scaleX: config.properties.scaleX || 1,
+              scaleY: config.properties.scaleY || 1
+            };
           }
           break;
 
         case 'fade':
-          animationProps = { alpha: config.properties.alpha || 1 };
-          if (isReverse && cycle > 0) {
-            animationProps = { alpha: 1 };
+          if (isReverse) {
+            animationProps = { alpha: originalValues.alpha };
+          } else {
+            animationProps = { alpha: config.properties.alpha || 1 };
           }
           break;
       }
