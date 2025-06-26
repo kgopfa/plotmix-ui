@@ -302,6 +302,18 @@ export class IndividualTimelineManager {
     config: any,
     target: any
   ) {
+    // Build repeat configuration from BaseAnimationConfig
+    const repeatConfig: Record<string, number | boolean> = {};
+    if (config.repeat !== undefined && config.repeat !== 0) {
+      repeatConfig.repeat = config.repeat;
+    }
+    if (config.repeatDelay !== undefined) {
+      repeatConfig.repeatDelay = config.repeatDelay;
+    }
+    if (config.yoyo !== undefined) {
+      repeatConfig.yoyo = config.yoyo;
+    }
+
     if (isPathAnimationConfig(config) || isPolygonAnimationConfig(config)) {
       this.addPathAnimation(timeline, config, target);
     } else if (isColorAnimationConfig(config)) {
@@ -311,6 +323,7 @@ export class IndividualTimelineManager {
           pixi: { alpha: 0 },
           duration: config.duration,
           ease: config.ease,
+          ...repeatConfig
         },
         config.startTime
       );
@@ -321,6 +334,7 @@ export class IndividualTimelineManager {
           pixi: { alpha: 1 },
           duration: config.duration,
           ease: config.ease,
+          ...repeatConfig,
           onInterrupt: () => {
             target.removeChild(config.newChild);
           }
@@ -346,6 +360,7 @@ export class IndividualTimelineManager {
           physics2D: physics2DConfig,
           duration: config.duration,
           ease: config.ease,
+          ...repeatConfig
         },
         config.startTime
       );
@@ -356,6 +371,7 @@ export class IndividualTimelineManager {
           pixi: config.properties,
           duration: config.duration,
           ease: config.ease,
+          ...repeatConfig
         },
         config.startTime
       );
