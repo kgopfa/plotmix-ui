@@ -45,10 +45,7 @@ export function Inspector({
 
   const {
     localAnimations,
-    handleEnterPathMode,
-    handleAnimationChange,
-    handleAddAnimation,
-    handleDeleteAnimation
+    handleEnterPathMode
   } = useAnimationHandlers(selectedElement, onInspectorChange);
 
   const {
@@ -92,62 +89,63 @@ export function Inspector({
   }
 
   return (
-    <div className="h-full p-2 text-gray-800">
-      <div className="flex border-b mb-4">
-        <button
-          className={`px-4 py-2 ${activeTab === 'properties' ? 'border-b-2 border-blue-500' : ''}`}
-          onClick={() => setActiveTab('properties')}
-        >
-          Properties
-        </button>
-        <button
-          className={`px-4 py-2 ${activeTab === 'animations' ? 'border-b-2 border-blue-500' : ''}`}
-          onClick={() => setActiveTab('animations')}
-        >
-          Animations
-        </button>
-      </div>
+    <div className="h-full overflow-y-auto">
+      <div className="p-2 text-gray-800">
+        <div className="flex border-b mb-4">
+          <button
+            className={`px-4 py-2 ${activeTab === 'properties' ? 'border-b-2 border-blue-500' : ''}`}
+            onClick={() => setActiveTab('properties')}
+          >
+            Properties
+          </button>
+          <button
+            className={`px-4 py-2 ${activeTab === 'animations' ? 'border-b-2 border-blue-500' : ''}`}
+            onClick={() => setActiveTab('animations')}
+          >
+            Animations
+          </button>
+        </div>
 
-      {activeTab === 'properties' ? (
-        hasGroupSelection ? (
-          <GroupPropertiesTab
-            selectedGroup={selectedGroup!}
-            onGroupInspectorChange={onGroupInspectorChange!}
-          />
-        ) : hasIndividualElement ? (
-          <PropertiesTab
-            selectedElement={selectedElement!}
-            onInspectorChange={onInspectorChange}
-          />
-        ) : (
-          <div className="p-4 text-gray-600">
-            <p>Multiple elements selected. Group them to edit as a group.</p>
-          </div>
-        )
-      ) : (
-        hasGroupSelection ? (
-          <GroupAnimationsTab
-            selectedGroup={selectedGroup!}
-            localAnimations={localGroupAnimations}
-            onAddAnimation={handleAddGroupAnimation}
-            onDeleteAnimation={handleDeleteGroupAnimation}
-            onAnimationChange={handleGroupAnimationChange}
-          />
-        ) : hasIndividualElement ? (
-          <AnimationsTab
-            selectedElement={selectedElement!}
-            localAnimations={localAnimations}
-            onAddAnimation={handleAddAnimation}
-            onDeleteAnimation={handleDeleteAnimation}
-            onAnimationChange={handleAnimationChange}
-            onEnterPathMode={handleEnterPathMode}
-          />
-        ) : (
-          <div className="p-4 text-gray-600">
-            <p>Multiple elements selected. Group them to edit animations as a group.</p>
-          </div>
-        )
-      )}
+        <div className="pb-80">
+          {activeTab === 'properties' ? (
+            hasGroupSelection ? (
+              <GroupPropertiesTab
+                selectedGroup={selectedGroup!}
+                onGroupInspectorChange={onGroupInspectorChange!}
+              />
+            ) : hasIndividualElement ? (
+              <PropertiesTab
+                selectedElement={selectedElement!}
+                onInspectorChange={onInspectorChange}
+              />
+            ) : (
+              <div className="p-4 text-gray-600">
+                <p>Multiple elements selected. Group them to edit as a group.</p>
+              </div>
+            )
+          ) : (
+            hasGroupSelection ? (
+              <GroupAnimationsTab
+                selectedGroup={selectedGroup!}
+                localAnimations={localGroupAnimations}
+                onAddAnimation={handleAddGroupAnimation}
+                onDeleteAnimation={handleDeleteGroupAnimation}
+                onAnimationChange={handleGroupAnimationChange}
+              />
+            ) : hasIndividualElement ? (
+              <AnimationsTab
+                selectedElement={selectedElement!}
+                localAnimations={localAnimations}
+                onEnterPathMode={handleEnterPathMode}
+              />
+            ) : (
+              <div className="p-4 text-gray-600">
+                <p>Multiple elements selected. Group them to edit animations as a group.</p>
+              </div>
+            )
+          )}
+        </div>
+      </div>
     </div>
   );
 } 
