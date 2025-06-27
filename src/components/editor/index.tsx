@@ -790,6 +790,14 @@ export default function EditorCanvas() {
     const handleDrawComplete = () => {
       // Exit draw mode when a path is completed
       setActiveTool('select');
+      
+      // If we were in path mode and completed a drawing, exit path mode
+      if (toolState.isPathMode && toolState.animationTarget) {
+        // The draw tool should have already added the element and marked it as an animation path
+        // We just need to exit path mode
+        togglePathMode();
+        setAnimationTarget(null);
+      }
     };
 
     window.addEventListener('draw-complete', handleDrawComplete);
@@ -797,7 +805,7 @@ export default function EditorCanvas() {
     return () => {
       window.removeEventListener('draw-complete', handleDrawComplete);
     };
-  }, [setActiveTool]);
+  }, [setActiveTool, toolState.isPathMode, toolState.animationTarget, togglePathMode, setAnimationTarget]);
 
   // Listen for animation path updates (from ShapeSelect component)
   useEffect(() => {
@@ -818,7 +826,14 @@ export default function EditorCanvas() {
       });
     };
 
+    // Listen for single line/shape path additions
+    const handleAddPathToAnimation = (e: CustomEvent) => {
+      const { pathElement } = e.detail;
+      addPathToAnimation(pathElement);
+    };
+
     window.addEventListener('animation-path-updated', handleAnimationPathUpdate as EventListener);
+    window.addEventListener('add-path-to-animation', handleAddPathToAnimation as EventListener);
 
     const handleGroupDragEndEvent = () => {
       if (isGroupDraggingRef.current) {
@@ -836,10 +851,11 @@ export default function EditorCanvas() {
 
     return () => {
       window.removeEventListener('animation-path-updated', handleAnimationPathUpdate as EventListener);
+      window.removeEventListener('add-path-to-animation', handleAddPathToAnimation as EventListener);
       window.removeEventListener('group-drag-end', handleGroupDragEndEvent);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [updateAnimationsForPathElement, gsapManager]);
+  }, [updateAnimationsForPathElement, gsapManager, addPathToAnimation]);
 
   // Simplified group management handlers - now using unified createGroup
   const handleGroupElements = useCallback(() => {
