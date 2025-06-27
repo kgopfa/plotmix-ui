@@ -234,24 +234,52 @@ export function generateAnimationConfig(
     
     // Check if it's an AnimatedCanvasObject (doesn't have elementIds property)
     if (pathElement && !('elementIds' in pathElement)) {
-      const pathTopLeftX = pathElement.x - pathElement.width / 2;
-      const pathTopLeftY = pathElement.y - pathElement.height / 2;
-      
-      const updatedProps = {
-        ...animationProps,
-        x: pathTopLeftX,
-        y: pathTopLeftY
-      };
-      
-      return {
-        ...baseConfig,
-        type: 'path',
-        pathElement: pathElement,
-        targetElement: element,
-        pathTopLeftX,
-        pathTopLeftY,
-        properties: updatedProps
-      };
+      // Handle different types of single path elements
+      if (pathElement.type === 'line' && pathElement.lineOptions?.points) {
+        // For lines, use the line's start point as the path start
+        const { start, end } = pathElement.lineOptions.points;
+        const pathTopLeftX = start.x;
+        const pathTopLeftY = start.y;
+        
+        const updatedProps = {
+          ...animationProps,
+          x: pathTopLeftX,
+          y: pathTopLeftY,
+          // Add end point for line path animation
+          endX: end.x,
+          endY: end.y
+        };
+        
+        return {
+          ...baseConfig,
+          type: 'path',
+          pathElement: pathElement,
+          targetElement: element,
+          pathTopLeftX,
+          pathTopLeftY,
+          properties: updatedProps
+        };
+      } else {
+        // For other shapes (rectangle, circle, etc.), use the previous logic
+        const pathTopLeftX = pathElement.x - pathElement.width / 2;
+        const pathTopLeftY = pathElement.y - pathElement.height / 2;
+        
+        const updatedProps = {
+          ...animationProps,
+          x: pathTopLeftX,
+          y: pathTopLeftY
+        };
+        
+        return {
+          ...baseConfig,
+          type: 'path',
+          pathElement: pathElement,
+          targetElement: element,
+          pathTopLeftX,
+          pathTopLeftY,
+          properties: updatedProps
+        };
+      }
     }
     
     // Handle CanvasGroup (like polygon - bunch of lines in a group)

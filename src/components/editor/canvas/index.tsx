@@ -256,11 +256,34 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
           addChainedLineId(newElement.id);
           // Set the end point as the new start point for the next line
           setLineStartPoint(endPoint);
+          
+          // If we're in path mode and this is the first line in the chain,
+          // we need to potentially add it to the animation
+          if (isPathMode && chainedLineIds.length === 0) {
+            // This is the first line in a potential polygon chain
+            // For now, we'll wait to see if more lines are added
+            // The polygon completion logic will handle path mode exit
+          }
         } else {
           // For simpleLine, complete the line and exit
           setLineStartPoint(null);
           setActiveTool('select');
           setMaskPos(null);
+          
+          // If we were in path mode, add the line to animation and exit path mode
+          if (isPathMode) {
+            // Fire an event to add the line to the animation path
+            const pathEvent = new CustomEvent('add-path-to-animation', {
+              detail: { pathElement: newElement }
+            });
+            window.dispatchEvent(pathEvent);
+            
+            // Fire an event to exit path mode
+            const exitPathEvent = new CustomEvent('exit-path-mode', {
+              detail: { source: 'line-complete' }
+            });
+            window.dispatchEvent(exitPathEvent);
+          }
         }
       }
       return;
@@ -950,7 +973,11 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
             // Signal to parent that drawing is complete and we should exit draw mode
             const customEvent = new CustomEvent('draw-complete', {
-              detail: { tool: 'draw' }
+              detail: { 
+                tool: 'draw',
+                element: newElement,
+                isPathMode: isPathMode 
+              }
             });
             window.dispatchEvent(customEvent);
           }

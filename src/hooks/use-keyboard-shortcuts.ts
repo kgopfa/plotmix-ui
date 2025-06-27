@@ -29,7 +29,7 @@ export function useKeyboardShortcuts({
   const { selectedElements } = useSelectionStore();
   const { removeElement } = useCanvasOperations();
   const toolState = useUIStore((state) => state.tools);
-  const { setLineChaining, setActiveTool, togglePathMode } = useUIStore();
+  const { setLineChaining, setActiveTool, togglePathMode, setAnimationTarget } = useUIStore();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -124,6 +124,7 @@ export function useKeyboardShortcuts({
           }
           if (toolState.isPathMode) {
             togglePathMode();
+            setAnimationTarget(null);
           }
           break;
 
@@ -188,6 +189,7 @@ export function useKeyboardShortcuts({
     setLineChaining,
     setActiveTool,
     togglePathMode,
+    setAnimationTarget,
     onSelectAll,
     onUndo,
     onRedo,

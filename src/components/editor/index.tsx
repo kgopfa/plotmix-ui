@@ -787,25 +787,29 @@ export default function EditorCanvas() {
 
   // Listen for draw completion events
   useEffect(() => {
-    const handleDrawComplete = () => {
+    const handleDrawComplete = (e: CustomEvent) => {
       // Exit draw mode when a path is completed
       setActiveTool('select');
       
-      // If we were in path mode and completed a drawing, exit path mode
-      if (toolState.isPathMode && toolState.animationTarget) {
-        // The draw tool should have already added the element and marked it as an animation path
-        // We just need to exit path mode
+      const { element, isPathMode: wasInPathMode } = e.detail || {};
+      
+      // If we were in path mode and completed a drawing, add to animation and exit path mode
+      if (toolState.isPathMode && toolState.animationTarget && element && wasInPathMode) {
+        // Add the drawn path to the animation
+        addPathToAnimation(element);
+        
+        // Exit path mode
         togglePathMode();
         setAnimationTarget(null);
       }
     };
 
-    window.addEventListener('draw-complete', handleDrawComplete);
+    window.addEventListener('draw-complete', handleDrawComplete as EventListener);
 
     return () => {
-      window.removeEventListener('draw-complete', handleDrawComplete);
+      window.removeEventListener('draw-complete', handleDrawComplete as EventListener);
     };
-  }, [setActiveTool, toolState.isPathMode, toolState.animationTarget, togglePathMode, setAnimationTarget]);
+      }, [setActiveTool, toolState.isPathMode, toolState.animationTarget, togglePathMode, setAnimationTarget, addPathToAnimation]);
 
   // Listen for animation path updates (from ShapeSelect component)
   useEffect(() => {
@@ -832,8 +836,20 @@ export default function EditorCanvas() {
       addPathToAnimation(pathElement);
     };
 
+    // Listen for path mode exit events
+    const handleExitPathMode = (e: CustomEvent) => {
+      const { source } = e.detail;
+      console.log('Exiting path mode from:', source);
+      
+      if (toolState.isPathMode) {
+        togglePathMode();
+        setAnimationTarget(null);
+      }
+    };
+
     window.addEventListener('animation-path-updated', handleAnimationPathUpdate as EventListener);
     window.addEventListener('add-path-to-animation', handleAddPathToAnimation as EventListener);
+    window.addEventListener('exit-path-mode', handleExitPathMode as EventListener);
 
     const handleGroupDragEndEvent = () => {
       if (isGroupDraggingRef.current) {
@@ -852,6 +868,7 @@ export default function EditorCanvas() {
     return () => {
       window.removeEventListener('animation-path-updated', handleAnimationPathUpdate as EventListener);
       window.removeEventListener('add-path-to-animation', handleAddPathToAnimation as EventListener);
+      window.removeEventListener('exit-path-mode', handleExitPathMode as EventListener);
       window.removeEventListener('group-drag-end', handleGroupDragEndEvent);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
