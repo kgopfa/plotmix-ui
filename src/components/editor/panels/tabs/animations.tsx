@@ -348,61 +348,6 @@ export function AnimationsTab({
                 </select>
               </label>
               <div className="mt-2">
-                <h4 className="font-medium mb-2">Repeat Settings</h4>
-                <div className="grid grid-cols-2 gap-2">
-                  <label>
-                    Repeat Count:
-                    <input
-                      type="number"
-                      min="-1"
-                      value={animation.repeat ?? 0}
-                      onChange={e => {
-                        console.log(`Setting repeat for ${animation.id} to ${e.target.value}`);
-                        handleAnimationChange(animation.id, 'repeat', e.target.value);
-                      }}
-                      className="w-full"
-                      placeholder="0 = no repeat, -1 = infinite"
-                      title="0 = no repeat, -1 = infinite loop, positive numbers = specific count"
-                    />
-                  </label>
-                  <label>
-                    Repeat Delay (seconds):
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.1"
-                      value={animation.repeatDelay ?? 0}
-                      onChange={e => handleAnimationChange(animation.id, 'repeatDelay', e.target.value)}
-                      className="w-full"
-                      placeholder="0"
-                      disabled={!animation.repeat || animation.repeat === 0}
-                    />
-                  </label>
-                </div>
-                <div className="mt-2">
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={animation.yoyo || false}
-                      onChange={e => handleAnimationChange(animation.id, 'yoyo', e.target.checked)}
-                      className="mr-2"
-                      disabled={!animation.repeat || animation.repeat === 0}
-                    />
-                    <span>Yoyo (reverse direction on repeat)</span>
-                  </label>
-                </div>
-                {(animation.repeat ?? 0) !== 0 && (
-                  <div className="mt-2 p-2 bg-blue-50 rounded text-sm text-blue-700">
-                    <strong>Note:</strong> Repeats happen within the {animation.duration}s duration.
-                    {animation.repeat === -1 ? (
-                      <span> Animation will loop infinitely with compressed cycles.</span>
-                    ) : (
-                      <span> Each cycle will be compressed to fit {animation.repeat} repeat{animation.repeat !== 1 ? 's' : ''} + delays.</span>
-                    )}
-                  </div>
-                )}
-              </div>
-              <div className="mt-2">
                 <h4 className="font-medium mb-2">Properties</h4>
                 <div className="grid grid-cols-2 gap-2">
                   {animation.type === 'rotate' && (
@@ -507,33 +452,6 @@ export function AnimationsTab({
                           Draw Path
                         </button>
                       </div>
-                      
-                      <div className="col-span-2">
-                        <label className="block">
-                          Direction:
-                          <select
-                            value={animation.properties.pathDirection || 'clockwise'}
-                            onChange={e => handleAnimationChange(animation.id, 'properties.pathDirection', e.target.value)}
-                            className="w-full mt-1"
-                          >
-                            <option value="clockwise">Clockwise</option>
-                            <option value="counterclockwise">Counterclockwise</option>
-                          </select>
-                        </label>
-                      </div>
-                      
-                      <div className="col-span-2 flex items-center">
-                        <input
-                          type="checkbox"
-                          id={`yoyo-${animation.id}`}
-                          checked={animation.properties.yoyo || false}
-                          onChange={e => handleAnimationChange(animation.id, 'properties.yoyo', e.target.checked)}
-                          className="mr-2"
-                        />
-                        <label htmlFor={`yoyo-${animation.id}`}>
-                          Yoyo (forward and backward)
-                        </label>
-                      </div>
                     </div>
                   )}
                   {animation.type === 'physics' && (
@@ -626,6 +544,61 @@ export function AnimationsTab({
                     </>
                   )}
                 </div>
+              </div>
+              <div className="mt-2">
+                <h4 className="font-medium mb-2">Repeat Settings</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  <label>
+                    Repeat Count:
+                    <input
+                      type="number"
+                      min="-1"
+                      value={animation.repeat ?? 0}
+                      onChange={e => {
+                        console.log(`Setting repeat for ${animation.id} to ${e.target.value}`);
+                        handleAnimationChange(animation.id, 'repeat', e.target.value);
+                      }}
+                      className="w-full"
+                      placeholder="0 = no repeat, -1 = infinite"
+                      title="0 = no repeat, -1 = infinite loop, positive numbers = specific count"
+                    />
+                  </label>
+                  <label>
+                    Repeat Delay:
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={animation.repeatDelay ?? 0}
+                      onChange={e => handleAnimationChange(animation.id, 'repeatDelay', e.target.value)}
+                      className="w-full"
+                      placeholder="0"
+                      disabled={!animation.repeat || animation.repeat === 0}
+                    />
+                  </label>
+                </div>
+                <div className="mt-2">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={animation.yoyo || false}
+                      onChange={e => handleAnimationChange(animation.id, 'yoyo', e.target.checked)}
+                      className="mr-2"
+                      disabled={!animation.repeat || animation.repeat === 0}
+                    />
+                    <span>Yoyo</span>
+                  </label>
+                </div>
+                {(animation.repeat ?? 0) !== 0 && (
+                  <div className="mt-2 p-2 bg-blue-50 rounded text-sm text-blue-700">
+                    <strong>Note:</strong> Repeats happen within the {animation.duration}s duration.
+                    {animation.repeat === -1 ? (
+                      <span> Animation will loop infinitely with compressed cycles.</span>
+                    ) : (
+                      <span> Each cycle will be compressed to fit {animation.repeat} repeat{animation.repeat !== 1 ? 's' : ''} + delays.</span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
