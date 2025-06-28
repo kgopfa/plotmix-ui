@@ -642,11 +642,12 @@ export class GSAPTimelineManager {
         console.log('Testing GSAP native yoyo for scale...');
         
         // Skip the return animation and instead create a yoyo animation
+        // Use half the cycle duration so total time (forward + return) = cycleDuration
         this.timeline.to(
           config.target,
           {
             pixi: config.properties,
-            duration: cycleDuration, // Use full cycle duration
+            duration: cycleDuration / 2, // Half duration so yoyo fits within cycleDuration
             ease: config.ease,
             yoyo: true,
             repeat: 1 // One repeat to create the return effect
