@@ -182,6 +182,37 @@ export function GroupAnimationsTab({
                   />
                   <span>Yoyo (return to start)</span>
                 </label>
+                {animation.yoyo && (
+                  <div className="mt-2 ml-6">
+                    <label>
+                      Return Easing:
+                      <select
+                        value={animation.yoyoReturnEasing ?? animation.easing ?? 'none'}
+                        onChange={e => handleAnimationChange(animation.id, 'yoyoReturnEasing', e.target.value)}
+                        className="w-full"
+                      >
+                        {[
+                          'power1.in', 'power1.out', 'power1.inOut',
+                          'power2.in', 'power2.out', 'power2.inOut',
+                          'power3.in', 'power3.out', 'power3.inOut',
+                          'power4.in', 'power4.out', 'power4.inOut',
+                          'back.in', 'back.out', 'back.inOut',
+                          'elastic.in', 'elastic.out', 'elastic.inOut',
+                          'bounce.in', 'bounce.out', 'bounce.inOut',
+                          'steps(5)', 'steps(10)', 'steps(20)',
+                          'circ.in', 'circ.out', 'circ.inOut',
+                          'expo.in', 'expo.out', 'expo.inOut',
+                          'sine.in', 'sine.out', 'sine.inOut',
+                          'none', 'linear'
+                        ].map(ease => (
+                          <option key={ease} value={ease}>
+                            {ease}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                )}
               </div>
               <div className="mt-2">
                 <h4 className="font-medium mb-2">Properties</h4>

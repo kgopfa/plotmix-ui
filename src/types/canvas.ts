@@ -86,6 +86,7 @@ export interface ElementAnimation {
   repeat?: number;
   repeatDelay?: number;
   yoyo?: boolean;
+  yoyoReturnEasing?: GsapEase;
 }
 
 export interface BaseAnimationConfig {
@@ -97,6 +98,7 @@ export interface BaseAnimationConfig {
   repeat?: number;
   repeatDelay?: number;
   yoyo?: boolean;
+  yoyoReturnEase?: string;
 }
 
 export interface AnimatedCanvasObject {

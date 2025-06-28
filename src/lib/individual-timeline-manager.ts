@@ -406,7 +406,7 @@ export class IndividualTimelineManager {
         {
           pixi: { alpha: 0 },
           duration: halfCycleDuration,
-          ease: config.ease
+          ease: config.yoyoReturnEase ?? config.ease
         },
         currentTime + halfCycleDuration
       );
@@ -416,7 +416,7 @@ export class IndividualTimelineManager {
         {
           pixi: { alpha: 1 },
           duration: halfCycleDuration,
-          ease: config.ease
+          ease: config.yoyoReturnEase ?? config.ease
         },
         currentTime + halfCycleDuration
       );
@@ -588,7 +588,7 @@ export class IndividualTimelineManager {
         {
           pixi: originalValues,
           duration: halfCycleDuration,
-          ease: config.ease
+          ease: config.yoyoReturnEase ?? config.ease
         },
         currentTime + halfCycleDuration
       );
@@ -716,7 +716,7 @@ export class IndividualTimelineManager {
         {
           pixi: originalValues,
           duration: halfCycleDuration,
-          ease: config.ease
+          ease: config.yoyoReturnEase ?? config.ease
         },
         currentTime + halfCycleDuration
       );

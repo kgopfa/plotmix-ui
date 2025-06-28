@@ -197,7 +197,8 @@ export function generateAnimationConfig(
     ease: animation.easing ?? 'power1.out',
     repeat: animation.repeat,
     repeatDelay: animation.repeatDelay,
-    yoyo: animation.yoyo
+    yoyo: animation.yoyo,
+    yoyoReturnEase: animation.yoyoReturnEasing ?? animation.easing ?? 'power1.out'
   };
 
   /**
@@ -380,6 +381,7 @@ export function generateGroupAnimationConfig(
     repeat: animation.repeat,
     repeatDelay: animation.repeatDelay,
     yoyo: animation.yoyo,
+    yoyoReturnEase: animation.yoyoReturnEasing ?? animation.easing ?? 'power1.out',
     properties: animationProps
   };
 } 

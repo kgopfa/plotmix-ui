@@ -343,7 +343,7 @@ export class GSAPTimelineManager {
         {
           pixi: { alpha: 0 },
           duration: halfCycleDuration,
-          ease: config.ease
+          ease: config.yoyoReturnEase ?? config.ease
         },
         currentTime + halfCycleDuration
       );
@@ -353,7 +353,7 @@ export class GSAPTimelineManager {
         {
           pixi: { alpha: 1 },
           duration: halfCycleDuration,
-          ease: config.ease
+          ease: config.yoyoReturnEase ?? config.ease
         },
         currentTime + halfCycleDuration
       );
@@ -479,7 +479,7 @@ export class GSAPTimelineManager {
         {
           pixi: originalValues,
           duration: halfCycleDuration,
-          ease: config.ease
+          ease: config.yoyoReturnEase ?? config.ease
         },
         currentTime + halfCycleDuration
       );
@@ -665,7 +665,7 @@ export class GSAPTimelineManager {
         {
           pixi: returnProperties,
           duration: halfCycleDuration,
-          ease: config.ease
+          ease: config.yoyoReturnEase ?? config.ease
         },
         currentTime + halfCycleDuration
       );
@@ -809,7 +809,7 @@ export class GSAPTimelineManager {
         {
           pixi: originalValues,
           duration: halfCycleDuration,
-          ease: config.ease
+          ease: config.yoyoReturnEase ?? config.ease
         },
         currentTime + halfCycleDuration
       );
@@ -949,7 +949,7 @@ export class GSAPTimelineManager {
       this.timeline.to(target, {
         pixi: originalValues,
         duration: halfCycleDuration,
-        ease: config.ease
+        ease: config.yoyoReturnEase ?? config.ease
       }, currentTime + halfCycleDuration);
 
       currentTime += cycleDuration + (cycle < totalCycles - 1 ? repeatDelay : 0);
@@ -1049,7 +1049,7 @@ export class GSAPTimelineManager {
       this.timeline.to(target, {
         pixi: originalValues,
         duration: halfCycleDuration,
-        ease: config.ease
+        ease: config.yoyoReturnEase ?? config.ease
       }, currentTime + halfCycleDuration);
 
       currentTime += cycleDuration + (cycle < totalCycles - 1 ? repeatDelay : 0);
