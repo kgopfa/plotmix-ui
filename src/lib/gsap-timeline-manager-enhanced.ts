@@ -146,7 +146,10 @@ export class GSAPTimelineManagerEnhanced extends GSAPTimelineManager {
       startTime: anim.startTime,
       duration: anim.duration,
       properties: anim.properties,
-      easing: anim.easing
+      easing: anim.easing,
+      repeat: anim.repeat,
+      repeatDelay: anim.repeatDelay,
+      yoyo: anim.yoyo
     })));
   }
 

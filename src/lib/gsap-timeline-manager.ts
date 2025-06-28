@@ -265,7 +265,7 @@ export class GSAPTimelineManager {
       this.addRepeatedColorAnimation(config, target, cycleDuration, repeat, repeatDelay, yoyo);
     } else if (isPhysicsAnimationConfig(config)) {
       // Handle repeats manually for physics animations
-      this.addRepeatedPhysicsAnimation(config, target, cycleDuration, repeat, repeatDelay);
+      this.addRepeatedPhysicsAnimation(config, target, cycleDuration, repeat, repeatDelay, yoyo);
     } else {
       // Handle repeats manually for standard animations
       this.addRepeatedStandardAnimation(config, target, cycleDuration, repeat, repeatDelay, yoyo);
@@ -409,9 +409,89 @@ export class GSAPTimelineManager {
   }
 
   /**
-   * Add repeated physics animation cycles
+   * Add repeated physics animation cycles with proper yoyo support
    */
   private addRepeatedPhysicsAnimation(
+    config: PhysicsAnimationConfig,
+    target: PIXI.Container,
+    cycleDuration: number,
+    repeat: number,
+    repeatDelay: number,
+    yoyo: boolean
+  ) {
+    if (yoyo) {
+      // When yoyo is enabled, each cycle includes forward + return
+      this.addYoyoPhysicsAnimation(config, target, cycleDuration, repeat, repeatDelay);
+    } else {
+      // Normal repeated animation without yoyo
+      this.addNormalPhysicsAnimation(config, target, cycleDuration, repeat, repeatDelay);
+    }
+  }
+
+  /**
+   * Add yoyo physics animation: forward + return within each cycle
+   */
+  private addYoyoPhysicsAnimation(
+    config: PhysicsAnimationConfig,
+    target: PIXI.Container,
+    cycleDuration: number,
+    repeat: number,
+    repeatDelay: number
+  ) {
+    // Store original values
+    const originalValues: Record<string, number> = {};
+    originalValues.x = target.x;
+    originalValues.y = target.y;
+
+    const totalCycles = repeat === -1 ? 10 : (1 + repeat);
+    let currentTime = config.startTime;
+
+    const physics2DConfig: Record<string, string | number> = {
+      velocity: config.velocity,
+      angle: config.angle,
+      gravity: config.gravity
+    };
+
+    if (config.acceleration !== undefined) physics2DConfig.acceleration = config.acceleration;
+    if (config.accelerationAngle !== undefined) physics2DConfig.accelerationAngle = config.accelerationAngle;
+    if (config.friction !== undefined) physics2DConfig.friction = config.friction;
+    if (config.xProp) physics2DConfig.xProp = config.xProp;
+    if (config.yProp) physics2DConfig.yProp = config.yProp;
+
+    for (let cycle = 0; cycle < totalCycles; cycle++) {
+      // Each cycle duration is split: half for forward, half for return
+      const halfCycleDuration = cycleDuration / 2;
+
+      // Forward journey: apply physics
+      this.timeline.to(
+        config.target,
+        {
+          physics2D: physics2DConfig,
+          duration: halfCycleDuration,
+          ease: config.ease
+        },
+        currentTime
+      );
+
+      // Return journey: animate back to original position
+      this.timeline.to(
+        config.target,
+        {
+          pixi: originalValues,
+          duration: halfCycleDuration,
+          ease: config.ease
+        },
+        currentTime + halfCycleDuration
+      );
+
+      currentTime += cycleDuration + (cycle < totalCycles - 1 ? repeatDelay : 0);
+    }
+  }
+
+  /**
+   * Add normal physics animation without yoyo
+   */
+  private addNormalPhysicsAnimation(
     config: PhysicsAnimationConfig,
     target: PIXI.Container,
     cycleDuration: number,
@@ -478,10 +558,22 @@ export class GSAPTimelineManager {
     repeat: number,
     repeatDelay: number
   ) {
-    // Store original values
+    // Store original values - access PIXI properties directly
     const originalValues: Record<string, unknown> = {};
     Object.keys(config.properties).forEach(key => {
-      const currentValue = (target as unknown as Record<string, unknown>)[key];
+      let currentValue: unknown;
+      
+      // Handle PIXI scale properties specifically
+      if (key === 'scaleX') {
+        currentValue = target.scale.x;
+      } else if (key === 'scaleY') {
+        currentValue = target.scale.y;
+      } else {
+        // Access other PIXI properties normally
+        const pixiTarget = target as PIXI.Container & Record<string, unknown>;
+        currentValue = pixiTarget[key];
+      }
+      
       if (currentValue !== undefined) {
         originalValues[key] = currentValue;
       } else {
@@ -493,7 +585,10 @@ export class GSAPTimelineManager {
         } else if (key === 'rotation') {
           originalValues[key] = 0;
         } else if (key === 'pivotX' || key === 'pivotY') {
-          originalValues[key] = currentValue || 0;
+          originalValues[key] = 0;
+        } else if (key === 'x' || key === 'y') {
+          const pixiTarget = target as PIXI.Container & Record<string, unknown>;
+          originalValues[key] = pixiTarget[key] || 0;
         } else {
           originalValues[key] = 0;
         }
@@ -519,10 +614,55 @@ export class GSAPTimelineManager {
       );
 
       // Return journey: target values → original values
+      // Debug logging for scale animations
+      if ('scaleX' in config.properties || 'scaleY' in config.properties) {
+        console.log('Scale Animation Debug:');
+        console.log('Forward properties:', config.properties);
+        console.log('Return properties:', originalValues);
+        console.log('Target scale object:', target.scale);
+      }
+
+      // Create return properties in the same format as forward properties
+      const returnProperties = { ...originalValues };
+      
+      // For scale animations, let's try both approaches to see which works
+      if ('scaleX' in config.properties || 'scaleY' in config.properties) {
+        console.log('Trying scaleX/scaleY format for return');
+        
+        // Alternative approach 1: try setting scale object directly
+        // returnProperties = {
+        //   scale: {
+        //     x: originalValues.scaleX || target.scale.x,
+        //     y: originalValues.scaleY || target.scale.y
+        //   }
+        // };
+        
+        // Alternative approach 2: Use GSAP's built-in yoyo instead of manual
+        // Instead of manual yoyo, let's try using GSAP's native yoyo for this specific case
+        console.log('Testing GSAP native yoyo for scale...');
+        
+        // Skip the return animation and instead create a yoyo animation
+        this.timeline.to(
+          config.target,
+          {
+            pixi: config.properties,
+            duration: cycleDuration, // Use full cycle duration
+            ease: config.ease,
+            yoyo: true,
+            repeat: 1 // One repeat to create the return effect
+          },
+          currentTime
+        );
+        
+        // Skip the manual return animation for this test
+        currentTime += cycleDuration + (cycle < totalCycles - 1 ? repeatDelay : 0);
+        continue; // Skip the rest of this cycle
+      }
+
       this.timeline.to(
         config.target,
         {
-          pixi: originalValues,
+          pixi: returnProperties,
           duration: halfCycleDuration,
           ease: config.ease
         },
@@ -615,8 +755,8 @@ export class GSAPTimelineManager {
     } else if (animation.type === 'rotate') {
       originalValues.rotation = groupContainer.rotation || 0;
     } else if (animation.type === 'scale') {
-      originalValues.scaleX = (groupContainer as unknown as Record<string, number>).scaleX || 1;
-      originalValues.scaleY = (groupContainer as unknown as Record<string, number>).scaleY || 1;
+      originalValues.scaleX = groupContainer.scale.x || 1;
+      originalValues.scaleY = groupContainer.scale.y || 1;
     } else if (animation.type === 'fade') {
       originalValues.alpha = groupContainer.alpha || 1;
     }
@@ -756,40 +896,105 @@ export class GSAPTimelineManager {
   private addLinePathAnimation(config: PathAnimationConfig | PolygonAnimationConfig, target: PIXI.Container, pathElement: AnimatedCanvasObject | CanvasGroup) {
     if (!('lineOptions' in pathElement) || !pathElement.lineOptions?.points?.end) return;
 
-    // Build repeat configuration
-    const repeatConfig: Record<string, number | boolean> = {};
-    if (config.repeat !== undefined && config.repeat !== 0) {
-      repeatConfig.repeat = config.repeat;
-    }
-    if (config.repeatDelay !== undefined) {
-      repeatConfig.repeatDelay = config.repeatDelay;
-    }
-    if (config.yoyo !== undefined) {
-      repeatConfig.yoyo = config.yoyo;
+    const { end } = pathElement.lineOptions.points;
+    const repeat = config.repeat ?? 0;
+    const repeatDelay = config.repeatDelay ?? 0;
+    const yoyo = config.yoyo ?? false;
+
+    // Calculate compressed cycle duration for repeats
+    let cycleDuration = config.duration;
+    if (repeat !== 0) {
+      if (repeat === -1) {
+        cycleDuration = config.duration / 10;
+      } else {
+        const totalCycles = 1 + repeat;
+        const totalDelayTime = repeat * repeatDelay;
+        const availableAnimationTime = config.duration - totalDelayTime;
+        cycleDuration = Math.max(0.1, availableAnimationTime / totalCycles);
+      }
     }
 
-    const { end } = pathElement.lineOptions.points;
-    this.timeline.to(target, {
-      pixi: { x: end.x, y: end.y },
-      duration: config.duration,
-      ease: config.ease,
-      ...repeatConfig
-    }, config.startTime);
+    if (yoyo) {
+      this.addYoyoLinePathAnimation(config, target, end, cycleDuration, repeat, repeatDelay);
+    } else {
+      this.addNormalLinePathAnimation(config, target, end, cycleDuration, repeat, repeatDelay);
+    }
+  }
+
+  private addYoyoLinePathAnimation(
+    config: PathAnimationConfig | PolygonAnimationConfig,
+    target: PIXI.Container,
+    endPoint: { x: number, y: number },
+    cycleDuration: number,
+    repeat: number,
+    repeatDelay: number
+  ) {
+    // Store original values
+    const originalValues = { x: target.x, y: target.y };
+    const totalCycles = repeat === -1 ? 10 : (1 + repeat);
+    let currentTime = config.startTime;
+
+    for (let cycle = 0; cycle < totalCycles; cycle++) {
+      const halfCycleDuration = cycleDuration / 2;
+
+      // Forward journey: current position → end position
+      this.timeline.to(target, {
+        pixi: { x: endPoint.x, y: endPoint.y },
+        duration: halfCycleDuration,
+        ease: config.ease
+      }, currentTime);
+
+      // Return journey: end position → original position
+      this.timeline.to(target, {
+        pixi: originalValues,
+        duration: halfCycleDuration,
+        ease: config.ease
+      }, currentTime + halfCycleDuration);
+
+      currentTime += cycleDuration + (cycle < totalCycles - 1 ? repeatDelay : 0);
+    }
+  }
+
+  private addNormalLinePathAnimation(
+    config: PathAnimationConfig | PolygonAnimationConfig,
+    target: PIXI.Container,
+    endPoint: { x: number, y: number },
+    cycleDuration: number,
+    repeat: number,
+    repeatDelay: number
+  ) {
+    const totalCycles = repeat === -1 ? 10 : (1 + repeat);
+    let currentTime = config.startTime;
+
+    for (let cycle = 0; cycle < totalCycles; cycle++) {
+      this.timeline.to(target, {
+        pixi: { x: endPoint.x, y: endPoint.y },
+        duration: cycleDuration,
+        ease: config.ease
+      }, currentTime);
+
+      currentTime += cycleDuration + (cycle < totalCycles - 1 ? repeatDelay : 0);
+    }
   }
 
   private addCustomPathAnimation(config: PathAnimationConfig | PolygonAnimationConfig, target: PIXI.Container, pathElement: AnimatedCanvasObject | CanvasGroup) {
     if (!('pathPoints' in pathElement) || !pathElement.pathPoints) return;
 
-    // Build repeat configuration
-    const repeatConfig: Record<string, number | boolean> = {};
-    if (config.repeat !== undefined && config.repeat !== 0) {
-      repeatConfig.repeat = config.repeat;
-    }
-    if (config.repeatDelay !== undefined) {
-      repeatConfig.repeatDelay = config.repeatDelay;
-    }
-    if (config.yoyo !== undefined) {
-      repeatConfig.yoyo = config.yoyo;
+    const repeat = config.repeat ?? 0;
+    const repeatDelay = config.repeatDelay ?? 0;
+    const yoyo = config.yoyo ?? false;
+
+    // Calculate compressed cycle duration for repeats
+    let cycleDuration = config.duration;
+    if (repeat !== 0) {
+      if (repeat === -1) {
+        cycleDuration = config.duration / 10;
+      } else {
+        const totalCycles = 1 + repeat;
+        const totalDelayTime = repeat * repeatDelay;
+        const availableAnimationTime = config.duration - totalDelayTime;
+        cycleDuration = Math.max(0.1, availableAnimationTime / totalCycles);
+      }
     }
 
     const pathPoints = pathElement.pathPoints.map((p: { x: number, y: number }) => ({
@@ -802,19 +1007,81 @@ export class GSAPTimelineManager {
       svgPath += `L${pathPoints[i].x},${pathPoints[i].y} `;
     }
 
-    const proxy = { x: 0, y: 0 };
-    this.timeline.to(proxy, {
-      motionPath: { path: svgPath, autoRotate: false },
-      duration: config.duration,
-      ease: config.ease,
-      ...repeatConfig,
-      onUpdate: () => {
-        if (target && target.parent && !target.destroyed) {
-          target.x = proxy.x;
-          target.y = proxy.y;
+    if (yoyo) {
+      this.addYoyoCustomPathAnimation(config, target, svgPath, cycleDuration, repeat, repeatDelay);
+    } else {
+      this.addNormalCustomPathAnimation(config, target, svgPath, cycleDuration, repeat, repeatDelay);
+    }
+  }
+
+  private addYoyoCustomPathAnimation(
+    config: PathAnimationConfig | PolygonAnimationConfig,
+    target: PIXI.Container,
+    svgPath: string,
+    cycleDuration: number,
+    repeat: number,
+    repeatDelay: number
+  ) {
+    // Store original values
+    const originalValues = { x: target.x, y: target.y };
+    const totalCycles = repeat === -1 ? 10 : (1 + repeat);
+    let currentTime = config.startTime;
+
+    for (let cycle = 0; cycle < totalCycles; cycle++) {
+      const halfCycleDuration = cycleDuration / 2;
+
+      // Forward journey: follow the path
+      const forwardProxy = { x: target.x, y: target.y };
+      this.timeline.to(forwardProxy, {
+        motionPath: { path: svgPath, autoRotate: false },
+        duration: halfCycleDuration,
+        ease: config.ease,
+        onUpdate: () => {
+          if (target && target.parent && !target.destroyed) {
+            target.x = forwardProxy.x;
+            target.y = forwardProxy.y;
+          }
         }
-      }
-    }, config.startTime);
+      }, currentTime);
+
+      // Return journey: animate back to original position
+      this.timeline.to(target, {
+        pixi: originalValues,
+        duration: halfCycleDuration,
+        ease: config.ease
+      }, currentTime + halfCycleDuration);
+
+      currentTime += cycleDuration + (cycle < totalCycles - 1 ? repeatDelay : 0);
+    }
+  }
+
+  private addNormalCustomPathAnimation(
+    config: PathAnimationConfig | PolygonAnimationConfig,
+    target: PIXI.Container,
+    svgPath: string,
+    cycleDuration: number,
+    repeat: number,
+    repeatDelay: number
+  ) {
+    const totalCycles = repeat === -1 ? 10 : (1 + repeat);
+    let currentTime = config.startTime;
+
+    for (let cycle = 0; cycle < totalCycles; cycle++) {
+      const proxy = { x: target.x, y: target.y };
+      this.timeline.to(proxy, {
+        motionPath: { path: svgPath, autoRotate: false },
+        duration: cycleDuration,
+        ease: config.ease,
+        onUpdate: () => {
+          if (target && target.parent && !target.destroyed) {
+            target.x = proxy.x;
+            target.y = proxy.y;
+          }
+        }
+      }, currentTime);
+
+      currentTime += cycleDuration + (cycle < totalCycles - 1 ? repeatDelay : 0);
+    }
   }
 
   private addPolygonPathAnimation(config: PolygonAnimationConfig, target: PIXI.Container) {
