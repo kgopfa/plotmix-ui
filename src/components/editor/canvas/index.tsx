@@ -32,6 +32,7 @@ import { contextMenuManager } from '@/lib/context-menu-manager';
 import { useCanvasElements, useCanvasGroups, useCanvasOperations } from '@/stores/useCanvasStore';
 import { useSelectionStore } from '@/stores/useSelectionStore';
 import { useUIStore } from '@/stores/useUIStore';
+import { useTimelineStore } from '@/stores/useTimelineStore';
 
 extend({ Container, Graphics, Text });
 
@@ -118,8 +119,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     chainedLineIds 
   } = toolState;
 
-  // Animation playback state - placeholder for now
-  const isPlaying = false;
+  // Animation playback state
+  const isPlaying = useTimelineStore(state => state.playback.isPlaying);
 
   const shapeRefs = useRef<Record<string, Container>>({});
   const groupContainers = useRef<Record<string, Container>>({});
@@ -1666,12 +1667,12 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                 )}
 
                                       {/* Show hover outline when hovered but not selected (but not for textgroup characters or elements in custom/polygon groups) */}
-                {hoveredId === el.id && !selectedIds.includes(el.id) && !isTextGroupCharacter(el) && !isElementInCustomOrPolygonGroup(el) && (
+                {!isPlaying && hoveredId === el.id && !selectedIds.includes(el.id) && !isTextGroupCharacter(el) && !isElementInCustomOrPolygonGroup(el) && (
                   <HoverOutline element={el} />
                 )}
 
                 {/* Show selection outline for all selected elements (but not for textgroup characters or elements in custom/polygon groups) */}
-                {selectedIds.includes(el.id) && !isTextGroupCharacter(el) && !isElementInCustomOrPolygonGroup(el) && (
+                {!isPlaying && selectedIds.includes(el.id) && !isTextGroupCharacter(el) && !isElementInCustomOrPolygonGroup(el) && (
                   <ElementSelect
                     element={el}
                     scaleFactor={canvasScaleFactor.current}
@@ -1784,12 +1785,12 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                 )}
 
                                       {/* Show hover outline when hovered but not selected (but not for textgroup characters or elements in custom/polygon groups) */}
-                {hoveredId === el.id && !selectedIds.includes(el.id) && !isTextGroupCharacter(el) && !isElementInCustomOrPolygonGroup(el) && (
+                {!isPlaying && hoveredId === el.id && !selectedIds.includes(el.id) && !isTextGroupCharacter(el) && !isElementInCustomOrPolygonGroup(el) && (
                   <HoverOutline element={el} />
                 )}
 
                 {/* Show selection outline for all selected elements (but not for textgroup characters or elements in custom/polygon groups) */}
-                {selectedIds.includes(el.id) && !isTextGroupCharacter(el) && !isElementInCustomOrPolygonGroup(el) && (
+                {!isPlaying && selectedIds.includes(el.id) && !isTextGroupCharacter(el) && !isElementInCustomOrPolygonGroup(el) && (
                   <ElementSelect
                     element={el}
                     scaleFactor={canvasScaleFactor.current}
