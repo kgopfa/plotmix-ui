@@ -194,6 +194,27 @@ export function AnimationsTab({
     syncToStores(updatedAnimations);
   };
 
+  // Handle duplicating animations
+  const handleDuplicateAnimation = (animationId: string) => {
+    const originalAnimation = animations.find(anim => anim.id === animationId);
+    if (!originalAnimation) return;
+
+    // Create a copy with a new ID and slightly offset start time
+    const duplicatedAnimation: ElementAnimation = {
+      ...originalAnimation,
+      id: `${originalAnimation.type}-${Date.now()}`,
+      startTime: originalAnimation.startTime + originalAnimation.duration + 0.1 // Offset to avoid overlap
+    };
+
+    const updatedAnimations = [...animations, duplicatedAnimation];
+    
+    // Update local state immediately
+    setAnimations(updatedAnimations);
+    
+    // Sync to stores
+    syncToStores(updatedAnimations);
+  };
+
   // Handle all animation changes through local state
   const handleAnimationChange = (id: string, field: string, value: string | number | boolean) => {
     console.log(`Animation change: ${field} = ${value} for animation ${id}`);
@@ -281,13 +302,22 @@ export function AnimationsTab({
           }`}>
             <div className="flex justify-between items-center mb-2 border-b pb-2">
               <span className="font-medium text-blue-600">{animation.type}</span>
-              <button
-                onClick={() => handleDeleteAnimationInternal(animation.id)}
-                className="text-red-500 hover:text-red-700"
-                title="Delete animation"
-              >
-                ×
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleDuplicateAnimation(animation.id)}
+                  className="text-blue-500 hover:text-blue-700 px-1"
+                  title="Duplicate animation"
+                >
+                  📄
+                </button>
+                <button
+                  onClick={() => handleDeleteAnimationInternal(animation.id)}
+                  className="text-red-500 hover:text-red-700"
+                  title="Delete animation"
+                >
+                  ×
+                </button>
+              </div>
             </div>
             <div className="flex flex-col gap-2">
               <div className="grid grid-cols-2 gap-2">

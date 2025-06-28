@@ -11,6 +11,7 @@ interface GroupAnimationsTabProps {
   localAnimations: ElementAnimation[];
   onAddAnimation: () => void;
   onDeleteAnimation: (id: string) => void;
+  onDuplicateAnimation: (id: string) => void;
   onAnimationChange: (id: string, field: string, value: string | number | boolean) => void;
 }
 
@@ -19,6 +20,7 @@ export function GroupAnimationsTab({
   localAnimations,
   onAddAnimation,
   onDeleteAnimation,
+  onDuplicateAnimation,
   onAnimationChange
 }: GroupAnimationsTabProps) {
   // Local state for animations
@@ -103,13 +105,22 @@ export function GroupAnimationsTab({
           }`}>
             <div className="flex justify-between items-center mb-2 border-b pb-2">
               <span className="font-medium text-blue-600">{animation.type}</span>
-              <button
-                onClick={() => onDeleteAnimation(animation.id)}
-                className="text-red-500 hover:text-red-700"
-                title="Delete animation"
-              >
-                ×
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => onDuplicateAnimation(animation.id)}
+                  className="text-blue-500 hover:text-blue-700 px-1"
+                  title="Duplicate animation"
+                >
+                  📄
+                </button>
+                <button
+                  onClick={() => onDeleteAnimation(animation.id)}
+                  className="text-red-500 hover:text-red-700"
+                  title="Delete animation"
+                >
+                  ×
+                </button>
+              </div>
             </div>
             <div className="flex flex-col gap-2">
               <div className="grid grid-cols-2 gap-2">

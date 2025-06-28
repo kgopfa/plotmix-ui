@@ -52,7 +52,8 @@ export function Inspector({
     localGroupAnimations,
     handleGroupAnimationChange,
     handleAddGroupAnimation,
-    handleDeleteGroupAnimation
+    handleDeleteGroupAnimation,
+    handleDuplicateGroupAnimation
   } = useGroupAnimationHandlers(selectedGroup, onGroupInspectorChange);
 
   // Listen for animation selections and auto-switch to animations tab
@@ -130,6 +131,7 @@ export function Inspector({
                 localAnimations={localGroupAnimations}
                 onAddAnimation={handleAddGroupAnimation}
                 onDeleteAnimation={handleDeleteGroupAnimation}
+                onDuplicateAnimation={handleDuplicateGroupAnimation}
                 onAnimationChange={handleGroupAnimationChange}
               />
             ) : hasIndividualElement ? (

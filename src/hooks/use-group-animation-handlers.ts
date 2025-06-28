@@ -115,10 +115,29 @@ export function useGroupAnimationHandlers(
     onGroupInspectorChange(selectedGroup.id, 'animations', updatedAnimations);
   };
 
+  const handleDuplicateGroupAnimation = (animationId: string) => {
+    if (!selectedGroup || !onGroupInspectorChange) return;
+    
+    const originalAnimation = localGroupAnimations.find(anim => anim.id === animationId);
+    if (!originalAnimation) return;
+
+    // Create a copy with a new ID and slightly offset start time
+    const duplicatedAnimation: ElementAnimation = {
+      ...originalAnimation,
+      id: `${originalAnimation.type}-${Date.now()}`,
+      startTime: originalAnimation.startTime + originalAnimation.duration + 0.1 // Offset to avoid overlap
+    };
+
+    const updatedAnimations = [...localGroupAnimations, duplicatedAnimation];
+    setLocalGroupAnimations(updatedAnimations);
+    onGroupInspectorChange(selectedGroup.id, 'animations', updatedAnimations);
+  };
+
   return {
     localGroupAnimations,
     handleGroupAnimationChange,
     handleAddGroupAnimation,
-    handleDeleteGroupAnimation
+    handleDeleteGroupAnimation,
+    handleDuplicateGroupAnimation
   };
 } 
