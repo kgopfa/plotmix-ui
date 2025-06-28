@@ -173,54 +173,15 @@ export function GroupAnimationsTab({
                 </select>
               </label>
               <div className="mt-2">
-                <h4 className="font-medium mb-2">Repeat Settings</h4>
-                <div className="grid grid-cols-2 gap-2">
-                  <label>
-                    Repeat Count:
-                    <input
-                      type="number"
-                      min="-1"
-                      value={animation.repeat ?? 0}
-                      onChange={e => handleAnimationChange(animation.id, 'repeat', e.target.value)}
-                      className="w-full"
-                      placeholder="0 = no repeat, -1 = infinite"
-                    />
-                  </label>
-                  <label>
-                    Repeat Delay (seconds):
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.1"
-                      value={animation.repeatDelay ?? 0}
-                      onChange={e => handleAnimationChange(animation.id, 'repeatDelay', e.target.value)}
-                      className="w-full"
-                      disabled={!animation.repeat || animation.repeat === 0}
-                    />
-                  </label>
-                </div>
-                <div className="mt-2">
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={animation.yoyo || false}
-                      onChange={e => handleAnimationChange(animation.id, 'yoyo', e.target.checked)}
-                      className="mr-2"
-                      disabled={!animation.repeat || animation.repeat === 0}
-                    />
-                    <span>Yoyo (reverse direction on repeat)</span>
-                  </label>
-                </div>
-                {(animation.repeat ?? 0) !== 0 && (
-                  <div className="mt-2 p-2 bg-blue-50 rounded text-sm text-blue-700">
-                    <strong>Note:</strong> Repeats happen within the {animation.duration}s duration.
-                    {animation.repeat === -1 ? (
-                      <span> Animation will loop infinitely with compressed cycles.</span>
-                    ) : (
-                      <span> Each cycle will be compressed to fit {animation.repeat} repeat{animation.repeat !== 1 ? 's' : ''} + delays.</span>
-                    )}
-                  </div>
-                )}
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={animation.yoyo || false}
+                    onChange={e => handleAnimationChange(animation.id, 'yoyo', e.target.checked)}
+                    className="mr-2"
+                  />
+                  <span>Yoyo (return to start)</span>
+                </label>
               </div>
               <div className="mt-2">
                 <h4 className="font-medium mb-2">Properties</h4>
@@ -300,6 +261,44 @@ export function GroupAnimationsTab({
                     </label>
                   )}
                 </div>
+              </div>
+              <div className="mt-2">
+                <h4 className="font-medium mb-2">Repeat Settings</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  <label>
+                    Repeat Count:
+                    <input
+                      type="number"
+                      min="-1"
+                      value={animation.repeat ?? 0}
+                      onChange={e => handleAnimationChange(animation.id, 'repeat', e.target.value)}
+                      className="w-full"
+                      placeholder="0 = no repeat, -1 = infinite"
+                    />
+                  </label>
+                  <label>
+                    Repeat Delay:
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={animation.repeatDelay ?? 0}
+                      onChange={e => handleAnimationChange(animation.id, 'repeatDelay', e.target.value)}
+                      className="w-full"
+                      disabled={!animation.repeat || animation.repeat === 0}
+                    />
+                  </label>
+                </div>
+                {(animation.repeat ?? 0) !== 0 && (
+                  <div className="mt-2 p-2 bg-blue-50 rounded text-sm text-blue-700">
+                    <strong>Note:</strong> Repeats happen within the {animation.duration}s duration.
+                    {animation.repeat === -1 ? (
+                      <span> Animation will loop infinitely with compressed cycles.</span>
+                    ) : (
+                      <span> Each cycle will be compressed to fit {animation.repeat} repeat{animation.repeat !== 1 ? 's' : ''} + delays.</span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>

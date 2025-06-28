@@ -338,7 +338,7 @@ export class IndividualTimelineManager {
   }
 
   /**
-   * Add repeated color animation cycles
+   * Add repeated color animation cycles with proper yoyo support
    */
   private addRepeatedColorAnimation(
     timeline: gsap.core.Timeline,
@@ -349,58 +349,120 @@ export class IndividualTimelineManager {
     repeatDelay: number,
     yoyo: boolean
   ) {
+    if (yoyo) {
+      // When yoyo is enabled, each cycle includes forward + return
+      this.addYoyoColorAnimation(timeline, config, target, cycleDuration, repeat, repeatDelay);
+    } else {
+      // Normal repeated animation without yoyo
+      this.addNormalColorAnimation(timeline, config, target, cycleDuration, repeat, repeatDelay);
+    }
+  }
+
+  /**
+   * Add yoyo color animation: forward + return within each cycle
+   */
+  private addYoyoColorAnimation(
+    timeline: gsap.core.Timeline,
+    config: any,
+    target: any,
+    cycleDuration: number,
+    repeat: number,
+    repeatDelay: number
+  ) {
     const totalCycles = repeat === -1 ? 10 : (1 + repeat);
     let currentTime = config.startTime;
 
     for (let cycle = 0; cycle < totalCycles; cycle++) {
-      const isReverse = yoyo && cycle % 2 === 1;
+      // Each cycle duration is split: half for forward, half for return
+      const halfCycleDuration = cycleDuration / 2;
 
-      if (isReverse) {
-        // Reverse cycle: new to old
-        timeline.to(
-          config.newChild,
-          {
-            pixi: { alpha: 0 },
-            duration: cycleDuration,
-            ease: config.ease
-          },
-          currentTime
-        );
+      // Forward journey: old to new color
+      timeline.to(
+        config.oldChild,
+        {
+          pixi: { alpha: 0 },
+          duration: halfCycleDuration,
+          ease: config.ease
+        },
+        currentTime
+      );
 
-        timeline.to(
-          config.oldChild,
-          {
-            pixi: { alpha: 1 },
-            duration: cycleDuration,
-            ease: config.ease
-          },
-          currentTime
-        );
-      } else {
-        // Forward cycle: old to new
-        timeline.to(
-          config.oldChild,
-          {
-            pixi: { alpha: 0 },
-            duration: cycleDuration,
-            ease: config.ease
-          },
-          currentTime
-        );
+      timeline.to(
+        config.newChild,
+        {
+          pixi: { alpha: 1 },
+          duration: halfCycleDuration,
+          ease: config.ease,
+          onInterrupt: cycle === 0 ? () => {
+            target.removeChild(config.newChild);
+          } : undefined
+        },
+        currentTime
+      );
 
-        timeline.to(
-          config.newChild,
-          {
-            pixi: { alpha: 1 },
-            duration: cycleDuration,
-            ease: config.ease,
-            onInterrupt: cycle === 0 ? () => {
-              target.removeChild(config.newChild);
-            } : undefined
-          },
-          currentTime
-        );
-      }
+      // Return journey: new to old color
+      timeline.to(
+        config.newChild,
+        {
+          pixi: { alpha: 0 },
+          duration: halfCycleDuration,
+          ease: config.ease
+        },
+        currentTime + halfCycleDuration
+      );
+
+      timeline.to(
+        config.oldChild,
+        {
+          pixi: { alpha: 1 },
+          duration: halfCycleDuration,
+          ease: config.ease
+        },
+        currentTime + halfCycleDuration
+      );
+
+      currentTime += cycleDuration + (cycle < totalCycles - 1 ? repeatDelay : 0);
+    }
+  }
+
+  /**
+   * Add normal color animation without yoyo
+   */
+  private addNormalColorAnimation(
+    timeline: gsap.core.Timeline,
+    config: any,
+    target: any,
+    cycleDuration: number,
+    repeat: number,
+    repeatDelay: number
+  ) {
+    const totalCycles = repeat === -1 ? 10 : (1 + repeat);
+    let currentTime = config.startTime;
+
+    for (let cycle = 0; cycle < totalCycles; cycle++) {
+      // Forward cycle: old to new
+      timeline.to(
+        config.oldChild,
+        {
+          pixi: { alpha: 0 },
+          duration: cycleDuration,
+          ease: config.ease
+        },
+        currentTime
+      );
+
+      timeline.to(
+        config.newChild,
+        {
+          pixi: { alpha: 1 },
+          duration: cycleDuration,
+          ease: config.ease,
+          onInterrupt: cycle === 0 ? () => {
+            target.removeChild(config.newChild);
+          } : undefined
+        },
+        currentTime
+      );
 
       currentTime += cycleDuration + (cycle < totalCycles - 1 ? repeatDelay : 0);
     }
@@ -448,7 +510,7 @@ export class IndividualTimelineManager {
   }
 
   /**
-   * Add repeated standard animation cycles
+   * Add standard animation with proper yoyo support
    */
   private addRepeatedStandardAnimation(
     timeline: gsap.core.Timeline,
@@ -459,50 +521,101 @@ export class IndividualTimelineManager {
     repeatDelay: number,
     yoyo: boolean
   ) {
+    if (yoyo) {
+      // When yoyo is enabled, each cycle includes forward + return
+      this.addYoyoStandardAnimation(timeline, config, target, cycleDuration, repeat, repeatDelay);
+    } else {
+      // Normal repeated animation without yoyo
+      this.addNormalStandardAnimation(timeline, config, target, cycleDuration, repeat, repeatDelay);
+    }
+  }
+
+  /**
+   * Add yoyo animation: forward + return within each cycle
+   */
+  private addYoyoStandardAnimation(
+    timeline: gsap.core.Timeline,
+    config: any,
+    target: any,
+    cycleDuration: number,
+    repeat: number,
+    repeatDelay: number
+  ) {
+    // Store original values
+    const originalValues: any = {};
+    Object.keys(config.properties).forEach(key => {
+      const currentValue = target[key];
+      
+      if (currentValue !== undefined) {
+        originalValues[key] = currentValue;
+      } else {
+        // Set sensible defaults for missing properties
+        if (key === 'scaleX' || key === 'scaleY') {
+          originalValues[key] = 1;
+        } else if (key === 'alpha') {
+          originalValues[key] = 1;
+        } else if (key === 'rotation') {
+          originalValues[key] = 0;
+        } else if (key === 'pivotX' || key === 'pivotY') {
+          originalValues[key] = currentValue || 0;
+        } else {
+          originalValues[key] = 0;
+        }
+      }
+    });
+
     const totalCycles = repeat === -1 ? 10 : (1 + repeat);
     let currentTime = config.startTime;
 
-    // Store original values for yoyo effect
-    const originalValues: any = {};
-    if (yoyo) {
-      Object.keys(config.properties).forEach(key => {
-        const currentValue = target[key];
-        
-        if (currentValue !== undefined) {
-          originalValues[key] = currentValue;
-        } else {
-          // Set sensible defaults for missing properties
-          if (key === 'scaleX' || key === 'scaleY') {
-            originalValues[key] = 1;
-          } else if (key === 'alpha') {
-            originalValues[key] = 1;
-          } else if (key === 'rotation') {
-            originalValues[key] = 0;
-          } else if (key === 'pivotX' || key === 'pivotY') {
-            // For pivot, use the target element's properties or defaults
-            originalValues[key] = currentValue || 0;
-          } else {
-            originalValues[key] = 0;
-          }
-        }
-      });
-    }
-
     for (let cycle = 0; cycle < totalCycles; cycle++) {
-      const isReverse = yoyo && cycle % 2 === 1;
-      
-      let animationProps = config.properties;
-      if (isReverse) {
-        // For reverse cycles, animate back to original values
-        animationProps = originalValues;
-      }
+      // Each cycle duration is split: half for forward, half for return
+      const halfCycleDuration = cycleDuration / 2;
 
-
-
+      // Forward journey: current values → target values
       timeline.to(
         config.target,
         {
-          pixi: animationProps,
+          pixi: config.properties,
+          duration: halfCycleDuration,
+          ease: config.ease
+        },
+        currentTime
+      );
+
+      // Return journey: target values → original values
+      timeline.to(
+        config.target,
+        {
+          pixi: originalValues,
+          duration: halfCycleDuration,
+          ease: config.ease
+        },
+        currentTime + halfCycleDuration
+      );
+
+      currentTime += cycleDuration + (cycle < totalCycles - 1 ? repeatDelay : 0);
+    }
+  }
+
+  /**
+   * Add normal animation without yoyo
+   */
+  private addNormalStandardAnimation(
+    timeline: gsap.core.Timeline,
+    config: any,
+    target: any,
+    cycleDuration: number,
+    repeat: number,
+    repeatDelay: number
+  ) {
+    const totalCycles = repeat === -1 ? 10 : (1 + repeat);
+    let currentTime = config.startTime;
+
+    for (let cycle = 0; cycle < totalCycles; cycle++) {
+      timeline.to(
+        config.target,
+        {
+          pixi: config.properties,
           duration: cycleDuration,
           ease: config.ease
         },
@@ -513,40 +626,10 @@ export class IndividualTimelineManager {
     }
   }
 
-  /**
-   * Reverse animation properties for yoyo effect
-   */
-  private reverseAnimationProperties(properties: any, target: any): any {
-    const reversed: any = {};
-    
-    // Get current values from target to reverse to
-    Object.keys(properties).forEach(key => {
-      if (key === 'x' || key === 'y') {
-        // For position, reverse to current position (before animation started)
-        reversed[key] = target[key] || 0;
-      } else if (key === 'scaleX' || key === 'scaleY') {
-        // For scale, reverse to 1 (default scale)
-        reversed[key] = 1;
-      } else if (key === 'rotation') {
-        // For rotation, reverse to 0
-        reversed[key] = 0;
-      } else if (key === 'alpha') {
-        // For alpha, reverse to 1 (fully opaque)
-        reversed[key] = 1;
-      } else if (key === 'width' || key === 'height') {
-        // For dimensions, reverse to original size (we'll approximate)
-        reversed[key] = target[key] || properties[key];
-      } else {
-        // For other properties, try to reverse to current value
-        reversed[key] = target[key] !== undefined ? target[key] : properties[key];
-      }
-    });
-    
-    return reversed;
-  }
+
 
   /**
-   * Add group animation to timeline
+   * Add group animation to timeline with proper yoyo support
    */
   private addGroupAnimationToTimeline(
     timeline: gsap.core.Timeline,
@@ -562,61 +645,118 @@ export class IndividualTimelineManager {
     const repeatDelay = animation.repeatDelay ?? 0;
     const yoyo = animation.yoyo ?? false;
 
+    if (yoyo) {
+      // When yoyo is enabled, each cycle includes forward + return
+      this.addYoyoGroupAnimation(timeline, config, groupContainer, animation, cycleDuration, repeat, repeatDelay);
+    } else {
+      // Normal repeated animation without yoyo
+      this.addNormalGroupAnimation(timeline, config, groupContainer, animation, cycleDuration, repeat, repeatDelay);
+    }
+  }
+
+  /**
+   * Add yoyo group animation: forward + return within each cycle
+   */
+  private addYoyoGroupAnimation(
+    timeline: gsap.core.Timeline,
+    config: any,
+    groupContainer: any,
+    animation: ElementAnimation,
+    cycleDuration: number,
+    repeat: number,
+    repeatDelay: number
+  ) {
+    // Store original values
+    const originalValues: any = {};
+    if (animation.type === 'move') {
+      originalValues.x = groupContainer.x;
+      originalValues.y = groupContainer.y;
+    } else if (animation.type === 'rotate') {
+      originalValues.rotation = groupContainer.rotation || 0;
+    } else if (animation.type === 'scale') {
+      originalValues.scaleX = groupContainer.scaleX || 1;
+      originalValues.scaleY = groupContainer.scaleY || 1;
+    } else if (animation.type === 'fade') {
+      originalValues.alpha = groupContainer.alpha || 1;
+    }
+
     const totalCycles = repeat === -1 ? 10 : (1 + repeat);
     let currentTime = config.startTime;
 
-    // Store original values for yoyo effect
-    const originalValues: any = {};
-    if (yoyo) {
-      if (animation.type === 'move') {
-        originalValues.x = groupContainer.x;
-        originalValues.y = groupContainer.y;
-      } else if (animation.type === 'rotate') {
-        originalValues.rotation = groupContainer.rotation || 0;
-      } else if (animation.type === 'scale') {
-        originalValues.scaleX = groupContainer.scaleX || 1;
-        originalValues.scaleY = groupContainer.scaleY || 1;
-      } else if (animation.type === 'fade') {
-        originalValues.alpha = groupContainer.alpha || 1;
-      }
-    }
-
     for (let cycle = 0; cycle < totalCycles; cycle++) {
-      const isReverse = yoyo && cycle % 2 === 1;
-      
-      // Determine animation properties for this cycle
-      let animationProps: any = {};
-      
+      // Each cycle duration is split: half for forward, half for return
+      const halfCycleDuration = cycleDuration / 2;
+
+      // Get target animation properties
+      let targetProps: any = {};
       if (animation.type === 'move') {
-        if (isReverse) {
-          animationProps = { x: originalValues.x, y: originalValues.y };
-        } else {
-          animationProps = { x: config.properties.x, y: config.properties.y };
-        }
+        targetProps = { x: config.properties.x, y: config.properties.y };
       } else if (animation.type === 'rotate') {
-        if (isReverse) {
-          animationProps = { rotation: originalValues.rotation };
-        } else {
-          animationProps = { rotation: config.properties.rotation || 0 };
-        }
+        targetProps = { rotation: config.properties.rotation || 0 };
       } else if (animation.type === 'scale') {
-        if (isReverse) {
-          animationProps = { scaleX: originalValues.scaleX, scaleY: originalValues.scaleY };
-        } else {
-          animationProps = { scaleX: config.properties.scaleX || 1, scaleY: config.properties.scaleY || 1 };
-        }
+        targetProps = { scaleX: config.properties.scaleX || 1, scaleY: config.properties.scaleY || 1 };
       } else if (animation.type === 'fade') {
-        if (isReverse) {
-          animationProps = { alpha: originalValues.alpha };
-        } else {
-          animationProps = { alpha: config.properties.alpha || 1 };
-        }
+        targetProps = { alpha: config.properties.alpha || 1 };
       }
 
+      // Forward journey: current values → target values
       timeline.to(
         groupContainer,
         {
-          pixi: animationProps,
+          pixi: targetProps,
+          duration: halfCycleDuration,
+          ease: config.ease
+        },
+        currentTime
+      );
+
+      // Return journey: target values → original values
+      timeline.to(
+        groupContainer,
+        {
+          pixi: originalValues,
+          duration: halfCycleDuration,
+          ease: config.ease
+        },
+        currentTime + halfCycleDuration
+      );
+
+      currentTime += cycleDuration + (cycle < totalCycles - 1 ? repeatDelay : 0);
+    }
+  }
+
+  /**
+   * Add normal group animation without yoyo
+   */
+  private addNormalGroupAnimation(
+    timeline: gsap.core.Timeline,
+    config: any,
+    groupContainer: any,
+    animation: ElementAnimation,
+    cycleDuration: number,
+    repeat: number,
+    repeatDelay: number
+  ) {
+    const totalCycles = repeat === -1 ? 10 : (1 + repeat);
+    let currentTime = config.startTime;
+
+    // Get target animation properties
+    let targetProps: any = {};
+    if (animation.type === 'move') {
+      targetProps = { x: config.properties.x, y: config.properties.y };
+    } else if (animation.type === 'rotate') {
+      targetProps = { rotation: config.properties.rotation || 0 };
+    } else if (animation.type === 'scale') {
+      targetProps = { scaleX: config.properties.scaleX || 1, scaleY: config.properties.scaleY || 1 };
+    } else if (animation.type === 'fade') {
+      targetProps = { alpha: config.properties.alpha || 1 };
+    }
+
+    for (let cycle = 0; cycle < totalCycles; cycle++) {
+      timeline.to(
+        groupContainer,
+        {
+          pixi: targetProps,
           duration: cycleDuration,
           ease: config.ease
         },
