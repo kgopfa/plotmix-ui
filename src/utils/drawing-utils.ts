@@ -1,6 +1,8 @@
 import { Graphics, Texture } from 'pixi.js';
+import { DropShadowFilter } from 'pixi-filters';
 import { AnimationPath } from '@/utils/animation-path';
 import type { AnimatedCanvasObject } from '@/types/canvas';
+import * as PIXI from 'pixi.js';
 
 // Cache for loaded image textures to prevent reloading during drag operations
 const imageTextureCache = new Map<string, Texture>();
@@ -42,6 +44,80 @@ export const smoothLinePosition = (value: number): number => {
   // For smooth lines, we want to allow sub-pixel positioning to enable anti-aliasing
   // Only apply minimal rounding to avoid floating point precision issues
   return Math.round(value * 100) / 100;
+};
+
+/**
+ * Apply shadow filter to a PIXI container based on element shadow properties
+ */
+export const applyShadowToContainer = (container: PIXI.Container, element: AnimatedCanvasObject) => {
+  if (!element.shadowEnabled) {
+    // Remove existing shadow filter if shadows are disabled
+    removeShadowFromContainer(container);
+    return;
+  }
+
+  // Create or update drop shadow filter using pixi-filters
+  const shadowFilter = new DropShadowFilter({
+    color: parseColor(element.shadowColor || '#000000'),
+    alpha: element.shadowOpacity || 0.5,
+    blur: element.shadowBlur || 0,
+    offset: {
+      x: element.shadowOffsetX || 10,
+      y: element.shadowOffsetY || 10
+    },
+    quality: 4, // Good balance between quality and performance
+    shadowOnly: false // Show both the element and its shadow
+  });
+
+  // Apply or update the shadow filter
+  const existingFilters = Array.isArray(container.filters) ? container.filters : (container.filters ? [container.filters] : []);
+  const nonShadowFilters = existingFilters.filter((filter: PIXI.Filter) => !(filter instanceof DropShadowFilter));
+  container.filters = [...nonShadowFilters, shadowFilter];
+};
+
+/**
+ * Remove shadow filter from a PIXI container
+ */
+export const removeShadowFromContainer = (container: PIXI.Container) => {
+  if (!container.filters) return;
+  
+  // Remove only DropShadowFilter instances, keep other filters
+  const filtersArray = Array.isArray(container.filters) ? container.filters : [container.filters];
+  const nonShadowFilters = filtersArray.filter((filter: PIXI.Filter) => !(filter instanceof DropShadowFilter));
+  
+  if (nonShadowFilters.length > 0) {
+    container.filters = nonShadowFilters;
+  } else {
+    // @ts-expect-error: PIXI allows setting filters to null to clear them
+    container.filters = null;
+  }
+};
+
+/**
+ * Update shadow properties for an existing container
+ * This is optimized to avoid recreating filters unnecessarily
+ */
+export const updateShadowForContainer = (container: PIXI.Container, element: AnimatedCanvasObject) => {
+  if (!element.shadowEnabled) {
+    removeShadowFromContainer(container);
+    return;
+  }
+
+  // Find existing shadow filter
+  const filtersArray = Array.isArray(container.filters) ? container.filters : (container.filters ? [container.filters] : []);
+  const existingShadowFilter = filtersArray.find((filter: PIXI.Filter) => filter instanceof DropShadowFilter) as DropShadowFilter;
+  
+  if (existingShadowFilter) {
+    // Update existing filter properties
+    existingShadowFilter.color = parseColor(element.shadowColor || '#000000');
+    existingShadowFilter.alpha = element.shadowOpacity || 0.5;
+    existingShadowFilter.blur = element.shadowBlur || 0;
+    existingShadowFilter.offset.x = element.shadowOffsetX || 10;
+    existingShadowFilter.offset.y = element.shadowOffsetY || 10;
+  } else {
+    // No existing filter, create new one
+    applyShadowToContainer(container, element);
+  }
 };
 
 export const drawArrowhead = (

@@ -6,7 +6,7 @@ import { Container, Graphics, Rectangle, Text } from 'pixi.js';
 import type { FederatedPointerEvent } from 'pixi.js';
 import type { AnimatedCanvasObject } from '@/types/canvas';
 import { useImperativeHandle, forwardRef, useState, useRef, useEffect, useCallback } from 'react';
-import { drawShape } from '@/utils/drawing-utils';
+import { drawShape, applyShadowToContainer, updateShadowForContainer } from '@/utils/drawing-utils';
 import { createNewObject } from '@/lib/canvas-object-factory';
 import ElementSelect from './element-select';
 import HoverOutline from './hover-outline';
@@ -670,6 +670,16 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       window.removeEventListener('corner-square-resize', handleCornerSquareResize as EventListener);
     };
   }, [onElementResize]);
+
+  // Update shadows when element properties change
+  useEffect(() => {
+    elements.forEach((element) => {
+      const container = shapeRefs.current[element.id];
+      if (container) {
+        updateShadowForContainer(container, element);
+      }
+    });
+  }, [elements]); // Re-run when elements array changes (properties updated)
 
   // Check if a point is within a resize handle
   const getResizeHandleAtPoint = (element: AnimatedCanvasObject, x: number, y: number): ResizeHandle => {
@@ -1615,7 +1625,11 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                       onPointerOver={handleElementMouseMove(el.id)}
                       onPointerOut={handleElementMouseLeave(el.id)}
                       ref={(node) => {
-                        if (node) shapeRefs.current[el.id] = node;
+                        if (node) {
+                          shapeRefs.current[el.id] = node;
+                          // Apply shadow when container is created
+                          applyShadowToContainer(node, el);
+                        }
                       }}
                     >
                       <pixiGraphics draw={(g) => drawShape(g, el)} />
@@ -1733,7 +1747,11 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                 onPointerOver={handleElementMouseMove(el.id)}
                 onPointerOut={handleElementMouseLeave(el.id)}
                 ref={(node) => {
-                  if (node) shapeRefs.current[el.id] = node;
+                  if (node) {
+                    shapeRefs.current[el.id] = node;
+                    // Apply shadow when container is created
+                    applyShadowToContainer(node, el);
+                  }
                 }}
               >
                 <pixiGraphics draw={(g) => drawShape(g, el)} />
