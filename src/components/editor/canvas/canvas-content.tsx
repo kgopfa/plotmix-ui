@@ -16,57 +16,93 @@ export const CanvasContent = forwardRef<Viewport | null, { children: React.React
 
     const viewport = viewportRef.current;
 
-    // Configure viewport with all scrolling and interaction capabilities
+    // Configure viewport with enhanced zoom capabilities like Figma/Photoshop
     viewport
       .drag({
         mouseButtons: 'all' // Allow all mouse buttons for dragging
       })
-      .pinch() // Touch/trackpad pinch to zoom
+      .pinch({
+        percent: 2, // More sensitive pinch for trackpad
+        center: null // Let pinch center around the gesture center
+      })
       .wheel({
-        smooth: 3, // Smooth wheel scrolling
-        percent: 0.1, // Zoom sensitivity (10% per wheel step)
+        smooth: 5, // Increased smoothness for wheel scrolling
+        percent: 0.15, // Better zoom sensitivity (15% per wheel step)
         reverse: false, // Normal zoom direction (wheel up = zoom in)
         trackpadPinch: true, // Enable trackpad pinch gestures
         wheelZoom: true, // Enable zoom with wheel
-        interrupt: true // Allow interrupting animations
+        interrupt: true, // Allow interrupting animations
+        center: null, // Zoom towards cursor position (Figma-like behavior)
+        lineHeight: 40 // Better line height for smooth scrolling
       })
       .decelerate({
-        friction: 0.88, // Momentum scrolling friction (lower = more momentum)
-        bounce: 0.8, // Bounce back when hitting edges
-        minSpeed: 0.01 // Minimum speed before stopping
+        friction: 0.92, // Higher friction for more controlled movement
+        bounce: 0.6, // Reduced bounce for more professional feel
+        minSpeed: 0.02 // Slightly higher min speed for better feel
       })
       .clampZoom({ 
-        minScale: 0.1, 
-        maxScale: 8,
-        minWidth: 100,
-        minHeight: 100
+        minScale: 0.02, // Allow zooming out much further like Figma
+        maxScale: 100, // Allow zooming in much closer like Photoshop
+        minWidth: 10,
+        minHeight: 10
       })
       .clamp({
-        left: -10000, // Allow scrolling beyond world bounds for better UX
-        top: -10000,
-        right: 110000, // World width + padding  
-        bottom: 110000 // World height + padding
+        left: -50000, // Expanded bounds for better navigation
+        top: -50000,
+        right: 150000,
+        bottom: 150000
       });
 
-    // Custom wheel handling for panning (separate from zoom)
+    // Enhanced wheel handling for better zoom and pan experience
     const handleWheel = (e: WheelEvent) => {
       // Only handle if the target is the canvas or its children
       const target = e.target as HTMLElement;
       if (!target.closest('canvas')) return;
       
-      if (e.shiftKey) {
+      // Detect if this is a pinch gesture (wheel with ctrlKey on Mac trackpads)
+      const isPinchGesture = e.ctrlKey || e.metaKey;
+      
+      if (isPinchGesture) {
+        // Enhanced zoom behavior - zoom towards cursor position
+        e.preventDefault();
+        
+        // Calculate zoom factor - more responsive like Figma
+        let zoomFactor = 1;
+        const deltaY = e.deltaY;
+        
+        // Determine zoom factor based on delta
+        if (Math.abs(deltaY) < 10) {
+          // Small delta - fine zoom control
+          zoomFactor = deltaY > 0 ? 0.95 : 1.05;
+        } else if (Math.abs(deltaY) < 50) {
+          // Medium delta - normal zoom
+          zoomFactor = deltaY > 0 ? 0.85 : 1.15;
+        } else {
+          // Large delta - fast zoom
+          zoomFactor = deltaY > 0 ? 0.7 : 1.3;
+        }
+        
+        const currentScale = viewport.scale.x;
+        const newScale = Math.min(Math.max(currentScale * zoomFactor, 0.02), 100);
+        
+        // Apply zoom
+        const zoomPercent = (newScale / currentScale - 1);
+        viewport.zoom(zoomPercent, true);
+        
+      } else if (e.shiftKey) {
         // Horizontal panning with Shift+wheel
         e.preventDefault();
-        viewport.x -= e.deltaY * 2;
-      } else if (!e.ctrlKey && !e.metaKey) {
+        const panSpeed = Math.abs(e.deltaY) > 10 ? e.deltaY * 3 : e.deltaY * 1.5;
+        viewport.x -= panSpeed;
+      } else {
         // Vertical panning with normal wheel (when not zooming)
         e.preventDefault();
-        viewport.y -= e.deltaY * 2;
+        const panSpeed = Math.abs(e.deltaY) > 10 ? e.deltaY * 3 : e.deltaY * 1.5;
+        viewport.y -= panSpeed;
       }
-      // Let ctrl+wheel and cmd+wheel pass through to the built-in zoom
     };
 
-    // Keyboard navigation
+    // Enhanced keyboard navigation
     const handleKeyDown = (e: KeyboardEvent) => {
       // Only handle if canvas area is focused or no input is focused
       const activeElement = document.activeElement;
@@ -74,7 +110,9 @@ export const CanvasContent = forwardRef<Viewport | null, { children: React.React
         return; // Don't interfere with text input
       }
 
-      const scrollSpeed = e.shiftKey ? 100 : 30;
+      const scrollSpeed = e.shiftKey ? 200 : 50; // Faster navigation
+      const fastZoomFactor = e.shiftKey ? 0.5 : 0.8; // Fast zoom with shift
+      const zoomFactor = e.shiftKey ? 2 : 1.25; // Regular zoom
       
       switch (e.key) {
         case 'ArrowUp':
@@ -97,21 +135,100 @@ export const CanvasContent = forwardRef<Viewport | null, { children: React.React
           e.preventDefault();
           viewport.animate({
             position: { x: 0, y: 0 }, // Center of world
-            time: 500
+            time: 400,
+            ease: 'easeOutQuart'
           });
+          break;
+        case '=':
+        case '+': // Zoom in
+          if (e.metaKey || e.ctrlKey) {
+            e.preventDefault();
+            const currentScale = viewport.scale.x;
+            const newScale = Math.min(currentScale * zoomFactor, 100);
+            viewport.animate({
+              scale: newScale,
+              time: 200,
+              ease: 'easeOutQuart'
+            });
+          }
+          break;
+        case '-': // Zoom out
+          if (e.metaKey || e.ctrlKey) {
+            e.preventDefault();
+            const currentScale = viewport.scale.x;
+            const newScale = Math.max(currentScale * fastZoomFactor, 0.02);
+            viewport.animate({
+              scale: newScale,
+              time: 200,
+              ease: 'easeOutQuart'
+            });
+          }
+          break;
+        case '0': // Reset zoom to 100%
+          if (e.metaKey || e.ctrlKey) {
+            e.preventDefault();
+            viewport.animate({
+              scale: 1,
+              time: 300,
+              ease: 'easeOutQuart'
+            });
+          }
           break;
       }
     };
 
     // Add event listeners to the canvas specifically
     const canvas = app.renderer.view.canvas as HTMLCanvasElement;
+    
+    // Add touch handling for mobile pinch-to-zoom
+    let initialPinchDistance = 0;
+    let initialScale = 1;
+    
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        initialPinchDistance = Math.sqrt(
+          Math.pow(touch2.clientX - touch1.clientX, 2) +
+          Math.pow(touch2.clientY - touch1.clientY, 2)
+        );
+        initialScale = viewport.scale.x;
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const currentDistance = Math.sqrt(
+          Math.pow(touch2.clientX - touch1.clientX, 2) +
+          Math.pow(touch2.clientY - touch1.clientY, 2)
+        );
+        
+        if (initialPinchDistance > 0) {
+          const pinchScale = currentDistance / initialPinchDistance;
+          const newScale = Math.min(Math.max(initialScale * pinchScale, 0.02), 100);
+          
+          // Apply zoom for touch/pinch gesture
+          viewport.setZoom(newScale, true);
+        }
+      }
+    };
+
+    const handleTouchEnd = () => {
+      initialPinchDistance = 0;
+      initialScale = 1;
+    };
+    
     if (canvas) {
       // Make canvas focusable
       canvas.setAttribute('tabindex', '0');
       canvas.style.outline = 'none'; // Remove focus outline
       
-      // Add wheel listener to document but check target
-      document.addEventListener('wheel', handleWheel, { passive: false });
+      // Add wheel listener with passive: false for preventDefault
+      canvas.addEventListener('wheel', handleWheel, { passive: false });
       // Add keyboard listener to document
       document.addEventListener('keydown', handleKeyDown);
       
@@ -119,6 +236,11 @@ export const CanvasContent = forwardRef<Viewport | null, { children: React.React
       canvas.addEventListener('mousedown', () => {
         canvas.focus();
       });
+
+      // Add touch event listeners
+      canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+      canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+      canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
     }
 
     // Center the viewport to the middle of the world on initial load
@@ -129,9 +251,11 @@ export const CanvasContent = forwardRef<Viewport | null, { children: React.React
     // Cleanup
     return () => {
       if (canvas) {
-        document.removeEventListener('wheel', handleWheel);
+        canvas.removeEventListener('wheel', handleWheel);
         document.removeEventListener('keydown', handleKeyDown);
-        canvas.removeEventListener('mousedown', () => {});
+        canvas.removeEventListener('touchstart', handleTouchStart);
+        canvas.removeEventListener('touchmove', handleTouchMove);
+        canvas.removeEventListener('touchend', handleTouchEnd);
       }
     };
 

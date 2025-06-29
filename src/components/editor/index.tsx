@@ -88,6 +88,11 @@ export default function EditorCanvas() {
   // Canvas zoom state - will migrate this to UI store in next iteration
   const [canvasZoom, setCanvasZoom] = useState(1);
 
+  // Handle zoom changes from the Canvas component
+  const handleZoomChange = useCallback((newZoom: number) => {
+    setCanvasZoom(newZoom);
+  }, []);
+
   // Element snapping functionality - only keep what's needed for canvas operations
   const {
     clearGuides: clearElementSnapGuides,
@@ -176,91 +181,8 @@ export default function EditorCanvas() {
     }
   }, [dimensions, containerRef]);
 
-  // Zoom and gesture handling
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    let lastPinchDistance = 0;
-
-    // Handle mouse wheel zoom (Cmd+scroll)
-    const handleWheel = (e: WheelEvent) => {
-      if (e.metaKey || e.ctrlKey) { // Cmd on Mac, Ctrl on Windows/Linux
-        e.preventDefault();
-
-        const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1; // Scroll down = zoom out, scroll up = zoom in
-        const newZoom = Math.min(Math.max(canvasZoom * zoomFactor, 0.1), 5); // Clamp between 0.1x and 5x
-
-        // Use the canvas's center-based zoom instead of just setting state
-        if (canvasRef.current) {
-          canvasRef.current.setZoom(newZoom);
-        } else {
-          setCanvasZoom(newZoom);
-        }
-      }
-    };
-
-    // Handle trackpad pinch gestures
-    const handleTouchStart = (e: TouchEvent) => {
-      if (e.touches.length === 2) {
-        const touch1 = e.touches[0];
-        const touch2 = e.touches[1];
-        lastPinchDistance = Math.sqrt(
-          Math.pow(touch2.clientX - touch1.clientX, 2) +
-          Math.pow(touch2.clientY - touch1.clientY, 2)
-        );
-      }
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches.length === 2) {
-        e.preventDefault(); // Prevent default pinch behavior
-
-        const touch1 = e.touches[0];
-        const touch2 = e.touches[1];
-        const currentDistance = Math.sqrt(
-          Math.pow(touch2.clientX - touch1.clientX, 2) +
-          Math.pow(touch2.clientY - touch1.clientY, 2)
-        );
-
-        if (lastPinchDistance > 0) {
-          const rawPinchScale = currentDistance / lastPinchDistance;
-          // Dampen the pinch sensitivity - only apply 30% of the raw scale change
-          const pinchScale = 1 + (rawPinchScale - 1) * 0.1;
-          const newZoom = Math.min(Math.max(canvasZoom * pinchScale, 0.1), 5);
-
-          // Use the canvas's center-based zoom instead of just setting state
-          if (canvasRef.current) {
-            canvasRef.current.setZoom(newZoom);
-          } else {
-            setCanvasZoom(newZoom);
-          }
-        }
-
-        lastPinchDistance = currentDistance;
-      }
-    };
-
-    const handleTouchEnd = (e: TouchEvent) => {
-      if (e.touches.length < 2) {
-        lastPinchDistance = 0;
-      }
-    };
-
-    // Add event listeners
-    container.addEventListener('wheel', handleWheel, { passive: false });
-    container.addEventListener('touchstart', handleTouchStart, { passive: false });
-    container.addEventListener('touchmove', handleTouchMove, { passive: false });
-    container.addEventListener('touchend', handleTouchEnd, { passive: false });
-
-    // Cleanup
-    return () => {
-      container.removeEventListener('wheel', handleWheel);
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchmove', handleTouchMove);
-      container.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [canvasZoom, containerRef]);
+  // Note: Zoom handling is now done by the PIXI viewport in the Canvas component
+  // This provides better performance and Figma-like zoom behavior
 
   // Update groups when groups array changes
   useEffect(() => {
@@ -1096,14 +1018,16 @@ export default function EditorCanvas() {
               )}
 
               {/* Navigation Help */}
-              <div className="bg-black/75 text-white text-xs rounded p-2 max-w-[200px]">
+              <div className="bg-black/75 text-white text-xs rounded p-2 max-w-[220px]">
                 <div className="font-semibold mb-1">Navigation:</div>
                 <div>• Drag to pan</div>
                 <div>• Wheel to scroll up/down</div>
                 <div>• Shift+Wheel for left/right</div>
-                <div>• Ctrl+Wheel to zoom</div>
+                <div>• Ctrl/Cmd+Wheel to zoom</div>
+                <div>• Pinch to zoom (trackpad)</div>
                 <div>• Arrow keys to navigate</div>
                 <div>• Spacebar to center</div>
+                <div>• Ctrl/Cmd + 0 to reset zoom</div>
               </div>
             </div>
 
@@ -1114,6 +1038,8 @@ export default function EditorCanvas() {
                   width: Math.max(dimensions.width * 3, 4000), // Canvas fills entire scrollable area
                   height: Math.max(dimensions.height * 3, 4000)
                 }}
+                zoom={canvasZoom}
+                onZoomChange={handleZoomChange}
               />
             )}
           </div>

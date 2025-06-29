@@ -640,18 +640,20 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     const handleZoomChange = () => {
       const currentScale = viewport.scale.x;
       setCurrentZoom(currentScale);
-      if (onZoomChange && Math.abs(currentScale - zoom) > 0.01) {
+      if (onZoomChange) {
         onZoomChange(currentScale);
       }
     };
 
     // Listen for zoom changes from user interactions (wheel, pinch, etc.)
     viewport.on('zoomed', handleZoomChange);
+    viewport.on('moved', handleZoomChange); // Also listen for viewport moves which can include zoom
 
     return () => {
       viewport.off('zoomed', handleZoomChange);
+      viewport.off('moved', handleZoomChange);
     };
-  }, [zoom, onZoomChange]);
+  }, [onZoomChange]);
 
   // Add this useEffect in your Canvas component
   useEffect(() => {
