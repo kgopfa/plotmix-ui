@@ -3,7 +3,7 @@ import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
 import { ContextMenu } from '../canvas/context-menu';
 import { contextMenuManager } from '@/lib/context-menu-manager';
-import { useSelectionStore } from '@/stores/useSelectionStore';
+import { useSelectionStore } from '@/stores/use-selection-store';
 
 interface ContextMenuPosition {
   x: number;

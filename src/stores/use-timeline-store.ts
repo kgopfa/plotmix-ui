@@ -8,7 +8,7 @@ import { TimelineManager } from '@/lib/timeline-manager';
 import { AnimatedCanvasObject, CanvasGroup, ElementAnimation } from '@/types/canvas';
 import { TimelineTrackData } from '@/types/timeline';
 import { calculateEffectiveEndTime, calculateEffectiveDuration } from '@/utils/animation-utils';
-import { useCanvasStore } from '@/stores/useCanvasStore';
+import { useCanvasStore } from '@/stores/use-canvas-store';
 
 // Enable Immer MapSet plugin for Map support
 enableMapSet();

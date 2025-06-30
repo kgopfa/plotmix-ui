@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useCanvasStore } from '@/stores/useCanvasStore';
+import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useShallow } from 'zustand/react/shallow';
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 

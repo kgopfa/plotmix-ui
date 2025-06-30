@@ -2,7 +2,7 @@ import React from 'react';
 import { extend } from '@pixi/react';
 import { Container, Graphics } from 'pixi.js';
 import * as PIXI from 'pixi.js';
-import { useUIStore } from '@/stores/useUIStore';
+import { useUIStore } from '@/stores/use-ui-store';
 
 extend({ Container, Graphics });
 

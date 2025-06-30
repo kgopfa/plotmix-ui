@@ -1,4 +1,4 @@
-import { useToolState, useToolActions } from '@/stores/useUIStore';
+import { useToolState, useToolActions } from '@/stores/use-ui-store';
 import type { ToolType } from '@/types/tool';
 
 export function Toolbar() {

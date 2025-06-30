@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { AnimatedCanvasObject } from '@/types/canvas';
-import { useUIStore, useKeyboardShortcutsStore } from '@/stores/useUIStore';
-import { useSelectionStore } from '@/stores/useSelectionStore';
-import { useCanvasOperations } from '@/stores/useCanvasStore';
+import { useUIStore, useKeyboardShortcutsStore } from '@/stores/use-ui-store';
+import { useSelectionStore } from '@/stores/use-selection-store';
+import { useCanvasOperations } from '@/stores/use-canvas-store';
 
 interface UseKeyboardShortcutsProps {
   onSelectAll?: () => void;

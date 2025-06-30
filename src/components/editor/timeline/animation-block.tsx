@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { ElementAnimation } from '@/types/canvas';
-import { useTimelineStore } from '@/stores/useTimelineStore';
+import { useTimelineStore } from '@/stores/use-timeline-store';
 
 interface AnimationBlockProps {
   animation: ElementAnimation;

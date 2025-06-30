@@ -3,10 +3,10 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { TimelineManager } from '@/lib/timeline-manager';
-import { useSelectionStore } from '@/stores/useSelectionStore';
-import { useCanvasElements, useCanvasGroups } from '@/stores/useCanvasStore';
-import { useUIStore } from '@/stores/useUIStore';
-import { useTimelineSync } from '@/stores/useTimelineStore';
+import { useSelectionStore } from '@/stores/use-selection-store';
+import { useCanvasElements, useCanvasGroups } from '@/stores/use-canvas-store';
+import { useUIStore } from '@/stores/use-ui-store';
+import { useTimelineSync } from '@/stores/use-timeline-store';
 import { useCanvasMigration } from '@/hooks/use-canvas-migration';
 import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
 import { SceneExplorer } from './panels/scene-explorer';

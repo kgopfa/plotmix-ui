@@ -1,12 +1,12 @@
 import { useEffect, useCallback, useState } from 'react';
-import { useCanvasStore } from '@/stores/useCanvasStore';
+import { useCanvasStore } from '@/stores/use-canvas-store';
 import { 
   useTimelineStore, 
   useTimelineSync, 
   useTimelinePlayback, 
   useTimelineTracks,
   useTimelineAnimations 
-} from '@/stores/useTimelineStore';
+} from '@/stores/use-timeline-store';
 import { ElementAnimation } from '@/types/canvas';
 import type { CanvasRef } from '@/components/editor/canvas';
 

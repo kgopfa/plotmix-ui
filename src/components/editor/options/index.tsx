@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { useSelectionStore } from '@/stores/useSelectionStore';
-import { useUIStore } from '@/stores/useUIStore';
+import { useSelectionStore } from '@/stores/use-selection-store';
+import { useUIStore } from '@/stores/use-ui-store';
 import { useGridSnapping } from '@/hooks/use-grid-snapping';
 import { useElementSnapping } from '@/hooks/use-element-snapping';
 import { SnappingOptions } from './snap-options';

@@ -10,7 +10,7 @@ import { GroupAnimationsTab } from './tabs/group-animations';
 import { useAnimationHandlers } from '@/hooks/use-animation-handlers';
 import { useGroupAnimationHandlers } from '@/hooks/use-group-animation-handlers';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
-import { useSelectionStore } from '@/stores/useSelectionStore';
+import { useSelectionStore } from '@/stores/use-selection-store';
 
 interface InspectorProps {
   onInspectorChange: (

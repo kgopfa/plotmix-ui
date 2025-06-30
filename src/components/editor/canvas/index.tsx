@@ -29,10 +29,10 @@ import { eventManager } from '@/lib/event-manager';
 import { contextMenuManager } from '@/lib/context-menu-manager';
 
 // Import Zustand stores
-import { useCanvasElements, useCanvasGroups, useCanvasOperations } from '@/stores/useCanvasStore';
-import { useSelectionStore } from '@/stores/useSelectionStore';
-import { useUIStore } from '@/stores/useUIStore';
-import { useTimelineStore } from '@/stores/useTimelineStore';
+import { useCanvasElements, useCanvasGroups, useCanvasOperations } from '@/stores/use-canvas-store';
+import { useSelectionStore } from '@/stores/use-selection-store';
+import { useUIStore } from '@/stores/use-ui-store';
+import { useTimelineStore } from '@/stores/use-timeline-store';
 
 extend({ Container, Graphics, Text });
 

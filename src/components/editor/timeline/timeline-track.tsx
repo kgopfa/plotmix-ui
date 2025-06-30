@@ -1,5 +1,5 @@
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
-import { useSelectionStore } from '@/stores/useSelectionStore';
+import { useSelectionStore } from '@/stores/use-selection-store';
 import { AnimationBlock } from './animation-block';
 
 const MAX_DURATION_SECONDS = 120;

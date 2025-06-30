@@ -6,8 +6,8 @@ import {
 } from '@/types/canvas';
 import { useState, useEffect, useRef } from 'react';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
-import { useTimelineStore } from '@/stores/useTimelineStore';
-import { useCanvasStore } from '@/stores/useCanvasStore';
+import { useTimelineStore } from '@/stores/use-timeline-store';
+import { useCanvasStore } from '@/stores/use-canvas-store';
 
 interface AnimationsTabProps {
   selectedElement: AnimatedCanvasObject;

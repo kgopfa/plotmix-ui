@@ -1,9 +1,9 @@
 import { useRef, useState, useMemo, useEffect } from 'react';
 import { TimelineTrack } from '@/components/editor/timeline/timeline-track';
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
-import { useCanvasElements, useCanvasGroups } from '@/stores/useCanvasStore';
-import { useTimelineStore } from '@/stores/useTimelineStore';
-import { usePanelState, usePanelActions } from '@/stores/useUIStore';
+import { useCanvasElements, useCanvasGroups } from '@/stores/use-canvas-store';
+import { useTimelineStore } from '@/stores/use-timeline-store';
+import { usePanelState, usePanelActions } from '@/stores/use-ui-store';
 import { useShallow } from 'zustand/react/shallow';
 
 // Remove all props - Timeline is now self-contained!
