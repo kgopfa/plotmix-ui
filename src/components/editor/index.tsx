@@ -23,6 +23,7 @@ import { useTimelineIntegration } from '@/hooks/use-timeline-integration';
 import { useElementSnapping } from '@/hooks/use-element-snapping';
 import { OptionsBar } from './options';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
+import { ProjectToolbar } from './project-toolbar';
 
 
 export default function EditorCanvas() {
@@ -916,6 +917,9 @@ export default function EditorCanvas() {
 
   return (
     <div className="h-screen w-screen flex flex-col">
+      {/* Project Toolbar */}
+      <ProjectToolbar />
+      
       {/* Options Bar */}
       <OptionsBar
         canvasZoom={canvasZoom}

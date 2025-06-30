@@ -158,6 +158,27 @@ interface TimelineStoreActionsExtended {
   updateAnimationFromTimeline: (animationId: string, elementId: string, newEffectiveDuration: number, startTime: number) => void;
   getEffectiveDuration: (animationId: string) => number;
   getAnimationState: (animationId: string) => AnimationState | null;
+  
+  // Project save/load support
+  getProjectData: () => {
+    elements: AnimatedCanvasObject[];
+    groups: CanvasGroup[];
+    animationStates: Map<string, AnimationState>;
+    scale: number;
+    duration: number;
+    currentTime: number;
+    managerType: 'enhanced' | 'individual';
+  };
+  
+  loadProjectData: (data: {
+    elements: AnimatedCanvasObject[];
+    groups: CanvasGroup[];
+    animationStates: Record<string, AnimationState>;
+    scale: number;
+    duration: number;
+    currentTime: number;
+    managerType: 'enhanced' | 'individual';
+  }) => void;
 }
 
 type TimelineStore = TimelineStoreState & TimelineStoreActions & TimelineStoreActionsExtended;
@@ -1051,6 +1072,58 @@ export const useTimelineStore = create<TimelineStore>()(
 
       getAnimationState: (animationId: string) => {
         return get().animationStates.get(animationId) ?? null;
+      },
+
+      // Project save/load support
+      getProjectData: () => {
+        const state = get();
+        return {
+          elements: state.elements,
+          groups: state.groups,
+          animationStates: state.animationStates,
+          scale: state.ui.scale,
+          duration: state.playback.totalDuration,
+          currentTime: state.playback.currentTime,
+          managerType: state.currentManagerType,
+        };
+      },
+
+      loadProjectData: (data) => {
+        set(produce((state) => {
+          // Load core data - create deep copies to avoid frozen object issues
+          state.elements = data.elements.map(element => ({
+            ...element,
+            animations: element.animations.map(anim => ({ ...anim }))
+          }));
+          state.groups = data.groups.map(group => ({
+            ...group,
+            animations: group.animations.map(anim => ({ ...anim }))
+          }));
+          
+          // Clear and reload animation states
+          state.animationStates.clear();
+          Object.entries(data.animationStates).forEach(([key, value]) => {
+            // Create a fresh copy to avoid frozen object issues
+            state.animationStates.set(key, {
+              baseDuration: value.baseDuration,
+              repeat: value.repeat,
+              repeatDelay: value.repeatDelay,
+              yoyo: value.yoyo,
+              effectiveDuration: value.effectiveDuration,
+              effectiveEndTime: value.effectiveEndTime,
+            });
+          });
+          
+          // Update timeline UI
+          state.ui.scale = data.scale;
+          state.playback.totalDuration = data.duration;
+          state.playback.currentTime = data.currentTime;
+          state.currentManagerType = data.managerType;
+        }));
+        
+        // Update tracks and rebuild timeline
+        get().updateTracks();
+        get().buildGSAPTimeline();
       },
     })
 );
