@@ -66,7 +66,6 @@ export class ProjectManager {
         scale: timelineState.ui.scale,
         duration: timelineState.playback.totalDuration,
         currentTime: timelineState.playback.currentTime,
-        managerType: timelineState.currentManagerType,
         // Convert Map to Record for JSON serialization
         animationStates: Object.fromEntries(timelineState.animationStates),
       };
@@ -209,7 +208,6 @@ export class ProjectManager {
       scale: projectData.timeline.scale,
       duration: projectData.timeline.duration,
       currentTime: projectData.timeline.currentTime,
-      managerType: projectData.timeline.managerType,
     });
     
     // 4. Load UI state (optional)
@@ -320,9 +318,6 @@ export class ProjectManager {
       }
       if (typeof data.timeline.duration !== 'number') {
         errors.push({ field: 'timeline.duration', message: 'Timeline duration must be a number' });
-      }
-      if (!['enhanced', 'individual'].includes(data.timeline.managerType)) {
-        errors.push({ field: 'timeline.managerType', message: 'Invalid timeline manager type' });
       }
     }
 

@@ -34,7 +34,6 @@ export interface ProjectTimeline {
   scale: number;
   duration: number;
   currentTime: number;
-  managerType: 'enhanced' | 'individual';
   animationStates: Record<string, AnimationState>; // Serialized from Map
 }
 

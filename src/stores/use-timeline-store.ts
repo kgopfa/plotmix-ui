@@ -3,7 +3,6 @@ import { produce, enableMapSet } from 'immer';
 import { useShallow } from 'zustand/react/shallow';
 import { TimeManager, TimeManagerState } from '@/lib/time-manager';
 import { GSAPTimelineManagerEnhanced } from '@/lib/gsap-timeline-manager-enhanced';
-import { IndividualTimelineManager } from '@/lib/individual-timeline-manager';
 import { TimelineManager } from '@/lib/timeline-manager';
 import { AnimatedCanvasObject, CanvasGroup, ElementAnimation } from '@/types/canvas';
 import { TimelineTrackData } from '@/types/timeline';
@@ -61,9 +60,7 @@ interface TimelineStoreState {
   // Timeline managers
   timeManager: TimeManager;
   gsapManager: GSAPTimelineManagerEnhanced;
-  individualManager: IndividualTimelineManager;
   timelineManager: TimelineManager;
-  currentManagerType: 'enhanced' | 'individual';
   
   // Real-time subscription state
   subscriptions: {
@@ -139,19 +136,6 @@ interface TimelineStoreActions {
 }
 
 interface TimelineStoreActionsExtended {
-  // Individual Timeline Manager methods
-  updateElementAnimations: (elementId: string, animations: ElementAnimation[], allElements: AnimatedCanvasObject[]) => void;
-  updateGroupAnimations: (groupId: string, animations: ElementAnimation[], group: CanvasGroup) => void;
-  batchUpdateElements: (updates: Array<{elementId: string, animations: ElementAnimation[]}>, allElements: AnimatedCanvasObject[]) => void;
-  batchUpdateGroups: (updates: Array<{groupId: string, animations: ElementAnimation[], group: CanvasGroup}>) => void;
-  
-  // Manager selection
-  setAnimationManager: (useIndividual: boolean) => void;
-  getCurrentManagerType: () => 'enhanced' | 'individual';
-  
-  // Enhanced performance monitoring for Phase 2
-  getIndividualTimelineStats: () => object;
-  
   // Animation duration management
   updateAnimationDuration: (animationId: string, elementId: string, baseDuration: number) => void;
   updateAnimationRepeat: (animationId: string, elementId: string, repeat: number, repeatDelay?: number, yoyo?: boolean) => void;
@@ -167,7 +151,6 @@ interface TimelineStoreActionsExtended {
     scale: number;
     duration: number;
     currentTime: number;
-    managerType: 'enhanced' | 'individual';
   };
   
   loadProjectData: (data: {
@@ -177,7 +160,6 @@ interface TimelineStoreActionsExtended {
     scale: number;
     duration: number;
     currentTime: number;
-    managerType: 'enhanced' | 'individual';
   }) => void;
 }
 
@@ -214,9 +196,7 @@ export const useTimelineStore = create<TimelineStore>()(
       ui: initialUIState,
       timeManager: TimeManager.getInstance(),
       gsapManager: new GSAPTimelineManagerEnhanced(),
-      individualManager: new IndividualTimelineManager(),
       timelineManager: TimelineManager.getInstance(),
-      currentManagerType: 'enhanced',
       subscriptions: {
         timeManager: null,
         gsapManager: null,
@@ -748,156 +728,17 @@ export const useTimelineStore = create<TimelineStore>()(
       // Enhanced performance monitoring
       getAnimationPerformance: () => {
         const state = get();
-        const managerType = state.getCurrentManagerType();
-        
-        if (managerType === 'individual') {
-          return state.individualManager.getPerformanceStats();
-        } else {
-          return state.gsapManager.getPerformanceMetrics();
-        }
+        return state.gsapManager.getPerformanceMetrics();
       },
 
       getCacheStatistics: () => {
         const state = get();
-        const managerType = state.getCurrentManagerType();
-        
-        if (managerType === 'individual') {
-          const stats = state.individualManager.getPerformanceStats();
-          return {
-            type: 'individual',
-            poolStats: stats.poolStats,
-            activeElements: stats.activeElements,
-            activeGroups: stats.activeGroups,
-            totalAnimations: stats.totalAnimations
-          };
-        } else {
-          return state.gsapManager.getCacheStats();
-        }
+        return state.gsapManager.getCacheStats();
       },
 
       generatePerformanceReport: () => {
         const state = get();
-        const managerType = state.getCurrentManagerType();
-        
-        if (managerType === 'individual') {
-          return state.individualManager.generatePerformanceReport();
-        } else {
-          return state.gsapManager.generatePerformanceReport();
-        }
-      },
-
-      buildTimeline: (elements: AnimatedCanvasObject[], groups: CanvasGroup[], useIndividualManager = false) => {
-        const state = get();
-        
-        try {
-          if (useIndividualManager) {
-            console.log('Building timeline with Individual Timeline Manager');
-            
-            // Use Individual Timeline Manager (Phase 2)
-            const individualManager = state.individualManager;
-            
-            // Clear existing timelines
-            individualManager.clearTimeline();
-            
-            // Batch update all elements
-            const elementUpdates = elements.map(element => ({
-              elementId: element.id,
-              animations: element.animations || []
-            }));
-            
-            const groupUpdates = groups.map(group => ({
-              groupId: group.id,
-              animations: group.animations || [],
-              group
-            }));
-            
-            individualManager.batchUpdateElements(elementUpdates, elements);
-            individualManager.batchUpdateGroups(groupUpdates);
-            
-            console.log('Individual Timeline Manager build complete');
-          } else {
-            console.log('Building timeline with Enhanced Timeline Manager');
-            
-            // Use Enhanced Timeline Manager (Phase 1)
-            state.gsapManager.buildAnimationTimeline(elements, groups);
-            
-            console.log('Enhanced Timeline Manager build complete');
-          }
-          
-          // Update store state
-          set(produce((draft) => {
-            draft.elements = elements;
-            draft.groups = groups;
-          }));
-          
-        } catch (error) {
-          console.error('Error building timeline:', error);
-        }
-      },
-
-      // Individual Timeline Manager methods
-      updateElementAnimations: (elementId, animations, allElements) => {
-        const state = get();
-        try {
-          state.individualManager.updateElementAnimations(elementId, animations, allElements);
-          console.log(`Updated animations for element ${elementId}`);
-        } catch (error) {
-          console.error(`Error updating element ${elementId}:`, error);
-        }
-      },
-
-      updateGroupAnimations: (groupId, animations, group) => {
-        const state = get();
-        try {
-          state.individualManager.updateGroupAnimations(groupId, animations, group);
-          console.log(`Updated animations for group ${groupId}`);
-        } catch (error) {
-          console.error(`Error updating group ${groupId}:`, error);
-        }
-      },
-
-      batchUpdateElements: (updates, allElements) => {
-        const state = get();
-        try {
-          state.individualManager.batchUpdateElements(updates, allElements);
-          console.log(`Batch updated ${updates.length} elements`);
-        } catch (error) {
-          console.error('Error in batch element update:', error);
-        }
-      },
-
-      batchUpdateGroups: (updates) => {
-        const state = get();
-        try {
-          state.individualManager.batchUpdateGroups(updates);
-          console.log(`Batch updated ${updates.length} groups`);
-        } catch (error) {
-          console.error('Error in batch group update:', error);
-        }
-      },
-
-      // Manager selection
-      setAnimationManager: (useIndividual) => {
-        set(produce((draft) => {
-          if (useIndividual) {
-            console.log('Switching to Individual Timeline Manager (Phase 2)');
-            draft.currentManagerType = 'individual';
-          } else {
-            console.log('Switching to Enhanced Timeline Manager (Phase 1)');
-            draft.currentManagerType = 'enhanced';
-          }
-        }));
-      },
-
-      getCurrentManagerType: () => {
-        const state = get();
-        return state.currentManagerType || 'enhanced';
-      },
-
-      // Enhanced performance monitoring for Phase 2
-      getIndividualTimelineStats: () => {
-        const state = get();
-        return state.individualManager.getPerformanceStats();
+        return state.gsapManager.generatePerformanceReport();
       },
 
       // Animation duration management
@@ -1084,7 +925,6 @@ export const useTimelineStore = create<TimelineStore>()(
           scale: state.ui.scale,
           duration: state.playback.totalDuration,
           currentTime: state.playback.currentTime,
-          managerType: state.currentManagerType,
         };
       },
 
@@ -1118,7 +958,6 @@ export const useTimelineStore = create<TimelineStore>()(
           state.ui.scale = data.scale;
           state.playback.totalDuration = data.duration;
           state.playback.currentTime = data.currentTime;
-          state.currentManagerType = data.managerType;
         }));
         
         // Update tracks and rebuild timeline

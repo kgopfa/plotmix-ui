@@ -1,83 +1,46 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useCallback } from 'react';
+import { useTimelineStore } from '@/stores/use-timeline-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
-import { 
-  useTimelineStore, 
-  useTimelineSync, 
-  useTimelinePlayback, 
-  useTimelineTracks,
-  useTimelineAnimations 
-} from '@/stores/use-timeline-store';
-import { ElementAnimation } from '@/types/canvas';
+import type { ElementAnimation } from '@/types/canvas';
 import type { CanvasRef } from '@/components/editor/canvas';
 
 /**
- * Integration hook that connects the timeline store with the canvas store
- * and provides a unified interface for timeline operations
+ * Enhanced Timeline Integration Hook
+ * 
+ * Provides streamlined integration between canvas and timeline stores
+ * using only the Enhanced Timeline Manager for optimal performance.
  */
 export function useTimelineIntegration() {
-  const { elements, groups } = useCanvasStore();
-  const {
-    initializeSubscriptions,
-    cleanupSubscriptions,
+  // Get stores and timeline functions
+  const { 
+    elements, 
+    groups,
+    updateTracks,
     buildGSAPTimeline,
-    isLoading,
-    error
-  } = useTimelineSync();
+    play: timelinePlay,
+    pause: timelinePause,
+    stop: timelineStop,
+    seek: timelineSeek,
+    setPlaybackSpeed
+  } = useTimelineStore();
 
-  const playbackControls = useTimelinePlayback();
-  const { setElements, setGroups, updateTracks } = useTimelineTracks();
-  const animationControls = useTimelineAnimations();
-
-  // Initialize timeline subscriptions when the hook mounts
-  useEffect(() => {
-    initializeSubscriptions();
-
-    // Cleanup subscriptions on unmount
-    return () => {
-      cleanupSubscriptions();
-    };
-  }, [initializeSubscriptions, cleanupSubscriptions]);
-
-  // Sync canvas store data with timeline store
-  useEffect(() => {
-    setElements(elements);
-    setGroups(groups);
-  }, [elements, groups, setElements, setGroups]);
+  const {
+    updateElementAnimation: updateCanvasElementAnimation,
+    updateGroupAnimation: updateCanvasGroupAnimation,
+    removeElementAnimation,
+    removeGroupAnimation
+  } = useCanvasStore();
 
   // Enhanced canvas ref setup with automatic timeline building
   const setCanvasRef = useCallback((ref: React.RefObject<CanvasRef | null>) => {
     const state = useTimelineStore.getState();
-    const managerType = state.getCurrentManagerType();
     
-    // Set canvas ref for both managers
+    // Set canvas ref for Enhanced Timeline Manager
     state.gsapManager.setCanvasRef(ref);
-    state.individualManager.setCanvasRef(ref);
     
-    // Build initial timeline with all elements based on current manager
-    if (managerType === 'individual') {
-      // Use Individual Timeline Manager for initial build
-      state.individualManager.clearTimeline();
-      
-      const elementUpdates = elements.map(element => ({
-        elementId: element.id,
-        animations: element.animations || []
-      }));
-      
-      const groupUpdates = groups.map(group => ({
-        groupId: group.id,
-        animations: group.animations || [],
-        group
-      }));
-      
-      state.individualManager.batchUpdateElements(elementUpdates, elements);
-      state.individualManager.batchUpdateGroups(groupUpdates);
-      
-      console.log(`🎬 Individual Timeline Manager initialized with ${elementUpdates.length} elements and ${groupUpdates.length} groups`);
-    } else {
-      // Use Enhanced Timeline Manager for initial build
-      buildGSAPTimeline();
-      console.log(`🎬 Enhanced Timeline Manager initialized with ${elements.length} elements and ${groups.length} groups`);
-    }
+    // Build initial timeline with all elements using Enhanced Timeline Manager
+    buildGSAPTimeline();
+    console.log(`🎬 Enhanced Timeline Manager initialized with ${elements.length} elements and ${groups.length} groups`);
   }, [elements, groups, buildGSAPTimeline]);
 
   // Enhanced animation handlers that sync with both stores
@@ -87,27 +50,21 @@ export function useTimelineIntegration() {
     // Timeline store will be updated automatically through subscription
   }, []);
 
+  const addGroupAnimation = useCallback((groupId: string, animation: ElementAnimation) => {
+    // Update canvas store
+    useCanvasStore.getState().addGroupAnimation(groupId, animation);
+    // Timeline store will be updated automatically through subscription
+  }, []);
+
   const updateElementAnimation = useCallback((
     elementId: string,
     animationId: string,
     updates: Partial<ElementAnimation>
   ) => {
     // Update canvas store
-    useCanvasStore.getState().updateElementAnimation(elementId, animationId, updates);
-    // Timeline store will be updated automatically through subscription
-  }, []);
-
-  const removeElementAnimation = useCallback((elementId: string, animationId: string) => {
-    // Update canvas store
-    useCanvasStore.getState().removeElementAnimation(elementId, animationId);
-    // Timeline store will be updated automatically through subscription
-  }, []);
-
-  const addGroupAnimation = useCallback((groupId: string, animation: ElementAnimation) => {
-    // Update canvas store
-    useCanvasStore.getState().addGroupAnimation(groupId, animation);
-    // Timeline store will be updated automatically through subscription
-  }, []);
+    updateCanvasElementAnimation(elementId, animationId, updates);
+    // Timeline will rebuild automatically through subscription
+  }, [updateCanvasElementAnimation]);
 
   const updateGroupAnimation = useCallback((
     groupId: string,
@@ -115,200 +72,118 @@ export function useTimelineIntegration() {
     updates: Partial<ElementAnimation>
   ) => {
     // Update canvas store
-    useCanvasStore.getState().updateGroupAnimation(groupId, animationId, updates);
-    // Timeline store will be updated automatically through subscription
-  }, []);
+    updateCanvasGroupAnimation(groupId, animationId, updates);
+    // Timeline will rebuild automatically through subscription
+  }, [updateCanvasGroupAnimation]);
 
-  const removeGroupAnimation = useCallback((groupId: string, animationId: string) => {
+  const deleteElementAnimation = useCallback((elementId: string, animationId: string) => {
     // Update canvas store
-    useCanvasStore.getState().removeGroupAnimation(groupId, animationId);
-    // Timeline store will be updated automatically through subscription
-  }, []);
+    removeElementAnimation(elementId, animationId);
+    // Timeline will rebuild automatically through subscription
+  }, [removeElementAnimation]);
 
-  // Timeline-specific animation operations
-  const duplicateElementAnimation = useCallback((elementId: string, animationId: string) => {
-    animationControls.duplicateAnimation(elementId, animationId, 'element');
-  }, [animationControls]);
+  const deleteGroupAnimation = useCallback((groupId: string, animationId: string) => {
+    // Update canvas store
+    removeGroupAnimation(groupId, animationId);
+    // Timeline will rebuild automatically through subscription
+  }, [removeGroupAnimation]);
 
-  const duplicateGroupAnimation = useCallback((groupId: string, animationId: string) => {
-    animationControls.duplicateAnimation(groupId, animationId, 'group');
-  }, [animationControls]);
-
-  // Playback control wrappers that ensure GSAP timeline is built
-  const play = useCallback(() => {
-    buildGSAPTimeline();
-    playbackControls.play();
-  }, [buildGSAPTimeline, playbackControls]);
-
-  const pause = useCallback(() => {
-    playbackControls.pause();
-  }, [playbackControls]);
-
-  const stop = useCallback(() => {
-    playbackControls.stop();
-  }, [playbackControls]);
-
-  const seek = useCallback((time: number) => {
-    playbackControls.seek(time);
-  }, [playbackControls]);
-
-  // Force rebuild timeline (supports both managers)
+  // Enhanced timeline rebuild that syncs both stores first
   const rebuildTimeline = useCallback(() => {
-    const state = useTimelineStore.getState();
-    const managerType = state.getCurrentManagerType();
-
-    if (managerType === 'individual') {
-      // Use Individual Timeline Manager for rebuild
-      state.individualManager.clearTimeline();
-      const elementUpdates = elements.map(element => ({
-        elementId: element.id,
-        animations: element.animations || []
-      }));
-      const groupUpdates = groups.map(group => ({
-        groupId: group.id,
-        animations: group.animations || [],
-        group
-      }));
-      state.individualManager.batchUpdateElements(elementUpdates, elements);
-      state.individualManager.batchUpdateGroups(groupUpdates);
-    } else {
-      updateTracks();
-      buildGSAPTimeline();
-    }
+    console.log('🔄 Rebuilding timeline with Enhanced Timeline Manager...');
+    
+    // Sync Timeline Store with Canvas Store first
+    const canvasElements = useCanvasStore.getState().getAllElements();
+    const canvasGroups = useCanvasStore.getState().getAllGroups();
+    const timelineStore = useTimelineStore.getState();
+    
+    // Update Timeline Store with latest data
+    timelineStore.setElements(canvasElements);
+    timelineStore.setGroups(canvasGroups);
+    
+    // Force rebuild timeline tracks and GSAP timeline
+    updateTracks();
+    buildGSAPTimeline();
   }, [elements, groups, updateTracks, buildGSAPTimeline]);
 
-  // Enhanced Phase 2 methods for Individual Timeline Manager
+  // Playback controls
+  const playbackControls = {
+    play: useCallback(() => {
+      console.log('▶️ Playing timeline');
+      timelinePlay();
+    }, [timelinePlay]),
+    
+    pause: useCallback(() => {
+      console.log('⏸️ Pausing timeline');
+      timelinePause();
+    }, [timelinePause]),
+    
+    stop: useCallback(() => {
+      console.log('⏹️ Stopping timeline');
+      timelineStop();
+    }, [timelineStop]),
+    
+    seek: useCallback((time: number) => {
+      console.log(`⏭️ Seeking to time: ${time}s`);
+      timelineSeek(time);
+    }, [timelineSeek]),
+    
+    setSpeed: useCallback((speed: number) => {
+      console.log(`⚡ Setting playback speed: ${speed}x`);
+      setPlaybackSpeed(speed);
+    }, [setPlaybackSpeed])
+  };
+
+  // Enhanced animation update for optimized performance
   const updateElementAnimationOptimized = useCallback((
     elementId: string,
     animationId: string,
     updates: Partial<ElementAnimation>
   ) => {
-    const state = useTimelineStore.getState();
-    const managerType = state.getCurrentManagerType();
-
     // Update canvas store first
     useCanvasStore.getState().updateElementAnimation(elementId, animationId, updates);
-
-    if (managerType === 'individual') {
-      // Get updated element and update only its timeline
-      const element = useCanvasStore.getState().elements.find(el => el.id === elementId);
-      if (element) {
-        state.updateElementAnimations(elementId, element.animations, state.elements);
-      }
-    } else {
-      // Fallback to full rebuild for enhanced manager
-      rebuildTimeline();
-    }
+    
+    // Enhanced Timeline Manager will rebuild automatically through subscription
+    rebuildTimeline();
   }, [rebuildTimeline]);
 
   const batchUpdateAnimations = useCallback((
     updates: Array<{ elementId: string, animationId: string, updates: Partial<ElementAnimation> }>
   ) => {
-    const state = useTimelineStore.getState();
-    const managerType = state.getCurrentManagerType();
-
     // Update canvas store first
     updates.forEach(({ elementId, animationId, updates: animUpdates }) => {
       useCanvasStore.getState().updateElementAnimation(elementId, animationId, animUpdates);
     });
 
-    if (managerType === 'individual') {
-      // Batch update timelines efficiently
-      const elementUpdates = updates.map(({ elementId }) => {
-        const element = useCanvasStore.getState().elements.find(el => el.id === elementId);
-        return {
-          elementId,
-          animations: element?.animations || []
-        };
-      });
-
-      state.batchUpdateElements(elementUpdates, state.elements);
-    } else {
-      // Fallback to full rebuild for enhanced manager
-      rebuildTimeline();
-    }
-  }, [rebuildTimeline]);
-
-  // Manager selection and performance monitoring
-  const setAnimationManager = useCallback((useIndividual: boolean) => {
-    const state = useTimelineStore.getState();
-    state.setAnimationManager(useIndividual);
+    // Enhanced Timeline Manager handles batch rebuilds efficiently through caching
     rebuildTimeline();
   }, [rebuildTimeline]);
 
-  const getAnimationStats = useCallback(() => {
-    const state = useTimelineStore.getState();
-    return state.getAnimationPerformance();
-  }, []);
-
-  const generatePerformanceReport = useCallback(() => {
-    const state = useTimelineStore.getState();
-    return state.generatePerformanceReport();
-  }, []);
-
-  // Performance monitoring hook - updates every second
-  const [animationStats, setAnimationStats] = useState<object | null>(null);
-  
-  useEffect(() => {
-    const updateStats = () => {
-      const stats = getAnimationStats();
-      setAnimationStats(stats);
-    };
-
-    // Initial stats
-    updateStats();
-
-    // Update stats every second
-    const interval = setInterval(updateStats, 1000);
-
-    return () => clearInterval(interval);
-  }, [getAnimationStats]);
-
   return {
-    // Playback controls
-    playback: playbackControls.playback,
-    play,
-    pause,
-    stop,
-    seek,
-    setPlaybackSpeed: playbackControls.setPlaybackSpeed,
-
-    // Animation management (enhanced with canvas store sync)
-    addElementAnimation,
-    updateElementAnimation,
-    removeElementAnimation,
-    addGroupAnimation,
-    updateGroupAnimation,
-    removeGroupAnimation,
-    duplicateElementAnimation,
-    duplicateGroupAnimation,
-
-    // Phase 2 Enhanced methods
-    updateElementAnimationOptimized,
-    batchUpdateAnimations,
-    setAnimationManager,
-    getAnimationStats,
-    generatePerformanceReport,
-
     // Canvas integration
     setCanvasRef,
+    
+    // Animation management
+    addElementAnimation,
+    addGroupAnimation,
+    updateElementAnimation,
+    updateGroupAnimation,
+    deleteElementAnimation,
+    deleteGroupAnimation,
+    
+    // Timeline operations
     rebuildTimeline,
     
-    // Performance monitoring
-    animationStats,
-
-    // State
-    isLoading,
-    error,
-
-    // Direct access to timeline store actions
-    timelineStore: {
-      addAnimation: animationControls.addAnimation,
-      updateAnimation: animationControls.updateAnimation,
-      removeAnimation: animationControls.removeAnimation,
-      duplicateAnimation: animationControls.duplicateAnimation,
-      getAnimationById: animationControls.getAnimationById,
-    },
+    // Playback controls
+    playbackControls,
+    
+    // Performance optimized methods
+    updateElementAnimationOptimized,
+    batchUpdateAnimations,
+    
+    // Timeline state
+    elements,
+    groups
   };
 }
 

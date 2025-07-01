@@ -53,7 +53,7 @@ export function AnimationsTab({
       timelineStore.setElements(canvasElements);
       timelineStore.setGroups(canvasGroups);
       
-      // Force rebuild timeline tracks and GSAP timeline
+      // Rebuild timeline using Enhanced Timeline Manager
       setTimeout(() => {
         updateTracks();
         buildGSAPTimeline();
