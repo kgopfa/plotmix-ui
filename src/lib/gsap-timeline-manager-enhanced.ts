@@ -59,10 +59,24 @@ export class GSAPTimelineManagerEnhanced extends GSAPTimelineManager {
     const startTime = performance.now();
 
     try {
+      console.log('🎬 Enhanced Timeline Manager: Building timeline...');
+      console.log('🎬 Elements with animations:', elements.filter(el => !el.isAnimationPath && el.animations?.length > 0).map(el => ({
+        id: el.id,
+        name: el.name,
+        animationCount: el.animations.length,
+        animations: el.animations.map(a => ({ id: a.id, type: a.type, duration: a.duration }))
+      })));
+
       // Performance check - skip if no animations and already optimized
-      if (!this.hasAnimations(elements, groups) && this.timeline.duration() === 0) {
-        console.log('Skipping timeline build - no animations found');
-        return;
+      if (!this.hasAnimations(elements, groups)) {
+        if (this.timeline.duration() === 0) {
+          console.log('🎬 Skipping timeline build - no animations found and timeline is empty');
+          return;
+        } else {
+          console.log('🎬 Clearing timeline - no animations found but timeline has content');
+          this.clearTimeline();
+          return;
+        }
       }
 
       // Clean expired cache entries
@@ -72,16 +86,23 @@ export class GSAPTimelineManagerEnhanced extends GSAPTimelineManager {
       const changedElements = this.detectChangedElements(elements);
       const changedGroups = this.detectChangedGroups(groups || []);
 
-      if (changedElements.length === 0 && changedGroups.length === 0) {
+      console.log('🎬 Changed elements:', changedElements.length, changedElements.map(el => el.id));
+      console.log('🎬 Changed groups:', changedGroups.length, changedGroups.map(g => g.id));
+
+      // Force rebuild if we have animations but no timeline content
+      const hasTimelineContent = this.timeline.duration() > 0;
+      const forceRebuild = !hasTimelineContent && this.hasAnimations(elements, groups);
+
+      if (changedElements.length === 0 && changedGroups.length === 0 && !forceRebuild) {
         this.metrics.cacheHits++;
-        console.log('Cache hit - no changes detected, skipping rebuild');
+        console.log('🎬 Cache hit - no changes detected, skipping rebuild');
         return; // No changes, skip rebuild
       }
 
-      console.log(`Cache miss - rebuilding timeline for ${changedElements.length} elements and ${changedGroups.length} groups`);
+      console.log(`🎬 Cache miss - rebuilding timeline for ${changedElements.length} elements and ${changedGroups.length} groups ${forceRebuild ? '(forced rebuild)' : ''}`);
       this.metrics.cacheMisses++;
-      this.metrics.elementsProcessed += changedElements.length;
-      this.metrics.groupsProcessed += changedGroups.length;
+      this.metrics.elementsProcessed += elements.length; // Process all elements for safety
+      this.metrics.groupsProcessed += (groups || []).length;
 
       // For Phase 1, we'll do a smart full rebuild with caching
       this.performOptimizedRebuild(elements, groups || []);
@@ -93,10 +114,10 @@ export class GSAPTimelineManagerEnhanced extends GSAPTimelineManager {
       const rebuildTime = performance.now() - startTime;
       this.updateMetrics(rebuildTime);
 
-      console.log(`Timeline rebuilt in ${rebuildTime.toFixed(2)}ms`);
+      console.log(`🎬 Timeline rebuilt in ${rebuildTime.toFixed(2)}ms`);
 
     } catch (error) {
-      console.error('Error building animation timeline:', error);
+      console.error('🎬 Error building animation timeline:', error);
       this.handleTimelineError(error);
     }
   }
@@ -290,6 +311,14 @@ export class GSAPTimelineManagerEnhanced extends GSAPTimelineManager {
    */
   clearTimeline() {
     super.clearTimeline();
+    this.clearCaches();
+  }
+
+  /**
+   * Force clear caches - useful when animations are modified externally
+   */
+  forceClearCache() {
+    console.log('🎬 Force clearing animation cache');
     this.clearCaches();
   }
 

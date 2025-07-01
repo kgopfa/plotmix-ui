@@ -53,7 +53,10 @@ export function AnimationsTab({
       timelineStore.setElements(canvasElements);
       timelineStore.setGroups(canvasGroups);
       
-      // Rebuild timeline using Enhanced Timeline Manager
+      // Force clear Enhanced Timeline Manager cache to ensure rebuild
+      timelineStore.gsapManager.forceClearCache();
+      
+      // Rebuild timeline
       setTimeout(() => {
         updateTracks();
         buildGSAPTimeline();
@@ -109,6 +112,11 @@ export function AnimationsTab({
         updateAnimationDuration(animationId, selectedElement.id, animation.duration);
       }
     }
+    
+    // Force clear cache for any animation changes to ensure timeline rebuilds
+    const timelineStore = useTimelineStore.getState();
+    timelineStore.gsapManager.forceClearCache();
+    
     // Note: Canvas Store update and timeline rebuild handled by useEffect
   };
 

@@ -76,6 +76,9 @@ export class GSAPTimelineManager {
     const buildStartTime = performance.now();
 
     try {
+      console.log('🎬 Base Timeline Manager: Starting build...');
+      console.log('🎬 Canvas ref available:', !!this.canvasRef?.current);
+      
       // Performance optimization: Check if any animations exist before building timeline
       const hasElementAnimations = elements.some(el =>
         !el.isAnimationPath && el.animations && el.animations.length > 0
@@ -86,13 +89,17 @@ export class GSAPTimelineManager {
 
       // Skip timeline building if no animations exist
       if (!hasElementAnimations && !hasGroupAnimations) {
+        console.log('🎬 No animations found, clearing timeline');
         this.clearTimeline();
         this.updatePerformanceMetrics(buildStartTime, 0, 0, 0);
         return;
       }
 
       const shapeRefs = this.canvasRef?.current?.getShapeRefs();
+      console.log('🎬 Shape refs available:', !!shapeRefs, 'Count:', shapeRefs ? Object.keys(shapeRefs).length : 0);
+      
       if (!shapeRefs) {
+        console.warn('🎬 Cannot build timeline - shape refs not available');
         return;
       }
 
@@ -103,12 +110,15 @@ export class GSAPTimelineManager {
       let elementsProcessed = 0;
       let groupsProcessed = 0;
 
+      console.log('🎬 Processing elements for animations...');
+      
       // Process element animations
       elements.forEach((element) => {
         if (element.isAnimationPath || !element.animations || element.animations.length === 0) {
           return;
         }
 
+        console.log(`🎬 Processing element ${element.id} with ${element.animations.length} animations`);
         elementsProcessed++;
 
         // Special handling for textGroup animations
@@ -122,9 +132,12 @@ export class GSAPTimelineManager {
       // Process group animations
       if (groups) {
         const groupContainers = this.canvasRef?.current?.getGroupContainers();
+        console.log('🎬 Group containers available:', !!groupContainers, 'Count:', groupContainers ? Object.keys(groupContainers).length : 0);
+        
         if (groupContainers) {
           groups.forEach((group) => {
             if (!group.isDefaultGroup && group.animations && group.animations.length > 0) {
+              console.log(`🎬 Processing group ${group.id} with ${group.animations.length} animations`);
               groupsProcessed++;
               animationsCreated += this.processGroupAnimations(group, groupContainers);
             }
@@ -133,11 +146,14 @@ export class GSAPTimelineManager {
       }
 
       this.timeline.pause(0);
+      
+      console.log(`🎬 Timeline build complete: ${elementsProcessed} elements, ${groupsProcessed} groups, ${animationsCreated} animations`);
 
       // Update performance metrics
       this.updatePerformanceMetrics(buildStartTime, elementsProcessed, groupsProcessed, animationsCreated);
 
-    } catch {
+    } catch (error) {
+      console.error('🎬 Error in timeline build:', error);
       this.clearTimeline();
     }
   }
