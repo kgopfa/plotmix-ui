@@ -1,5 +1,5 @@
-import { 
-  AnimatedCanvasObject, 
+import {
+  AnimatedCanvasObject,
   ElementAnimation,
   AnimationType,
   GsapEase
@@ -15,7 +15,7 @@ interface AnimationsTabProps {
   onEnterPathMode: (id: string) => void;
 }
 
-export function AnimationsTab({ 
+export function AnimationsTab({
   selectedElement,
   localAnimations,
   onEnterPathMode
@@ -26,7 +26,7 @@ export function AnimationsTab({
   const [showAddDropdown, setShowAddDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const animationSelectionManager = AnimationSelectionManager.getInstance();
-  
+
   // Get stores for direct updates
   const canvasStore = useCanvasStore();
   const { updateAnimationDuration, updateAnimationRepeat, updateTracks, buildGSAPTimeline } = useTimelineStore();
@@ -40,22 +40,22 @@ export function AnimationsTab({
   useEffect(() => {
     if (animations.length > 0 || localAnimations.length !== animations.length) {
       console.log(`🎬 Animations changed for element ${selectedElement.id}, rebuilding timeline...`);
-      
+
       // Update Canvas Store first
       canvasStore.updateElement(selectedElement.id, { animations });
-      
+
       // Force Timeline Store to sync with Canvas Store
       const canvasElements = canvasStore.getAllElements();
       const canvasGroups = canvasStore.getAllGroups();
       const timelineStore = useTimelineStore.getState();
-      
+
       // Update Timeline Store with latest data
       timelineStore.setElements(canvasElements);
       timelineStore.setGroups(canvasGroups);
-      
+
       // Force clear Enhanced Timeline Manager cache to ensure rebuild
       timelineStore.gsapManager.forceClearCache();
-      
+
       // Rebuild timeline
       setTimeout(() => {
         updateTracks();
@@ -112,11 +112,11 @@ export function AnimationsTab({
         updateAnimationDuration(animationId, selectedElement.id, animation.duration);
       }
     }
-    
+
     // Force clear cache for any animation changes to ensure timeline rebuilds
     const timelineStore = useTimelineStore.getState();
     timelineStore.gsapManager.forceClearCache();
-    
+
     // Note: Canvas Store update and timeline rebuild handled by useEffect
   };
 
@@ -141,7 +141,7 @@ export function AnimationsTab({
       move: { x: 0, y: 0 },
       color: { fillColor: selectedElement.fill },
       fade: { alpha: selectedElement.opacity ?? 1 },
-      path: { 
+      path: {
         pathPoints: [],
         pathDirection: 'clockwise' as 'clockwise' | 'counterclockwise',
         yoyo: false,
@@ -180,13 +180,13 @@ export function AnimationsTab({
     };
 
     const updatedAnimations = [...animations, newAnimation];
-    
+
     // Update local state immediately
     setAnimations(updatedAnimations);
-    
+
     // Sync to stores
     syncToStores(updatedAnimations);
-    
+
     // Close dropdown
     setShowAddDropdown(false);
   };
@@ -194,10 +194,10 @@ export function AnimationsTab({
   // Handle deleting animations internally
   const handleDeleteAnimationInternal = (animationId: string) => {
     const updatedAnimations = animations.filter(anim => anim.id !== animationId);
-    
+
     // Update local state immediately
     setAnimations(updatedAnimations);
-    
+
     // Sync to stores
     syncToStores(updatedAnimations);
   };
@@ -215,10 +215,10 @@ export function AnimationsTab({
     };
 
     const updatedAnimations = [...animations, duplicatedAnimation];
-    
+
     // Update local state immediately
     setAnimations(updatedAnimations);
-    
+
     // Sync to stores
     syncToStores(updatedAnimations);
   };
@@ -226,16 +226,16 @@ export function AnimationsTab({
   // Handle all animation changes through local state
   const handleAnimationChange = (id: string, field: string, value: string | number | boolean) => {
     console.log(`Animation change: ${field} = ${value} for animation ${id}`);
-    
+
     const updatedAnimations = animations.map(anim => {
       if (anim.id !== id) return anim;
-      
+
       if (field.includes('.')) {
         // Handle nested properties (e.g., 'properties.rotation')
         const [parent, child] = field.split('.');
         const parentKey = parent as keyof ElementAnimation;
         const parentValue = anim[parentKey];
-        
+
         if (typeof parentValue === 'object' && parentValue !== null) {
           return {
             ...anim,
@@ -247,7 +247,7 @@ export function AnimationsTab({
         }
         return anim;
       }
-      
+
       // Handle direct properties
       if (field === 'repeat') {
         return { ...anim, repeat: Number(value) };
@@ -264,7 +264,7 @@ export function AnimationsTab({
 
     // Update local state immediately
     setAnimations(updatedAnimations);
-    
+
     // Sync to stores based on field type
     syncToStores(updatedAnimations, field, id);
   };
@@ -305,9 +305,8 @@ export function AnimationsTab({
       </div>
       <div className="flex flex-col gap-2">
         {animations.map((animation) => (
-          <div key={animation.id} className={`border rounded p-2 ${
-            selectedAnimationId === animation.id ? 'border-green-500 bg-green-50' : ''
-          }`}>
+          <div key={animation.id} className={`border rounded p-2 ${selectedAnimationId === animation.id ? 'border-green-500 bg-green-50' : ''
+            }`}>
             <div className="flex justify-between items-center mb-2 border-b pb-2">
               <span className="font-medium text-blue-600">{animation.type}</span>
               <div className="flex gap-2">
@@ -526,8 +525,8 @@ export function AnimationsTab({
                           className="w-full py-2 px-3 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center justify-center"
                         >
                           <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M3 17.25V21H6.75L17.81 9.94L14.06 6.19L3 17.25Z" fill="currentColor"/>
-                            <path d="M20.71 7.04C21.1 6.65 21.1 6.02 20.71 5.63L18.37 3.29C17.98 2.9 17.35 2.9 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04Z" fill="currentColor"/>
+                            <path d="M3 17.25V21H6.75L17.81 9.94L14.06 6.19L3 17.25Z" fill="currentColor" />
+                            <path d="M20.71 7.04C21.1 6.65 21.1 6.02 20.71 5.63L18.37 3.29C17.98 2.9 17.35 2.9 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04Z" fill="currentColor" />
                           </svg>
                           Draw Path
                         </button>

@@ -18,7 +18,7 @@ class EventManager {
   private listeners = new Map<string, Set<EventHandler>>();
   private boundHandlers = new Map<string, (event: Event | PointerEvent | MouseEvent | KeyboardEvent) => void>();
 
-  private constructor() {}
+  private constructor() { }
 
   static getInstance(): EventManager {
     if (!EventManager.instance) {
@@ -35,7 +35,7 @@ class EventManager {
     // Create handler set if it doesn't exist
     if (!this.listeners.has(eventType)) {
       this.listeners.set(eventType, new Set());
-      
+
       // Create bound handler for this event type
       const boundHandler = (event: Event | PointerEvent | MouseEvent | KeyboardEvent) => {
         const handlers = this.listeners.get(eventType);
@@ -49,9 +49,9 @@ class EventManager {
           });
         }
       };
-      
+
       this.boundHandlers.set(eventType, boundHandler);
-      
+
       // Add the actual DOM event listener
       target.addEventListener(eventType, boundHandler as EventListener, { passive: false });
     }
@@ -68,7 +68,7 @@ class EventManager {
     const handlers = this.listeners.get(eventType);
     if (handlers) {
       handlers.delete(handler);
-      
+
       // If no more handlers, remove the DOM event listener
       if (handlers.size === 0) {
         const boundHandler = this.boundHandlers.get(eventType);
@@ -103,7 +103,7 @@ class EventManager {
       document.removeEventListener(eventType, handler as EventListener);
       window.removeEventListener(eventType, handler as EventListener);
     });
-    
+
     this.listeners.clear();
     this.boundHandlers.clear();
   }

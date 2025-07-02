@@ -78,7 +78,7 @@ export class GSAPTimelineManager {
     try {
       console.log('🎬 Base Timeline Manager: Starting build...');
       console.log('🎬 Canvas ref available:', !!this.canvasRef?.current);
-      
+
       // Performance optimization: Check if any animations exist before building timeline
       const hasElementAnimations = elements.some(el =>
         !el.isAnimationPath && el.animations && el.animations.length > 0
@@ -97,7 +97,7 @@ export class GSAPTimelineManager {
 
       const shapeRefs = this.canvasRef?.current?.getShapeRefs();
       console.log('🎬 Shape refs available:', !!shapeRefs, 'Count:', shapeRefs ? Object.keys(shapeRefs).length : 0);
-      
+
       if (!shapeRefs) {
         console.warn('🎬 Cannot build timeline - shape refs not available');
         return;
@@ -111,7 +111,7 @@ export class GSAPTimelineManager {
       let groupsProcessed = 0;
 
       console.log('🎬 Processing elements for animations...');
-      
+
       // Process element animations
       elements.forEach((element) => {
         if (element.isAnimationPath || !element.animations || element.animations.length === 0) {
@@ -133,7 +133,7 @@ export class GSAPTimelineManager {
       if (groups) {
         const groupContainers = this.canvasRef?.current?.getGroupContainers();
         console.log('🎬 Group containers available:', !!groupContainers, 'Count:', groupContainers ? Object.keys(groupContainers).length : 0);
-        
+
         if (groupContainers) {
           groups.forEach((group) => {
             if (!group.isDefaultGroup && group.animations && group.animations.length > 0) {
@@ -146,7 +146,7 @@ export class GSAPTimelineManager {
       }
 
       this.timeline.pause(0);
-      
+
       console.log(`🎬 Timeline build complete: ${elementsProcessed} elements, ${groupsProcessed} groups, ${animationsCreated} animations`);
 
       // Update performance metrics
@@ -258,7 +258,7 @@ export class GSAPTimelineManager {
     const repeat = config.repeat ?? 0;
     const repeatDelay = config.repeatDelay ?? 0;
     const yoyo = config.yoyo ?? false;
-    
+
     // Calculate compressed cycle duration for repeats
     let cycleDuration = config.duration;
     if (repeat !== 0) {
@@ -578,7 +578,7 @@ export class GSAPTimelineManager {
     const originalValues: Record<string, unknown> = {};
     Object.keys(config.properties).forEach(key => {
       let currentValue: unknown;
-      
+
       // Handle PIXI scale properties specifically
       if (key === 'scaleX') {
         currentValue = target.scale.x;
@@ -589,7 +589,7 @@ export class GSAPTimelineManager {
         const pixiTarget = target as PIXI.Container & Record<string, unknown>;
         currentValue = pixiTarget[key];
       }
-      
+
       if (currentValue !== undefined) {
         originalValues[key] = currentValue;
       } else {
@@ -640,11 +640,11 @@ export class GSAPTimelineManager {
 
       // Create return properties in the same format as forward properties
       const returnProperties = { ...originalValues };
-      
+
       // For scale animations, let's try both approaches to see which works
       if ('scaleX' in config.properties || 'scaleY' in config.properties) {
         console.log('Trying scaleX/scaleY format for return');
-        
+
         // Alternative approach 1: try setting scale object directly
         // returnProperties = {
         //   scale: {
@@ -652,11 +652,11 @@ export class GSAPTimelineManager {
         //     y: originalValues.scaleY || target.scale.y
         //   }
         // };
-        
+
         // Alternative approach 2: Use GSAP's built-in yoyo instead of manual
         // Instead of manual yoyo, let's try using GSAP's native yoyo for this specific case
         console.log('Testing GSAP native yoyo for scale...');
-        
+
         // Skip the return animation and instead create a yoyo animation
         // Use half the cycle duration so total time (forward + return) = cycleDuration
         this.timeline.to(
@@ -670,7 +670,7 @@ export class GSAPTimelineManager {
           },
           currentTime
         );
-        
+
         // Skip the manual return animation for this test
         currentTime += cycleDuration + (cycle < totalCycles - 1 ? repeatDelay : 0);
         continue; // Skip the rest of this cycle
@@ -732,8 +732,8 @@ export class GSAPTimelineManager {
    * Add group animation to timeline with proper yoyo support
    */
   private addGroupAnimationToTimeline(
-    config: GroupAnimationConfig, 
-    groupContainer: PIXI.Container, 
+    config: GroupAnimationConfig,
+    groupContainer: PIXI.Container,
     animation: ElementAnimation
   ) {
     if (!isGroupAnimationConfig(config)) return;

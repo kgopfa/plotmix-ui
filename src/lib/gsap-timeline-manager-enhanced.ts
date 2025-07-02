@@ -187,7 +187,7 @@ export class GSAPTimelineManagerEnhanced extends GSAPTimelineManager {
       animationCount: el.animations?.length || 0,
       animations: el.animations
     })));
-    
+
     const hasElementAnimations = elements.some(el =>
       !el.isAnimationPath && el.animations && el.animations.length > 0
     );
@@ -199,7 +199,7 @@ export class GSAPTimelineManagerEnhanced extends GSAPTimelineManager {
     console.log('GSAP Enhanced: hasGroupAnimations:', hasGroupAnimations);
     const result = hasElementAnimations || hasGroupAnimations;
     console.log('GSAP Enhanced: Final hasAnimations result:', result);
-    
+
     return result;
   }
 
