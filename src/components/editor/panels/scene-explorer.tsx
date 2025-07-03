@@ -721,7 +721,24 @@ export function SceneExplorer({
       }}
       onDrop={handleDropOnRoot}
     >
-      <h3 className="font-semibold mb-2">Scenes</h3>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-semibold">Scenes</h3>
+      </div>
+      
+      {/* New Scene Button */}
+      <button
+        className="w-full mb-3 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+        onClick={(e) => {
+          e.stopPropagation();
+          // TODO: Implement new scene functionality
+          console.log('New Scene button clicked');
+        }}
+      >
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 6V18M6 12H18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        New Scene
+      </button>
       <ul>
         <li>
           <details open>

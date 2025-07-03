@@ -526,7 +526,6 @@ export const OptionsBar: React.FC<OptionsBarProps> = ({
       </div>
       
       <div className="flex gap-2 items-center">
-        <button className="btn">Export ▼</button>
         <ZoomControls 
           canvasZoom={canvasZoom}
           onZoomIn={onZoomIn}
