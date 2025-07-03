@@ -388,6 +388,7 @@ export default function EditorCanvas() {
     setClosingShape(false);
     setActiveTool('select');
     setMaskPos(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toolState.isClosingShape, toolState.chainedLineIds, canvasObjects, createPolygonGroup, clearChainedLineIds, setActiveTool, setAnimationTarget, setClosingShape, setGroups, setLineChaining, setLineStartPoint, setMaskPos, togglePathMode]);
 
   // Helper function to add path shape to animation
