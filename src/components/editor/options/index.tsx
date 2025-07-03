@@ -70,7 +70,8 @@ const ProjectControls = () => {
           value={projectName}
           onChange={(e) => setProjectName(e.target.value)}
           placeholder="Project name"
-          className="px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 w-24"
+          className="px-2 py-1 text-sm text-black border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 w-32"
+          style={{ color: '#000000', WebkitTextFillColor: '#000000' }}
         />
       </div>
 
