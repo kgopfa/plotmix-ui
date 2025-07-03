@@ -9,7 +9,6 @@ import { SnappingOptions } from './snap-options';
 // Simplified interface - only for props that can't be accessed via stores
 interface OptionsBarProps {
   canvasZoom: number;
-  onImageImport: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onResetZoom: () => void;
@@ -120,16 +119,6 @@ const ProjectControls = () => {
     </div>
   );
 };
-
-const ImageImportButton = ({ onImageImport }: { onImageImport: () => void }) => (
-  <button 
-    className="btn"
-    onClick={onImageImport}
-    title="Import Image"
-  >
-    Import Image
-  </button>
-);
 
 const PathModeIndicator = () => {
   const isPathMode = useUIStore(state => state.tools.isPathMode);
@@ -504,7 +493,6 @@ const ZoomControls = ({
 
 export const OptionsBar: React.FC<OptionsBarProps> = ({
   canvasZoom,
-  onImageImport,
   onZoomIn,
   onZoomOut,
   onResetZoom,
@@ -515,7 +503,6 @@ export const OptionsBar: React.FC<OptionsBarProps> = ({
     <div className="h-12 bg-white border-b flex items-center justify-between px-4 shadow z-20">
       <div className="flex gap-2">
         <ProjectControls />
-        <ImageImportButton onImageImport={onImageImport} />
         <PathModeIndicator />
         <PanelToggleButtons />
         <SnappingControls />

@@ -859,9 +859,8 @@ export default function EditorCanvas() {
     updateSelectedGroups(detectedGroups);
   }, [selectedObjects, groups, updateSelectedGroups]);
 
-  // Handle image file upload
-  const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  // Helper function to handle image file directly
+  const handleImageFile = useCallback((file: File) => {
     if (!file) return;
 
     // Check if file is an image
@@ -910,21 +909,39 @@ export default function EditorCanvas() {
     };
 
     reader.readAsDataURL(file);
+  }, [canvasObjects, setCanvasObjects, selectElement, containerRef]);
+
+  // Handle image file upload
+  const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    handleImageFile(file);
     
     // Clear the input so same file can be uploaded again
     e.target.value = '';
-  }, [canvasObjects, setCanvasObjects, selectElement, containerRef]);
+  }, [handleImageFile]);
+
+  // Add event listener for image import from toolbar
+  useEffect(() => {
+    const handleImageImport = (event: CustomEvent) => {
+      const file = event.detail.file;
+      if (file) {
+        handleImageFile(file);
+      }
+    };
+
+    window.addEventListener('image-import', handleImageImport as EventListener);
+    return () => {
+      window.removeEventListener('image-import', handleImageImport as EventListener);
+    };
+  }, [handleImageFile]);
 
   return (
     <div className="h-screen w-screen flex flex-col">
       {/* Options Bar */}
       <OptionsBar
         canvasZoom={canvasZoom}
-        onImageImport={() => {
-          if (imageFileInputRef.current) {
-            imageFileInputRef.current.click();
-          }
-        }}
         onZoomIn={() => {
           if (canvasRef.current) {
             canvasRef.current.zoomIn();

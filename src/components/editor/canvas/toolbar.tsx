@@ -1,9 +1,11 @@
 import { useToolState, useToolActions } from '@/stores/use-ui-store';
 import type { ToolType } from '@/types/tool';
+import { useRef } from 'react';
 
 export function Toolbar() {
   const { activeTool, isPathMode } = useToolState();
   const { setActiveTool } = useToolActions();
+  const imageFileInputRef = useRef<HTMLInputElement>(null);
   
   // Define which tools are allowed in path mode
   const pathModeAllowedTools: ToolType[] = ['line', 'simpleLine', 'draw'];
@@ -35,9 +37,42 @@ export function Toolbar() {
       setActiveTool(tool);
     }
   };
+
+  // Handle image import
+  const handleImageImport = () => {
+    imageFileInputRef.current?.click();
+  };
+
+  // Handle file change for image import
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Dispatch custom event to handle image import in the main editor
+      const imageImportEvent = new CustomEvent('image-import', {
+        detail: { file }
+      });
+      window.dispatchEvent(imageImportEvent);
+    }
+    // Reset input
+    if (imageFileInputRef.current) {
+      imageFileInputRef.current.value = '';
+    }
+  };
   
   const renderVerticalToolbar = () => (
     <div className="bg-white shadow-lg rounded-lg flex flex-col gap-2 p-2">
+      {/* Import Image Button */}
+      <button
+        className="flex flex-col items-center justify-center p-2 hover:bg-gray-100"
+        onClick={handleImageImport}
+        title="Import Image"
+      >
+        <span className="text-xl">🖼️</span>
+      </button>
+
+      {/* Separator */}
+      <div className="h-px bg-gray-200 mx-1"></div>
+
       <button
         className={getButtonClass('rectangle')}
         onClick={() => handleToolClick('rectangle')}
@@ -121,7 +156,14 @@ export function Toolbar() {
         <span className="text-xl">👆</span>
       </button>
 
-
+      {/* Hidden file input for image import */}
+      <input
+        ref={imageFileInputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={handleFileChange}
+      />
     </div>
   );
 
