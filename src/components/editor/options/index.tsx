@@ -3,7 +3,7 @@ import { useSelectionStore } from '@/stores/use-selection-store';
 import { useUIStore } from '@/stores/use-ui-store';
 import { useGridSnapping } from '@/hooks/use-grid-snapping';
 import { useElementSnapping } from '@/hooks/use-element-snapping';
-import { useProjectManager, useAutoBackup } from '@/hooks/use-project-manager';
+import { useProjectManager } from '@/hooks/use-project-manager';
 import { SnappingOptions } from './snap-options';
 
 // Simplified interface - only for props that can't be accessed via stores
@@ -22,20 +22,12 @@ const ProjectControls = () => {
   const {
     loadFromFile,
     downloadProject,
-    validateProject,
-    createBackup,
-    getProjectStats,
     isLoading,
     error
   } = useProjectManager();
   
-  const { startAutoBackup, getAutoBackups, clearAutoBackups } = useAutoBackup(5);
-  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [projectName, setProjectName] = useState('');
-  const [showBackups, setShowBackups] = useState(false);
-  const [autoBackupEnabled, setAutoBackupEnabled] = useState(false);
-  const [autoBackupCleanup, setAutoBackupCleanup] = useState<(() => void) | null>(null);
 
   const handleSave = () => {
     try {
@@ -65,40 +57,9 @@ const ProjectControls = () => {
     }
   };
 
-  const handleBackup = () => {
-    try {
-      createBackup();
-      console.log('Backup created successfully');
-    } catch (error) {
-      console.error('Backup failed:', error);
-    }
-  };
 
-  const toggleAutoBackup = () => {
-    if (autoBackupEnabled) {
-      if (autoBackupCleanup) {
-        autoBackupCleanup();
-        setAutoBackupCleanup(null);
-      }
-      setAutoBackupEnabled(false);
-    } else {
-      const cleanup = startAutoBackup();
-      setAutoBackupCleanup(() => cleanup);
-      setAutoBackupEnabled(true);
-    }
-  };
 
-  const loadAutoBackup = async (backupData: string) => {
-    try {
-      await validateProject(backupData);
-      await loadFromFile(new Blob([backupData], { type: 'application/json' }) as File);
-      setShowBackups(false);
-    } catch (error) {
-      console.error('Failed to load backup:', error);
-    }
-  };
 
-  const stats = getProjectStats();
 
   return (
     <div className="flex items-center gap-2 border-r pr-2 mr-2">
@@ -133,79 +94,7 @@ const ProjectControls = () => {
         📁
       </button>
 
-      {/* Backup Button */}
-      <button
-        onClick={handleBackup}
-        disabled={isLoading}
-        className="btn disabled:bg-gray-400 disabled:cursor-not-allowed"
-        title="Create Backup"
-      >
-        🔄
-      </button>
 
-      {/* Auto-Backup Toggle */}
-      <label className="flex items-center gap-1 text-xs cursor-pointer" title="Auto-backup every 5 minutes">
-        <input
-          type="checkbox"
-          checked={autoBackupEnabled}
-          onChange={toggleAutoBackup}
-          className="rounded w-3 h-3"
-        />
-        <span className="text-gray-600">Auto</span>
-      </label>
-
-      {/* Backups Dropdown */}
-      <div className="relative">
-        <button
-          onClick={() => setShowBackups(!showBackups)}
-          className="btn"
-          title="View Backups"
-        >
-          📚
-        </button>
-
-        {showBackups && (
-          <div className="absolute top-full mt-1 left-0 bg-white border border-gray-300 rounded shadow-lg z-50 min-w-64">
-            <div className="p-2 border-b border-gray-200">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Auto Backups</span>
-                <button
-                  onClick={clearAutoBackups}
-                  className="text-xs text-red-600 hover:text-red-800"
-                >
-                  Clear All
-                </button>
-              </div>
-            </div>
-            <div className="max-h-48 overflow-y-auto">
-              {getAutoBackups().map((backup, index) => (
-                <div
-                  key={backup.timestamp}
-                  className="p-2 border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
-                  onClick={() => loadAutoBackup(backup.data)}
-                >
-                  <div className="text-sm">
-                    Backup #{index + 1}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {new Date(backup.timestamp).toLocaleString()}
-                  </div>
-                </div>
-              ))}
-              {getAutoBackups().length === 0 && (
-                <div className="p-2 text-sm text-gray-500 text-center">
-                  No backups available
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Project Stats */}
-      <div className="text-xs text-gray-600">
-        {stats.elements}e • {stats.groups}g • {stats.animations}a
-      </div>
 
       {/* Loading/Error Indicators */}
       {isLoading && (
@@ -235,8 +124,6 @@ const ProjectControls = () => {
 const FileActions = () => (
   <div className="flex gap-2">
     <button className="btn">New Scene</button>
-    <button className="btn">Save</button>
-    <button className="btn">Revert</button>
   </div>
 );
 
