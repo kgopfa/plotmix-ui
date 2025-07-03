@@ -121,13 +121,6 @@ const ProjectControls = () => {
   );
 };
 
-// Sub-components for better organization
-const FileActions = () => (
-  <div className="flex gap-2">
-    <button className="btn">New Scene</button>
-  </div>
-);
-
 const ImageImportButton = ({ onImageImport }: { onImageImport: () => void }) => (
   <button 
     className="btn"
@@ -522,7 +515,6 @@ export const OptionsBar: React.FC<OptionsBarProps> = ({
     <div className="h-12 bg-white border-b flex items-center justify-between px-4 shadow z-20">
       <div className="flex gap-2">
         <ProjectControls />
-        <FileActions />
         <ImageImportButton onImageImport={onImageImport} />
         <PathModeIndicator />
         <PanelToggleButtons />
