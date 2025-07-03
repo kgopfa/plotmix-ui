@@ -56,10 +56,6 @@ const ProjectControls = () => {
     }
   };
 
-
-
-
-
   return (
     <div className="flex items-center gap-2 border-r pr-2 mr-2">
       {/* Project Name Input */}
@@ -94,8 +90,6 @@ const ProjectControls = () => {
         📁
       </button>
 
-
-
       {/* Loading/Error Indicators */}
       {isLoading && (
         <div className="text-xs text-blue-600">
@@ -128,7 +122,7 @@ const PathModeIndicator = () => {
   if (!isPathMode) return null;
 
   return (
-    <div className="flex items-center gap-2 px-3 py-1 bg-blue-500 text-white rounded text-sm ml-2">
+    <div className="flex items-center gap-2 px-3 py-1 bg-blue-500 text-white rounded text-sm">
       <span className="font-medium">Drawing Animation Path</span>
       <button
         className="bg-white text-blue-500 px-2 py-0.5 rounded text-xs font-medium hover:bg-blue-100"
@@ -194,7 +188,7 @@ const PanelToggleButtons = () => {
   }, [showPanelMenu]);
 
   return (
-    <div className="relative ml-2 border-l pl-2">
+    <div className="relative border-l pl-2">
       <button
         ref={panelButtonRef}
         className={`btn flex items-center gap-1 ${showPanelMenu ? 'bg-blue-100' : ''}`}
@@ -362,7 +356,7 @@ const SnappingControls = () => {
   }, [showSnappingOptions]);
 
   return (
-    <div className="relative ml-2 border-l pl-2">
+    <div className="relative border-l pl-2">
       <button
         ref={snappingButtonRef}
         className={`btn flex items-center gap-1 ${showSnappingOptions ? 'bg-blue-100' : ''}`}
@@ -419,7 +413,7 @@ const SelectionIndicator = ({ onGroupElements, onUngroupElements }: {
   if (selectedObjects.length === 0) return null;
 
   return (
-    <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-200 rounded text-sm ml-2">
+    <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-200 rounded text-sm">
       <span className="text-blue-600 font-medium">
         {selectedObjects.length} object{selectedObjects.length !== 1 ? 's' : ''} selected
       </span>
@@ -465,7 +459,7 @@ const ZoomControls = ({
   onZoomOut: () => void;
   onResetZoom: () => void;
 }) => (
-  <div className="flex gap-1 items-center border-r pr-2 mr-2">
+  <div className="flex gap-1 items-center">
     <button 
       className="btn" 
       onClick={onZoomOut}
@@ -501,7 +495,7 @@ export const OptionsBar: React.FC<OptionsBarProps> = ({
 }) => {
   return (
     <div className="h-12 bg-white border-b flex items-center justify-between px-4 shadow z-20">
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2">
         <ProjectControls />
         <PathModeIndicator />
         <PanelToggleButtons />
@@ -512,14 +506,12 @@ export const OptionsBar: React.FC<OptionsBarProps> = ({
         />
       </div>
       
-      <div className="flex gap-2 items-center">
-        <ZoomControls 
-          canvasZoom={canvasZoom}
-          onZoomIn={onZoomIn}
-          onZoomOut={onZoomOut}
-          onResetZoom={onResetZoom}
-        />
-      </div>
+      <ZoomControls 
+        canvasZoom={canvasZoom}
+        onZoomIn={onZoomIn}
+        onZoomOut={onZoomOut}
+        onResetZoom={onResetZoom}
+      />
     </div>
   );
 }; 
