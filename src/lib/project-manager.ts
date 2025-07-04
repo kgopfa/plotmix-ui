@@ -1,18 +1,19 @@
 import { 
   ProjectData, 
+  LegacyProjectData,
+  Scene,
   ProjectValidationError, 
   ProjectLoadOptions, 
   ProjectSaveOptions,
   ProjectMetadata,
-  ProjectCanvas,
-  ProjectTimeline,
-  ProjectUI
+  isLegacyProject
 } from '@/types/project';
 import { ToolType } from '@/types/tool';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useTimelineStore } from '@/stores/use-timeline-store';
 import { useUIStore } from '@/stores/use-ui-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
+import { useSceneStore } from '@/stores/use-scene-store';
 
 export class ProjectManager {
   private static instance: ProjectManager;
@@ -26,7 +27,7 @@ export class ProjectManager {
   }
 
   /**
-   * Save complete project state to JSON
+   * Save complete project state to JSON (scene-based format)
    */
   saveProject(name?: string, options: ProjectSaveOptions = {}): string {
     const {
@@ -34,14 +35,12 @@ export class ProjectManager {
       prettyPrint = true
     } = options;
     
-    // TODO: Implement compression if needed
-    // const { compress = false } = options;
-
     try {
       const canvasState = useCanvasStore.getState();
       const timelineState = useTimelineStore.getState();
       const uiState = useUIStore.getState();
       const selectionState = useSelectionStore.getState();
+      const sceneState = useSceneStore.getState();
 
       // Generate project metadata
       const metadata: ProjectMetadata = {
@@ -51,68 +50,69 @@ export class ProjectManager {
         description: `Canvas animation project with ${canvasState.elements.length} elements`,
       };
 
-      // Canvas data (always included)
-      const canvas: ProjectCanvas = {
-        elements: canvasState.elements,
-        groups: canvasState.groups,
-        dimensions: {
-          width: 1920, // TODO: Get from actual canvas dimensions
-          height: 1080
-        }
-      };
-
-      // Timeline data (always included)
-      const timeline: ProjectTimeline = {
-        scale: timelineState.ui.scale,
-        duration: timelineState.playback.totalDuration,
-        currentTime: timelineState.playback.currentTime,
-        // Convert Map to Record for JSON serialization
-        animationStates: Object.fromEntries(timelineState.animationStates),
-      };
-
-      // UI data (optional)
-      const ui: ProjectUI = includeUI ? {
-        zoom: 1, // TODO: Get from actual canvas zoom state
-        selectedElements: selectionState.selectedElements.map(el => el.id),
-        selectedGroups: selectionState.selectedGroups.map(g => g.id),
-        panelState: {
-          leftPanelVisible: uiState.panels.leftPanelVisible,
-          rightPanelVisible: uiState.panels.rightPanelVisible,
-          leftPanelWidth: uiState.panels.leftPanelWidth,
-          rightPanelWidth: uiState.panels.rightPanelWidth,
-          timelineHeight: uiState.panels.timelineHeight,
-          isTimelineCollapsed: uiState.panels.isTimelineCollapsed,
+      // Create current scene from current state
+      const currentSceneId = sceneState.activeSceneId || 'scene-1';
+      
+      const scene: Scene = {
+        id: currentSceneId,
+        name: 'Scene 1', // TODO: Get scene name from scene store
+        canvas: {
+          elements: canvasState.elements,
+          groups: canvasState.groups,
+          dimensions: {
+            width: 1920, // TODO: Get from actual canvas dimensions
+            height: 1080
+          }
         },
-        toolState: {
-          activeTool: uiState.tools.activeTool,
-          isPathMode: uiState.tools.isPathMode,
-          showPaths: uiState.tools.showPaths,
-        }
-      } : {
-        zoom: 1,
-        selectedElements: [],
-        selectedGroups: [],
-        panelState: {
-          leftPanelVisible: true,
-          rightPanelVisible: true,
-          leftPanelWidth: 320,
-          rightPanelWidth: 320,
-          timelineHeight: 240,
-          isTimelineCollapsed: false,
+        timeline: {
+          scale: timelineState.ui.scale,
+          duration: timelineState.playback.totalDuration,
+          currentTime: timelineState.playback.currentTime,
+          // Convert Map to Record for JSON serialization
+          animationStates: Object.fromEntries(timelineState.animationStates),
         },
-        toolState: {
-          activeTool: 'select',
-          isPathMode: false,
-          showPaths: true,
+        ui: includeUI ? {
+          zoom: 1, // TODO: Get from actual canvas zoom state
+          selectedElements: selectionState.selectedElements.map(el => el.id),
+          selectedGroups: selectionState.selectedGroups.map(g => g.id),
+          panelState: {
+            leftPanelVisible: uiState.panels.leftPanelVisible,
+            rightPanelVisible: uiState.panels.rightPanelVisible,
+            leftPanelWidth: uiState.panels.leftPanelWidth,
+            rightPanelWidth: uiState.panels.rightPanelWidth,
+            timelineHeight: uiState.panels.timelineHeight,
+            isTimelineCollapsed: uiState.panels.isTimelineCollapsed,
+          },
+          toolState: {
+            activeTool: uiState.tools.activeTool,
+            isPathMode: uiState.tools.isPathMode,
+            showPaths: uiState.tools.showPaths,
+          }
+        } : {
+          zoom: 1,
+          selectedElements: [],
+          selectedGroups: [],
+          panelState: {
+            leftPanelVisible: true,
+            rightPanelVisible: true,
+            leftPanelWidth: 320,
+            rightPanelWidth: 320,
+            timelineHeight: 240,
+            isTimelineCollapsed: false,
+          },
+          toolState: {
+            activeTool: 'select',
+            isPathMode: false,
+            showPaths: true,
+          }
         }
       };
 
       const projectData: ProjectData = {
         version: this.currentVersion,
         metadata,
-        canvas,
-        timeline,
-        ui,
+        scenes: [scene],
+        activeSceneId: currentSceneId,
       };
 
       // Serialize to JSON
@@ -131,7 +131,7 @@ export class ProjectManager {
   }
 
   /**
-   * Load project from JSON string
+   * Load project from JSON string (handles both legacy and scene-based formats)
    */
   async loadProject(jsonData: string, options: ProjectLoadOptions = {}): Promise<void> {
     const {
@@ -142,7 +142,16 @@ export class ProjectManager {
     } = options;
 
     try {
-      const projectData: ProjectData = JSON.parse(jsonData);
+      const rawData = JSON.parse(jsonData);
+      
+      // Check if this is a legacy project and migrate if needed
+      let projectData: ProjectData;
+      if (isLegacyProject(rawData)) {
+        console.log('Detected legacy project format, migrating to scene-based format...');
+        projectData = this.migrateLegacyProject(rawData);
+      } else {
+        projectData = rawData as ProjectData;
+      }
       
       // Validate the data
       const validationErrors = this.validateProjectData(projectData);
@@ -161,7 +170,8 @@ export class ProjectManager {
       // Load data into stores in the correct order
       await this.loadIntoStores(migratedData, { skipUI, skipSelection });
       
-      console.log(`Project loaded: ${migratedData.metadata.name} (${migratedData.canvas.elements.length} elements)`);
+      const activeScene = migratedData.scenes.find(s => s.id === migratedData.activeSceneId) || migratedData.scenes[0];
+      console.log(`Project loaded: ${migratedData.metadata.name} (${activeScene.canvas.elements.length} elements)`);
     } catch (error) {
       console.error('Failed to load project:', error);
       throw new Error(`Load failed: ${error instanceof Error ? error.message : 'Invalid project file'}`);
@@ -169,7 +179,7 @@ export class ProjectManager {
   }
 
   /**
-   * Load project data into all stores
+   * Load project data into all stores (scene-based)
    */
   private async loadIntoStores(
     projectData: ProjectData, 
@@ -177,26 +187,36 @@ export class ProjectManager {
   ): Promise<void> {
     const { skipUI, skipSelection } = options;
 
-    // 1. Clear existing state
+    // 1. Set active scene
+    console.log('Setting active scene...');
+    useSceneStore.getState().setActiveScene(projectData.activeSceneId);
+    
+    // Get the active scene data
+    const activeScene = projectData.scenes.find(s => s.id === projectData.activeSceneId) || projectData.scenes[0];
+    if (!activeScene) {
+      throw new Error('No scenes found in project data');
+    }
+
+    // 2. Clear existing state
     console.log('Clearing existing state...');
     useCanvasStore.getState().clearCanvas();
     useSelectionStore.getState().clearSelections();
     
-    // 2. Load canvas data first (source of truth) - create fresh copies
+    // 3. Load canvas data from active scene - create fresh copies
     console.log('Loading canvas data...');
     const canvasStore = useCanvasStore.getState();
-    const freshElements = projectData.canvas.elements.map(element => ({
+    const freshElements = activeScene.canvas.elements.map(element => ({
       ...element,
       animations: element.animations.map(anim => ({ ...anim }))
     }));
-    const freshGroups = projectData.canvas.groups.map(group => ({
+    const freshGroups = activeScene.canvas.groups.map(group => ({
       ...group,
       animations: group.animations.map(anim => ({ ...anim }))
     }));
     canvasStore.setElements(freshElements);
     canvasStore.setGroups(freshGroups);
     
-    // 3. Load timeline state
+    // 4. Load timeline state from active scene
     console.log('Loading timeline state...');
     const timelineStore = useTimelineStore.getState();
     
@@ -204,40 +224,40 @@ export class ProjectManager {
     timelineStore.loadProjectData({
       elements: freshElements,
       groups: freshGroups,
-      animationStates: projectData.timeline.animationStates,
-      scale: projectData.timeline.scale,
-      duration: projectData.timeline.duration,
-      currentTime: projectData.timeline.currentTime,
+      animationStates: activeScene.timeline.animationStates,
+      scale: activeScene.timeline.scale,
+      duration: activeScene.timeline.duration,
+      currentTime: activeScene.timeline.currentTime,
     });
     
-    // 4. Load UI state (optional)
-    if (!skipUI && projectData.ui) {
+    // 5. Load UI state from active scene (optional)
+    if (!skipUI && activeScene.ui) {
       console.log('Loading UI state...');
       const uiStore = useUIStore.getState();
       
       // Panel state
-      uiStore.setLeftPanelWidth(projectData.ui.panelState.leftPanelWidth);
-      uiStore.setRightPanelWidth(projectData.ui.panelState.rightPanelWidth);
-      uiStore.setTimelineHeight(projectData.ui.panelState.timelineHeight);
+      uiStore.setLeftPanelWidth(activeScene.ui.panelState.leftPanelWidth);
+      uiStore.setRightPanelWidth(activeScene.ui.panelState.rightPanelWidth);
+      uiStore.setTimelineHeight(activeScene.ui.panelState.timelineHeight);
       
-      if (projectData.ui.panelState.isTimelineCollapsed !== uiStore.panels.isTimelineCollapsed) {
+      if (activeScene.ui.panelState.isTimelineCollapsed !== uiStore.panels.isTimelineCollapsed) {
         uiStore.toggleTimelineCollapse();
       }
       
       // Tool state
-      uiStore.setActiveTool(projectData.ui.toolState.activeTool as ToolType);
-      if (projectData.ui.toolState.isPathMode !== uiStore.tools.isPathMode) {
+      uiStore.setActiveTool(activeScene.ui.toolState.activeTool as ToolType);
+      if (activeScene.ui.toolState.isPathMode !== uiStore.tools.isPathMode) {
         uiStore.togglePathMode();
       }
     }
     
-    // 5. Restore selections (after elements are loaded)
-    if (!skipSelection && projectData.ui) {
+    // 6. Restore selections from active scene (after elements are loaded)
+    if (!skipSelection && activeScene.ui) {
       console.log('Restoring selections...');
       const selectionStore = useSelectionStore.getState();
       
       const elementsToSelect = freshElements.filter(el => 
-        projectData.ui.selectedElements.includes(el.id)
+        activeScene.ui.selectedElements.includes(el.id)
       );
       
       if (elementsToSelect.length > 0) {
@@ -248,7 +268,7 @@ export class ProjectManager {
       // when elements in a group are selected
     }
     
-    // 6. Rebuild timeline (with a small delay to ensure everything is ready)
+    // 7. Rebuild timeline (with a small delay to ensure everything is ready)
     console.log('Rebuilding timeline...');
     setTimeout(() => {
       timelineStore.updateTracks();
@@ -257,7 +277,7 @@ export class ProjectManager {
   }
 
   /**
-   * Validate project data structure
+   * Validate project data structure (scene-based)
    */
   private validateProjectData(data: ProjectData): ProjectValidationError[] {
     const errors: ProjectValidationError[] = [];
@@ -272,56 +292,113 @@ export class ProjectManager {
       errors.push({ field: 'metadata.name', message: 'Missing project name' });
     }
 
-    // Canvas validation
-    if (!data.canvas) {
-      errors.push({ field: 'canvas', message: 'Missing canvas data' });
-      return errors; // Can't continue without canvas data
+    // Scenes validation
+    if (!Array.isArray(data.scenes)) {
+      errors.push({ field: 'scenes', message: 'Scenes must be an array' });
+      return errors; // Can't continue without scenes
     }
 
-    if (!Array.isArray(data.canvas.elements)) {
-      errors.push({ field: 'canvas.elements', message: 'Canvas elements must be an array' });
-    } else {
-      // Validate each element
-      data.canvas.elements.forEach((element, index) => {
-        if (!element.id) {
-          errors.push({ field: 'canvas.elements', message: 'Element missing ID', index });
-        }
-        if (!element.type) {
-          errors.push({ field: 'canvas.elements', message: 'Element missing type', index });
-        }
-        if (typeof element.x !== 'number' || typeof element.y !== 'number') {
-          errors.push({ field: 'canvas.elements', message: 'Element missing valid position', index });
-        }
-      });
+    if (data.scenes.length === 0) {
+      errors.push({ field: 'scenes', message: 'Project must have at least one scene' });
+      return errors;
     }
 
-    if (!Array.isArray(data.canvas.groups)) {
-      errors.push({ field: 'canvas.groups', message: 'Canvas groups must be an array' });
+    // Active scene validation
+    if (!data.activeSceneId) {
+      errors.push({ field: 'activeSceneId', message: 'Missing active scene ID' });
     } else {
-      // Validate each group
-      data.canvas.groups.forEach((group, index) => {
-        if (!group.id) {
-          errors.push({ field: 'canvas.groups', message: 'Group missing ID', index });
-        }
-        if (!Array.isArray(group.elementIds)) {
-          errors.push({ field: 'canvas.groups', message: 'Group elementIds must be an array', index });
-        }
-      });
-    }
-
-    // Timeline validation
-    if (!data.timeline) {
-      errors.push({ field: 'timeline', message: 'Missing timeline data' });
-    } else {
-      if (typeof data.timeline.scale !== 'number') {
-        errors.push({ field: 'timeline.scale', message: 'Timeline scale must be a number' });
-      }
-      if (typeof data.timeline.duration !== 'number') {
-        errors.push({ field: 'timeline.duration', message: 'Timeline duration must be a number' });
+      const activeSceneExists = data.scenes.some(s => s.id === data.activeSceneId);
+      if (!activeSceneExists) {
+        errors.push({ field: 'activeSceneId', message: 'Active scene ID does not match any scene' });
       }
     }
+
+    // Validate each scene
+    data.scenes.forEach((scene, sceneIndex) => {
+      if (!scene.id) {
+        errors.push({ field: 'scenes', message: 'Scene missing ID', index: sceneIndex });
+      }
+      if (!scene.name) {
+        errors.push({ field: 'scenes', message: 'Scene missing name', index: sceneIndex });
+      }
+
+      // Canvas validation
+      if (!scene.canvas) {
+        errors.push({ field: 'scenes', message: 'Scene missing canvas data', index: sceneIndex });
+      } else {
+        if (!Array.isArray(scene.canvas.elements)) {
+          errors.push({ field: 'scenes', message: 'Scene canvas elements must be an array', index: sceneIndex });
+        } else {
+          // Validate each element in the scene
+          scene.canvas.elements.forEach((element, elementIndex) => {
+            if (!element.id) {
+              errors.push({ field: 'scenes', message: `Scene ${sceneIndex} element missing ID`, index: elementIndex });
+            }
+            if (!element.type) {
+              errors.push({ field: 'scenes', message: `Scene ${sceneIndex} element missing type`, index: elementIndex });
+            }
+            if (typeof element.x !== 'number' || typeof element.y !== 'number') {
+              errors.push({ field: 'scenes', message: `Scene ${sceneIndex} element missing valid position`, index: elementIndex });
+            }
+          });
+        }
+
+        if (!Array.isArray(scene.canvas.groups)) {
+          errors.push({ field: 'scenes', message: 'Scene canvas groups must be an array', index: sceneIndex });
+        } else {
+          // Validate each group in the scene
+          scene.canvas.groups.forEach((group, groupIndex) => {
+            if (!group.id) {
+              errors.push({ field: 'scenes', message: `Scene ${sceneIndex} group missing ID`, index: groupIndex });
+            }
+            if (!Array.isArray(group.elementIds)) {
+              errors.push({ field: 'scenes', message: `Scene ${sceneIndex} group elementIds must be an array`, index: groupIndex });
+            }
+          });
+        }
+      }
+
+      // Timeline validation
+      if (!scene.timeline) {
+        errors.push({ field: 'scenes', message: 'Scene missing timeline data', index: sceneIndex });
+      } else {
+        if (typeof scene.timeline.scale !== 'number') {
+          errors.push({ field: 'scenes', message: `Scene ${sceneIndex} timeline scale must be a number`, index: sceneIndex });
+        }
+        if (typeof scene.timeline.duration !== 'number') {
+          errors.push({ field: 'scenes', message: `Scene ${sceneIndex} timeline duration must be a number`, index: sceneIndex });
+        }
+      }
+    });
 
     return errors;
+  }
+
+  /**
+   * Migrate legacy project (v1.x) to scene-based format (v2.x)
+   */
+  private migrateLegacyProject(legacyData: LegacyProjectData): ProjectData {
+    console.log('Migrating legacy project to scene-based format...');
+    
+    // Create a single scene from the legacy project data
+    const defaultSceneId = 'scene-1';
+    const scene: Scene = {
+      id: defaultSceneId,
+      name: 'Scene 1',
+      canvas: legacyData.canvas,
+      timeline: legacyData.timeline,
+      ui: legacyData.ui,
+    };
+
+    return {
+      version: this.currentVersion,
+      metadata: {
+        ...legacyData.metadata,
+        modifiedAt: new Date().toISOString()
+      },
+      scenes: [scene],
+      activeSceneId: defaultSceneId,
+    };
   }
 
   /**
@@ -345,13 +422,14 @@ export class ProjectManager {
   }
 
   /**
-   * Get current project statistics
+   * Get current project statistics (from active scene)
    */
   getProjectStats(): {
     elements: number;
     groups: number;
     animations: number;
     characters: number;
+    scenes: number;
   } {
     const canvasState = useCanvasStore.getState();
     
@@ -364,7 +442,8 @@ export class ProjectManager {
       elements: canvasState.elements.length,
       groups: canvasState.groups.length,
       animations,
-      characters
+      characters,
+      scenes: 1, // TODO: Get actual scene count when multiple scenes are supported
     };
   }
 
