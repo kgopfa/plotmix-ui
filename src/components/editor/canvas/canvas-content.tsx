@@ -23,7 +23,9 @@ export const CanvasContent = forwardRef<Viewport | null, { children: React.React
       })
       .pinch({
         percent: 2, // More sensitive pinch for trackpad
-        center: null // Let pinch center around the gesture center
+        center: null, // Let pinch center around the gesture center
+        noDrag: false, // Allow dragging during pinch
+        factor: 1 // Normal pinch factor
       })
       .wheel({
         smooth: 5, // Increased smoothness for wheel scrolling
@@ -180,47 +182,7 @@ export const CanvasContent = forwardRef<Viewport | null, { children: React.React
     // Add event listeners to the canvas specifically
     const canvas = app.renderer.view.canvas as HTMLCanvasElement;
     
-    // Add touch handling for mobile pinch-to-zoom
-    let initialPinchDistance = 0;
-    let initialScale = 1;
-    
-    const handleTouchStart = (e: TouchEvent) => {
-      if (e.touches.length === 2) {
-        const touch1 = e.touches[0];
-        const touch2 = e.touches[1];
-        initialPinchDistance = Math.sqrt(
-          Math.pow(touch2.clientX - touch1.clientX, 2) +
-          Math.pow(touch2.clientY - touch1.clientY, 2)
-        );
-        initialScale = viewport.scale.x;
-      }
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches.length === 2) {
-        e.preventDefault();
-        
-        const touch1 = e.touches[0];
-        const touch2 = e.touches[1];
-        const currentDistance = Math.sqrt(
-          Math.pow(touch2.clientX - touch1.clientX, 2) +
-          Math.pow(touch2.clientY - touch1.clientY, 2)
-        );
-        
-        if (initialPinchDistance > 0) {
-          const pinchScale = currentDistance / initialPinchDistance;
-          const newScale = Math.min(Math.max(initialScale * pinchScale, 0.02), 100);
-          
-          // Apply zoom for touch/pinch gesture
-          viewport.setZoom(newScale, true);
-        }
-      }
-    };
-
-    const handleTouchEnd = () => {
-      initialPinchDistance = 0;
-      initialScale = 1;
-    };
+    // pixi-viewport handles mobile pinch-to-zoom natively
     
     if (canvas) {
       // Make canvas focusable
@@ -237,10 +199,7 @@ export const CanvasContent = forwardRef<Viewport | null, { children: React.React
         canvas.focus();
       });
 
-      // Add touch event listeners
-      canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-      canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-      canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+      // Touch events are handled by pixi-viewport natively
     }
 
     // Center the viewport to the middle of the world on initial load
@@ -253,9 +212,6 @@ export const CanvasContent = forwardRef<Viewport | null, { children: React.React
       if (canvas) {
         canvas.removeEventListener('wheel', handleWheel);
         document.removeEventListener('keydown', handleKeyDown);
-        canvas.removeEventListener('touchstart', handleTouchStart);
-        canvas.removeEventListener('touchmove', handleTouchMove);
-        canvas.removeEventListener('touchend', handleTouchEnd);
       }
     };
 
