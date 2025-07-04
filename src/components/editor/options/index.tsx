@@ -494,7 +494,7 @@ export const OptionsBar: React.FC<OptionsBarProps> = ({
   onUngroupElements
 }) => {
   return (
-    <div className="h-12 bg-white border-b flex items-center justify-between px-4 shadow z-20">
+    <div className="h-12 bg-white border-b flex items-center justify-between px-4 shadow z-[60]">
       <div className="flex items-center gap-2">
         <ProjectControls />
         <PathModeIndicator />
