@@ -18,6 +18,7 @@ import { useSceneStore } from '@/stores/use-scene-store';
 export class ProjectManager {
   private static instance: ProjectManager;
   private currentVersion = "1.0.0";
+  private sceneDataCache: Map<string, Scene> = new Map();
 
   static getInstance(): ProjectManager {
     if (!ProjectManager.instance) {
@@ -37,9 +38,6 @@ export class ProjectManager {
     
     try {
       const canvasState = useCanvasStore.getState();
-      const timelineState = useTimelineStore.getState();
-      const uiState = useUIStore.getState();
-      const selectionState = useSelectionStore.getState();
       const sceneState = useSceneStore.getState();
 
       // Generate project metadata
@@ -50,45 +48,14 @@ export class ProjectManager {
         description: `Canvas animation project with ${canvasState.elements.length} elements`,
       };
 
-      // Create current scene from current state
+      // Get all scenes (this will save current scene to cache)
+      const allScenes = this.getAllScenes();
       const currentSceneId = sceneState.activeSceneId || 'scene-1';
-      
-      const scene: Scene = {
-        id: currentSceneId,
-        name: 'Scene 1', // TODO: Get scene name from scene store
-        canvas: {
-          elements: canvasState.elements,
-          groups: canvasState.groups,
-          dimensions: {
-            width: 1920, // TODO: Get from actual canvas dimensions
-            height: 1080
-          }
-        },
-        timeline: {
-          scale: timelineState.ui.scale,
-          duration: timelineState.playback.totalDuration,
-          currentTime: timelineState.playback.currentTime,
-          // Convert Map to Record for JSON serialization
-          animationStates: Object.fromEntries(timelineState.animationStates),
-        },
-        ui: includeUI ? {
-          zoom: 1, // TODO: Get from actual canvas zoom state
-          selectedElements: selectionState.selectedElements.map(el => el.id),
-          selectedGroups: selectionState.selectedGroups.map(g => g.id),
-          panelState: {
-            leftPanelVisible: uiState.panels.leftPanelVisible,
-            rightPanelVisible: uiState.panels.rightPanelVisible,
-            leftPanelWidth: uiState.panels.leftPanelWidth,
-            rightPanelWidth: uiState.panels.rightPanelWidth,
-            timelineHeight: uiState.panels.timelineHeight,
-            isTimelineCollapsed: uiState.panels.isTimelineCollapsed,
-          },
-          toolState: {
-            activeTool: uiState.tools.activeTool,
-            isPathMode: uiState.tools.isPathMode,
-            showPaths: uiState.tools.showPaths,
-          }
-        } : {
+
+      // Filter UI data if needed
+      const scenes = includeUI ? allScenes : allScenes.map(scene => ({
+        ...scene,
+        ui: {
           zoom: 1,
           selectedElements: [],
           selectedGroups: [],
@@ -106,12 +73,12 @@ export class ProjectManager {
             showPaths: true,
           }
         }
-      };
+      }));
 
       const projectData: ProjectData = {
         version: this.currentVersion,
         metadata,
-        scenes: [scene],
+        scenes: scenes,
         activeSceneId: currentSceneId,
       };
 
@@ -187,9 +154,17 @@ export class ProjectManager {
   ): Promise<void> {
     const { skipUI, skipSelection } = options;
 
-    // 1. Set active scene
-    console.log('Setting active scene...');
-    useSceneStore.getState().setActiveScene(projectData.activeSceneId);
+    // 1. Sync scene store with project data
+    console.log('Syncing scene store...');
+    const sceneStore = useSceneStore.getState();
+    
+    // Update the scene cache with loaded data
+    for (const scene of projectData.scenes) {
+      this.sceneDataCache.set(scene.id, scene);
+    }
+    
+    // Set active scene
+    sceneStore.setActiveScene(projectData.activeSceneId);
     
     // Get the active scene data
     const activeScene = projectData.scenes.find(s => s.id === projectData.activeSceneId) || projectData.scenes[0];
@@ -443,7 +418,7 @@ export class ProjectManager {
       groups: canvasState.groups.length,
       animations,
       characters,
-      scenes: 1, // TODO: Get actual scene count when multiple scenes are supported
+      scenes: useSceneStore.getState().getScenes().length,
     };
   }
 
@@ -464,6 +439,9 @@ export class ProjectManager {
     const timelineStore = useTimelineStore.getState();
     const selectionStore = useSelectionStore.getState();
 
+    // Save current scene to cache before creating new one
+    this.saveCurrentSceneToCache();
+
     // Create new scene in the scene store
     const newSceneId = sceneStore.createScene(name);
 
@@ -471,6 +449,44 @@ export class ProjectManager {
     canvasStore.clearCanvas();
     selectionStore.clearSelections();
     timelineStore.resetTimeline();
+
+    // Initialize cache for the new empty scene
+    const sceneInfo = sceneStore.getSceneById(newSceneId);
+    const emptyScene: Scene = {
+      id: newSceneId,
+      name: sceneInfo?.name || name || `Scene ${sceneStore.getScenes().length}`,
+      canvas: {
+        elements: [],
+        groups: [],
+        dimensions: { width: 1920, height: 1080 }
+      },
+      timeline: {
+        scale: 1,
+        duration: 10,
+        currentTime: 0,
+        animationStates: {},
+      },
+      ui: {
+        zoom: 1,
+        selectedElements: [],
+        selectedGroups: [],
+        panelState: {
+          leftPanelVisible: true,
+          rightPanelVisible: true,
+          leftPanelWidth: 320,
+          rightPanelWidth: 320,
+          timelineHeight: 240,
+          isTimelineCollapsed: false,
+        },
+        toolState: {
+          activeTool: 'select',
+          isPathMode: false,
+          showPaths: true,
+        }
+      }
+    };
+    
+    this.sceneDataCache.set(newSceneId, emptyScene);
 
     console.log(`Created new scene: ${newSceneId}`);
     return newSceneId;
@@ -543,25 +559,31 @@ export class ProjectManager {
     }
 
     try {
-      // Save current project state
-      const projectData = this.saveProject();
-      const parsedData = JSON.parse(projectData);
+      // Save current scene state to cache
+      this.saveCurrentSceneToCache();
       
-      // Find the target scene
-      const targetScene = parsedData.scenes.find((s: Scene) => s.id === sceneId);
+      // Find the target scene in cache
+      const targetScene = this.sceneDataCache.get(sceneId);
       if (!targetScene) {
-        console.error(`Scene ${sceneId} not found`);
+        console.error(`Scene ${sceneId} not found in cache`);
         return;
       }
 
-      // Update active scene in the project data
-      parsedData.activeSceneId = sceneId;
+      // Create project data with target scene as active
+      const projectData: ProjectData = {
+        version: this.currentVersion,
+        metadata: {
+          name: `Project with ${sceneStore.getScenes().length} scenes`,
+          createdAt: new Date().toISOString(),
+          modifiedAt: new Date().toISOString(),
+          description: `Multi-scene project`,
+        },
+        scenes: this.getAllScenes(),
+        activeSceneId: sceneId,
+      };
 
       // Load the project data (this will switch to the target scene)
-      await this.loadProject(JSON.stringify(parsedData), { skipUI: false, skipSelection: false });
-
-      // Update scene store
-      sceneStore.setActiveScene(sceneId);
+      await this.loadProject(JSON.stringify(projectData), { skipUI: false, skipSelection: false });
 
       console.log(`Switched to scene: ${sceneId}`);
     } catch (error) {
@@ -592,5 +614,127 @@ export class ProjectManager {
   getSceneById(sceneId: string) {
     const sceneStore = useSceneStore.getState();
     return sceneStore.getSceneById(sceneId);
+  }
+
+  /**
+   * Save current scene state to cache
+   */
+  private saveCurrentSceneToCache(): void {
+    const canvasState = useCanvasStore.getState();
+    const timelineState = useTimelineStore.getState();
+    const uiState = useUIStore.getState();
+    const selectionState = useSelectionStore.getState();
+    const sceneState = useSceneStore.getState();
+
+    const currentSceneId = sceneState.activeSceneId;
+    if (!currentSceneId) return;
+
+    // Get scene name from scene store
+    const sceneInfo = sceneState.getSceneById(currentSceneId);
+    const sceneName = sceneInfo?.name || 'Scene 1';
+
+    const scene: Scene = {
+      id: currentSceneId,
+      name: sceneName,
+      canvas: {
+        elements: canvasState.elements,
+        groups: canvasState.groups,
+        dimensions: {
+          width: 1920, // TODO: Get from actual canvas dimensions
+          height: 1080
+        }
+      },
+      timeline: {
+        scale: timelineState.ui.scale,
+        duration: timelineState.playback.totalDuration,
+        currentTime: timelineState.playback.currentTime,
+        // Convert Map to Record for JSON serialization
+        animationStates: Object.fromEntries(timelineState.animationStates),
+      },
+      ui: {
+        zoom: 1, // TODO: Get from actual canvas zoom state
+        selectedElements: selectionState.selectedElements.map(el => el.id),
+        selectedGroups: selectionState.selectedGroups.map(g => g.id),
+        panelState: {
+          leftPanelVisible: uiState.panels.leftPanelVisible,
+          rightPanelVisible: uiState.panels.rightPanelVisible,
+          leftPanelWidth: uiState.panels.leftPanelWidth,
+          rightPanelWidth: uiState.panels.rightPanelWidth,
+          timelineHeight: uiState.panels.timelineHeight,
+          isTimelineCollapsed: uiState.panels.isTimelineCollapsed,
+        },
+        toolState: {
+          activeTool: uiState.tools.activeTool,
+          isPathMode: uiState.tools.isPathMode,
+          showPaths: uiState.tools.showPaths,
+        }
+      }
+    };
+
+    this.sceneDataCache.set(currentSceneId, scene);
+    console.log(`Saved scene ${currentSceneId} to cache`);
+  }
+
+  /**
+   * Get all scenes from cache and current state
+   */
+  private getAllScenes(): Scene[] {
+    // Save current scene to cache first
+    this.saveCurrentSceneToCache();
+    
+    const sceneState = useSceneStore.getState();
+    const allSceneInfos = sceneState.getScenes();
+    
+    const scenes: Scene[] = [];
+    
+    for (const sceneInfo of allSceneInfos) {
+      const cachedScene = this.sceneDataCache.get(sceneInfo.id);
+      if (cachedScene) {
+        // Update name from scene store (in case it was renamed)
+        scenes.push({
+          ...cachedScene,
+          name: sceneInfo.name
+        });
+      } else {
+        // Create empty scene for scenes that don't have cached data yet
+        const emptyScene: Scene = {
+          id: sceneInfo.id,
+          name: sceneInfo.name,
+          canvas: {
+            elements: [],
+            groups: [],
+            dimensions: { width: 1920, height: 1080 }
+          },
+          timeline: {
+            scale: 1,
+            duration: 10,
+            currentTime: 0,
+            animationStates: {},
+          },
+          ui: {
+            zoom: 1,
+            selectedElements: [],
+            selectedGroups: [],
+            panelState: {
+              leftPanelVisible: true,
+              rightPanelVisible: true,
+              leftPanelWidth: 320,
+              rightPanelWidth: 320,
+              timelineHeight: 240,
+              isTimelineCollapsed: false,
+            },
+            toolState: {
+              activeTool: 'select',
+              isPathMode: false,
+              showPaths: true,
+            }
+          }
+        };
+        scenes.push(emptyScene);
+        this.sceneDataCache.set(sceneInfo.id, emptyScene);
+      }
+    }
+    
+    return scenes;
   }
 } 
