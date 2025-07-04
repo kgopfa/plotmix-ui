@@ -21,6 +21,7 @@ export interface SceneState {
   getScenes: () => SceneInfo[];
   getSceneById: (sceneId: string) => SceneInfo | undefined;
   updateSceneModified: (sceneId: string) => void;
+  loadScenes: (scenesData: Array<{ id: string; name: string; lastModified?: string }>, activeSceneId: string) => void;
 }
 
 const DEFAULT_SCENE_ID = 'scene-1';
@@ -183,6 +184,21 @@ export const useSceneStore = create<SceneState>()(
             set({ scenes: updatedScenes });
           }
         },
+        
+        loadScenes: (scenesData: Array<{ id: string; name: string; lastModified?: string }>, activeSceneId: string) => {
+          const loadedScenes: SceneInfo[] = scenesData.map(scene => ({
+            id: scene.id,
+            name: scene.name,
+            lastModified: scene.lastModified || new Date().toISOString()
+          }));
+          
+          set({
+            scenes: loadedScenes,
+            activeSceneId: activeSceneId
+          });
+          
+          console.log(`Loaded ${loadedScenes.length} scenes into store, active: ${activeSceneId}`);
+        },
       }),
       {
         name: 'scene-store',
@@ -205,6 +221,7 @@ export const useDuplicateScene = () => useSceneStore(state => state.duplicateSce
 export const useGetScenes = () => useSceneStore(state => state.getScenes);
 export const useGetSceneById = () => useSceneStore(state => state.getSceneById);
 export const useUpdateSceneModified = () => useSceneStore(state => state.updateSceneModified);
+export const useLoadScenes = () => useSceneStore(state => state.loadScenes);
 
 // Legacy hook for backwards compatibility - but avoid using this
 export const useSceneActions = () => ({
@@ -217,4 +234,5 @@ export const useSceneActions = () => ({
   getScenes: useSceneStore.getState().getScenes,
   getSceneById: useSceneStore.getState().getSceneById,
   updateSceneModified: useSceneStore.getState().updateSceneModified,
+  loadScenes: useSceneStore.getState().loadScenes,
 }); 

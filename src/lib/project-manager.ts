@@ -163,8 +163,15 @@ export class ProjectManager {
       this.sceneDataCache.set(scene.id, scene);
     }
     
-    // Set active scene
-    sceneStore.setActiveScene(projectData.activeSceneId);
+    // Load all scenes into the scene store (this also sets the active scene)
+    sceneStore.loadScenes(
+      projectData.scenes.map(scene => ({
+        id: scene.id,
+        name: scene.name,
+        lastModified: new Date().toISOString() // Use current timestamp for lastModified
+      })),
+      projectData.activeSceneId
+    );
     
     // Get the active scene data
     const activeScene = projectData.scenes.find(s => s.id === projectData.activeSceneId) || projectData.scenes[0];
