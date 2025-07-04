@@ -561,16 +561,9 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     },
     resetToCenter: () => {
       const viewport = viewportRef.current;
-      if (!viewport) return;
-
-      // Reset to center of the world with default zoom
-      viewport.animate({
-        position: { x: 0, y: 0 }, // This centers the viewport on world center
-        scale: 1,
-        time: 400
-      });
-      setCurrentZoom(1);
-      if (onZoomChange) onZoomChange(1);
+      if (viewport) {
+        viewport.moveCenter(dimensions.width / 2, dimensions.height / 2);
+      }
     },
     resetZoomToOneHundredPercent: () => {
       const viewport = viewportRef.current;
@@ -1510,6 +1503,19 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       clearSelections();
     }
   }, [elements, selectElement, clearSelections]);
+
+  // Add viewport clamping to restrict panning
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (viewport) {
+      viewport.clamp({
+        left: 0,
+        top: 0,
+        right: dimensions.width,
+        bottom: dimensions.height,
+      });
+    }
+  }, [dimensions]);
 
   return (
     <>
