@@ -454,4 +454,143 @@ export class ProjectManager {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     return this.saveProject(`Backup_${timestamp}`, { includeUI: false });
   }
+
+  /**
+   * Create a new scene with optional name
+   */
+  createScene(name?: string): string {
+    const sceneStore = useSceneStore.getState();
+    const canvasStore = useCanvasStore.getState();
+    const timelineStore = useTimelineStore.getState();
+    const selectionStore = useSelectionStore.getState();
+
+    // Create new scene in the scene store
+    const newSceneId = sceneStore.createScene(name);
+
+    // Clear current canvas and timeline state for the new scene
+    canvasStore.clearCanvas();
+    selectionStore.clearSelections();
+    timelineStore.resetTimeline();
+
+    console.log(`Created new scene: ${newSceneId}`);
+    return newSceneId;
+  }
+
+  /**
+   * Delete a scene by ID
+   */
+  deleteScene(sceneId: string): boolean {
+    const sceneStore = useSceneStore.getState();
+    return sceneStore.deleteScene(sceneId);
+  }
+
+  /**
+   * Duplicate a scene with optional new name
+   */
+  duplicateScene(sceneId: string, newName?: string): string | null {
+    const sceneStore = useSceneStore.getState();
+    
+    try {
+      // Save current project data to get the scene's content
+      const projectData = this.saveProject();
+      const parsedData = JSON.parse(projectData);
+      
+      // Find the scene to duplicate
+      const sceneToClone = parsedData.scenes.find((s: Scene) => s.id === sceneId);
+      if (!sceneToClone) {
+        console.error(`Scene ${sceneId} not found for duplication`);
+        return null;
+      }
+
+      // Create new scene in scene store
+      const newSceneId = sceneStore.duplicateScene(sceneId, newName);
+      if (!newSceneId) {
+        return null;
+      }
+
+      // Create a copy of the scene with new ID
+      const clonedScene: Scene = {
+        ...sceneToClone,
+        id: newSceneId,
+        name: newName || `${sceneToClone.name} Copy`
+      };
+
+      // Update the project data with the new scene
+      parsedData.scenes.push(clonedScene);
+      parsedData.activeSceneId = newSceneId;
+
+      // Load the updated project data (this will switch to the new scene)
+      this.loadProject(JSON.stringify(parsedData), { skipUI: false, skipSelection: false });
+
+      console.log(`Duplicated scene ${sceneId} to ${newSceneId}`);
+      return newSceneId;
+    } catch (error) {
+      console.error('Failed to duplicate scene:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Switch to a different scene
+   */
+  async switchScene(sceneId: string): Promise<void> {
+    const sceneStore = useSceneStore.getState();
+    const currentSceneId = sceneStore.getActiveSceneId();
+    
+    if (currentSceneId === sceneId) {
+      console.log(`Already on scene ${sceneId}`);
+      return;
+    }
+
+    try {
+      // Save current project state
+      const projectData = this.saveProject();
+      const parsedData = JSON.parse(projectData);
+      
+      // Find the target scene
+      const targetScene = parsedData.scenes.find((s: Scene) => s.id === sceneId);
+      if (!targetScene) {
+        console.error(`Scene ${sceneId} not found`);
+        return;
+      }
+
+      // Update active scene in the project data
+      parsedData.activeSceneId = sceneId;
+
+      // Load the project data (this will switch to the target scene)
+      await this.loadProject(JSON.stringify(parsedData), { skipUI: false, skipSelection: false });
+
+      // Update scene store
+      sceneStore.setActiveScene(sceneId);
+
+      console.log(`Switched to scene: ${sceneId}`);
+    } catch (error) {
+      console.error('Failed to switch scene:', error);
+      throw new Error(`Failed to switch to scene ${sceneId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Rename a scene
+   */
+  renameScene(sceneId: string, newName: string): boolean {
+    const sceneStore = useSceneStore.getState();
+    return sceneStore.renameScene(sceneId, newName);
+  }
+
+  /**
+   * Get all scenes
+   */
+  getScenes() {
+    const sceneStore = useSceneStore.getState();
+    return sceneStore.getScenes();
+  }
+
+  /**
+   * Get a specific scene by ID
+   */
+  getSceneById(sceneId: string) {
+    const sceneStore = useSceneStore.getState();
+    return sceneStore.getSceneById(sceneId);
+  }
 } 
