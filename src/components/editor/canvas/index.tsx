@@ -858,6 +858,22 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     const isMultiSelect = (e.nativeEvent && 'metaKey' in e.nativeEvent) ?
       (e.nativeEvent.metaKey || e.nativeEvent.ctrlKey) : false;
 
+    // Convert to screen coordinates for consistency with global move handler
+    const canvas = document.querySelector('canvas');
+    let screenX: number, screenY: number;
+    
+    if (canvas && e.nativeEvent) {
+      const rect = canvas.getBoundingClientRect();
+      const nativeEvent = e.nativeEvent as PointerEvent;
+      screenX = nativeEvent.clientX - rect.left;
+      screenY = nativeEvent.clientY - rect.top;
+    } else {
+      // Fallback to PIXI coordinates if screen coordinates unavailable
+      screenX = e.global.x;
+      screenY = e.global.y;
+    }
+
+    // Also keep PIXI world coordinates for certain operations
     const pos = e.global;
     const element = elements.find(el => el.id === id);
 
@@ -914,7 +930,15 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         // Select the parent textGroup instead of the character
         selectElement([parentTextGroup], isMultiSelect);
         setDraggingId(parentTextGroup.id);
-        setDragOffset({ x: pos.x - parentTextGroup.x, y: pos.y - parentTextGroup.y });
+        
+        // Convert screen coordinates to world coordinates for offset calculation
+        const viewport = viewportRef.current;
+        if (viewport) {
+          const worldPoint = viewport.toWorld(screenX, screenY);
+          setDragOffset({ x: worldPoint.x - parentTextGroup.x, y: worldPoint.y - parentTextGroup.y });
+        } else {
+          setDragOffset({ x: pos.x - parentTextGroup.x, y: pos.y - parentTextGroup.y });
+        }
         setIsDraggingGroup(false);
         return;
       }
@@ -953,7 +977,15 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         setResizingHandle(handle);
         setDraggingId(id);
         setInitialSize({ width: element.width, height: element.height });
-        setInitialMouse({ x: pos.x, y: pos.y });
+        
+        // Convert screen coordinates to world coordinates for consistency with move handler
+        const viewport = viewportRef.current;
+        if (viewport) {
+          const worldPoint = viewport.toWorld(screenX, screenY);
+          setInitialMouse({ x: worldPoint.x, y: worldPoint.y });
+        } else {
+          setInitialMouse({ x: pos.x, y: pos.y });
+        }
         onElementSelect(id, isMultiSelect);
 
         // Set cursor for resize operation
@@ -993,15 +1025,26 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
     // Regular shape drag - check if multiple elements are selected for group dragging
     if (selectedIds.length > 1 && selectedIds.includes(id)) {
-      // Group dragging: calculate offsets for all selected elements
+      // Group dragging: calculate offsets for all selected elements using world coordinates
+      const viewport = viewportRef.current;
       const offsets = selectedIds.map(selectedId => {
         const selectedElement = elements.find(el => el.id === selectedId);
         if (!selectedElement) return { id: selectedId, offsetX: 0, offsetY: 0 };
-        return {
-          id: selectedId,
-          offsetX: pos.x - selectedElement.x,
-          offsetY: pos.y - selectedElement.y
-        };
+        
+        if (viewport) {
+          const worldPoint = viewport.toWorld(screenX, screenY);
+          return {
+            id: selectedId,
+            offsetX: worldPoint.x - selectedElement.x,
+            offsetY: worldPoint.y - selectedElement.y
+          };
+        } else {
+          return {
+            id: selectedId,
+            offsetX: pos.x - selectedElement.x,
+            offsetY: pos.y - selectedElement.y
+          };
+        }
       });
 
       setGroupDragOffsets(offsets);
@@ -1009,10 +1052,17 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       setDraggingId(id); // Still track the primary dragged element
       onElementSelect(id, isMultiSelect);
     } else {
-      // Single element drag
+      // Single element drag - use consistent coordinate system
       setDraggingId(id);
       onElementSelect(id, isMultiSelect);
-      setDragOffset({ x: pos.x - shapeX, y: pos.y - shapeY });
+      
+      const viewport = viewportRef.current;
+      if (viewport) {
+        const worldPoint = viewport.toWorld(screenX, screenY);
+        setDragOffset({ x: worldPoint.x - shapeX, y: worldPoint.y - shapeY });
+      } else {
+        setDragOffset({ x: pos.x - shapeX, y: pos.y - shapeY });
+      }
       setIsDraggingGroup(false);
     }
   };
@@ -1087,7 +1137,15 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         const rect = canvasElement.getBoundingClientRect();
         const canvasX = e.clientX - rect.left;
         const canvasY = e.clientY - rect.top;
-        setMousePos({ x: canvasX, y: canvasY });
+        
+        // Convert screen coordinates to world coordinates for line chaining
+        const viewport = viewportRef.current;
+        if (viewport) {
+          const worldPoint = viewport.toWorld(canvasX, canvasY);
+          setMousePos({ x: worldPoint.x, y: worldPoint.y });
+        } else {
+          setMousePos({ x: canvasX, y: canvasY });
+        }
       }
     }
 
@@ -1101,14 +1159,22 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     const canvasX = e.clientX - rect.left;
     const canvasY = e.clientY - rect.top;
 
+    // Convert screen coordinates to world coordinates using viewport
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+
+    const worldPoint = viewport.toWorld(canvasX, canvasY);
+    const worldX = worldPoint.x;
+    const worldY = worldPoint.y;
+
     // Handle virtual group dragging first
     if (draggingId === 'virtual-group') {
       if (isDraggingGroup && groupDragOffsets.length > 0 && onGroupDrag) {
-        // Handle group dragging: calculate new positions for all selected elements
+        // Handle group dragging: calculate new positions for all selected elements using world coordinates
         const newPositions = groupDragOffsets.map(offset => ({
           id: offset.id,
-          x: canvasX - offset.offsetX,
-          y: canvasY - offset.offsetY
+          x: worldX - offset.offsetX,
+          y: worldY - offset.offsetY
         }));
         onGroupDrag(newPositions);
       }
@@ -1121,11 +1187,11 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
     // Handle resizing - only if mouse button is pressed (buttons property > 0)
     if (resizingHandle && initialSize && initialMouse && e.buttons > 0) {
-      // Calculate the delta from the initial mouse position (using canvas coordinates)
-      const initialCanvasX = initialMouse.x;
-      const initialCanvasY = initialMouse.y;
-      const deltaX = canvasX - initialCanvasX;
-      const deltaY = canvasY - initialCanvasY;
+      // Calculate the delta from the initial mouse position (using world coordinates)
+      const initialWorldX = initialMouse.x;
+      const initialWorldY = initialMouse.y;
+      const deltaX = worldX - initialWorldX;
+      const deltaY = worldY - initialWorldY;
 
       let newWidth = initialSize.width;
       let newHeight = initialSize.height;
@@ -1176,10 +1242,10 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
     // Handle endpoint dragging
     if (draggingEndpoint && onLineEndpointDrag) {
-      onLineEndpointDrag(draggingId, draggingEndpoint, canvasX, canvasY);
+      onLineEndpointDrag(draggingId, draggingEndpoint, worldX, worldY);
     } else if (dragOffset) {
-      // Handle regular shape dragging using canvas coordinates
-      onElementDragEnd(draggingId, canvasX - dragOffset.x, canvasY - dragOffset.y);
+      // Handle regular shape dragging using world coordinates
+      onElementDragEnd(draggingId, worldX - dragOffset.x, worldY - dragOffset.y);
     }
   };
 
@@ -1194,7 +1260,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   };
 
   const handleCanvasPointerMove = (e: FederatedPointerEvent) => {
-    // Always update mouse position for line preview and drawing tools
+    // Always update mouse position for line preview and drawing tools using world coordinates
     setMousePos({ x: e.global.x, y: e.global.y });
 
     if (isDrawing && tool === 'draw') {

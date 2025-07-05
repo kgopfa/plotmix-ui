@@ -448,48 +448,7 @@ const SelectionIndicator = ({ onGroupElements, onUngroupElements }: {
   );
 };
 
-const ZoomControls = ({ 
-  canvasZoom, 
-  onZoomIn, 
-  onZoomOut, 
-  onResetZoom 
-}: {
-  canvasZoom: number;
-  onZoomIn: () => void;
-  onZoomOut: () => void;
-  onResetZoom: () => void;
-}) => (
-  <div className="flex gap-1 items-center">
-    <button 
-      className="btn" 
-      onClick={onZoomOut}
-    >
-      −
-    </button>
-    <span className="text-xs text-gray-600 min-w-[40px] text-center">
-      {Math.round(canvasZoom * 100)}%
-    </span>
-    <button 
-      className="btn" 
-      onClick={onZoomIn}
-    >
-      +
-    </button>
-    <button 
-      className="btn ml-1" 
-      onClick={onResetZoom}
-      title="Reset to 100%"
-    >
-      100%
-    </button>
-  </div>
-);
-
 export const OptionsBar: React.FC<OptionsBarProps> = ({
-  canvasZoom,
-  onZoomIn,
-  onZoomOut,
-  onResetZoom,
   onGroupElements,
   onUngroupElements
 }) => {
@@ -505,13 +464,6 @@ export const OptionsBar: React.FC<OptionsBarProps> = ({
           onUngroupElements={onUngroupElements}
         />
       </div>
-      
-      <ZoomControls 
-        canvasZoom={canvasZoom}
-        onZoomIn={onZoomIn}
-        onZoomOut={onZoomOut}
-        onResetZoom={onResetZoom}
-      />
     </div>
   );
 }; 
