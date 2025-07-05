@@ -17,6 +17,7 @@ import { MaskOverlay } from './canvas/mask-overlay';
 import { AnimatedCanvasObject, ElementAnimation, CanvasGroup } from '@/types/canvas';
 import { Canvas } from './canvas';
 import type { CanvasRef } from './canvas';
+import { ZoomControls } from './canvas/zoom-controls';
 import { createNewObject } from '@/lib/canvas-object-factory';
 import { useCanvasDimensions } from '@/hooks/use-canvas-dimensions';
 import { useTimelineIntegration } from '@/hooks/use-timeline-integration';
@@ -1049,16 +1050,24 @@ export default function EditorCanvas() {
               </div>
             </div>
 
-            {dimensions.width > 0 && dimensions.height > 0 && (
-              <Canvas
-                ref={canvasRef}
-                dimensions={{
-                  width: Math.max(dimensions.width * 3, 4000), // Canvas fills entire scrollable area
-                  height: Math.max(dimensions.height * 3, 4000)
-                }}
-                zoom={canvasZoom}
-                onZoomChange={handleZoomChange}
-              />
+            {dimensions.width > 0 && dimensions.height > 0 ? (
+              <>
+                <Canvas
+                  ref={canvasRef}
+                  dimensions={{
+                    width: Math.max(dimensions.width * 3, 4000), // Canvas fills entire scrollable area
+                    height: Math.max(dimensions.height * 3, 4000)
+                  }}
+                  zoom={canvasZoom}
+                  onZoomChange={handleZoomChange}
+                />
+                
+
+              </>
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                <div className="text-gray-500">Loading canvas... (dimensions: {dimensions.width}x{dimensions.height})</div>
+              </div>
             )}
           </div>
         </main>
@@ -1069,6 +1078,20 @@ export default function EditorCanvas() {
           style={{ left: `${panelState.leftPanelVisible ? panelState.leftPanelWidth + 16 : 16}px` }}
         >
           <Toolbar />
+        </div>
+
+        {/* Zoom Controls - Positioned at bottom right, above timeline, left of inspector */}
+        <div
+          className="absolute z-50 transition-all duration-300"
+          style={{ 
+            bottom: `${panelState.isTimelineCollapsed ? 32 + 16 : panelState.timelineHeight + 16}px`,
+            right: `${panelState.rightPanelVisible ? panelState.rightPanelWidth + 16 : 16}px`
+          }}
+        >
+          <ZoomControls
+            canvasRef={canvasRef}
+            currentZoom={canvasZoom}
+          />
         </div>
 
         {/* Mask Overlay - Fixed position relative to viewport */}

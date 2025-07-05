@@ -453,14 +453,12 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     zoomIn: () => {
       const viewport = viewportRef.current;
       if (!viewport) return;
-      const newScale = Math.min(viewport.scale.x * 1.1, 5); // Limit to 5x max zoom
+      const currentScale = viewport.scale.x;
+      const newScale = Math.min(currentScale * 1.1, 5); // Limit to 5x max zoom
 
-      // Get the current center point of the viewport
-      const currentCenter = viewport.center;
-
-      // Use PIXI viewport's built-in center-based zoom
-      viewport.setZoom(newScale, true);
-      viewport.moveCenter(currentCenter);
+      // Zoom towards the center of the viewport (like wheel zoom)
+      const zoomPercent = (newScale / currentScale - 1);
+      viewport.zoom(zoomPercent, true); // Center around viewport center
 
       setCurrentZoom(newScale);
       if (onZoomChange) onZoomChange(newScale);
@@ -468,14 +466,12 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     zoomOut: () => {
       const viewport = viewportRef.current;
       if (!viewport) return;
-      const newScale = Math.max(viewport.scale.x * 0.9, 0.1); // Limit to 0.1x min zoom
+      const currentScale = viewport.scale.x;
+      const newScale = Math.max(currentScale * 0.9, 0.1); // Limit to 0.1x min zoom
 
-      // Get the current center point of the viewport
-      const currentCenter = viewport.center;
-
-      // Use PIXI viewport's built-in center-based zoom
-      viewport.setZoom(newScale, true);
-      viewport.moveCenter(currentCenter);
+      // Zoom towards the center of the viewport (like wheel zoom)
+      const zoomPercent = (newScale / currentScale - 1);
+      viewport.zoom(zoomPercent, true); // Center around viewport center
 
       setCurrentZoom(newScale);
       if (onZoomChange) onZoomChange(newScale);
@@ -484,14 +480,12 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     setZoom: (scale: number) => {
       const viewport = viewportRef.current;
       if (!viewport) return;
+      const currentScale = viewport.scale.x;
       const clampedScale = Math.min(Math.max(scale, 0.1), 5); // Limit between 0.1x and 5x
 
-      // Get the current center point of the viewport
-      const currentCenter = viewport.center;
-
-      // Use PIXI viewport's built-in center-based zoom
-      viewport.setZoom(clampedScale, true);
-      viewport.moveCenter(currentCenter);
+      // Zoom towards the center of the viewport (like wheel zoom)
+      const zoomPercent = (clampedScale / currentScale - 1);
+      viewport.zoom(zoomPercent, true); // Center around viewport center
 
       setCurrentZoom(clampedScale);
       if (onZoomChange) onZoomChange(clampedScale);
@@ -569,12 +563,11 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       const viewport = viewportRef.current;
       if (!viewport) return;
 
-      // Get the current center point of the viewport to maintain position
-      const currentCenter = viewport.center;
-
-      // Set zoom to exactly 1.0 (100%) while maintaining center
-      viewport.setZoom(1, true);
-      viewport.moveCenter(currentCenter);
+      // Zoom to 100% towards the center of the viewport (like wheel zoom)
+      const currentScale = viewport.scale.x;
+      const targetScale = 1;
+      const zoomPercent = (targetScale / currentScale - 1);
+      viewport.zoom(zoomPercent, true); // Center around viewport center
 
       setCurrentZoom(1);
       if (onZoomChange) onZoomChange(1);
