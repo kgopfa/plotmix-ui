@@ -970,7 +970,7 @@ export default function EditorCanvas() {
         {/* Scrollable Canvas Container */}
         <main
           ref={containerRef}
-          className="absolute inset-0 bg-gray-100 overflow-auto"
+          className="absolute inset-0 bg-gray-100 overflow-auto canvas-container"
           onMouseMove={e => {
             if (toolState.activeTool !== 'select') {
               const rect = e.currentTarget.getBoundingClientRect();

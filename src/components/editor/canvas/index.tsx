@@ -613,6 +613,97 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     };
   }, []);
 
+  // Prevent browser pinch-zoom from interfering with custom canvas zoom
+  // This implementation addresses the common issue where browser native pinch-zoom
+  // conflicts with custom canvas zoom controls. We use a multi-layer approach:
+  // 1. CSS: touch-action: none on canvas elements (applied in globals.css)
+  // 2. JavaScript: preventDefault() on multi-touch events to block browser zoom
+  // 3. Desktop: Block Ctrl+Wheel events that trigger browser zoom
+  // This ensures the PIXI viewport zoom controls work correctly on all devices
+  useEffect(() => {
+    let canvas: HTMLCanvasElement | null = null;
+    
+    // Touch event handlers to prevent default browser zoom behavior
+    const handleTouchStart = (e: TouchEvent) => {
+      // Allow single-touch interactions but prevent multi-touch zoom
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      // Prevent default for multi-touch to block pinch-zoom
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      // Prevent default for multi-touch
+      if (e.touches.length > 1 || e.changedTouches.length > 1) {
+        e.preventDefault();
+      }
+    };
+
+    // Wheel event handler to prevent Ctrl+Wheel zoom (desktop pinch-zoom)
+    const handleWheel = (e: WheelEvent) => {
+      // Prevent browser zoom when Ctrl/Cmd is held (desktop pinch-zoom)
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    // Prevent context menu on long touch/right click
+    const handleContextMenu = (e: Event) => {
+      e.preventDefault();
+    };
+    
+    // Function to find and setup canvas element
+    const setupCanvas = () => {
+      canvas = document.querySelector('canvas');
+      if (!canvas) {
+        // If canvas not found immediately, try again after a short delay
+        setTimeout(setupCanvas, 100);
+        return;
+      }
+
+      // Add event listeners with passive: false to ensure preventDefault works
+      canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+      canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+      canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+      canvas.addEventListener('wheel', handleWheel, { passive: false });
+      canvas.addEventListener('contextmenu', handleContextMenu);
+
+      console.log('Canvas zoom prevention event listeners added');
+    };
+
+    // Initial setup
+    setupCanvas();
+
+    // Cleanup function
+    return () => {
+      if (canvas) {
+        canvas.removeEventListener('touchstart', handleTouchStart);
+        canvas.removeEventListener('touchmove', handleTouchMove);
+        canvas.removeEventListener('touchend', handleTouchEnd);
+        canvas.removeEventListener('wheel', handleWheel);
+        canvas.removeEventListener('contextmenu', handleContextMenu);
+        console.log('Canvas zoom prevention event listeners removed');
+      }
+    };
+  }, []);
+
+  // Additional useEffect to handle canvas reference updates
+  useEffect(() => {
+    // Re-apply event listeners if canvas element is recreated
+    const canvas = document.querySelector('canvas');
+    if (canvas && canvas !== canvasRef.current) {
+      canvasRef.current = canvas;
+      console.log('Canvas element updated in canvasRef');
+    }
+  }, [dimensions]); // Re-run when dimensions change (canvas recreation)
+
   // Sync external zoom with viewport
   useEffect(() => {
     const viewport = viewportRef.current;

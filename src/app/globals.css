@@ -38,3 +38,28 @@ body {
     @apply px-2 py-1 text-xs font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500;
   }
 }
+
+/* Canvas-specific styles to prevent browser zoom interference */
+@layer utilities {
+  /* Prevent browser touch gestures on canvas elements */
+  canvas {
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+  }
+  
+  /* Prevent text selection and dragging on canvas containers */
+  .canvas-container, .canvas-container * {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-drag: none;
+  }
+}
