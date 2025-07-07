@@ -27,7 +27,7 @@ export const OptionsBar: React.FC<OptionsBarProps> = ({
   const [projectName, setProjectName] = useState('Project Name');
 
   return (
-    <Disclosure as="nav" className="bg-white shadow-sm">
+    <Disclosure as="nav" className="bg-white border-b border-gray-200 shadow-lg">
       <div className="mx-auto max-w-full px-2 sm:px-4 lg:px-0">
         <div className="flex h-16 justify-between">
           <div className="flex lg:pl-0 lg:pr-0">
