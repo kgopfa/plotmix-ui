@@ -23,6 +23,7 @@ import { useCanvasDimensions } from '@/hooks/use-canvas-dimensions';
 import { useTimelineIntegration } from '@/hooks/use-timeline-integration';
 import { useElementSnapping } from '@/hooks/use-element-snapping';
 import { OptionsBar } from './options';
+import { NavigationSidebar } from './navigation-sidebar';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 
 
@@ -966,6 +967,9 @@ export default function EditorCanvas() {
         onUngroupElements={handleUngroupElements}
       />
 
+      {/* Navigation Sidebar */}
+      <NavigationSidebar />
+
       {/* Main Body - Full height canvas with floating panels */}
       <div className="flex-1 relative overflow-hidden">
         {/* Scrollable Canvas Container */}
@@ -1187,10 +1191,11 @@ export default function EditorCanvas() {
         )}
       </div>
 
-      {/* Floating Timeline - positioned fixed at bottom, floats over content */}
+      {/* Floating Timeline - positioned fixed at bottom, starts after navigation sidebar */}
       <div
-        className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50"
+        className="fixed bottom-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50"
         style={{
+          left: '80px', // Start after navigation sidebar
           height: panelState.isTimelineCollapsed ? '32px' : `${panelState.timelineHeight}px`,
           minHeight: '32px', // Allow collapsing to 32px (h-8)
           maxHeight: '80vh'
