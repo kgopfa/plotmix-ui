@@ -25,7 +25,7 @@ function classNames(...classes: string[]) {
 
 export const NavigationSidebar: React.FC = () => {
   return (
-    <div className="m-2 fixed inset-y-0 left-0 z-40 w-16 overflow-y-auto bg-gray-900 pb-4 rounded-lg" style={{ top: '64px' }}>
+    <div className="m-2 fixed inset-y-0 left-0 z-40 w-16 overflow-y-auto bg-gray-900 pb-4 rounded-sm" style={{ top: '64px' }}>
       <nav className="mt-8">
         <ul role="list" className="flex flex-col items-center space-y-1">
           {navigation.map((item) => (
