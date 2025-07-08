@@ -5,12 +5,14 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { TimelineManager } from '@/lib/timeline-manager';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useCanvasElements, useCanvasGroups } from '@/stores/use-canvas-store';
-import { useUIStore, useActiveNav, useHoverNav } from '@/stores/use-ui-store';
+import { useUIStore, useActiveNav, useHoverNav, useActiveRightPanel } from '@/stores/use-ui-store';
 import { useTimelineSync } from '@/stores/use-timeline-store';
 import { useCanvasMigration } from '@/hooks/use-canvas-migration';
 import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
 import { SceneExplorer } from './panels/scene-explorer';
-import { Inspector } from './panels/inspector';
+import { PropertiesPanel } from './panels/properties-panel';
+import { AnimationsPanel } from './panels/animations-panel';
+import { HistoryPanel } from './panels/history-panel';
 import { Timeline } from './timeline';
 import { Toolbar } from './canvas/toolbar';
 import { MaskOverlay } from './canvas/mask-overlay';
@@ -76,6 +78,8 @@ export default function EditorCanvas() {
     setAnimationTarget,
     toggleShowPaths,
   } = useUIStore();
+
+  const activeRightPanel = useActiveRightPanel();
 
   const MASK_OFFSET_X = 0;
   const MASK_OFFSET_Y = 0;
@@ -1157,17 +1161,26 @@ export default function EditorCanvas() {
           </>
         )}
 
-        {/* Floating Right Panel - Inspector */}
-        {panelState.rightPanelVisible && (
+        {/* Floating Right Panel - Content */}
+        {panelState.rightPanelVisible && activeRightPanel && (
           <>
             <div
               className="absolute top-0 right-20 h-full bg-gray-50/95 backdrop-blur-sm border-l border-gray-200 overflow-y-auto z-30 shadow-lg transition-transform duration-300"
               style={{ width: `${panelState.rightPanelWidth / 16}rem` }}
             >
-              <Inspector
-                onInspectorChange={handleInspectorChange}
-                onGroupInspectorChange={handleGroupInspectorChange}
-              />
+              {activeRightPanel === 'properties' && (
+                <PropertiesPanel
+                  onInspectorChange={handleInspectorChange}
+                  onGroupInspectorChange={handleGroupInspectorChange}
+                />
+              )}
+              {activeRightPanel === 'animations' && (
+                <AnimationsPanel
+                  onInspectorChange={handleInspectorChange}
+                  onGroupInspectorChange={handleGroupInspectorChange}
+                />
+              )}
+              {activeRightPanel === 'history' && <HistoryPanel />}
             </div>
 
             {/* Right Resize Handle */}

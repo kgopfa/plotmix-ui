@@ -6,6 +6,7 @@ import {
   PlayCircleIcon,
   ClockIcon,
 } from '@heroicons/react/24/outline';
+import { useActiveRightPanel, useSetActiveRightPanel } from '@/stores/use-ui-store';
 
 // Navigation item type for right sidebar
 type RightNavKey = 'properties' | 'animations' | 'history';
@@ -22,11 +23,11 @@ const navigation: RightNavItem[] = [
 ];
 
 export const RightNavigationSidebar: React.FC = () => {
-  // Broadcast selected tab to listeners (Inspector, etc.)
+  const activePanel = useActiveRightPanel();
+  const setActivePanel = useSetActiveRightPanel();
+
   const handleClick = (key: RightNavKey) => {
-    window.dispatchEvent(
-      new CustomEvent('right-nav-select', { detail: { tab: key } }) as Event,
-    );
+    setActivePanel(key);
   };
 
   return (
@@ -38,7 +39,7 @@ export const RightNavigationSidebar: React.FC = () => {
           {navigation.map((item) => (
             <li key={item.key}>
               <button
-                className="text-gray-400 hover:bg-gray-800 hover:text-white group flex flex-col gap-x-3 rounded-md p-3 text-sm/6 font-semibold"
+                className={`${activePanel === item.key ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'} group flex flex-col gap-x-3 rounded-md p-3 text-sm/6 font-semibold`}
                 onClick={() => handleClick(item.key)}
                 title={item.name}
               >

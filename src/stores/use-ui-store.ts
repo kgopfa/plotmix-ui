@@ -62,6 +62,9 @@ interface KeyboardShortcut {
 // Navigation keys corresponding to sidebar icons
 export type NavKey = 'video' | 'scenes' | 'uploads' | 'ai' | 'tools' | 'audio' | 'timeline';
 
+// Right sidebar keys
+export type RightPanelKey = 'properties' | 'animations' | 'history';
+
 interface NavigationState {
   activeNav: NavKey | null; // sticks after click
   hoverNav: NavKey | null;  // transient while hovering
@@ -75,6 +78,7 @@ interface UIState {
   preferences: UserPreferences;
   keyboardShortcuts: KeyboardShortcut[];
   navigation: NavigationState;
+  activeRightPanel: RightPanelKey | null;
 }
 
 // Actions
@@ -123,6 +127,7 @@ interface UIActions {
   // Navigation
   setActiveNav: (nav: NavKey | null) => void;
   setHoverNav: (nav: NavKey | null) => void;
+  setActiveRightPanel: (panel: RightPanelKey) => void;
 }
 
 type UIStore = UIState & UIActions;
@@ -227,6 +232,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
       preferences: defaultUserPreferences,
       keyboardShortcuts: defaultKeyboardShortcuts,
       navigation: { activeNav: null, hoverNav: null },
+      activeRightPanel: 'properties',
 
   // Panel Actions
   toggleLeftPanel: () => {
@@ -515,6 +521,13 @@ export const useUIStore = create<UIStore>((set, get) => ({
       state.navigation.hoverNav = nav;
     }));
   },
+
+  // Right panel action
+  setActiveRightPanel: (panel: RightPanelKey) => {
+    set(produce((state) => {
+      state.activeRightPanel = panel;
+    }));
+  },
 }));
 
 // Selector hooks for specific parts of the UI state
@@ -527,6 +540,8 @@ export const useActiveNav = () => useUIStore((state) => state.navigation.activeN
 export const useHoverNav = () => useUIStore((state) => state.navigation.hoverNav);
 export const useSetActiveNav = () => useUIStore((state) => state.setActiveNav);
 export const useSetHoverNav = () => useUIStore((state) => state.setHoverNav);
+export const useActiveRightPanel = () => useUIStore((state) => state.activeRightPanel);
+export const useSetActiveRightPanel = () => useUIStore((state) => state.setActiveRightPanel);
 
 // Action hooks
 export const usePanelActions = () => useUIStore(
