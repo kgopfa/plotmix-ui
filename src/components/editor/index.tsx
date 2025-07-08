@@ -24,6 +24,7 @@ import { useTimelineIntegration } from '@/hooks/use-timeline-integration';
 import { useElementSnapping } from '@/hooks/use-element-snapping';
 import { OptionsBar } from './options';
 import { NavigationSidebar } from './panels/navigation-sidebar';
+import { RightNavigationSidebar } from './panels/right-navigation-sidebar';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 
 
@@ -974,8 +975,9 @@ export default function EditorCanvas() {
         onUngroupElements={handleUngroupElements}
       />
 
-      {/* Navigation Sidebar */}
+      {/* Navigation Sidebars */}
       <NavigationSidebar />
+      <RightNavigationSidebar />
 
       {/* Main Body - Full height canvas with floating panels */}
       <div className="flex-1 relative overflow-hidden">
@@ -1028,7 +1030,7 @@ export default function EditorCanvas() {
             {/* Navigation and Path Controls */}
             <div
               className="absolute bottom-4 z-20 flex flex-col gap-2 transition-all duration-300"
-              style={{ right: `${panelState.rightPanelVisible ? panelState.rightPanelWidth + 16 : 16}px` }} // Adjust position based on panel visibility
+              style={{ right: `${panelState.rightPanelVisible ? panelState.rightPanelWidth + 16 + 80 : 16 + 80}px` }} // Adjust position based on right panel & sidebar
             >
               {/* Path visibility toggle - only show if paths exist */}
               {canvasObjects.some(el => el.isAnimationPath) && (
@@ -1083,7 +1085,7 @@ export default function EditorCanvas() {
           className="absolute z-50 transition-all duration-300"
           style={{ 
             bottom: `${panelState.isTimelineCollapsed ? 32 + 16 : panelState.timelineHeight + 16}px`,
-            right: `${panelState.rightPanelVisible ? panelState.rightPanelWidth + 16 : 16}px`
+            right: `${panelState.rightPanelVisible ? panelState.rightPanelWidth + 16 + 80 : 16 + 80}px`
           }}
         >
           <ZoomControls
@@ -1159,7 +1161,7 @@ export default function EditorCanvas() {
         {panelState.rightPanelVisible && (
           <>
             <div
-              className="absolute top-0 right-0 h-full bg-gray-50/95 backdrop-blur-sm border-l border-gray-200 overflow-y-auto z-30 shadow-lg transition-transform duration-300"
+              className="absolute top-0 right-20 h-full bg-gray-50/95 backdrop-blur-sm border-l border-gray-200 overflow-y-auto z-30 shadow-lg transition-transform duration-300"
               style={{ width: `${panelState.rightPanelWidth / 16}rem` }}
             >
               <Inspector
@@ -1171,7 +1173,7 @@ export default function EditorCanvas() {
             {/* Right Resize Handle */}
             <div
               className="absolute top-0 h-full w-1 border-l border-gray-300 hover:bg-blue-500 cursor-col-resize z-40 transition-colors"
-              style={{ right: `${panelState.rightPanelWidth / 16}rem` }}
+              style={{ right: `${panelState.rightPanelWidth / 16 + 5}rem` }}
               onMouseDown={handleMouseDown('right')}
             />
           </>

@@ -11,6 +11,7 @@ import { useAnimationHandlers } from '@/hooks/use-animation-handlers';
 import { useGroupAnimationHandlers } from '@/hooks/use-group-animation-handlers';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
 import { useSelectionStore } from '@/stores/use-selection-store';
+import { HistoryTab } from './tabs/history';
 
 interface InspectorProps {
   onInspectorChange: (
@@ -28,7 +29,7 @@ interface InspectorProps {
 }
 
 // Main Inspector Component
-type Tab = 'properties' | 'animations';
+type Tab = 'properties' | 'animations' | 'history';
 
 export function Inspector({ 
   onInspectorChange, 
@@ -70,6 +71,21 @@ export function Inspector({
     animationSelectionManager.clearSelection();
   }, [selectedElement?.id, selectedGroup?.id, animationSelectionManager]);
 
+  // Listen for selections from the right navigation sidebar
+  useEffect(() => {
+    const handleRightNavSelect = (e: Event) => {
+      // @ts-ignore – CustomEvent detail typing
+      const { tab } = (e as CustomEvent).detail || {};
+      if (tab) {
+        setActiveTab(tab as Tab);
+      }
+    };
+    window.addEventListener('right-nav-select', handleRightNavSelect as EventListener);
+    return () => {
+      window.removeEventListener('right-nav-select', handleRightNavSelect as EventListener);
+    };
+  }, []);
+
   // Determine what to show based on selection priority:
   // 1. If we have a group selected and multiple elements, show group properties
   // 2. If we have an individual element selected, show individual properties  
@@ -105,6 +121,12 @@ export function Inspector({
           >
             Animations
           </button>
+          <button
+            className={`px-4 py-2 ${activeTab === 'history' ? 'border-b-2 border-blue-500' : ''}`}
+            onClick={() => setActiveTab('history')}
+          >
+            History
+          </button>
         </div>
 
         <div className="pb-80">
@@ -125,25 +147,29 @@ export function Inspector({
               </div>
             )
           ) : (
-            hasGroupSelection ? (
-              <GroupAnimationsTab
-                selectedGroup={selectedGroup!}
-                localAnimations={localGroupAnimations}
-                onAddAnimation={handleAddGroupAnimation}
-                onDeleteAnimation={handleDeleteGroupAnimation}
-                onDuplicateAnimation={handleDuplicateGroupAnimation}
-                onAnimationChange={handleGroupAnimationChange}
-              />
-            ) : hasIndividualElement ? (
-              <AnimationsTab
-                selectedElement={selectedElement!}
-                localAnimations={localAnimations}
-                onEnterPathMode={handleEnterPathMode}
-              />
+            activeTab === 'animations' ? (
+              hasGroupSelection ? (
+                <GroupAnimationsTab
+                  selectedGroup={selectedGroup!}
+                  localAnimations={localGroupAnimations}
+                  onAddAnimation={handleAddGroupAnimation}
+                  onDeleteAnimation={handleDeleteGroupAnimation}
+                  onDuplicateAnimation={handleDuplicateGroupAnimation}
+                  onAnimationChange={handleGroupAnimationChange}
+                />
+              ) : hasIndividualElement ? (
+                <AnimationsTab
+                  selectedElement={selectedElement!}
+                  localAnimations={localAnimations}
+                  onEnterPathMode={handleEnterPathMode}
+                />
+              ) : (
+                <div className="p-4 text-gray-600">
+                  <p>Multiple elements selected. Group them to edit animations as a group.</p>
+                </div>
+              )
             ) : (
-              <div className="p-4 text-gray-600">
-                <p>Multiple elements selected. Group them to edit animations as a group.</p>
-              </div>
+              <HistoryTab />
             )
           )}
         </div>
