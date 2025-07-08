@@ -60,7 +60,7 @@ export function Toolbar() {
   };
   
   const renderVerticalToolbar = () => (
-    <div className="bg-white shadow-lg rounded-lg flex flex-col gap-2 p-2">
+    <div className="bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col gap-2 p-2">
       {/* Import Image Button */}
       <button
         className="flex flex-col items-center justify-center p-2 hover:bg-gray-100"

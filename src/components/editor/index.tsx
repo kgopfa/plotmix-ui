@@ -1069,12 +1069,14 @@ export default function EditorCanvas() {
         </main>
 
         {/* Floating Toolbar - Fixed position outside scrollable area */}
-        <div
-          className="absolute top-2/5 -translate-y-1/2 z-50 transition-all duration-300"
-          style={{ left: `${panelState.leftPanelVisible ? 80 + panelState.leftPanelWidth + 16 : 80 + 16}px` }}
-        >
-          <Toolbar />
-        </div>
+        {activeNav === 'tools' && (
+          <div
+            className="absolute top-2/5 -translate-y-1/2 z-50 transition-all duration-300"
+            style={{ left: '80px' }}
+          >
+            <Toolbar />
+          </div>
+        )}
 
         {/* Zoom Controls - Positioned at bottom right, above timeline, left of inspector */}
         <div

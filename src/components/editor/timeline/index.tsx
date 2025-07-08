@@ -227,7 +227,7 @@ export function Timeline() {
 
   return (
     <div 
-      className={`mr-2 mb-2 bg-white transition-all rounded-sm border border-gray-200 shadow-lg duration-200 ${
+      className={`mr-2 mb-2 bg-white transition-all rounded-lg border border-gray-200 shadow-lg duration-200 ${
         isTimelineCollapsed 
           ? 'h-8' 
           : 'h-full flex flex-col'
