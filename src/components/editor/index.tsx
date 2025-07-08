@@ -942,6 +942,10 @@ export default function EditorCanvas() {
   const activeNav = useActiveNav();
   const hoverNav = useHoverNav();
 
+  const isScenesPanelVisible = panelState.leftPanelVisible && (hoverNav === 'scenes' || activeNav === 'scenes');
+  // Timeline should only shift when Scenes is actually selected (active), not just hovered
+  const timelineLeftOffset = 80 + (panelState.leftPanelVisible && activeNav === 'scenes' ? panelState.leftPanelWidth : 0);
+
   return (
     <div className="h-screen w-screen flex flex-col">
       {/* Options Bar */}
@@ -1095,7 +1099,7 @@ export default function EditorCanvas() {
         />
 
         {/* Floating Left Panel - Scene Explorer */}
-        {panelState.leftPanelVisible && (hoverNav==='scenes' || activeNav==='scenes') && (
+        {isScenesPanelVisible && (
           <>
             <div
               className="absolute top-0 h-full bg-gray-50/95 backdrop-blur-sm overflow-y-auto z-60 shadow-lg transition-transform duration-300"
@@ -1176,7 +1180,7 @@ export default function EditorCanvas() {
       <div
         className="fixed bottom-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50"
         style={{
-          left: '80px', // Start after navigation sidebar
+          left: `${timelineLeftOffset}px`, // Start after nav sidebar and any visible left panel
           height: panelState.isTimelineCollapsed ? '32px' : `${panelState.timelineHeight}px`,
           minHeight: '32px', // Allow collapsing to 32px (h-8)
           maxHeight: '80vh'
