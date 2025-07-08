@@ -58,11 +58,7 @@ export const AnimationsPanel: React.FC<AnimationsPanelProps> = ({
   } = useGroupAnimationHandlers(selectedGroup, onGroupInspectorChange);
 
   if (!hasSelection) {
-    return (
-      <div className="h-full p-2 text-gray-800">
-        <p>Select an element or group to edit animations</p>
-      </div>
-    );
+    return null;
   }
 
   return (

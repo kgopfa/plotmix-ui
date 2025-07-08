@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { TimelineManager } from '@/lib/timeline-manager';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useCanvasElements, useCanvasGroups } from '@/stores/use-canvas-store';
-import { useUIStore, useActiveNav, useHoverNav, useActiveRightPanel } from '@/stores/use-ui-store';
+import { useUIStore, useActiveNav, useHoverNav, useActiveRightPanel, useHoverRightPanel } from '@/stores/use-ui-store';
 import { useTimelineSync } from '@/stores/use-timeline-store';
 import { useCanvasMigration } from '@/hooks/use-canvas-migration';
 import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
@@ -49,6 +49,8 @@ export default function EditorCanvas() {
     updateSelectedGroups
   } = useSelectionStore();
 
+  const hasSelection = selectedObjects.length > 0 || selectedGroups.length > 0;
+
   // Use UI store for tool state
   const toolState = useUIStore((state) => state.tools);
   const {
@@ -80,6 +82,7 @@ export default function EditorCanvas() {
   } = useUIStore();
 
   const activeRightPanel = useActiveRightPanel();
+  const hoverRightPanel = useHoverRightPanel();
 
   const MASK_OFFSET_X = 0;
   const MASK_OFFSET_Y = 0;
@@ -1162,33 +1165,26 @@ export default function EditorCanvas() {
         )}
 
         {/* Floating Right Panel - Content */}
-        {panelState.rightPanelVisible && activeRightPanel && (
+        {panelState.rightPanelVisible && (hoverRightPanel || activeRightPanel) && (
           <>
             <div
-              className="absolute top-0 right-20 h-full bg-gray-50/95 backdrop-blur-sm border-l border-gray-200 overflow-y-auto z-30 shadow-lg transition-transform duration-300"
+              className="absolute top-16 right-20 max-h-[80vh] bg-white/95 backdrop-blur-sm rounded-lg shadow-lg overflow-y-auto z-30 transition-all duration-300"
               style={{ width: `${panelState.rightPanelWidth / 16}rem` }}
             >
-              {activeRightPanel === 'properties' && (
+              {(hoverRightPanel || activeRightPanel) === 'properties' && hasSelection && (
                 <PropertiesPanel
                   onInspectorChange={handleInspectorChange}
                   onGroupInspectorChange={handleGroupInspectorChange}
                 />
               )}
-              {activeRightPanel === 'animations' && (
+              {(hoverRightPanel || activeRightPanel) === 'animations' && hasSelection && (
                 <AnimationsPanel
                   onInspectorChange={handleInspectorChange}
                   onGroupInspectorChange={handleGroupInspectorChange}
                 />
               )}
-              {activeRightPanel === 'history' && <HistoryPanel />}
+              {(hoverRightPanel || activeRightPanel) === 'history' && <HistoryPanel />}
             </div>
-
-            {/* Right Resize Handle */}
-            <div
-              className="absolute top-0 h-full w-1 border-l border-gray-300 hover:bg-blue-500 cursor-col-resize z-40 transition-colors"
-              style={{ right: `${panelState.rightPanelWidth / 16 + 5}rem` }}
-              onMouseDown={handleMouseDown('right')}
-            />
           </>
         )}
       </div>

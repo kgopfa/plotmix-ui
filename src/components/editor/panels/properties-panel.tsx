@@ -43,11 +43,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   const hasSelection = selectedElement || hasGroupSelection;
 
   if (!hasSelection) {
-    return (
-      <div className="h-full p-2 text-gray-800">
-        <p>Select an element or group to edit properties</p>
-      </div>
-    );
+    return null;
   }
 
   return (

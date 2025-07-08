@@ -79,6 +79,7 @@ interface UIState {
   keyboardShortcuts: KeyboardShortcut[];
   navigation: NavigationState;
   activeRightPanel: RightPanelKey | null;
+  hoverRightPanel: RightPanelKey | null;
 }
 
 // Actions
@@ -128,6 +129,7 @@ interface UIActions {
   setActiveNav: (nav: NavKey | null) => void;
   setHoverNav: (nav: NavKey | null) => void;
   setActiveRightPanel: (panel: RightPanelKey) => void;
+  setHoverRightPanel: (panel: RightPanelKey | null) => void;
 }
 
 type UIStore = UIState & UIActions;
@@ -233,6 +235,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
       keyboardShortcuts: defaultKeyboardShortcuts,
       navigation: { activeNav: null, hoverNav: null },
       activeRightPanel: 'properties',
+      hoverRightPanel: null,
 
   // Panel Actions
   toggleLeftPanel: () => {
@@ -528,6 +531,12 @@ export const useUIStore = create<UIStore>((set, get) => ({
       state.activeRightPanel = panel;
     }));
   },
+
+  setHoverRightPanel: (panel: RightPanelKey | null) => {
+    set(produce((state) => {
+      state.hoverRightPanel = panel;
+    }));
+  },
 }));
 
 // Selector hooks for specific parts of the UI state
@@ -542,6 +551,8 @@ export const useSetActiveNav = () => useUIStore((state) => state.setActiveNav);
 export const useSetHoverNav = () => useUIStore((state) => state.setHoverNav);
 export const useActiveRightPanel = () => useUIStore((state) => state.activeRightPanel);
 export const useSetActiveRightPanel = () => useUIStore((state) => state.setActiveRightPanel);
+export const useHoverRightPanel = () => useUIStore((state) => state.hoverRightPanel);
+export const useSetHoverRightPanel = () => useUIStore((state) => state.setHoverRightPanel);
 
 // Action hooks
 export const usePanelActions = () => useUIStore(
