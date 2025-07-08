@@ -1071,8 +1071,8 @@ export default function EditorCanvas() {
         {/* Floating Toolbar - Fixed position outside scrollable area */}
         {(activeNav === 'tools' || hoverNav === 'tools') && (
           <div
-            className="absolute top-2/5 -translate-y-1/2 z-50 transition-all duration-300"
-            style={{ left: '80px' }}
+            className="absolute top-2/5 -translate-y-1/2 transition-all duration-300"
+            style={{ left: '80px', zIndex: (hoverNav === 'tools' && activeNav !== 'tools') ? 70 : 50 }}
           >
             <Toolbar />
           </div>
