@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { TimelineManager } from '@/lib/timeline-manager';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useCanvasElements, useCanvasGroups } from '@/stores/use-canvas-store';
-import { useUIStore, useActiveNav, useHoverNav, useActiveRightPanel, useHoverRightPanel } from '@/stores/use-ui-store';
+import { useUIStore, useActiveNav, useHoverNav, useActiveRightPanel, useHoverRightPanel, RightPanelKey } from '@/stores/use-ui-store';
 import { useTimelineSync } from '@/stores/use-timeline-store';
 import { useCanvasMigration } from '@/hooks/use-canvas-migration';
 import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
@@ -96,6 +96,34 @@ export default function EditorCanvas() {
 
   // Canvas zoom state - will migrate this to UI store in next iteration
   const [canvasZoom, setCanvasZoom] = useState(1);
+
+  // Individual right panel card heights (in px)
+  const [cardHeights, setCardHeights] = useState<Record<RightPanelKey, number>>({
+    properties: 320,
+    animations: 320,
+    history: 320,
+  });
+
+  // Start resizing a specific card panel by dragging its bottom edge
+  const startCardResize = useCallback((key: RightPanelKey) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    const startY = e.clientY;
+    const startHeight = cardHeights[key];
+
+    const onMouseMove = (ev: MouseEvent) => {
+      const delta = ev.clientY - startY;
+      const newHeight = Math.max(192, Math.min(window.innerHeight * 0.7, startHeight + delta));
+      setCardHeights(prev => ({ ...prev, [key]: newHeight }));
+    };
+
+    const onMouseUp = () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, [cardHeights]);
 
   // Handle zoom changes from the Canvas component
   const handleZoomChange = useCallback((newZoom: number) => {
@@ -1157,24 +1185,28 @@ export default function EditorCanvas() {
               style={{ width: `${panelState.rightPanelWidth / 16}rem` }}
             >
               { (activeRightPanels.includes('properties') || hoverRightPanel === 'properties') && hasSelection && (
-                <div className="bg-white border border-gray-200 h-96 rounded-lg shadow-lg p-2">
+                <div className="relative bg-white border border-gray-200 rounded-lg shadow-lg overflow-auto z-10" style={{height: `${cardHeights.properties}px`}}>
                   <PropertiesPanel
                     onInspectorChange={handleInspectorChange}
                     onGroupInspectorChange={handleGroupInspectorChange}
                   />
+                  {/* Bottom resize handle */}
+                  <div className="absolute bottom-0 left-0 right-0 h-2 cursor-row-resize" onMouseDown={startCardResize('properties')}></div>
                 </div>
               )}
               { (activeRightPanels.includes('animations') || hoverRightPanel === 'animations') && hasSelection && (
-                <div className="bg-white border border-gray-200 h-96 rounded-lg shadow-lg p-2">
+                <div className="relative bg-white border border-gray-200 rounded-lg shadow-lg overflow-auto z-10" style={{height: `${cardHeights.animations}px`}}>
                   <AnimationsPanel
                     onInspectorChange={handleInspectorChange}
                     onGroupInspectorChange={handleGroupInspectorChange}
                   />
+                  <div className="absolute bottom-0 left-0 right-0 h-2 cursor-row-resize" onMouseDown={startCardResize('animations')}></div>
                 </div>
               )}
               { (activeRightPanels.includes('history') || hoverRightPanel === 'history') && (
-                <div className="bg-white border border-gray-200 rounded-lg shadow-md p-2">
+                <div className="relative bg-white border border-gray-200 rounded-lg shadow-lg overflow-auto z-10" style={{height: `${cardHeights.history}px`}}>
                   <HistoryPanel />
+                  <div className="absolute bottom-0 left-0 right-0 h-2 cursor-row-resize" onMouseDown={startCardResize('history')}></div>
                 </div>
               )}
             </div>
