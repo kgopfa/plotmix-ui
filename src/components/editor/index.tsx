@@ -80,7 +80,7 @@ export default function EditorCanvas() {
     toggleShowPaths,
   } = useUIStore();
 
-  const activeRightPanel = useActiveRightPanel();
+  const activeRightPanels = useActiveRightPanel();
   const hoverRightPanel = useHoverRightPanel();
 
   const MASK_OFFSET_X = 0;
@@ -1150,25 +1150,33 @@ export default function EditorCanvas() {
         )}
 
         {/* Floating Right Panel - Content */}
-        {panelState.rightPanelVisible && (hoverRightPanel || activeRightPanel) && (
+        {panelState.rightPanelVisible && (hoverRightPanel || activeRightPanels.length > 0) && (
           <>
             <div
-              className="absolute top-16 right-20 max-h-[80vh] bg-white/95 backdrop-blur-sm rounded-lg shadow-lg overflow-y-auto z-30 transition-all duration-300"
+              className="absolute top-2 right-20 max-h-[80vh] bg-transparent overflow-y-auto z-30 transition-all duration-300 space-y-2"
               style={{ width: `${panelState.rightPanelWidth / 16}rem` }}
             >
-              {(hoverRightPanel || activeRightPanel) === 'properties' && hasSelection && (
-                <PropertiesPanel
-                  onInspectorChange={handleInspectorChange}
-                  onGroupInspectorChange={handleGroupInspectorChange}
-                />
+              { (activeRightPanels.includes('properties') || hoverRightPanel === 'properties') && hasSelection && (
+                <div className="bg-white border border-gray-200 h-96 rounded-lg shadow-lg p-2">
+                  <PropertiesPanel
+                    onInspectorChange={handleInspectorChange}
+                    onGroupInspectorChange={handleGroupInspectorChange}
+                  />
+                </div>
               )}
-              {(hoverRightPanel || activeRightPanel) === 'animations' && hasSelection && (
-                <AnimationsPanel
-                  onInspectorChange={handleInspectorChange}
-                  onGroupInspectorChange={handleGroupInspectorChange}
-                />
+              { (activeRightPanels.includes('animations') || hoverRightPanel === 'animations') && hasSelection && (
+                <div className="bg-white border border-gray-200 h-96 rounded-lg shadow-lg p-2">
+                  <AnimationsPanel
+                    onInspectorChange={handleInspectorChange}
+                    onGroupInspectorChange={handleGroupInspectorChange}
+                  />
+                </div>
               )}
-              {(hoverRightPanel || activeRightPanel) === 'history' && <HistoryPanel />}
+              { (activeRightPanels.includes('history') || hoverRightPanel === 'history') && (
+                <div className="bg-white border border-gray-200 rounded-lg shadow-md p-2">
+                  <HistoryPanel />
+                </div>
+              )}
             </div>
           </>
         )}

@@ -101,7 +101,7 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
   };
   
   return (
-    <form className="flex flex-col gap-2">
+    <form className="flex flex-col gap-2 p-2">
       <label>
         Name:
         <input

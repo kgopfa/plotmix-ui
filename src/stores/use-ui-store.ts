@@ -78,7 +78,7 @@ interface UIState {
   preferences: UserPreferences;
   keyboardShortcuts: KeyboardShortcut[];
   navigation: NavigationState;
-  activeRightPanel: RightPanelKey | null;
+  activeRightPanel: RightPanelKey[];
   hoverRightPanel: RightPanelKey | null;
 }
 
@@ -234,7 +234,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
       preferences: defaultUserPreferences,
       keyboardShortcuts: defaultKeyboardShortcuts,
       navigation: { activeNav: null, hoverNav: null },
-      activeRightPanel: 'properties',
+      activeRightPanel: ['properties'],
       hoverRightPanel: null,
 
   // Panel Actions
@@ -528,7 +528,12 @@ export const useUIStore = create<UIStore>((set, get) => ({
   // Right panel action
   setActiveRightPanel: (panel: RightPanelKey) => {
     set(produce((state) => {
-      state.activeRightPanel = panel;
+      const panels: RightPanelKey[] = state.activeRightPanel as RightPanelKey[];
+      if (panels.includes(panel)) {
+        state.activeRightPanel = panels.filter((p: RightPanelKey) => p !== panel);
+      } else {
+        state.activeRightPanel.push(panel);
+      }
     }));
   },
 

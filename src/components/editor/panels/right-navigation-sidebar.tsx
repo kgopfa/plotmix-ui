@@ -23,7 +23,7 @@ const navigation: RightNavItem[] = [
 ];
 
 export const RightNavigationSidebar: React.FC = () => {
-  const activePanel = useActiveRightPanel();
+  const activePanels = useActiveRightPanel();
   const hoverPanel = useHoverRightPanel();
   const setActivePanel = useSetActiveRightPanel();
   const setHoverPanel = useSetHoverRightPanel();
@@ -41,7 +41,7 @@ export const RightNavigationSidebar: React.FC = () => {
           {navigation.map((item) => (
             <li key={item.key}>
               <button
-                className={`${(activePanel === item.key || hoverPanel === item.key) ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'} group flex flex-col gap-x-3 rounded-md p-3 text-sm/6 font-semibold`}
+                className={`${(activePanels.includes(item.key) || hoverPanel === item.key) ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'} group flex flex-col gap-x-3 rounded-md p-3 text-sm/6 font-semibold`}
                 onClick={() => handleClick(item.key)}
                 onMouseEnter={() => setHoverPanel(item.key)}
                 onMouseLeave={() => setHoverPanel(null)}
