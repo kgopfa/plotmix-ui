@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { TimelineManager } from '@/lib/timeline-manager';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useCanvasElements, useCanvasGroups } from '@/stores/use-canvas-store';
-import { useUIStore, useActiveNav, useHoverNav, useActiveRightPanel, useHoverRightPanel, RightPanelKey } from '@/stores/use-ui-store';
+import { useUIStore, useActiveNav, useActiveRightPanel } from '@/stores/use-ui-store';
 import { useTimelineSync } from '@/stores/use-timeline-store';
 import { useCanvasMigration } from '@/hooks/use-canvas-migration';
 import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
@@ -80,8 +80,7 @@ export default function EditorCanvas() {
     toggleShowPaths,
   } = useUIStore();
 
-  const activeRightPanels = useActiveRightPanel();
-  const hoverRightPanel = useHoverRightPanel();
+  const activeRightPanel = useActiveRightPanel();
 
   const MASK_OFFSET_X = 0;
   const MASK_OFFSET_Y = 0;
@@ -96,34 +95,6 @@ export default function EditorCanvas() {
 
   // Canvas zoom state - will migrate this to UI store in next iteration
   const [canvasZoom, setCanvasZoom] = useState(1);
-
-  // Individual right panel card heights (in px)
-  const [cardHeights, setCardHeights] = useState<Record<RightPanelKey, number>>({
-    properties: 320,
-    animations: 320,
-    history: 320,
-  });
-
-  // Start resizing a specific card panel by dragging its bottom edge
-  const startCardResize = useCallback((key: RightPanelKey) => (e: React.MouseEvent) => {
-    e.preventDefault();
-    const startY = e.clientY;
-    const startHeight = cardHeights[key];
-
-    const onMouseMove = (ev: MouseEvent) => {
-      const delta = ev.clientY - startY;
-      const newHeight = Math.max(192, Math.min(window.innerHeight * 0.7, startHeight + delta));
-      setCardHeights(prev => ({ ...prev, [key]: newHeight }));
-    };
-
-    const onMouseUp = () => {
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
-    };
-
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
-  }, [cardHeights]);
 
   // Handle zoom changes from the Canvas component
   const handleZoomChange = useCallback((newZoom: number) => {
@@ -975,9 +946,8 @@ export default function EditorCanvas() {
   }, [handleImageFile]);
 
   const activeNav = useActiveNav();
-  const hoverNav = useHoverNav();
 
-  const isScenesPanelVisible = panelState.leftPanelVisible && (hoverNav === 'scenes' || activeNav === 'scenes');
+  const isScenesPanelVisible = panelState.leftPanelVisible && (activeNav === 'scenes');
   // Timeline should only shift when Scenes is actually selected (active), not just hovered
   const timelineLeftOffset = 80 + (panelState.leftPanelVisible && activeNav === 'scenes' ? panelState.leftPanelWidth : 0);
 
@@ -1105,10 +1075,10 @@ export default function EditorCanvas() {
         </main>
 
         {/* Floating Toolbar - Fixed position outside scrollable area */}
-        {(activeNav === 'tools' || hoverNav === 'tools') && (
+        {(activeNav === 'tools') && (
           <div
             className="absolute top-2/5 -translate-y-1/2 transition-all duration-300"
-            style={{ left: '80px', zIndex: (hoverNav === 'tools' && activeNav !== 'tools') ? 70 : 50 }}
+            style={{ left: '80px', zIndex: 50 }}
           >
             <Toolbar />
           </div>
@@ -1178,36 +1148,26 @@ export default function EditorCanvas() {
         )}
 
         {/* Floating Right Panel - Content */}
-        {panelState.rightPanelVisible && (hoverRightPanel || activeRightPanels.length > 0) && (
+        {panelState.rightPanelVisible && activeRightPanel && (
           <>
             <div
-              className="absolute top-2 right-20 max-h-[80vh] bg-transparent overflow-y-auto z-30 transition-all duration-300 space-y-2"
-              style={{ width: `${panelState.rightPanelWidth / 16}rem` }}
+              className="absolute right-20 bg-white border border-gray-200 rounded-lg shadow-sm overflow-y-auto z-30 transition-all duration-300 mb-2"
+              style={{ width: `${panelState.rightPanelWidth / 16}rem`, top: '8px', bottom: `${panelState.timelineHeight + 8}px` }}
             >
-              { (activeRightPanels.includes('properties') || hoverRightPanel === 'properties') && hasSelection && (
-                <div className="relative bg-white border border-gray-200 rounded-lg shadow-lg overflow-auto z-10" style={{height: `${cardHeights.properties}px`}}>
-                  <PropertiesPanel
-                    onInspectorChange={handleInspectorChange}
-                    onGroupInspectorChange={handleGroupInspectorChange}
-                  />
-                  {/* Bottom resize handle */}
-                  <div className="absolute bottom-0 left-0 right-0 h-2 cursor-row-resize" onMouseDown={startCardResize('properties')}></div>
-                </div>
+              { activeRightPanel === 'properties' && hasSelection && (
+                <PropertiesPanel
+                  onInspectorChange={handleInspectorChange}
+                  onGroupInspectorChange={handleGroupInspectorChange}
+                />
               )}
-              { (activeRightPanels.includes('animations') || hoverRightPanel === 'animations') && hasSelection && (
-                <div className="relative bg-white border border-gray-200 rounded-lg shadow-lg overflow-auto z-10" style={{height: `${cardHeights.animations}px`}}>
-                  <AnimationsPanel
-                    onInspectorChange={handleInspectorChange}
-                    onGroupInspectorChange={handleGroupInspectorChange}
-                  />
-                  <div className="absolute bottom-0 left-0 right-0 h-2 cursor-row-resize" onMouseDown={startCardResize('animations')}></div>
-                </div>
+              { activeRightPanel === 'animations' && hasSelection && (
+                <AnimationsPanel
+                  onInspectorChange={handleInspectorChange}
+                  onGroupInspectorChange={handleGroupInspectorChange}
+                />
               )}
-              { (activeRightPanels.includes('history') || hoverRightPanel === 'history') && (
-                <div className="relative bg-white border border-gray-200 rounded-lg shadow-lg overflow-auto z-10" style={{height: `${cardHeights.history}px`}}>
-                  <HistoryPanel />
-                  <div className="absolute bottom-0 left-0 right-0 h-2 cursor-row-resize" onMouseDown={startCardResize('history')}></div>
-                </div>
+              { activeRightPanel === 'history' && (
+                <HistoryPanel />
               )}
             </div>
           </>
