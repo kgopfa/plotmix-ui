@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { TimelineManager } from '@/lib/timeline-manager';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useCanvasElements, useCanvasGroups } from '@/stores/use-canvas-store';
-import { useUIStore } from '@/stores/use-ui-store';
+import { useUIStore, useActiveNav, useHoverNav } from '@/stores/use-ui-store';
 import { useTimelineSync } from '@/stores/use-timeline-store';
 import { useCanvasMigration } from '@/hooks/use-canvas-migration';
 import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
@@ -939,6 +939,9 @@ export default function EditorCanvas() {
     };
   }, [handleImageFile]);
 
+  const activeNav = useActiveNav();
+  const hoverNav = useHoverNav();
+
   return (
     <div className="h-screen w-screen flex flex-col">
       {/* Options Bar */}
@@ -1092,7 +1095,7 @@ export default function EditorCanvas() {
         />
 
         {/* Floating Left Panel - Scene Explorer */}
-        {panelState.leftPanelVisible && (
+        {panelState.leftPanelVisible && (hoverNav==='scenes' || activeNav==='scenes') && (
           <>
             <div
               className="absolute top-0 h-full bg-gray-50/95 backdrop-blur-sm overflow-y-auto z-60 shadow-lg transition-transform duration-300"

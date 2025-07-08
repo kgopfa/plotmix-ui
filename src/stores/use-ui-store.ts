@@ -59,6 +59,14 @@ interface KeyboardShortcut {
   description: string;
 }
 
+// Navigation keys corresponding to sidebar icons
+export type NavKey = 'video' | 'scenes' | 'uploads' | 'ai' | 'tools' | 'audio' | 'timeline';
+
+interface NavigationState {
+  activeNav: NavKey | null; // sticks after click
+  hoverNav: NavKey | null;  // transient while hovering
+}
+
 // Combined UI State
 interface UIState {
   panels: PanelState;
@@ -66,6 +74,7 @@ interface UIState {
   snapping: SnappingState;
   preferences: UserPreferences;
   keyboardShortcuts: KeyboardShortcut[];
+  navigation: NavigationState;
 }
 
 // Actions
@@ -110,6 +119,10 @@ interface UIActions {
   unregisterShortcut: (action: string) => void;
   executeShortcut: (event: KeyboardEvent) => boolean;
   getShortcutByAction: (action: string) => KeyboardShortcut | undefined;
+  
+  // Navigation
+  setActiveNav: (nav: NavKey | null) => void;
+  setHoverNav: (nav: NavKey | null) => void;
 }
 
 type UIStore = UIState & UIActions;
@@ -213,6 +226,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
       snapping: defaultSnappingState,
       preferences: defaultUserPreferences,
       keyboardShortcuts: defaultKeyboardShortcuts,
+      navigation: { activeNav: null, hoverNav: null },
 
   // Panel Actions
   toggleLeftPanel: () => {
@@ -488,6 +502,19 @@ export const useUIStore = create<UIStore>((set, get) => ({
     const state = get();
     return state.keyboardShortcuts.find((s: KeyboardShortcut) => s.action === action);
   },
+
+  // Navigation
+  setActiveNav: (nav: NavKey | null) => {
+    set(produce((state) => {
+      state.navigation.activeNav = nav;
+    }));
+  },
+
+  setHoverNav: (nav: NavKey | null) => {
+    set(produce((state) => {
+      state.navigation.hoverNav = nav;
+    }));
+  },
 }));
 
 // Selector hooks for specific parts of the UI state
@@ -549,3 +576,10 @@ export const useKeyboardShortcutsStore = () => {
     getShortcutByAction,
   };
 };
+
+// Navigation hooks
+export const useNavigationState = () => useUIStore((state) => state.navigation);
+export const useActiveNav = () => useUIStore(state => state.navigation.activeNav);
+export const useHoverNav = () => useUIStore(state => state.navigation.hoverNav);
+export const useSetActiveNav = () => useUIStore(state => state.setActiveNav);
+export const useSetHoverNav = () => useUIStore(state => state.setHoverNav);
