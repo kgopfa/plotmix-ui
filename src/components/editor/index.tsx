@@ -23,7 +23,7 @@ import { useCanvasDimensions } from '@/hooks/use-canvas-dimensions';
 import { useTimelineIntegration } from '@/hooks/use-timeline-integration';
 import { useElementSnapping } from '@/hooks/use-element-snapping';
 import { OptionsBar } from './options';
-import { NavigationSidebar } from './navigation-sidebar';
+import { NavigationSidebar } from './panels/navigation-sidebar';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 
 

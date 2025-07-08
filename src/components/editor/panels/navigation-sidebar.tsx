@@ -6,9 +6,9 @@ import {
   FilmIcon,
   SparklesIcon,
   VideoCameraIcon,
-  WrenchScrewdriverIcon,
   ClockIcon,
   MusicalNoteIcon,
+  PaintBrushIcon,
 } from '@heroicons/react/24/outline'
 
 const navigation = [
@@ -16,7 +16,7 @@ const navigation = [
   { name: 'Scenes', href: '#', icon: FilmIcon, current: false },
   { name: 'Uploads', href: '#', icon: CloudArrowUpIcon, current: false },
   { name: 'AI', href: '#', icon: SparklesIcon, current: false },
-  { name: 'Tools', href: '#', icon: WrenchScrewdriverIcon, current: false },
+  { name: 'Tools', href: '#', icon: PaintBrushIcon, current: false },
 ]
 
 const bottomNavigation = [
