@@ -1110,7 +1110,7 @@ export default function EditorCanvas() {
         {panelState.leftPanelVisible && (
           <>
             <div
-              className="absolute top-0 h-full bg-gray-50/95 backdrop-blur-sm border-r border-gray-200 overflow-y-auto z-30 shadow-lg transition-transform duration-300"
+              className="absolute top-0 h-full bg-gray-50/95 backdrop-blur-sm border-r border-gray-200 overflow-y-auto z-60 shadow-lg transition-transform duration-300"
               style={{ left: '80px', width: `${panelState.leftPanelWidth}px` }}
             >
               <SceneExplorer
@@ -1158,13 +1158,6 @@ export default function EditorCanvas() {
                 }}
               />
             </div>
-
-            {/* Left Resize Handle */}
-            <div
-              className="absolute top-0 h-full w-1 border-r border-gray-300 hover:bg-blue-500 cursor-col-resize z-40 transition-colors"
-              style={{ left: `${80 + panelState.leftPanelWidth}px` }}
-              onMouseDown={handleMouseDown('left')}
-            />
           </>
         )}
 

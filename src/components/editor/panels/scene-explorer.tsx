@@ -113,10 +113,6 @@ function SceneExplorerContent({
   const renameScene = useRenameScene();
   const projectManager = ProjectManager.getInstance();
 
-  // Resize state
-  const [height, setHeight] = useState(384); // 96 * 4 = 384px (min-h-96 equivalent)
-  const [isResizing, setIsResizing] = useState(false);
-
   // Use Zustand store for selection state
   const {
     select: onElementSelect,
@@ -899,48 +895,19 @@ function SceneExplorerContent({
         setSceneContextMenu(null);
   };
 
-  // Resize handlers
-  const handleResizeStart = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsResizing(true);
-  };
 
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isResizing) return;
-      
-      const newHeight = Math.max(200, Math.min(window.innerHeight - 100, e.clientY - 80));
-      setHeight(newHeight);
-    };
-
-    const handleMouseUp = () => {
-      setIsResizing(false);
-    };
-
-    if (isResizing) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [isResizing]);
 
   return (
-    <div className="relative mr-2 mt-2 w-80">
-      <div 
-        className="bg-white border border-gray-200 shadow-lg rounded-md p-2 text-gray-800 overflow-y-auto"
-        style={{ height: `${height}px` }}
-        onClick={handleEmptySpaceClick}
-        onDragOver={(e) => {
-          e.preventDefault();
-          if (draggedItem) {
-            e.dataTransfer.dropEffect = 'move';
-          }
-        }}
-        onDrop={handleDropOnRoot}
-      >
+    <div className="absolute inset-y-0 mr-2 mt-2 mb-2 w-80 bg-white border border-gray-200 shadow-lg rounded-md p-2 text-gray-800 overflow-y-auto pb-4"
+      onClick={handleEmptySpaceClick}
+      onDragOver={(e) => {
+        e.preventDefault();
+        if (draggedItem) {
+          e.dataTransfer.dropEffect = 'move';
+        }
+      }}
+      onDrop={handleDropOnRoot}
+    >
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold">Scenes</h3>
         </div>
@@ -1062,13 +1029,6 @@ function SceneExplorerContent({
           onClose={() => setSceneContextMenu(null)}
           canDelete={scenes.length > 1}
         />
-      </div>
-
-      {/* Invisible resize handle */}
-      <div
-        className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize"
-        onMouseDown={handleResizeStart}
-      />
     </div>
   );
 }
