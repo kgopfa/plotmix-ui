@@ -113,6 +113,10 @@ function SceneExplorerContent({
   const renameScene = useRenameScene();
   const projectManager = ProjectManager.getInstance();
 
+  // Resize state
+  const [height, setHeight] = useState(384); // 96 * 4 = 384px (min-h-96 equivalent)
+  const [isResizing, setIsResizing] = useState(false);
+
   // Use Zustand store for selection state
   const {
     select: onElementSelect,
@@ -892,141 +896,178 @@ function SceneExplorerContent({
         break;
     }
     
-    setSceneContextMenu(null);
+        setSceneContextMenu(null);
   };
 
+  // Resize handlers
+  const handleResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+      
+      const newHeight = Math.max(200, Math.min(window.innerHeight - 100, e.clientY - 80));
+      setHeight(newHeight);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isResizing]);
+
   return (
-    <div 
-      className="h-full p-2 text-gray-800"
-      onClick={handleEmptySpaceClick}
-      onDragOver={(e) => {
-        e.preventDefault();
-        if (draggedItem) {
-          e.dataTransfer.dropEffect = 'move';
-        }
-      }}
-      onDrop={handleDropOnRoot}
-    >
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold">Scenes</h3>
-      </div>
-      
-      {/* New Scene Button */}
-      <button
-        className="w-full mb-3 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
-        onClick={(e) => {
-          e.stopPropagation();
-          handleNewScene();
+    <div className="relative mr-2 mt-2 w-80">
+      <div 
+        className="bg-white border border-gray-200 shadow-lg rounded-md p-2 text-gray-800 overflow-y-auto"
+        style={{ height: `${height}px` }}
+        onClick={handleEmptySpaceClick}
+        onDragOver={(e) => {
+          e.preventDefault();
+          if (draggedItem) {
+            e.dataTransfer.dropEffect = 'move';
+          }
         }}
+        onDrop={handleDropOnRoot}
       >
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 6V18M6 12H18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-        New Scene
-      </button>
-      
-      <ul>
-        {scenes.map(scene => {
-          const isActive = scene.id === activeSceneId;
-          const isExpanded = expandedScenes.has(scene.id);
-          const isEditing = editingSceneName === scene.id;
-          
-          return (
-            <li key={scene.id}>
-              <div className="flex items-center">
-                {/* Expand/Collapse Button */}
-                <button
-                  className="w-4 h-4 flex items-center justify-center hover:bg-gray-300 rounded mr-1"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleSceneExpansion(scene.id);
-                  }}
-                >
-                  <svg 
-                    className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
-                    fill="currentColor" 
-                    viewBox="0 0 20 20"
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold">Scenes</h3>
+        </div>
+        
+        {/* New Scene Button */}
+        <button
+          className="w-full mb-3 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleNewScene();
+          }}
+        >
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 6V18M6 12H18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          New Scene
+        </button>
+        
+        <ul>
+          {scenes.map(scene => {
+            const isActive = scene.id === activeSceneId;
+            const isExpanded = expandedScenes.has(scene.id);
+            const isEditing = editingSceneName === scene.id;
+            
+            return (
+              <li key={scene.id}>
+                <div className="flex items-center">
+                  {/* Expand/Collapse Button */}
+                  <button
+                    className="w-4 h-4 flex items-center justify-center hover:bg-gray-300 rounded mr-1"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleSceneExpansion(scene.id);
+                    }}
                   >
-                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                  </svg>
-                </button>
+                    <svg 
+                      className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                      fill="currentColor" 
+                      viewBox="0 0 20 20"
+                    >
+                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </button>
 
-                {/* Scene Name */}
-                <div 
-                  className={`flex-1 px-2 py-1 rounded cursor-pointer hover:bg-gray-200 flex items-center gap-2 transition-colors ${
-                    isActive ? 'bg-blue-100 text-blue-600 font-medium' : ''
-                  }`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (!isEditing) {
-                      handleSceneSwitch(scene.id);
-                    }
-                  }}
-                  onContextMenu={(e) => handleSceneContextMenu(e, scene.id)}
-                >
-                  <span className="text-sm">🎬</span>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={editingName}
-                      onChange={(e) => setEditingName(e.target.value)}
-                      onBlur={() => handleSceneRename(scene.id, editingName)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          handleSceneRename(scene.id, editingName);
-                        } else if (e.key === 'Escape') {
-                          setEditingSceneName(null);
-                          setEditingName('');
-                        }
-                      }}
-                      className="flex-1 bg-white border border-blue-300 rounded px-1 text-sm"
-                      autoFocus
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  ) : (
-                    <span className="flex-1">{scene.name}</span>
-                  )}
-                  {isActive && (
-                    <span className="text-xs text-blue-500">●</span>
-                  )}
+                  {/* Scene Name */}
+                  <div 
+                    className={`flex-1 px-2 py-1 rounded cursor-pointer hover:bg-gray-200 flex items-center gap-2 transition-colors ${
+                      isActive ? 'bg-blue-100 text-blue-600 font-medium' : ''
+                    }`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!isEditing) {
+                        handleSceneSwitch(scene.id);
+                      }
+                    }}
+                    onContextMenu={(e) => handleSceneContextMenu(e, scene.id)}
+                  >
+                    <span className="text-sm">🎬</span>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={editingName}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        onBlur={() => handleSceneRename(scene.id, editingName)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleSceneRename(scene.id, editingName);
+                          } else if (e.key === 'Escape') {
+                            setEditingSceneName(null);
+                            setEditingName('');
+                          }
+                        }}
+                        className="flex-1 bg-white border border-blue-300 rounded px-1 text-sm"
+                        autoFocus
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    ) : (
+                      <span className="flex-1">{scene.name}</span>
+                    )}
+                    {isActive && (
+                      <span className="text-xs text-blue-500">●</span>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {/* Scene Content */}
-              {isExpanded && isActive && (
-                <ul className="ml-6 mt-1 space-y-1">
-                  {/* Render root groups (groups without parents) */}
-                  {getRootGroups().map(group => renderHierarchicalGroup(group, 0))}
-                  
-                  {/* Render root elements (elements without parents and not in non-default groups) */}
-                  {getRootElements().map(element => renderHierarchicalElement(element, 0))}
+                {/* Scene Content */}
+                {isExpanded && isActive && (
+                  <ul className="ml-6 mt-1 space-y-1">
+                    {/* Render root groups (groups without parents) */}
+                    {getRootGroups().map(group => renderHierarchicalGroup(group, 0))}
+                    
+                    {/* Render root elements (elements without parents and not in non-default groups) */}
+                    {getRootElements().map(element => renderHierarchicalElement(element, 0))}
 
-                  {/* Empty state */}
-                  {getRootGroups().length === 0 && getRootElements().length === 0 && (
-                    <li className="px-2 py-4 text-gray-500 text-center">
-                      No elements to display
-                    </li>
-                  )}
-                </ul>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+                    {/* Empty state */}
+                    {getRootGroups().length === 0 && getRootElements().length === 0 && (
+                      <li className="px-2 py-4 text-gray-500 text-center">
+                        No elements to display
+                      </li>
+                    )}
+                  </ul>
+                )}
+              </li>
+            );
+          })}
+        </ul>
 
-      {/* Element/Group Context Menu */}
-      <ContextMenu
-        contextMenu={contextMenu}
-        onAction={handleContextMenuAction}
-        onClose={() => setContextMenu(null)}
-      />
+        {/* Element/Group Context Menu */}
+        <ContextMenu
+          contextMenu={contextMenu}
+          onAction={handleContextMenuAction}
+          onClose={() => setContextMenu(null)}
+        />
 
-      {/* Scene Context Menu */}
-      <SceneContextMenu
-        contextMenu={sceneContextMenu}
-        onAction={handleSceneContextMenuAction}
-        onClose={() => setSceneContextMenu(null)}
-        canDelete={scenes.length > 1}
+        {/* Scene Context Menu */}
+        <SceneContextMenu
+          contextMenu={sceneContextMenu}
+          onAction={handleSceneContextMenuAction}
+          onClose={() => setSceneContextMenu(null)}
+          canDelete={scenes.length > 1}
+        />
+      </div>
+
+      {/* Invisible resize handle */}
+      <div
+        className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize"
+        onMouseDown={handleResizeStart}
       />
     </div>
   );
