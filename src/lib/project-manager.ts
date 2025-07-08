@@ -231,6 +231,18 @@ export class ProjectManager {
       if (activeScene.ui.toolState.isPathMode !== uiStore.tools.isPathMode) {
         uiStore.togglePathMode();
       }
+      
+      // Canvas size state (restore from canvas.canvasSize if available)
+      if (activeScene.canvas.canvasSize) {
+        if (activeScene.canvas.canvasSize.currentSizeId === 'custom' && activeScene.canvas.canvasSize.customSize) {
+          uiStore.setCustomCanvasSize(
+            activeScene.canvas.canvasSize.customSize.width,
+            activeScene.canvas.canvasSize.customSize.height
+          );
+        } else {
+          uiStore.setCanvasSize(activeScene.canvas.canvasSize.currentSizeId);
+        }
+      }
     }
     
     // 6. Restore selections from active scene (after elements are loaded)
@@ -465,7 +477,11 @@ export class ProjectManager {
       canvas: {
         elements: [],
         groups: [],
-        dimensions: { width: 1920, height: 1080 }
+        dimensions: { width: 1920, height: 1080 },
+        canvasSize: {
+          currentSizeId: 'fhd',
+          customSize: null
+        }
       },
       timeline: {
         scale: 1,
@@ -647,8 +663,16 @@ export class ProjectManager {
         elements: canvasState.elements,
         groups: canvasState.groups,
         dimensions: {
-          width: 1920, // TODO: Get from actual canvas dimensions
-          height: 1080
+          width: uiState.canvas.currentSizeId === 'custom' 
+            ? uiState.canvas.customSize?.width || 1920 
+            : uiState.canvas.availableSizes.find(s => s.id === uiState.canvas.currentSizeId)?.width || 1920,
+          height: uiState.canvas.currentSizeId === 'custom' 
+            ? uiState.canvas.customSize?.height || 1080 
+            : uiState.canvas.availableSizes.find(s => s.id === uiState.canvas.currentSizeId)?.height || 1080
+        },
+        canvasSize: {
+          currentSizeId: uiState.canvas.currentSizeId,
+          customSize: uiState.canvas.customSize
         }
       },
       timeline: {
@@ -710,7 +734,11 @@ export class ProjectManager {
           canvas: {
             elements: [],
             groups: [],
-            dimensions: { width: 1920, height: 1080 }
+            dimensions: { width: 1920, height: 1080 },
+            canvasSize: {
+              currentSizeId: 'fhd',
+              customSize: null
+            }
           },
           timeline: {
             scale: 1,

@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { TimelineManager } from '@/lib/timeline-manager';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useCanvasElements, useCanvasGroups } from '@/stores/use-canvas-store';
-import { useUIStore, useActiveNav, useActiveRightPanel } from '@/stores/use-ui-store';
+import { useUIStore, useActiveNav, useActiveRightPanel, useCanvasState } from '@/stores/use-ui-store';
 import { useTimelineSync } from '@/stores/use-timeline-store';
 import { useCanvasMigration } from '@/hooks/use-canvas-migration';
 import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
@@ -16,6 +16,7 @@ import { HistoryPanel } from './panels/history-panel';
 import { Timeline } from './timeline';
 import { Toolbar } from './panels/toolbar';
 import { MaskOverlay } from './canvas/mask-overlay';
+import { CanvasFrame } from './canvas/canvas-frame';
 import { AnimatedCanvasObject, ElementAnimation, CanvasGroup } from '@/types/canvas';
 import { Canvas } from './canvas';
 import type { CanvasRef } from './canvas';
@@ -37,6 +38,9 @@ export default function EditorCanvas() {
     setCanvasObjects,
     setGroups,
   } = useCanvasMigration();
+  
+  // Canvas state for logical dimensions
+  const canvasState = useCanvasState();
 
   // Use Zustand store for selection state
   const {
@@ -1054,23 +1058,31 @@ export default function EditorCanvas() {
               )}
             </div>
 
-            {dimensions.width > 0 && dimensions.height > 0 ? (
-              <>
-                <Canvas
-                  ref={canvasRef}
-                  dimensions={{
-                    width: Math.max(dimensions.width * 3, 4000), // Canvas fills entire scrollable area
-                    height: Math.max(dimensions.height * 3, 4000)
-                  }}
-                  zoom={canvasZoom}
-                  onZoomChange={handleZoomChange}
-                />
-              </>
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-                <div className="text-gray-500">Loading canvas... (dimensions: {dimensions.width}x{dimensions.height})</div>
-              </div>
-            )}
+            {/* Canvas Frame - centered with responsive sizing */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              {dimensions.width > 0 && dimensions.height > 0 ? (
+                <CanvasFrame>
+                  <Canvas
+                    ref={canvasRef}
+                    dimensions={{
+                      // Use logical canvas dimensions from store
+                      width: canvasState.currentSizeId === 'custom' 
+                        ? canvasState.customSize?.width || 1920 
+                        : canvasState.availableSizes.find(s => s.id === canvasState.currentSizeId)?.width || 1920,
+                      height: canvasState.currentSizeId === 'custom' 
+                        ? canvasState.customSize?.height || 1080 
+                        : canvasState.availableSizes.find(s => s.id === canvasState.currentSizeId)?.height || 1080
+                    }}
+                    zoom={canvasZoom}
+                    onZoomChange={handleZoomChange}
+                  />
+                </CanvasFrame>
+              ) : (
+                <div className="flex items-center justify-center bg-gray-100 rounded-lg shadow-lg border border-gray-200 w-2/3 h-1/2">
+                  <div className="text-gray-500">Loading canvas...</div>
+                </div>
+              )}
+            </div>
           </div>
         </main>
 

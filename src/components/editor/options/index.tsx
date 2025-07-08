@@ -3,12 +3,13 @@ import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuIt
 import { MagnifyingGlassIcon } from '@heroicons/react/20/solid'
 import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowUpFromBracket, faCloudArrowUp, faArrowRotateLeft, faArrowRotateRight, faGear, faChevronDown } from '@fortawesome/free-solid-svg-icons'
+import { faArrowUpFromBracket, faCloudArrowUp, faArrowRotateLeft, faArrowRotateRight, faGear } from '@fortawesome/free-solid-svg-icons'
 import { ProjectControls } from './project-controls';
 import { PathModeIndicator } from './path-mode-indicator';
 import { PanelToggleButtons } from './panel-toggle-buttons';
 import { SnappingControls } from './snapping-controls';
 import { SelectionIndicator } from './selection-indicator';
+import { CanvasSizeSelector } from './canvas-size-selector';
 
 // Simplified interface - only for props that can't be accessed via stores
 interface OptionsBarProps {
@@ -63,11 +64,8 @@ export const OptionsBar: React.FC<OptionsBarProps> = ({
 
           {/* Project Name and Profile Section */}
           <div className="flex items-center gap-4">
-            {/* Zoom Control */}
-            <button className="flex items-center h-9 gap-2 px-3 py-1.5 text-gray-600 text-sm font-medium hover:bg-gray-100 border border-gray-200 rounded-md transition-colors">
-              <span className="text-gray-600 font-medium">100%</span>
-              <FontAwesomeIcon icon={faChevronDown} className="mb-0.5 size-3 text-gray-600" />
-            </button>
+            {/* Canvas Size Control */}
+            <CanvasSizeSelector />
 
             {/* Project Name */}
             <div className="hidden lg:block">

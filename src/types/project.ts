@@ -28,6 +28,10 @@ export interface ProjectCanvas {
     width: number;
     height: number;
   };
+  canvasSize: {
+    currentSizeId: string;
+    customSize?: { width: number; height: number } | null;
+  };
 }
 
 export interface ProjectTimeline {

@@ -39,6 +39,20 @@ interface SnappingState {
   isElementSnapTemporarilyDisabled: boolean;
 }
 
+interface CanvasSize {
+  id: string;
+  name: string;
+  width: number;
+  height: number;
+  aspectRatio: string;
+}
+
+interface CanvasState {
+  currentSizeId: string;
+  availableSizes: CanvasSize[];
+  customSize: { width: number; height: number } | null;
+}
+
 interface UserPreferences {
   theme: 'light' | 'dark';
   autoSave: boolean;
@@ -75,6 +89,7 @@ interface UIState {
   panels: PanelState;
   tools: ToolState;
   snapping: SnappingState;
+  canvas: CanvasState;
   preferences: UserPreferences;
   keyboardShortcuts: KeyboardShortcut[];
   navigation: NavigationState;
@@ -130,6 +145,12 @@ interface UIActions {
   setHoverNav: (nav: NavKey | null) => void;
   setActiveRightPanel: (panel: RightPanelKey) => void;
   setHoverRightPanel: (panel: RightPanelKey | null) => void;
+  
+  // Canvas Actions
+  setCanvasSize: (sizeId: string) => void;
+  setCustomCanvasSize: (width: number, height: number) => void;
+  addCanvasSize: (size: CanvasSize) => void;
+  removeCanvasSize: (sizeId: string) => void;
 }
 
 type UIStore = UIState & UIActions;
@@ -174,6 +195,18 @@ const defaultSnappingState: SnappingState = {
   },
   isGridSnapTemporarilyDisabled: false,
   isElementSnapTemporarilyDisabled: false,
+};
+
+const defaultCanvasState: CanvasState = {
+  currentSizeId: 'hd',
+  availableSizes: [
+    { id: 'hd', name: 'HD (720p)', width: 1280, height: 720, aspectRatio: '16:9' },
+    { id: 'fhd', name: 'Full HD (1080p)', width: 1920, height: 1080, aspectRatio: '16:9' },
+    { id: '4k', name: '4K UHD', width: 3840, height: 2160, aspectRatio: '16:9' },
+    { id: '2k', name: '2K (1440p)', width: 2560, height: 1440, aspectRatio: '16:9' },
+    { id: 'sd', name: 'SD (480p)', width: 854, height: 480, aspectRatio: '16:9' },
+  ],
+  customSize: null,
 };
 
 const defaultUserPreferences: UserPreferences = {
@@ -231,6 +264,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
       panels: defaultPanelState,
       tools: defaultToolState,
       snapping: defaultSnappingState,
+      canvas: defaultCanvasState,
       preferences: defaultUserPreferences,
       keyboardShortcuts: defaultKeyboardShortcuts,
       navigation: { activeNav: null, hoverNav: null },
@@ -537,12 +571,49 @@ export const useUIStore = create<UIStore>((set, get) => ({
       state.hoverRightPanel = panel;
     }));
   },
+
+  // Canvas Actions
+  setCanvasSize: (sizeId: string) => {
+    set(produce((state) => {
+      state.canvas.currentSizeId = sizeId;
+      state.canvas.customSize = null; // Clear custom size when selecting predefined size
+    }));
+  },
+
+  setCustomCanvasSize: (width: number, height: number) => {
+    set(produce((state) => {
+      state.canvas.customSize = { width, height };
+      state.canvas.currentSizeId = 'custom';
+    }));
+  },
+
+  addCanvasSize: (size: CanvasSize) => {
+    set(produce((state) => {
+      const existingIndex = state.canvas.availableSizes.findIndex((s: CanvasSize) => s.id === size.id);
+      if (existingIndex >= 0) {
+        state.canvas.availableSizes[existingIndex] = size;
+      } else {
+        state.canvas.availableSizes.push(size);
+      }
+    }));
+  },
+
+  removeCanvasSize: (sizeId: string) => {
+    set(produce((state) => {
+      state.canvas.availableSizes = state.canvas.availableSizes.filter((s: CanvasSize) => s.id !== sizeId);
+      // If we're removing the current size, switch to the first available
+      if (state.canvas.currentSizeId === sizeId && state.canvas.availableSizes.length > 0) {
+        state.canvas.currentSizeId = state.canvas.availableSizes[0].id;
+      }
+    }));
+  },
 }));
 
 // Selector hooks for specific parts of the UI state
 export const usePanelState = () => useUIStore((state) => state.panels);
 export const useToolState = () => useUIStore((state) => state.tools);
 export const useSnappingState = () => useUIStore((state) => state.snapping);
+export const useCanvasState = () => useUIStore((state) => state.canvas);
 export const useUserPreferences = () => useUIStore((state) => state.preferences);
 export const useNavigationState = () => useUIStore((state) => state.navigation);
 export const useActiveNav = () => useUIStore((state) => state.navigation.activeNav);
@@ -589,6 +660,15 @@ export const useSnappingActions = () => useUIStore(
     updateElementSnapConfig: state.updateElementSnapConfig,
     setGridSnapTemporarilyDisabled: state.setGridSnapTemporarilyDisabled,
     setElementSnapTemporarilyDisabled: state.setElementSnapTemporarilyDisabled,
+  }))
+);
+
+export const useCanvasActions = () => useUIStore(
+  useShallow((state) => ({
+    setCanvasSize: state.setCanvasSize,
+    setCustomCanvasSize: state.setCustomCanvasSize,
+    addCanvasSize: state.addCanvasSize,
+    removeCanvasSize: state.removeCanvasSize,
   }))
 );
 
