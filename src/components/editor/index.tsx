@@ -1178,7 +1178,7 @@ export default function EditorCanvas() {
 
       {/* Floating Timeline - positioned fixed at bottom, starts after navigation sidebar */}
       <div
-        className="fixed bottom-2 right-0 bg-white border-t border-gray-200 shadow-lg z-50"
+        className="fixed bottom-2 right-0 bg-white border-b border-r border-gray-200 shadow-lg z-50"
         style={{
           left: `${timelineLeftOffset}px`, // Start after nav sidebar and any visible left panel
           height: panelState.isTimelineCollapsed ? '32px' : `${panelState.timelineHeight}px`,
@@ -1189,7 +1189,7 @@ export default function EditorCanvas() {
         {/* Timeline Resize Handle - Visual indicator - only show when not collapsed */}
         {!panelState.isTimelineCollapsed && (
           <div
-            className="absolute top-0 left-0 right-0 h-1 border-t-2 border-gray-300 hover:border-blue-500 cursor-row-resize z-40 transition-colors"
+            className="absolute top-0 left-0 right-0 h-2 cursor-row-resize z-40"
             onMouseDown={handleMouseDown('timeline')}
           />
         )}
