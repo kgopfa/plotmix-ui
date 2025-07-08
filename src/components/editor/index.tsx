@@ -1148,7 +1148,12 @@ export default function EditorCanvas() {
         )}
 
         {/* Floating Right Panel - Content */}
-        {panelState.rightPanelVisible && activeRightPanel && (
+        {(() => {
+          const shouldShow = panelState.rightPanelVisible && activeRightPanel && (
+            activeRightPanel === 'history' || (hasSelection && (activeRightPanel === 'properties' || activeRightPanel === 'animations'))
+          );
+          return shouldShow;
+        })() && (
           <>
             <div
               className="absolute right-20 bg-white border border-gray-200 rounded-lg shadow-sm overflow-y-auto z-30 transition-all duration-300 mb-2"
