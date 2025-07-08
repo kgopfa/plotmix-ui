@@ -180,18 +180,7 @@ export default function EditorCanvas() {
 
   // Timeline sync is handled by the useTimelineIntegration hook
 
-  // Auto-center the scroll view when dimensions are ready
-  useEffect(() => {
-    if (dimensions.width > 0 && dimensions.height > 0 && containerRef.current) {
-      const container = containerRef.current;
-      if (container) {
-        const centerX = (container.scrollWidth - container.clientWidth) / 2;
-        const centerY = (container.scrollHeight - container.clientHeight) / 2;
-        // Set initial position immediately without animation to avoid visible scroll
-        container.scrollTo(centerX, centerY);
-      }
-    }
-  }, [dimensions, containerRef]);
+  // No longer need auto-centering since canvas is fixed position
 
   // Note: Zoom handling is now done by the PIXI viewport in the Canvas component
   // This provides better performance and Figma-like zoom behavior
@@ -885,34 +874,22 @@ export default function EditorCanvas() {
     reader.onload = (event) => {
       const imageData = event.target?.result as string;
       if (imageData) {
-        // Create image object at canvas center
-        const containerElement = containerRef.current;
-        if (containerElement) {
-          const rect = containerElement.getBoundingClientRect();
-          const scrollLeft = containerElement.scrollLeft;
-          const scrollTop = containerElement.scrollTop;
-          
-          // Calculate center position relative to the canvas
-          const centerX = scrollLeft + rect.width / 2;
-          const centerY = scrollTop + rect.height / 2;
-          
-          // Create new image element
-          const newImage = createNewObject(
-            'image',
-            centerX,
-            centerY,
-            canvasObjects,
-            undefined, // pathPoints
-            false, // isPath
-            imageData,
-            200, // default width
-            150  // default height
-          );
+        // Position new image at center of fixed canvas (0,0 in canvas coordinates)
+        const newImage = createNewObject(
+          'image',
+          0, // Center of canvas
+          0, // Center of canvas
+          canvasObjects,
+          undefined, // pathPoints
+          false, // isPath
+          imageData,
+          200, // default width
+          150  // default height
+        );
 
-          // Add to canvas and select
-          setCanvasObjects(prev => [...prev, newImage]);
-          selectElement([newImage]);
-        }
+        // Add to canvas and select
+        setCanvasObjects(prev => [...prev, newImage]);
+        selectElement([newImage]);
       }
     };
 
@@ -921,7 +898,7 @@ export default function EditorCanvas() {
     };
 
     reader.readAsDataURL(file);
-  }, [canvasObjects, setCanvasObjects, selectElement, containerRef]);
+  }, [canvasObjects, setCanvasObjects, selectElement]);
 
   // Handle image file upload
   const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -987,103 +964,87 @@ export default function EditorCanvas() {
       <NavigationSidebar />
       <RightNavigationSidebar />
 
-      {/* Main Body - Full height canvas with floating panels */}
+      {/* Main Body - Fixed centered canvas */}
       <div className="flex-1 relative overflow-hidden">
-        {/* Scrollable Canvas Container */}
+        {/* Fixed Canvas Container */}
         <main
           ref={containerRef}
-          className="absolute inset-0 bg-gray-100 overflow-auto canvas-container"
+          className="absolute inset-0 bg-gray-100 flex items-center justify-center"
           onMouseMove={e => {
             if (toolState.activeTool !== 'select') {
               const rect = e.currentTarget.getBoundingClientRect();
-              const scrollLeft = e.currentTarget.scrollLeft;
-              const scrollTop = e.currentTarget.scrollTop;
               setMaskPos({
-                x: e.clientX - rect.left + scrollLeft,
-                y: e.clientY - rect.top + scrollTop,
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top,
               });
             }
           }}
           onMouseLeave={() => setMaskPos(null)}
         >
-          {/* Full canvas area - clean infinite canvas */}
+          {/* Path Mode Banner */}
+          {toolState.isPathMode && (
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-blue-100 text-blue-800 px-4 py-2 rounded-lg shadow-md z-50 flex items-center gap-4">
+              <span>
+                <strong>Path Drawing Mode:</strong> Select a tool and draw a path that your element will follow.
+              </span>
+              <button
+                className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                onClick={() => {
+                  togglePathMode();
+                  setAnimationTarget(null);
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+
+          {/* Navigation and Path Controls */}
           <div
-            className="relative bg-white"
-            style={{
-              width: '300vw', // 3x viewport width for more space
-              height: '300vh', // 3x viewport height for more space
-              minWidth: '4000px', // Larger minimum size
-              minHeight: '4000px'
-            }}
+            className="absolute bottom-4 z-20 flex flex-col gap-2 transition-all duration-300"
+            style={{ right: `${panelState.rightPanelVisible ? panelState.rightPanelWidth + 16 + 80 : 16 + 80}px` }}
           >
-            {toolState.isPathMode && (
-              <div className="absolute top-0 left-0 w-full py-2 px-4 bg-blue-100 text-blue-800 z-10 flex justify-between items-center">
-                <span>
-                  <strong>Path Drawing Mode:</strong> Select a tool and draw a path that your element will follow.
-                </span>
-                <button
-                  className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-                  onClick={() => {
-                    togglePathMode();
-                    setAnimationTarget(null);
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
+            {/* Path visibility toggle - only show if paths exist */}
+            {canvasObjects.some(el => el.isAnimationPath) && (
+              <button
+                className={`px-3 py-1.5 rounded shadow flex items-center ${toolState.showPaths ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'}`}
+                onClick={() => toggleShowPaths()}
+                title={toolState.showPaths ? 'Hide Animation Paths' : 'Show Animation Paths'}
+              >
+                <svg className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3 17.25V21H6.75L17.81 9.94L14.06 6.19L3 17.25Z"
+                    fill={toolState.showPaths ? "white" : "currentColor"} />
+                  <path d="M20.71 7.04C21.1 6.65 21.1 6.02 20.71 5.63L18.37 3.29C17.98 2.9 17.35 2.9 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04Z"
+                    fill={toolState.showPaths ? "white" : "currentColor"} />
+                </svg>
+                {toolState.showPaths ? 'Paths Visible' : 'Paths Hidden'}
+              </button>
             )}
-
-
-
-            {/* Navigation and Path Controls */}
-            <div
-              className="absolute bottom-4 z-20 flex flex-col gap-2 transition-all duration-300"
-              style={{ right: `${panelState.rightPanelVisible ? panelState.rightPanelWidth + 16 + 80 : 16 + 80}px` }} // Adjust position based on right panel & sidebar
-            >
-              {/* Path visibility toggle - only show if paths exist */}
-              {canvasObjects.some(el => el.isAnimationPath) && (
-                <button
-                  className={`px-3 py-1.5 rounded shadow flex items-center ${toolState.showPaths ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'}`}
-                  onClick={() => toggleShowPaths()}
-                  title={toolState.showPaths ? 'Hide Animation Paths' : 'Show Animation Paths'}
-                >
-                  <svg className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M3 17.25V21H6.75L17.81 9.94L14.06 6.19L3 17.25Z"
-                      fill={toolState.showPaths ? "white" : "currentColor"} />
-                    <path d="M20.71 7.04C21.1 6.65 21.1 6.02 20.71 5.63L18.37 3.29C17.98 2.9 17.35 2.9 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04Z"
-                      fill={toolState.showPaths ? "white" : "currentColor"} />
-                  </svg>
-                  {toolState.showPaths ? 'Paths Visible' : 'Paths Hidden'}
-                </button>
-              )}
-            </div>
-
-            {/* Canvas Frame - centered with responsive sizing */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              {dimensions.width > 0 && dimensions.height > 0 ? (
-                <CanvasFrame>
-                  <Canvas
-                    ref={canvasRef}
-                    dimensions={{
-                      // Use logical canvas dimensions from store
-                      width: canvasState.currentSizeId === 'custom' 
-                        ? canvasState.customSize?.width || 1920 
-                        : canvasState.availableSizes.find(s => s.id === canvasState.currentSizeId)?.width || 1920,
-                      height: canvasState.currentSizeId === 'custom' 
-                        ? canvasState.customSize?.height || 1080 
-                        : canvasState.availableSizes.find(s => s.id === canvasState.currentSizeId)?.height || 1080
-                    }}
-                    zoom={canvasZoom}
-                    onZoomChange={handleZoomChange}
-                  />
-                </CanvasFrame>
-              ) : (
-                <div className="flex items-center justify-center bg-gray-100 rounded-lg shadow-lg border border-gray-200 w-2/3 h-1/2">
-                  <div className="text-gray-500">Loading canvas...</div>
-                </div>
-              )}
-            </div>
           </div>
+
+          {/* Fixed Centered Canvas */}
+          {dimensions.width > 0 && dimensions.height > 0 ? (
+            <CanvasFrame>
+              <Canvas
+                ref={canvasRef}
+                dimensions={{
+                  // Use logical canvas dimensions from store
+                  width: canvasState.currentSizeId === 'custom' 
+                    ? canvasState.customSize?.width || 1920 
+                    : canvasState.availableSizes.find(s => s.id === canvasState.currentSizeId)?.width || 1920,
+                  height: canvasState.currentSizeId === 'custom' 
+                    ? canvasState.customSize?.height || 1080 
+                    : canvasState.availableSizes.find(s => s.id === canvasState.currentSizeId)?.height || 1080
+                }}
+                zoom={canvasZoom}
+                onZoomChange={handleZoomChange}
+              />
+            </CanvasFrame>
+          ) : (
+            <div className="flex items-center justify-center bg-gray-100 rounded-lg shadow-lg border border-gray-200 w-2/3 aspect-video">
+              <div className="text-gray-500">Loading canvas...</div>
+            </div>
+          )}
         </main>
 
         {/* Floating Toolbar - Fixed position outside scrollable area */}
