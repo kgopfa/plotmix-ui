@@ -522,6 +522,11 @@ export const usePanelState = () => useUIStore((state) => state.panels);
 export const useToolState = () => useUIStore((state) => state.tools);
 export const useSnappingState = () => useUIStore((state) => state.snapping);
 export const useUserPreferences = () => useUIStore((state) => state.preferences);
+export const useNavigationState = () => useUIStore((state) => state.navigation);
+export const useActiveNav = () => useUIStore((state) => state.navigation.activeNav);
+export const useHoverNav = () => useUIStore((state) => state.navigation.hoverNav);
+export const useSetActiveNav = () => useUIStore((state) => state.setActiveNav);
+export const useSetHoverNav = () => useUIStore((state) => state.setHoverNav);
 
 // Action hooks
 export const usePanelActions = () => useUIStore(
@@ -576,10 +581,3 @@ export const useKeyboardShortcutsStore = () => {
     getShortcutByAction,
   };
 };
-
-// Navigation hooks
-export const useNavigationState = () => useUIStore((state) => state.navigation);
-export const useActiveNav = () => useUIStore(state => state.navigation.activeNav);
-export const useHoverNav = () => useUIStore(state => state.navigation.hoverNav);
-export const useSetActiveNav = () => useUIStore(state => state.setActiveNav);
-export const useSetHoverNav = () => useUIStore(state => state.setHoverNav);

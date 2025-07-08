@@ -36,8 +36,22 @@ export const NavigationSidebar: React.FC = () => {
   const setActiveNav = useSetActiveNav();
   const setHoverNav = useSetHoverNav();
 
+  // Deselect active navigation item when clicking on empty sidebar space
+  const handleRootClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    // If the click is not within a link (<a>) element, clear selection
+    if (!target.closest('a')) {
+      setActiveNav(null);
+      setHoverNav(null);
+    }
+  };
+
   return (
-    <div className="m-2 fixed inset-y-0 left-0 z-40 w-16 overflow-y-auto border border-gray-200 shadow-lg pb-4 rounded-sm flex flex-col" style={{ top: '64px' }}>
+    <div
+      className="m-2 fixed inset-y-0 left-0 z-40 w-16 overflow-y-auto border border-gray-200 shadow-lg pb-4 rounded-sm flex flex-col"
+      style={{ top: '64px' }}
+      onClick={handleRootClick}
+    >
       {/* Top Navigation */}
       <nav className="mt-8">
         <ul role="list" className="flex flex-col items-center space-y-1">
