@@ -1039,19 +1039,6 @@ export default function EditorCanvas() {
                   {toolState.showPaths ? 'Paths Visible' : 'Paths Hidden'}
                 </button>
               )}
-
-              {/* Navigation Help */}
-              <div className="bg-black/75 text-white text-xs rounded p-2 max-w-[220px]">
-                <div className="font-semibold mb-1">Navigation:</div>
-                <div>• Drag to pan</div>
-                <div>• Wheel to scroll up/down</div>
-                <div>• Shift+Wheel for left/right</div>
-                <div>• Ctrl/Cmd+Wheel to zoom</div>
-                <div>• Pinch to zoom (trackpad)</div>
-                <div>• Arrow keys to navigate</div>
-                <div>• Spacebar to center</div>
-                <div>• Ctrl/Cmd + 0 to reset zoom</div>
-              </div>
             </div>
 
             {dimensions.width > 0 && dimensions.height > 0 ? (
@@ -1065,8 +1052,6 @@ export default function EditorCanvas() {
                   zoom={canvasZoom}
                   onZoomChange={handleZoomChange}
                 />
-                
-
               </>
             ) : (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
