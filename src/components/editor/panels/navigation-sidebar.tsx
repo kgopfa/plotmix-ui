@@ -48,7 +48,7 @@ export const NavigationSidebar: React.FC = () => {
 
   return (
     <div
-      className="m-2 fixed inset-y-0 left-0 z-40 w-16 overflow-y-auto border border-gray-200 shadow-lg pb-4 rounded-lg flex flex-col"
+      className="m-2 fixed bg-white inset-y-0 left-0 z-40 w-16 overflow-y-auto border border-gray-200 shadow-lg pb-4 rounded-lg flex flex-col"
       style={{ top: '64px' }}
       onClick={handleRootClick}
     >
