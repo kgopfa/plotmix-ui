@@ -64,8 +64,8 @@ export const OptionsBar: React.FC<OptionsBarProps> = ({
           {/* Project Name and Profile Section */}
           <div className="flex items-center gap-4">
             {/* Zoom Control */}
-            <button className="flex items-center h-9 gap-2 px-3 py-1.5 text-gray-600 text-sm font-medium hover:bg-gray-100 border border-gray-300 rounded-sm transition-colors">
-              <span className="text-gray-600 font-medium">100%</span>
+            <button className="flex items-center h-9 gap-2 px-3 py-1.5 text-gray-600 text-sm font-medium hover:bg-gray-100 border border-gray-200 rounded-md transition-colors">
+              <span className="text-gray-600 font-semibold">100%</span>
               <FontAwesomeIcon icon={faChevronDown} className="mb-0.5 size-3 text-gray-600" />
             </button>
 
@@ -78,7 +78,7 @@ export const OptionsBar: React.FC<OptionsBarProps> = ({
                   placeholder="Project name"
                   value={projectName}
                   onChange={(e) => setProjectName(e.target.value)}
-                  className="col-start-1 row-start-1 block w-full h-9 rounded-sm bg-white py-1.5 pr-3 pl-6 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
+                  className="col-start-1 row-start-1 block w-full h-9 rounded-md bg-white py-1.5 pr-3 pl-6 text-sm text-gray-600 font-semibold outline-1 -outline-offset-1 outline-gray-200 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
                 />
               </div>
             </div>
@@ -129,7 +129,7 @@ export const OptionsBar: React.FC<OptionsBarProps> = ({
 
               <button
                 type="button"
-                className="inline-flex w-28 items-center gap-x-2.5 rounded-sm bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 mr-4"
+                className="inline-flex w-28 h-9 items-center gap-x-2.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 mr-4"
               >
                 <FontAwesomeIcon icon={faArrowUpFromBracket} className="size-4 ml-1.5" />
                 <span className="text-sm">Share</span>

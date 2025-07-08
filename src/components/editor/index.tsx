@@ -19,7 +19,6 @@ import { MaskOverlay } from './canvas/mask-overlay';
 import { AnimatedCanvasObject, ElementAnimation, CanvasGroup } from '@/types/canvas';
 import { Canvas } from './canvas';
 import type { CanvasRef } from './canvas';
-import { ZoomControls } from './panels/zoom-controls';
 import { createNewObject } from '@/lib/canvas-object-factory';
 import { useCanvasDimensions } from '@/hooks/use-canvas-dimensions';
 import { useTimelineIntegration } from '@/hooks/use-timeline-integration';
@@ -1087,20 +1086,6 @@ export default function EditorCanvas() {
           </div>
         )}
 
-        {/* Zoom Controls - Positioned at bottom right, above timeline, left of inspector */}
-        <div
-          className="absolute z-50 transition-all duration-300"
-          style={{ 
-            bottom: `${panelState.isTimelineCollapsed ? 32 + 16 : panelState.timelineHeight + 16}px`,
-            right: `${panelState.rightPanelVisible ? panelState.rightPanelWidth + 16 + 80 : 16 + 80}px`
-          }}
-        >
-          <ZoomControls
-            canvasRef={canvasRef}
-            currentZoom={canvasZoom}
-          />
-        </div>
-
         {/* Mask Overlay - Fixed position relative to viewport */}
         <MaskOverlay
           tool={toolState.activeTool}
@@ -1207,7 +1192,7 @@ export default function EditorCanvas() {
           />
         )}
 
-        <Timeline />
+        <Timeline canvasZoom={canvasZoom} onCanvasZoom={setCanvasZoom} />
       </div>
 
       {/* Hidden file input for image upload */}

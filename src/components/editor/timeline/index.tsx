@@ -6,18 +6,23 @@ import { useTimelineStore } from '@/stores/use-timeline-store';
 import { usePanelState, usePanelActions } from '@/stores/use-ui-store';
 import { useShallow } from 'zustand/react/shallow';
 
-// Remove all props - Timeline is now self-contained!
-export function Timeline() {
+interface TimelineProps {
+  canvasZoom: number;
+  onCanvasZoom: (zoom: number) => void;
+}
+
+export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
   // Get data directly from stores
   const elements = useCanvasElements().filter(el => !el.isAnimationPath);
   const groups = useCanvasGroups();
   
   // Get timeline state and actions
-  const { playback, ui: timelineUI, getEffectiveDuration } = useTimelineStore(
+  const { playback, ui: timelineUI, getEffectiveDuration, setScale } = useTimelineStore(
     useShallow((state) => ({
       playback: state.playback,
       ui: state.ui,
-      getEffectiveDuration: state.getEffectiveDuration
+      getEffectiveDuration: state.getEffectiveDuration,
+      setScale: state.setScale
     }))
   );
   
@@ -37,6 +42,12 @@ export function Timeline() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [scrollLeft, setScrollLeft] = useState(0);
   const [expandedElements, setExpandedElements] = useState<Set<string>>(new Set());
+
+  // Zoom mode: 'time' or 'view'
+  const [zoomMode, setZoomMode] = useState<'time' | 'view'>('view');
+
+  // Slider value derived from mode
+  const sliderValue = zoomMode === 'time' ? timelineUI.scale : canvasZoom * 100;
 
   // Pre-warm animation durations for newly detected animations
   useEffect(() => {
@@ -253,17 +264,49 @@ export function Timeline() {
           </div>
         </div>
         
-        <button
-          onClick={() => toggleTimelineCollapse()}
-          className="flex items-center justify-center w-6 h-6 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
-          title={isTimelineCollapsed ? 'Expand Timeline' : 'Collapse Timeline'}
-        >
-          {isTimelineCollapsed ? (
-            <span className="text-sm">▲</span>
-          ) : (
-            <span className="text-sm">▼</span>
-          )}
-        </button>
+        <div className="flex items-center gap-3">
+          {/* Zoom Mode Buttons */}
+          <div className="flex border rounded overflow-hidden">
+            <button
+              className={`px-2 text-xs ${zoomMode==='time' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'}`}
+              onClick={() => setZoomMode('time')}
+            >Time</button>
+            <button
+              className={`px-2 text-xs ${zoomMode==='view' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'}`}
+              onClick={() => setZoomMode('view')}
+            >View</button>
+          </div>
+
+          {/* Zoom Slider */}
+          <input
+            type="range"
+            min={zoomMode==='time' ? 20 : 10}
+            max={zoomMode==='time' ? 400 : 500}
+            step={zoomMode==='time' ? 10 : 10}
+            value={sliderValue}
+            onChange={e => {
+              const val = Number(e.target.value);
+              if(zoomMode==='time') {
+                setScale(val);
+              } else {
+                onCanvasZoom(val/100);
+              }
+            }}
+            className="h-1.5 w-32 cursor-pointer accent-blue-500"
+            title="Zoom"
+          />
+          <button
+            onClick={() => toggleTimelineCollapse()}
+            className="flex items-center justify-center w-6 h-6 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+            title={isTimelineCollapsed ? 'Expand Timeline' : 'Collapse Timeline'}
+          >
+            {isTimelineCollapsed ? (
+              <span className="text-sm">▲</span>
+            ) : (
+              <span className="text-sm">▼</span>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Scrollable timeline container (ruler + tracks) - only visible when not collapsed */}
