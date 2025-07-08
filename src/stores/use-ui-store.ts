@@ -118,7 +118,7 @@ type UIStore = UIState & UIActions;
 const defaultPanelState: PanelState = {
   leftPanelVisible: true,
   rightPanelVisible: true,
-  leftPanelWidth: 320,
+  leftPanelWidth: 384,
   rightPanelWidth: 320,
   timelineHeight: 240,
   isTimelineCollapsed: false,
@@ -229,7 +229,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
 
   setLeftPanelWidth: (width: number) => {
     set(produce((state) => {
-      state.panels.leftPanelWidth = Math.max(200, Math.min(600, width));
+      state.panels.leftPanelWidth = Math.max(384, Math.min(600, width));
     }));
   },
 

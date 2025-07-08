@@ -118,7 +118,7 @@ export default function EditorCanvas() {
     // Use requestAnimationFrame for smooth resizing
     requestAnimationFrame(() => {
       if (panelState.isResizing === 'left') {
-        const newWidth = Math.max(200, Math.min(600, e.clientX)); // Min 200px, max 600px
+        const newWidth = Math.max(384, Math.min(600, e.clientX)); // Min 384px (w-96), max 600px
         setLeftPanelWidth(newWidth);
       } else if (panelState.isResizing === 'right') {
         const newWidth = Math.max(200, Math.min(600, window.innerWidth - e.clientX)); // Min 200px, max 600px
@@ -1095,7 +1095,7 @@ export default function EditorCanvas() {
         {panelState.leftPanelVisible && (
           <>
             <div
-              className="absolute top-0 h-full bg-gray-50/95 backdrop-blur-sm border-r border-gray-200 overflow-y-auto z-60 shadow-lg transition-transform duration-300"
+              className="absolute top-0 h-full bg-gray-50/95 backdrop-blur-sm overflow-y-auto z-60 shadow-lg transition-transform duration-300"
               style={{ left: '80px', width: `${panelState.leftPanelWidth}px` }}
             >
               <SceneExplorer
