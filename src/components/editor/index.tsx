@@ -1096,7 +1096,7 @@ export default function EditorCanvas() {
           <>
             <div
               className="absolute top-0 h-full bg-gray-50/95 backdrop-blur-sm overflow-y-auto z-60 shadow-lg transition-transform duration-300"
-              style={{ left: '80px', width: `${panelState.leftPanelWidth}px` }}
+              style={{ left: '80px', width: `${panelState.leftPanelWidth / 16}rem` }}
             >
               <SceneExplorer
                 elements={canvasObjects}
@@ -1151,7 +1151,7 @@ export default function EditorCanvas() {
           <>
             <div
               className="absolute top-0 right-0 h-full bg-gray-50/95 backdrop-blur-sm border-l border-gray-200 overflow-y-auto z-30 shadow-lg transition-transform duration-300"
-              style={{ width: `${panelState.rightPanelWidth}px` }}
+              style={{ width: `${panelState.rightPanelWidth / 16}rem` }}
             >
               <Inspector
                 onInspectorChange={handleInspectorChange}
@@ -1162,7 +1162,7 @@ export default function EditorCanvas() {
             {/* Right Resize Handle */}
             <div
               className="absolute top-0 h-full w-1 border-l border-gray-300 hover:bg-blue-500 cursor-col-resize z-40 transition-colors"
-              style={{ right: `${panelState.rightPanelWidth}px` }}
+              style={{ right: `${panelState.rightPanelWidth / 16}rem` }}
               onMouseDown={handleMouseDown('right')}
             />
           </>
