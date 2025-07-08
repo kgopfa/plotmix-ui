@@ -45,7 +45,7 @@ export function SceneExplorer(props: SceneExplorerProps) {
   };
 
   return (
-    <div className="absolute inset-y-0 mr-2 mt-2 mb-2 w-96 bg-white border border-gray-200 shadow-lg rounded-md p-2 text-gray-800 overflow-y-auto pb-4">
+    <div className="absolute inset-y-0 mr-2 mt-2 mb-2 w-96 bg-white border border-gray-200 shadow-lg rounded-lg p-2 text-gray-800 overflow-y-auto pb-4">
       {/* Scene list (creation, switching, rename, duplicate, delete) */}
       <SceneList onSceneExpand={handleSceneExpand} expandedScenes={expandedScenes} />
 

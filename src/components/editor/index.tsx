@@ -930,7 +930,8 @@ export default function EditorCanvas() {
 
   const isScenesPanelVisible = panelState.leftPanelVisible && (activeNav === 'scenes');
   // Timeline should only shift when Scenes is actually selected (active), not just hovered
-  const timelineLeftOffset = 80 + (panelState.leftPanelVisible && activeNav === 'scenes' ? panelState.leftPanelWidth : 0);
+  // Add extra 8px margin (ml-2) when scenes panel is active
+  const timelineLeftOffset = 80 + (panelState.leftPanelVisible && activeNav === 'scenes' ? panelState.leftPanelWidth + 8 : 0);
 
   return (
     <div className="h-screen w-screen flex flex-col">
@@ -1069,7 +1070,7 @@ export default function EditorCanvas() {
         {isScenesPanelVisible && (
           <>
             <div
-              className="absolute top-0 h-full bg-gray-50/95 backdrop-blur-sm overflow-y-auto z-60 shadow-lg transition-transform duration-300"
+              className="absolute top-0 h-full bg-transparent backdrop-blur-sm overflow-y-auto z-60 shadow-lg transition-transform duration-300"
               style={{ left: '80px', width: `${panelState.leftPanelWidth / 16}rem` }}
             >
               <SceneExplorer
