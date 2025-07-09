@@ -3,16 +3,15 @@ import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuIt
 import { MagnifyingGlassIcon } from '@heroicons/react/20/solid'
 import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowUpFromBracket, faCloudArrowUp, faArrowRotateLeft, faArrowRotateRight, faGear } from '@fortawesome/free-solid-svg-icons'
+import { faArrowUpFromBracket, faCloudArrowUp, faArrowRotateLeft, faArrowRotateRight, faGear, faChevronDown } from '@fortawesome/free-solid-svg-icons'
 import { ProjectControls } from './project-controls';
 import { PathModeIndicator } from './path-mode-indicator';
 import { PanelToggleButtons } from './panel-toggle-buttons';
 import { SnappingControls } from './snapping-controls';
 import { SelectionIndicator } from './selection-indicator';
-import { CanvasSizeSelector } from './canvas-size-selector';
 
 // Simplified interface - only for props that can't be accessed via stores
-interface OptionsBarProps {
+interface MainNavBarProps {
   canvasZoom: number;
   onZoomIn: () => void;
   onZoomOut: () => void;
@@ -21,7 +20,7 @@ interface OptionsBarProps {
   onUngroupElements: () => void;
 }
 
-export const OptionsBar: React.FC<OptionsBarProps> = ({
+export const MainNavBar: React.FC<MainNavBarProps> = ({
   onGroupElements,
   onUngroupElements
 }) => {
@@ -64,8 +63,18 @@ export const OptionsBar: React.FC<OptionsBarProps> = ({
 
           {/* Project Name and Profile Section */}
           <div className="flex items-center gap-4">
-            {/* Canvas Size Control */}
-            <CanvasSizeSelector />
+            {/* Zoom Control */}
+            <div className="hidden lg:block">
+              <div className="grid w-24 max-w-sm grid-cols-1 relative">
+                <input
+                  name="zoomControl"
+                  type="text"
+                  value="100%"
+                  className="col-start-1 row-start-1 block w-full h-9 rounded-md bg-white py-1.5 pr-3 pl-6 text-sm text-gray-600 font-medium outline-1 -outline-offset-1 outline-gray-200 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
+                />
+                <FontAwesomeIcon icon={faChevronDown} className="size-3 absolute right-4 top-1/2 -translate-y-1/2 text-gray-500" />
+              </div>
+            </div>
 
             {/* Project Name */}
             <div className="hidden lg:block">

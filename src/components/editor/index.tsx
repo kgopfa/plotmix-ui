@@ -22,7 +22,7 @@ import { createNewObject } from '@/lib/canvas-object-factory';
 import { useCanvasDimensions } from '@/hooks/use-canvas-dimensions';
 import { useTimelineIntegration } from '@/hooks/use-timeline-integration';
 import { useElementSnapping } from '@/hooks/use-element-snapping';
-import { OptionsBar } from './navigation/main';
+import { MainNavBar } from './navigation/main';
 import { LeftSidebar } from './navigation/left-sidebar';
 import { RightSidebar } from './navigation/right-sidebar';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
@@ -935,7 +935,7 @@ export default function EditorCanvas() {
   return (
     <div className="h-screen w-screen flex flex-col">
       {/* Options Bar */}
-      <OptionsBar
+      <MainNavBar
         canvasZoom={canvasZoom}
         onZoomIn={() => {
           if (canvasRef.current) {
