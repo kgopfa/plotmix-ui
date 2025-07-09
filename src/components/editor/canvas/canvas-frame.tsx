@@ -24,7 +24,7 @@ export const CanvasFrame: React.FC<CanvasFrameProps> = ({ children, className = 
     <div
       className={`
         mx-auto                     /* centered */
-        w-2/3                       /* ≈ 66% of available width */
+        w-1/3                       /* 33% of available width */
         max-w-[1920px]              /* hard ceiling for ultra-wide displays */
         max-h-[85vh]                /* never use > 85% of viewport height */
         aspect-video                /* locked 16:9 aspect ratio */
