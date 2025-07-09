@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { useActiveSceneId } from '@/stores/use-scene-store';
-import { SceneList } from './scene-list';
-import { ElementHierarchy } from './element-hierarchy';
+import { SceneList } from '../scene-list';
+import { ElementHierarchy } from '../element-hierarchy';
 
 interface SceneExplorerProps {
   elements: AnimatedCanvasObject[];

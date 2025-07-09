@@ -9,7 +9,7 @@ import { useUIStore, useActiveNav, useActiveRightPanel, useCanvasState } from '@
 import { useTimelineSync } from '@/stores/use-timeline-store';
 import { useCanvasMigration } from '@/hooks/use-canvas-migration';
 import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
-import { SceneExplorer } from './panels/scene-explorer';
+import { SceneExplorer } from './panels/tabs/scene-explorer';
 import { PropertiesPanel } from './panels/properties-panel';
 import { AnimationsPanel } from './panels/animations-panel';
 import { HistoryPanel } from './panels/history-panel';
@@ -24,9 +24,9 @@ import { createNewObject } from '@/lib/canvas-object-factory';
 import { useCanvasDimensions } from '@/hooks/use-canvas-dimensions';
 import { useTimelineIntegration } from '@/hooks/use-timeline-integration';
 import { useElementSnapping } from '@/hooks/use-element-snapping';
-import { OptionsBar } from './options';
-import { NavigationSidebar } from './panels/navigation-sidebar';
-import { RightNavigationSidebar } from './panels/right-navigation-sidebar';
+import { OptionsBar } from './navigation/main';
+import { LeftSidebar } from './navigation/left-sidebar';
+import { RightSidebar } from './navigation/right-sidebar';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 
 
@@ -962,8 +962,8 @@ export default function EditorCanvas() {
       />
 
       {/* Navigation Sidebars */}
-      <NavigationSidebar />
-      <RightNavigationSidebar />
+      <LeftSidebar />
+      <RightSidebar />
 
       {/* Main Body - Fixed centered canvas */}
       <div className="flex-1 relative overflow-hidden">

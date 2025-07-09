@@ -22,7 +22,7 @@ const navigation: RightNavItem[] = [
   { name: 'History', key: 'history', icon: ClockIcon },
 ];
 
-export const RightNavigationSidebar: React.FC = () => {
+export const RightSidebar: React.FC = () => {
   const activePanel = useActiveRightPanel();
   const hoverPanel = useHoverRightPanel();
   const setActivePanel = useSetActiveRightPanel();

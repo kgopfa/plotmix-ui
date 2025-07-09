@@ -31,7 +31,7 @@ function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ')
 }
 
-export const NavigationSidebar: React.FC = () => {
+export const LeftSidebar: React.FC = () => {
   const activeNav = useActiveNav();
   const setActiveNav = useSetActiveNav();
   const setHoverNav = useSetHoverNav();
