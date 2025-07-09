@@ -11,7 +11,7 @@ export const VideoSettingsTab: React.FC = () => {
     : canvasState.availableSizes.find(size => size.id === canvasState.currentSizeId);
 
   return (
-    <div className="h-full w-80 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
+    <div className="h-full w-96 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
       <div className="p-4 border-b border-gray-100">
         <div className="flex items-center gap-2">
           <VideoCameraIcon className="w-5 h-5 text-blue-600" />

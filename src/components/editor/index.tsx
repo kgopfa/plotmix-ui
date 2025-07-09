@@ -926,9 +926,11 @@ export default function EditorCanvas() {
 
   const activeNav = useActiveNav();
 
-  // Timeline should only shift when Scenes is actually selected (active), not just hovered
-  // Add extra 8px margin (ml-2) when scenes panel is active
-  const timelineLeftOffset = 80 + (panelState.leftPanelVisible && activeNav === 'scenes' ? panelState.leftPanelWidth + 8 : 0);
+  // Timeline should shift when any tab with content panels is active (not toggle buttons or compact tabs)
+  // Include: scenes, uploads, ai, video
+  // Exclude: tools (compact), audio (toggle), timeline (toggle)
+  const tabsWithPanels = ['scenes', 'uploads', 'ai', 'video'];
+  const timelineLeftOffset = 80 + (panelState.leftPanelVisible && activeNav && tabsWithPanels.includes(activeNav) ? panelState.leftPanelWidth + 8 : 0);
 
   return (
     <div className="h-screen w-screen flex flex-col">
