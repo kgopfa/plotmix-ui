@@ -143,9 +143,9 @@ export const LeftSidebar: React.FC = () => {
           className="fixed z-50 pointer-events-none"
           style={{ 
             left: '80px', // Position right after the sidebar (80px width + 8px margin)
-            top: '64px',  // Match sidebar top position exactly
-            maxHeight: 'calc(100vh - 64px)', // Match sidebar height exactly
-            height: 'calc(100vh - 64px)', // Ensure consistent height
+            top: '72px',  // Match sidebar top position exactly (64px + 8px margin)
+            maxHeight: 'calc(100vh - 80px)', // Match sidebar height exactly (account for top/bottom margins)
+            height: 'calc(100vh - 80px)', // Ensure consistent height (account for top/bottom margins)
           }}
         >
           <div 

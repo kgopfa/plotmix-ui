@@ -26,7 +26,7 @@ export const SceneExplorerTab: React.FC = () => {
   const visibleGroups = groups.filter(group => group.visible !== false);
 
   return (
-    <div className="h-full w-80 my-2 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
+    <div className="h-full w-80 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
       <div className="p-4 border-b border-gray-100">
         <div className="flex items-center gap-2">
           <FilmIcon className="w-5 h-5 text-blue-600" />

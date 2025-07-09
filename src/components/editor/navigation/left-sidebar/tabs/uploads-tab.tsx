@@ -49,7 +49,7 @@ export const UploadsTab: React.FC = () => {
   };
 
   return (
-    <div className="h-full w-80 my-2 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
+    <div className="h-full w-80 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
       <div className="p-4 border-b border-gray-100">
         <div className="flex items-center gap-2">
           <CloudArrowUpIcon className="w-5 h-5 text-green-600" />
