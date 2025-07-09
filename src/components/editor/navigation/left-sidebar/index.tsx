@@ -33,8 +33,8 @@ function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ')
 }
 
-// Hover Preview Content Component
-const HoverPreviewContent: React.FC<{ navKey: string }> = ({ navKey }) => {
+// Tab Content Component - Used for both hover and sticky tabs
+const TabContent: React.FC<{ navKey: string }> = ({ navKey }) => {
   switch (navKey) {
     case 'scenes':
       return <SceneExplorerPreview />;
@@ -95,8 +95,11 @@ export const LeftSidebar: React.FC = () => {
                     activeNav === item.key ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white',
                     'group flex flex-col gap-x-3 rounded-md p-3 text-sm/6 font-semibold',
                   )}
-                  onClick={()=>setActiveNav(item.key)}
-                  onMouseEnter={()=>setHoverNav(item.key)}
+                  onClick={(e)=>{
+                    e.preventDefault();
+                    setActiveNav(activeNav === item.key ? null : item.key);
+                  }}
+                  onMouseEnter={()=>setHoverNav(!activeNav ? item.key : null)}
                   onMouseLeave={()=>setHoverNav(null)}
                 >
                   <item.icon aria-hidden="true" className="size-6 shrink-0" />
@@ -118,8 +121,11 @@ export const LeftSidebar: React.FC = () => {
                     activeNav === item.key ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white',
                     'group flex flex-col gap-x-3 rounded-md p-3 text-sm/6 font-semibold',
                   )}
-                  onClick={()=>setActiveNav(item.key)}
-                  onMouseEnter={()=>setHoverNav(item.key)}
+                  onClick={(e)=>{
+                    e.preventDefault();
+                    setActiveNav(activeNav === item.key ? null : item.key);
+                  }}
+                  onMouseEnter={()=>setHoverNav(!activeNav ? item.key : null)}
                   onMouseLeave={()=>setHoverNav(null)}
                 >
                   <item.icon aria-hidden="true" className="size-6 shrink-0" />
@@ -131,8 +137,8 @@ export const LeftSidebar: React.FC = () => {
         </nav>
       </div>
 
-      {/* Hover Preview Panel */}
-      {hoverNav && (
+      {/* Tab Panel - Shows on hover (when no active tab) OR when active (sticky) */}
+      {(activeNav || (!activeNav && hoverNav)) && (
         <div
           className="fixed z-50 pointer-events-none"
           style={{ 
@@ -143,10 +149,10 @@ export const LeftSidebar: React.FC = () => {
         >
           <div 
             className="pointer-events-auto animate-in slide-in-from-left-2 fade-in duration-200"
-            onMouseEnter={() => setHoverNav(hoverNav)} // Keep the preview open when hovering over it
+            onMouseEnter={() => setHoverNav(!activeNav ? hoverNav : null)} // Only allow hover when no active tab
             onMouseLeave={() => setHoverNav(null)}
           >
-            <HoverPreviewContent navKey={hoverNav} />
+            <TabContent navKey={activeNav || hoverNav!} />
           </div>
         </div>
       )}

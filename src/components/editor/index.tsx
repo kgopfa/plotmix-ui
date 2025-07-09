@@ -9,12 +9,10 @@ import { useUIStore, useActiveNav, useActiveRightPanel, useCanvasState } from '@
 import { useTimelineSync } from '@/stores/use-timeline-store';
 import { useCanvasMigration } from '@/hooks/use-canvas-migration';
 import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
-import { SceneExplorer } from './panels/tabs/scene-explorer';
 import { PropertiesPanel } from './panels/properties-panel';
 import { AnimationsPanel } from './panels/animations-panel';
 import { HistoryPanel } from './panels/history-panel';
 import { Timeline } from './timeline';
-import { ToolbarTab } from './navigation/left-sidebar/tabs/toolbar-tab';
 import { MaskOverlay } from './canvas/mask-overlay';
 import { CanvasFrame } from './canvas/canvas-frame';
 import { AnimatedCanvasObject, ElementAnimation, CanvasGroup } from '@/types/canvas';
@@ -928,7 +926,6 @@ export default function EditorCanvas() {
 
   const activeNav = useActiveNav();
 
-  const isScenesPanelVisible = panelState.leftPanelVisible && (activeNav === 'scenes');
   // Timeline should only shift when Scenes is actually selected (active), not just hovered
   // Add extra 8px margin (ml-2) when scenes panel is active
   const timelineLeftOffset = 80 + (panelState.leftPanelVisible && activeNav === 'scenes' ? panelState.leftPanelWidth + 8 : 0);
@@ -1048,16 +1045,6 @@ export default function EditorCanvas() {
           )}
         </main>
 
-        {/* Floating Toolbar - Fixed position outside scrollable area */}
-        {(activeNav === 'tools') && (
-          <div
-            className="absolute top-2/5 -translate-y-1/2 transition-all duration-300"
-            style={{ left: '80px', zIndex: 50 }}
-          >
-            <ToolbarTab />
-          </div>
-        )}
-
         {/* Mask Overlay - Fixed position relative to viewport */}
         <MaskOverlay
           tool={toolState.activeTool}
@@ -1065,61 +1052,6 @@ export default function EditorCanvas() {
           maskOffsetX={MASK_OFFSET_X}
           maskOffsetY={MASK_OFFSET_Y}
         />
-
-        {/* Floating Left Panel - Scene Explorer */}
-        {isScenesPanelVisible && (
-          <>
-            <div
-              className="absolute top-0 h-full bg-transparent backdrop-blur-sm overflow-y-auto z-60 shadow-lg transition-transform duration-300"
-              style={{ left: '80px', width: `${panelState.leftPanelWidth / 16}rem` }}
-            >
-              <SceneExplorer
-                elements={canvasObjects}
-                groups={groups}
-                onElementVisibilityChange={(elementId, visible) => {
-                  setCanvasObjects(prev =>
-                    prev.map(el =>
-                      el.id === elementId
-                        ? { ...el, visible }
-                        : el
-                    )
-                  );
-                }}
-                onGroupVisibilityChange={(groupId, visible) => {
-                  setGroups(prev =>
-                    prev.map(group =>
-                      group.id === groupId
-                        ? { ...group, visible }
-                        : group
-                    )
-                  );
-                }}
-                onParentChange={(childId, newParentId, childType) => {
-                  console.log('onParentChange called:', { childId, newParentId, childType });
-                  if (childType === 'element') {
-                    setCanvasObjects(prev => {
-                      const updated = prev.map(el =>
-                        el.id === childId
-                          ? { ...el, parent: newParentId }
-                          : el
-                      );
-                      console.log('Updated canvas objects:', updated.find(el => el.id === childId));
-                      return updated;
-                    });
-                  } else {
-                    setGroups(prev =>
-                      prev.map(group =>
-                        group.id === childId
-                          ? { ...group, parent: newParentId }
-                          : group
-                      )
-                    );
-                  }
-                }}
-              />
-            </div>
-          </>
-        )}
 
         {/* Floating Right Panel - Content */}
         {(() => {
