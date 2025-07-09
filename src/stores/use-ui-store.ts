@@ -268,7 +268,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
       preferences: defaultUserPreferences,
       keyboardShortcuts: defaultKeyboardShortcuts,
       navigation: { activeNav: null, hoverNav: null },
-      activeRightPanel: 'properties',
+      activeRightPanel: null,
       hoverRightPanel: null,
 
   // Panel Actions
