@@ -140,7 +140,7 @@ export const LeftSidebar: React.FC = () => {
       {/* Tab Panel - Shows on hover (when no active tab) OR when active (sticky) */}
       {(activeNav || (!activeNav && hoverNav)) && (
         <div
-          className="fixed z-50 pointer-events-none"
+          className="fixed z-[60] pointer-events-none"
           style={{ 
             left: '80px', // Position right after the sidebar (80px width + 8px margin)
             top: '72px',  // Match sidebar top position exactly (64px + 8px margin)
