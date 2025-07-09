@@ -70,6 +70,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                   name="zoomControl"
                   type="text"
                   value="100%"
+                  onChange={() => {}}
                   className="col-start-1 row-start-1 block w-full h-9 rounded-md bg-white py-1.5 pr-3 pl-6 text-sm text-gray-600 font-medium outline-1 -outline-offset-1 outline-gray-200 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
                 />
                 <FontAwesomeIcon icon={faChevronDown} className="size-3 absolute right-4 top-1/2 -translate-y-1/2 text-gray-500" />

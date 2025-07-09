@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useRef, useEffect } from 'react'
 import {
   CloudArrowUpIcon,
   FilmIcon,
@@ -66,6 +66,43 @@ export const LeftSidebar: React.FC = () => {
   const hoverNav = useHoverNav();
   const setActiveNav = useSetActiveNav();
   const setHoverNav = useSetHoverNav();
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Clear any pending hover timeout
+  const clearHoverTimeout = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+  };
+
+  // Handle hover enter with timeout cleanup
+  const handleHoverEnter = (itemKey: NavItem['key']) => {
+    clearHoverTimeout();
+    if (!activeNav) {
+      setHoverNav(itemKey);
+    }
+  };
+
+  // Handle hover leave with controlled timeout
+  const handleHoverLeave = () => {
+    clearHoverTimeout();
+    if (!activeNav) {
+      hoverTimeoutRef.current = setTimeout(() => {
+        if (!document.querySelector('.tab-panel-area:hover')) {
+          setHoverNav(null);
+        }
+        hoverTimeoutRef.current = null;
+      }, 100);
+    }
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      clearHoverTimeout();
+    };
+  }, []);
 
   // Deselect active navigation item when clicking on empty sidebar space
   const handleRootClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -99,15 +136,8 @@ export const LeftSidebar: React.FC = () => {
                     e.preventDefault();
                     setActiveNav(activeNav === item.key ? null : item.key);
                   }}
-                  onMouseEnter={()=>setHoverNav(!activeNav ? item.key : null)}
-                  onMouseLeave={()=>{
-                    // Only clear hover after a small delay to allow moving to tab content
-                    setTimeout(() => {
-                      if (!document.querySelector('.tab-panel-area:hover') && !activeNav) {
-                        setHoverNav(null);
-                      }
-                    }, 100);
-                  }}
+                  onMouseEnter={()=>handleHoverEnter(item.key)}
+                  onMouseLeave={()=>handleHoverLeave()}
                 >
                   <item.icon aria-hidden="true" className="size-6 shrink-0" />
                   <span className="sr-only">{item.name}</span>
@@ -132,15 +162,8 @@ export const LeftSidebar: React.FC = () => {
                     e.preventDefault();
                     setActiveNav(activeNav === item.key ? null : item.key);
                   }}
-                  onMouseEnter={()=>setHoverNav(!activeNav ? item.key : null)}
-                  onMouseLeave={()=>{
-                    // Only clear hover after a small delay to allow moving to tab content
-                    setTimeout(() => {
-                      if (!document.querySelector('.tab-panel-area:hover') && !activeNav) {
-                        setHoverNav(null);
-                      }
-                    }, 100);
-                  }}
+                  onMouseEnter={()=>handleHoverEnter(item.key)}
+                  onMouseLeave={()=>handleHoverLeave()}
                 >
                   <item.icon aria-hidden="true" className="size-6 shrink-0" />
                   <span className="sr-only">{item.name}</span>
@@ -164,6 +187,7 @@ export const LeftSidebar: React.FC = () => {
               height: 'calc(100vh - 80px)',
             }}
             onMouseEnter={() => {
+              clearHoverTimeout();
               if (!activeNav && hoverNav) {
                 setHoverNav(hoverNav);
               }
@@ -184,14 +208,15 @@ export const LeftSidebar: React.FC = () => {
               className="pointer-events-auto animate-in slide-in-from-left-2 fade-in duration-200 h-full"
               onMouseEnter={() => {
                 // Keep hover state active when entering tab content
+                clearHoverTimeout();
                 if (!activeNav && hoverNav) {
                   setHoverNav(hoverNav);
                 }
               }}
               onMouseLeave={() => {
-                // Only clear hover when leaving tab content AND not over sidebar
+                // Only clear hover when leaving tab content
                 if (!activeNav) {
-                  setTimeout(() => setHoverNav(null), 50);
+                  handleHoverLeave();
                 }
               }}
             >
