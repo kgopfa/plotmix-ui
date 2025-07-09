@@ -43,29 +43,33 @@ export const AIToolsTab: React.FC = () => {
   };
 
   return (
-    <div className="w-80 bg-white border border-gray-200 shadow-lg rounded-lg p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <SparklesIcon className="w-5 h-5 text-purple-600" />
-        <h3 className="font-semibold text-gray-900">AI Tools</h3>
+    <div className="h-full w-80 my-2 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
+      <div className="p-4 border-b border-gray-100">
+        <div className="flex items-center gap-2">
+          <SparklesIcon className="w-5 h-5 text-purple-600" />
+          <h3 className="font-semibold text-gray-900">AI Tools</h3>
+        </div>
       </div>
-      <div className="space-y-3 text-sm">
-        {aiFeatures.map((feature, index) => (
-          <div key={index} className="p-3 bg-purple-50 rounded-lg">
-            <div className="flex items-start justify-between mb-1">
-              <div className="flex items-center gap-2">
-                <span className="text-lg">{feature.icon}</span>
-                <div className="font-medium text-gray-700">{feature.name}</div>
+      <div className="flex-1 p-4 overflow-y-auto">
+        <div className="space-y-3 text-sm">
+          {aiFeatures.map((feature, index) => (
+            <div key={index} className="p-3 bg-purple-50 rounded-lg">
+              <div className="flex items-start justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">{feature.icon}</span>
+                  <div className="font-medium text-gray-700">{feature.name}</div>
+                </div>
+                {getStatusBadge(feature.status)}
               </div>
-              {getStatusBadge(feature.status)}
+              <div className="text-gray-600 text-xs ml-6">{feature.description}</div>
             </div>
-            <div className="text-gray-600 text-xs ml-6">{feature.description}</div>
+          ))}
+        </div>
+        <div className="mt-4 p-3 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg">
+          <div className="text-xs text-gray-700 font-medium mb-1">Pro Tip</div>
+          <div className="text-xs text-gray-600">
+            AI features learn from your design patterns to provide better suggestions over time.
           </div>
-        ))}
-      </div>
-      <div className="mt-4 p-3 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg">
-        <div className="text-xs text-gray-700 font-medium mb-1">Pro Tip</div>
-        <div className="text-xs text-gray-600">
-          AI features learn from your design patterns to provide better suggestions over time.
         </div>
       </div>
     </div>

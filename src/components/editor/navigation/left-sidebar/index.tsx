@@ -142,17 +142,20 @@ export const LeftSidebar: React.FC = () => {
         <div
           className="fixed z-50 pointer-events-none"
           style={{ 
-            left: '88px', // Position right after the sidebar (80px width + 8px margin)
-            top: '72px',  // Align with sidebar top
-            maxHeight: 'calc(100vh - 80px)', // Don't overflow viewport
+            left: '80px', // Position right after the sidebar (80px width + 8px margin)
+            top: '64px',  // Match sidebar top position exactly
+            maxHeight: 'calc(100vh - 64px)', // Match sidebar height exactly
+            height: 'calc(100vh - 64px)', // Ensure consistent height
           }}
         >
           <div 
-            className="pointer-events-auto animate-in slide-in-from-left-2 fade-in duration-200"
+            className="pointer-events-auto animate-in slide-in-from-left-2 fade-in duration-200 h-full"
             onMouseEnter={() => setHoverNav(!activeNav ? hoverNav : null)} // Only allow hover when no active tab
             onMouseLeave={() => setHoverNav(null)}
           >
-            <TabContent navKey={activeNav || hoverNav!} />
+            <div className={`h-full ${(activeNav || hoverNav) === 'tools' ? '' : 'overflow-hidden'}`}>
+              <TabContent navKey={activeNav || hoverNav!} />
+            </div>
           </div>
         </div>
       )}
