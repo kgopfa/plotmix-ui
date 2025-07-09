@@ -2,7 +2,7 @@ import React from 'react';
 import { VideoCameraIcon } from '@heroicons/react/24/outline';
 import { useCanvasState } from '@/stores/use-ui-store';
 
-export const VideoSettingsPreview: React.FC = () => {
+export const VideoSettingsTab: React.FC = () => {
   const canvasState = useCanvasState();
   
   // Get current canvas size

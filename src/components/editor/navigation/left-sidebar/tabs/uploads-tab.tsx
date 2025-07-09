@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { CloudArrowUpIcon, DocumentIcon, PhotoIcon, VideoCameraIcon, MusicalNoteIcon } from '@heroicons/react/24/outline';
 
-export const UploadsPreview: React.FC = () => {
+export const UploadsTab: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const supportedFormats = [

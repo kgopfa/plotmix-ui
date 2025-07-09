@@ -14,7 +14,7 @@ import { PropertiesPanel } from './panels/properties-panel';
 import { AnimationsPanel } from './panels/animations-panel';
 import { HistoryPanel } from './panels/history-panel';
 import { Timeline } from './timeline';
-import { Toolbar } from './panels/toolbar';
+import { ToolbarTab } from './navigation/left-sidebar/tabs/toolbar-tab';
 import { MaskOverlay } from './canvas/mask-overlay';
 import { CanvasFrame } from './canvas/canvas-frame';
 import { AnimatedCanvasObject, ElementAnimation, CanvasGroup } from '@/types/canvas';
@@ -1054,7 +1054,7 @@ export default function EditorCanvas() {
             className="absolute top-2/5 -translate-y-1/2 transition-all duration-300"
             style={{ left: '80px', zIndex: 50 }}
           >
-            <Toolbar />
+            <ToolbarTab />
           </div>
         )}
 

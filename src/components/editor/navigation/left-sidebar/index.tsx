@@ -11,7 +11,8 @@ import {
   PaintBrushIcon,
 } from '@heroicons/react/24/outline'
 import { useActiveNav, useSetActiveNav, useSetHoverNav, useHoverNav } from '@/stores/use-ui-store';
-import { VideoSettingsPreview, AIToolsPreview, UploadsPreview, SceneExplorerPreview } from './previews';
+import { VideoSettingsPreview, AIToolsPreview, UploadsPreview, SceneExplorerPreview } from './tabs';
+import { ToolbarTab } from './tabs/toolbar-tab';
 
 type NavItem = { name: string; key: 'video' | 'scenes' | 'uploads' | 'ai' | 'tools' | 'audio' | 'timeline'; href: string; icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; };
 
@@ -48,29 +49,7 @@ const HoverPreviewContent: React.FC<{ navKey: string }> = ({ navKey }) => {
       return <AIToolsPreview />;
     
     case 'tools':
-      return (
-        <div className="w-80 bg-white border border-gray-200 shadow-lg rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <PaintBrushIcon className="w-5 h-5 text-orange-600" />
-            <h3 className="font-semibold text-gray-900">Tools</h3>
-          </div>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            {[
-              { name: 'Select', icon: '↖️' },
-              { name: 'Rectangle', icon: '▭' },
-              { name: 'Circle', icon: '⭕' },
-              { name: 'Text', icon: 'T' },
-              { name: 'Line', icon: '📏' },
-              { name: 'Arrow', icon: '➡️' }
-            ].map((tool) => (
-              <div key={tool.name} className="p-2 bg-gray-50 rounded text-center">
-                <div className="text-lg mb-1">{tool.icon}</div>
-                <div className="text-xs text-gray-600">{tool.name}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
+      return <ToolbarTab />;
     
     case 'audio':
     case 'timeline':

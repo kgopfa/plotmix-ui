@@ -2,7 +2,7 @@ import { useToolState, useToolActions } from '@/stores/use-ui-store';
 import type { ToolType } from '@/types/tool';
 import { useRef } from 'react';
 
-export function Toolbar() {
+export function ToolbarTab() {
   const { activeTool, isPathMode } = useToolState();
   const { setActiveTool } = useToolActions();
   const imageFileInputRef = useRef<HTMLInputElement>(null);

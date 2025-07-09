@@ -3,7 +3,7 @@ import { FilmIcon, EyeIcon } from '@heroicons/react/24/outline';
 import { useCanvasElements, useCanvasGroups } from '@/stores/use-canvas-store';
 import { useActiveSceneId, useScenes } from '@/stores/use-scene-store';
 
-export const SceneExplorerPreview: React.FC = () => {
+export const SceneExplorerTab: React.FC = () => {
   const canvasObjects = useCanvasElements();
   const groups = useCanvasGroups();
   const activeSceneId = useActiveSceneId();

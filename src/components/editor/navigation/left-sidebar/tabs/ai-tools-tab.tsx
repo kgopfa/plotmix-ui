@@ -1,7 +1,7 @@
 import React from 'react';
 import { SparklesIcon } from '@heroicons/react/24/outline';
 
-export const AIToolsPreview: React.FC = () => {
+export const AIToolsTab: React.FC = () => {
   const aiFeatures = [
     {
       name: 'Auto Animations',
