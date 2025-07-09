@@ -970,7 +970,7 @@ export default function EditorCanvas() {
         {/* Fixed Canvas Container */}
         <main
           ref={containerRef}
-          className="absolute inset-0 bg-slate-100 flex items-center justify-center"
+          className="absolute inset-0 bg-slate-100 flex items-start justify-start pt-16 pl-20"
           onMouseMove={e => {
             if (toolState.activeTool !== 'select') {
               const rect = e.currentTarget.getBoundingClientRect();
