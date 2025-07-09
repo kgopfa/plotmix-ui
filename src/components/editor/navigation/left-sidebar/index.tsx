@@ -100,7 +100,14 @@ export const LeftSidebar: React.FC = () => {
                     setActiveNav(activeNav === item.key ? null : item.key);
                   }}
                   onMouseEnter={()=>setHoverNav(!activeNav ? item.key : null)}
-                  onMouseLeave={()=>setHoverNav(null)}
+                  onMouseLeave={()=>{
+                    // Only clear hover after a small delay to allow moving to tab content
+                    setTimeout(() => {
+                      if (!document.querySelector('.tab-panel-area:hover') && !activeNav) {
+                        setHoverNav(null);
+                      }
+                    }, 100);
+                  }}
                 >
                   <item.icon aria-hidden="true" className="size-6 shrink-0" />
                   <span className="sr-only">{item.name}</span>
@@ -126,7 +133,14 @@ export const LeftSidebar: React.FC = () => {
                     setActiveNav(activeNav === item.key ? null : item.key);
                   }}
                   onMouseEnter={()=>setHoverNav(!activeNav ? item.key : null)}
-                  onMouseLeave={()=>setHoverNav(null)}
+                  onMouseLeave={()=>{
+                    // Only clear hover after a small delay to allow moving to tab content
+                    setTimeout(() => {
+                      if (!document.querySelector('.tab-panel-area:hover') && !activeNav) {
+                        setHoverNav(null);
+                      }
+                    }, 100);
+                  }}
                 >
                   <item.icon aria-hidden="true" className="size-6 shrink-0" />
                   <span className="sr-only">{item.name}</span>
@@ -139,25 +153,54 @@ export const LeftSidebar: React.FC = () => {
 
       {/* Tab Panel - Shows on hover (when no active tab) OR when active (sticky) */}
       {(activeNav || (!activeNav && hoverNav)) && (
-        <div
-          className="fixed z-[60] pointer-events-none"
-          style={{ 
-            left: '80px', // Position right after the sidebar (80px width + 8px margin)
-            top: '72px',  // Match sidebar top position exactly (64px + 8px margin)
-            maxHeight: 'calc(100vh - 80px)', // Match sidebar height exactly (account for top/bottom margins)
-            height: 'calc(100vh - 80px)', // Ensure consistent height (account for top/bottom margins)
-          }}
-        >
-          <div 
-            className="pointer-events-auto animate-in slide-in-from-left-2 fade-in duration-200 h-full"
-            onMouseEnter={() => setHoverNav(!activeNav ? hoverNav : null)} // Only allow hover when no active tab
-            onMouseLeave={() => setHoverNav(null)}
+        <>
+          {/* Transparent bridge to ensure seamless hover */}
+          <div
+            className="fixed z-[60] pointer-events-auto"
+            style={{ 
+              left: '72px', // Start right after sidebar
+              top: '72px',
+              width: '16px', // Bridge gap between sidebar and panel
+              height: 'calc(100vh - 80px)',
+            }}
+            onMouseEnter={() => {
+              if (!activeNav && hoverNav) {
+                setHoverNav(hoverNav);
+              }
+            }}
+          />
+          
+          {/* Actual tab panel */}
+          <div
+            className="fixed z-[60] pointer-events-none tab-panel-area"
+            style={{ 
+              left: '80px', // Position after bridge
+              top: '72px',
+              maxHeight: 'calc(100vh - 80px)',
+              height: 'calc(100vh - 80px)',
+            }}
           >
-            <div className={`h-full ${(activeNav || hoverNav) === 'tools' ? '' : 'overflow-hidden'}`}>
-              <TabContent navKey={activeNav || hoverNav!} />
+            <div 
+              className="pointer-events-auto animate-in slide-in-from-left-2 fade-in duration-200 h-full"
+              onMouseEnter={() => {
+                // Keep hover state active when entering tab content
+                if (!activeNav && hoverNav) {
+                  setHoverNav(hoverNav);
+                }
+              }}
+              onMouseLeave={() => {
+                // Only clear hover when leaving tab content AND not over sidebar
+                if (!activeNav) {
+                  setTimeout(() => setHoverNav(null), 50);
+                }
+              }}
+            >
+              <div className={`h-full ${(activeNav || hoverNav) === 'tools' ? '' : 'overflow-hidden'}`}>
+                <TabContent navKey={activeNav || hoverNav!} />
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
     </>
   )
