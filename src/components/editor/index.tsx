@@ -1089,7 +1089,7 @@ export default function EditorCanvas() {
 
       {/* Floating Timeline - positioned fixed at bottom, starts after navigation sidebar */}
       <div
-        className="fixed bottom-2 right-0 bg-transparent z-50"
+        className="fixed bottom-2 right-0 bg-transparent z-50 transition-all duration-600 ease-in-out"
         style={{
           left: `${timelineLeftOffset}px`, // Start after nav sidebar and any visible left panel
           height: panelState.isTimelineCollapsed ? '32px' : `${panelState.timelineHeight}px`,
