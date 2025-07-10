@@ -10,7 +10,7 @@ import {
   MusicalNoteIcon,
   PaintBrushIcon,
 } from '@heroicons/react/24/outline'
-import { useActiveNav, useSetActiveNav, useSetHoverNav, useHoverNav } from '@/stores/use-ui-store';
+import { useActiveNav, useSetActiveNav, useSetHoverNav, useHoverNav, usePanelActions, usePanelState } from '@/stores/use-ui-store';
 import { VideoSettingsPreview, AIToolsPreview, UploadsPreview, SceneExplorerPreview } from './tabs';
 import { ToolbarTab } from './tabs/toolbar-tab';
 
@@ -66,6 +66,8 @@ export const LeftSidebar: React.FC = () => {
   const hoverNav = useHoverNav();
   const setActiveNav = useSetActiveNav();
   const setHoverNav = useSetHoverNav();
+  const { toggleTimelineCollapse } = usePanelActions();
+  const { isTimelineCollapsed } = usePanelState();
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Clear any pending hover timeout
@@ -155,12 +157,17 @@ export const LeftSidebar: React.FC = () => {
                 <a
                   href={item.href}
                   className={classNames(
+                    item.key === 'timeline' && isTimelineCollapsed ? 'bg-gray-800 text-white' : 
                     activeNav === item.key ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white',
                     'group flex flex-col gap-x-3 rounded-md p-3 text-sm/6 font-semibold',
                   )}
                   onClick={(e)=>{
                     e.preventDefault();
-                    setActiveNav(activeNav === item.key ? null : item.key);
+                    if (item.key === 'timeline') {
+                      toggleTimelineCollapse();
+                    } else {
+                      setActiveNav(activeNav === item.key ? null : item.key);
+                    }
                   }}
                   onMouseEnter={()=>handleHoverEnter(item.key)}
                   onMouseLeave={()=>handleHoverLeave()}

@@ -1,9 +1,10 @@
 import { useRef, useState, useMemo, useEffect } from 'react';
+import { Play, Pause, RotateCcw } from 'lucide-react';
 import { TimelineTrack } from '@/components/editor/timeline/timeline-track';
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { useCanvasElements, useCanvasGroups } from '@/stores/use-canvas-store';
 import { useTimelineStore } from '@/stores/use-timeline-store';
-import { usePanelState, usePanelActions } from '@/stores/use-ui-store';
+import { usePanelState } from '@/stores/use-ui-store';
 import { useShallow } from 'zustand/react/shallow';
 
 interface TimelineProps {
@@ -15,7 +16,7 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
   // Get data directly from stores
   const elements = useCanvasElements().filter(el => !el.isAnimationPath);
   const groups = useCanvasGroups();
-  
+
   // Get timeline state and actions
   const { playback, ui: timelineUI, getEffectiveDuration, setScale } = useTimelineStore(
     useShallow((state) => ({
@@ -25,7 +26,7 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
       setScale: state.setScale
     }))
   );
-  
+
   const { play, pause, stop, updateAnimation } = useTimelineStore(
     useShallow((state) => ({
       play: state.play,
@@ -34,11 +35,10 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
       updateAnimation: state.updateAnimation
     }))
   );
-  
+
   // Get panel state for collapse functionality
   const { isTimelineCollapsed } = usePanelState();
-  const { toggleTimelineCollapse } = usePanelActions();
-  
+
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [scrollLeft, setScrollLeft] = useState(0);
   const [expandedElements, setExpandedElements] = useState<Set<string>>(new Set());
@@ -55,7 +55,7 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
       ...elements.flatMap(el => el.animations),
       ...groups.flatMap(g => g.animations)
     ];
-    
+
     // Pre-warm the getEffectiveDuration cache by calling it for each animation
     // This triggers the fallback logic which initializes the cache
     allAnimations.forEach(animation => {
@@ -140,7 +140,7 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
       .filter(group => !group.isDefaultGroup && !group.isAnimationPath)
       .forEach(group => {
         const isSelected = false; // Selection temporarily disabled
-        
+
         tracks.push({
           id: group.id,
           type: 'group',
@@ -152,13 +152,13 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
           isExpanded: expandedElements.has(group.id),
           depth: 0
         });
-        
+
         // For text groups, add character children if group is expanded
         if (group.type === 'text' && expandedElements.has(group.id)) {
-          const characters = elements.filter(el => 
+          const characters = elements.filter(el =>
             el.type === 'character' && group.elementIds.includes(el.id)
           ).sort((a, b) => (a.characterIndex || 0) - (b.characterIndex || 0));
-          
+
           characters.forEach(character => {
             tracks.push({
               id: character.id,
@@ -173,11 +173,11 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
             });
           });
         }
-        
+
         // For custom groups, add element children if group is expanded (polygon groups are not expandable)
         if (group.type === 'custom' && expandedElements.has(group.id)) {
           const groupElements = elements.filter(el => group.elementIds.includes(el.id));
-          
+
           groupElements.forEach(element => {
             tracks.push({
               id: element.id,
@@ -199,13 +199,13 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
       .filter(el => {
         // Skip characters - they appear under text groups
         if (el.type === 'character') return false;
-        
+
         // textGroup elements that aren't in typed groups should be shown
         if (el.type === 'textGroup') {
           const group = groups.find(g => g.elementIds.includes(el.id));
           return !group || group.isDefaultGroup;
         }
-        
+
         // Include elements that are in default groups or not in any typed group
         const group = groups.find(g => g.elementIds.includes(el.id));
         return !group || group.isDefaultGroup;
@@ -226,7 +226,7 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
   }, [elements, groups, expandedElements]);
 
   // Memoize ruler ticks for performance
-  const rulerTicks = useMemo(() => 
+  const rulerTicks = useMemo(() =>
     Array.from({ length: 121 }).map((_, i) => ({
       index: i,
       isMajor: i % 5 === 0,
@@ -237,42 +237,41 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
   );
 
   return (
-    <div 
-      className={`mr-2 mb-2 bg-white transition-all rounded-lg border border-gray-200 shadow-lg duration-200 ${
-        isTimelineCollapsed 
-          ? 'h-8' 
-          : 'h-full flex flex-col'
-      }`}
+    <div
+      className={`mr-2 mb-2 bg-white rounded-lg border border-gray-200 shadow-lg ${isTimelineCollapsed
+        ? 'h-18'
+        : 'h-full flex flex-col'
+        }`}
     >
       {/* Controls */}
-      <div className="h-8 border-b border-gray-200 flex items-center px-4 justify-between">
+      <div className="h-18 border-b border-gray-200 flex items-center px-4 justify-between">
         <div className="flex items-center gap-4">
           <button
             onClick={handlePlayPause}
-            className="w-20 h-6 flex items-center justify-center bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+            className="h-12 w-12 flex items-center justify-center bg-fuchsia-400 text-white rounded-full shadow-lg shadow-fuchsia-200 transition-all duration-200 cursor-pointer hover:scale-110"
           >
-            {playback.isPlaying ? 'Pause' : 'Play'}
+            {playback.isPlaying ? <Pause size={24} fill="currentColor" strokeWidth={0} /> : <Play size={24} fill="currentColor" strokeWidth={0} />}
           </button>
           <button
             onClick={handleStop}
-            className="w-20 h-6 flex items-center justify-center bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+            className="h-12 w-12 flex items-center justify-center bg-transparent cursor-pointer transition-all duration-200 hover:scale-110"
           >
-            Stop
+            <RotateCcw size={26} stroke="#dd7be0" strokeWidth={2} />
           </button>
           <div className="text-sm font-mono text-gray-700 w-32">
             {formatTime(playback.currentTime)}
           </div>
         </div>
-        
+
         <div className="flex items-center gap-3">
           {/* Zoom Mode Buttons */}
           <div className="flex border rounded overflow-hidden">
             <button
-              className={`px-2 text-xs ${zoomMode==='time' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'}`}
+              className={`px-2 text-xs cursor-pointer ${zoomMode === 'time' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'}`}
               onClick={() => setZoomMode('time')}
             >Time</button>
             <button
-              className={`px-2 text-xs ${zoomMode==='view' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'}`}
+              className={`px-2 text-xs cursor-pointer ${zoomMode === 'view' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'}`}
               onClick={() => setZoomMode('view')}
             >View</button>
           </div>
@@ -280,32 +279,22 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
           {/* Zoom Slider */}
           <input
             type="range"
-            min={zoomMode==='time' ? 20 : 10}
-            max={zoomMode==='time' ? 400 : 500}
-            step={zoomMode==='time' ? 10 : 10}
+            min={zoomMode === 'time' ? 20 : 10}
+            max={zoomMode === 'time' ? 400 : 500}
+            step={zoomMode === 'time' ? 10 : 10}
             value={sliderValue}
             onChange={e => {
               const val = Number(e.target.value);
-              if(zoomMode==='time') {
+              if (zoomMode === 'time') {
                 setScale(val);
               } else {
-                onCanvasZoom(val/100);
+                onCanvasZoom(val / 100);
               }
             }}
             className="h-1.5 w-32 cursor-pointer accent-blue-500"
             title="Zoom"
           />
-          <button
-            onClick={() => toggleTimelineCollapse()}
-            className="flex items-center justify-center w-6 h-6 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
-            title={isTimelineCollapsed ? 'Expand Timeline' : 'Collapse Timeline'}
-          >
-            {isTimelineCollapsed ? (
-              <span className="text-sm">▲</span>
-            ) : (
-              <span className="text-sm">▼</span>
-            )}
-          </button>
+
         </div>
       </div>
 
@@ -346,8 +335,8 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
                 scale={timelineUI.scale}
                 currentTime={playback.currentTime}
                 isSelected={track.isSelected}
-                onAnimationChange={track.type === 'group' 
-                  ? handleGroupAnimationChange 
+                onAnimationChange={track.type === 'group'
+                  ? handleGroupAnimationChange
                   : handleAnimationChange
                 }
                 isGroup={track.isGroup}
@@ -361,7 +350,7 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
                 }}
               />
             ))}
-            
+
             {hierarchicalTracks.length === 0 && (
               <div className="p-8 text-center text-gray-500">
                 No elements or groups with animations to display

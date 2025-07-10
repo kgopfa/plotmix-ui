@@ -1092,8 +1092,8 @@ export default function EditorCanvas() {
         className="fixed bottom-2 right-0 bg-transparent z-50 transition-all duration-600 ease-in-out"
         style={{
           left: `${timelineLeftOffset}px`, // Start after nav sidebar and any visible left panel
-          height: panelState.isTimelineCollapsed ? '32px' : `${panelState.timelineHeight}px`,
-          minHeight: '32px', // Allow collapsing to 32px (h-8)
+          height: panelState.isTimelineCollapsed ? '72px' : `${panelState.timelineHeight}px`,
+          minHeight: '72px', // Allow collapsing to 72px to show controls
           maxHeight: '80vh'
         }}
       >
