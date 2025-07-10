@@ -274,7 +274,7 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
               <span className="font-medium ml-1 text-xs">Time</span>
             </button>
             <button
-              className={`px-2 text-xs w-18 h-8 rounded-md flex flex-row items-center justify-center cursor-pointer text-gray-600 ${zoomMode === 'view' ? 'bg-zinc-200' : 'bg-transparent'}`}
+              className={`px-2 text-xs w-18 h-8 rounded-md flex flex-row items-center justify-center cursor-pointer text-blue-600 ${zoomMode === 'view' ? 'bg-blue-200' : 'bg-transparent'}`}
               onClick={() => setZoomMode('view')}
             >
               <Monitor size={18} />
