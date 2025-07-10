@@ -1,6 +1,21 @@
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { AnimationBlock } from './animation-block';
+import { 
+  Square, 
+  Circle, 
+  Triangle, 
+  RotateCcw, 
+  Minus, 
+  PenTool, 
+  Image, 
+  Type, 
+  FileText, 
+  Folder, 
+  Package2, 
+  Pentagon,
+  LetterText
+} from 'lucide-react';
 
 const MAX_DURATION_SECONDS = 120;
 const PIXELS_PER_SECOND = 100;
@@ -29,6 +44,59 @@ interface TimelineTrackProps {
   customName?: string; // Allow custom name override
   onGroupSelect?: (group: CanvasGroup) => void;
 }
+
+// Icon component for element types
+const ElementIcon = ({ element, isChild = false }: { element: AnimatedCanvasObject | CanvasGroup; isChild?: boolean }) => {
+  const iconSize = 14;
+  const iconClass = "text-gray-600";
+  
+  // Handle groups first
+  if ('elementIds' in element) {
+    const group = element as CanvasGroup;
+    switch (group.type) {
+      case 'text':
+        return <FileText size={iconSize} className={iconClass} />;
+      case 'custom':
+        return <Folder size={iconSize} className={iconClass} />;
+      case 'polygon':
+        return <Pentagon size={iconSize} className={iconClass} />;
+      default:
+        return <Package2 size={iconSize} className={iconClass} />;
+    }
+  }
+  
+  // Handle child indicator
+  if (isChild) {
+    return <span className="text-gray-400 text-xs">└</span>;
+  }
+  
+  // Handle individual elements
+  const animatedElement = element as AnimatedCanvasObject;
+  switch (animatedElement.type) {
+    case 'rectangle':
+      return <Square size={iconSize} className={iconClass} />;
+    case 'circle':
+      return <Circle size={iconSize} className={iconClass} />;
+    case 'triangle':
+      return <Triangle size={iconSize} className={iconClass} />;
+    case 'arc':
+      return <RotateCcw size={iconSize} className={iconClass} />;
+    case 'line':
+      return <Minus size={iconSize} className={iconClass} />;
+    case 'path':
+      return <PenTool size={iconSize} className={iconClass} />;
+    case 'image':
+      return <Image size={iconSize} className={iconClass} />;
+    case 'text':
+      return <Type size={iconSize} className={iconClass} />;
+    case 'textGroup':
+      return <FileText size={iconSize} className={iconClass} />;
+    case 'character':
+      return <LetterText size={iconSize} className={iconClass} />;
+    default:
+      return <Circle size={iconSize} className={iconClass} />;
+  }
+};
 
 export function TimelineTrack({
   element,
@@ -93,7 +161,7 @@ export function TimelineTrack({
     >
       {/* Track Label */}
       <div
-        className={`w-32 text-sm font-medium truncate flex items-center gap-1 ${
+        className={`w-32 text-sm font-medium truncate flex items-center gap-2 ${
           isSelected ? 'text-blue-600' : ''
         } ${isChild ? 'text-gray-600' : ''}`}
         style={{ paddingLeft: `${8 + depth * 16}px` }}
@@ -107,9 +175,7 @@ export function TimelineTrack({
             {isExpanded ? '▼' : '▶'}
           </button>
         )}
-        {isGroup && <span className="text-xs">📦</span>}
-        {!isGroup && 'type' in element && element.type === 'textGroup' && <span className="text-xs">📄</span>}
-        {!isGroup && !('type' in element && element.type === 'textGroup') && <span className="text-xs">{isChild ? '└' : '🔵'}</span>}
+        <ElementIcon element={element} isChild={isChild} />
         <span className="truncate">{name}</span>
       </div>
 
@@ -148,7 +214,7 @@ export function TimelineTrack({
 
         {/* Playhead */}
         <div
-          className="absolute top-0 bottom-0 w-0.5 bg-red-500"
+          className="absolute top-0 bottom-0 w-0.5 bg-fuchsia-300"
           style={{ left: `${currentTime * scale}px` }}
         />
       </div>
