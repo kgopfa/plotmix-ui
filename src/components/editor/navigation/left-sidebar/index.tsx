@@ -14,19 +14,19 @@ import { useActiveNav, useSetActiveNav, useSetHoverNav, useHoverNav, usePanelAct
 import { VideoSettingsPreview, AIToolsPreview, UploadsPreview, SceneExplorerPreview } from './tabs';
 import { ToolbarTab } from './tabs/toolbar-tab';
 
-type NavItem = { name: string; key: 'video' | 'scenes' | 'uploads' | 'ai' | 'tools' | 'audio' | 'timeline'; href: string; icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; };
+type NavItem = { name: string; key: 'video' | 'scenes' | 'uploads' | 'ai' | 'tools' | 'audio' | 'timeline'; icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; };
 
 const navigation: NavItem[] = [
-  { name: 'Video Settings', key: 'video', href: '#', icon: VideoCameraIcon },
-  { name: 'Scenes', key: 'scenes', href: '#', icon: FilmIcon },
-  { name: 'Uploads', key: 'uploads', href: '#', icon: CloudArrowUpIcon },
-  { name: 'AI', key: 'ai', href: '#', icon: SparklesIcon },
-  { name: 'Tools', key: 'tools', href: '#', icon: PaintBrushIcon },
+  { name: 'Video Settings', key: 'video', icon: VideoCameraIcon },
+  { name: 'Scenes', key: 'scenes', icon: FilmIcon },
+  { name: 'Uploads', key: 'uploads', icon: CloudArrowUpIcon },
+  { name: 'AI', key: 'ai', icon: SparklesIcon },
+  { name: 'Tools', key: 'tools', icon: PaintBrushIcon },
 ];
 
 const bottomNavigation: NavItem[] = [
-  { name: 'Audio', key: 'audio', href: '#', icon: MusicalNoteIcon },
-  { name: 'Timeline', key: 'timeline', href: '#', icon: ClockIcon },
+  { name: 'Audio', key: 'audio', icon: MusicalNoteIcon },
+  { name: 'Timeline', key: 'timeline', icon: ClockIcon },
 ];
 
 function classNames(...classes: string[]) {
@@ -109,8 +109,8 @@ export const LeftSidebar: React.FC = () => {
   // Deselect active navigation item when clicking on empty sidebar space
   const handleRootClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
-    // If the click is not within a link (<a>) element, clear selection
-    if (!target.closest('a')) {
+    // If the click is not within a button element, clear selection
+    if (!target.closest('button')) {
       setActiveNav(null);
       setHoverNav(null);
     }
@@ -128,14 +128,13 @@ export const LeftSidebar: React.FC = () => {
           <ul role="list" className="flex flex-col items-center space-y-1">
             {navigation.map((item: NavItem) => (
               <li key={item.name}>
-                <a
-                  href={item.href}
+                <button
+                  type="button"
                   className={classNames(
                     activeNav === item.key ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white',
                     'group flex flex-col gap-x-3 rounded-md p-3 text-sm/6 font-semibold',
                   )}
-                  onClick={(e)=>{
-                    e.preventDefault();
+                  onClick={()=>{
                     setActiveNav(activeNav === item.key ? null : item.key);
                   }}
                   onMouseEnter={()=>handleHoverEnter(item.key)}
@@ -143,7 +142,7 @@ export const LeftSidebar: React.FC = () => {
                 >
                   <item.icon aria-hidden="true" className="size-6 shrink-0" />
                   <span className="sr-only">{item.name}</span>
-                </a>
+                </button>
               </li>
             ))}
           </ul>
@@ -154,15 +153,14 @@ export const LeftSidebar: React.FC = () => {
           <ul role="list" className="flex flex-col items-center space-y-1">
             {bottomNavigation.map((item: NavItem) => (
               <li key={item.name}>
-                <a
-                  href={item.href}
+                <button
+                  type="button"
                   className={classNames(
                     item.key === 'timeline' && isTimelineCollapsed ? 'bg-gray-800 text-white' : 
                     activeNav === item.key ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white',
                     'group flex flex-col gap-x-3 rounded-md p-3 text-sm/6 font-semibold',
                   )}
-                  onClick={(e)=>{
-                    e.preventDefault();
+                  onClick={()=>{
                     if (item.key === 'timeline') {
                       toggleTimelineCollapse();
                     } else {
@@ -174,7 +172,7 @@ export const LeftSidebar: React.FC = () => {
                 >
                   <item.icon aria-hidden="true" className="size-6 shrink-0" />
                   <span className="sr-only">{item.name}</span>
-                </a>
+                </button>
               </li>
             ))}
           </ul>
