@@ -1,5 +1,5 @@
 import { useRef, useState, useMemo, useEffect } from 'react';
-import { Play, Pause, RotateCcw } from 'lucide-react';
+import { Play, Pause, RotateCcw, Clock, Monitor } from 'lucide-react';
 import { TimelineTrack } from '@/components/editor/timeline/timeline-track';
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { useCanvasElements, useCanvasGroups } from '@/stores/use-canvas-store';
@@ -265,15 +265,21 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
 
         <div className="flex items-center gap-3">
           {/* Zoom Mode Buttons */}
-          <div className="flex border rounded overflow-hidden">
+          <div className="flex gap-1 overflow-hidden">
             <button
-              className={`px-2 text-xs cursor-pointer ${zoomMode === 'time' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'}`}
+              className={`px-2 text-xs w-18 h-8 rounded-md flex flex-row items-center justify-center cursor-pointer text-gray-600 ${zoomMode === 'time' ? 'bg-zinc-200' : 'bg-transparent'}`}
               onClick={() => setZoomMode('time')}
-            >Time</button>
+            >
+              <Clock size={18} />
+              <span className="font-medium ml-1 text-xs">Time</span>
+            </button>
             <button
-              className={`px-2 text-xs cursor-pointer ${zoomMode === 'view' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'}`}
+              className={`px-2 text-xs w-18 h-8 rounded-md flex flex-row items-center justify-center cursor-pointer text-gray-600 ${zoomMode === 'view' ? 'bg-zinc-200' : 'bg-transparent'}`}
               onClick={() => setZoomMode('view')}
-            >View</button>
+            >
+              <Monitor size={18} />
+              <span className="font-medium ml-1 text-xs">View</span>
+            </button>
           </div>
 
           {/* Zoom Slider */}
@@ -291,7 +297,7 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
                 onCanvasZoom(val / 100);
               }
             }}
-            className="h-1.5 w-32 cursor-pointer accent-blue-500"
+            className="h-2 w-32 cursor-pointer appearance-none bg-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-400 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-blue-400 [&::-moz-range-thumb]:border-none [&::-moz-range-thumb]:cursor-pointer"
             title="Zoom"
           />
 
