@@ -47,7 +47,7 @@ export const RightSidebar: React.FC = () => {
                 onMouseLeave={() => setHoverPanel(null)}
                 title={item.name}
               >
-                <item.icon aria-hidden="true" className="size-6 shrink-0" />
+                <item.icon aria-hidden="true" className="size-5 shrink-0" />
                 <span className="sr-only">{item.name}</span>
               </button>
             </li>

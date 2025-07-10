@@ -9,8 +9,8 @@ import { useUIStore, useActiveNav, useActiveRightPanel, useCanvasState } from '@
 import { useTimelineSync } from '@/stores/use-timeline-store';
 import { useCanvasMigration } from '@/hooks/use-canvas-migration';
 import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
-import { PropertiesPanel } from './panels/properties-panel';
-import { AnimationsPanel } from './panels/animations-panel';
+import { PropertiesPanel } from './navigation/right-sidebar/properties-panel';
+import { AnimationsPanel } from './navigation/right-sidebar/animations-panel';
 import { HistoryPanel } from './panels/history-panel';
 import { Timeline } from './timeline';
 import { MaskOverlay } from './canvas/mask-overlay';
