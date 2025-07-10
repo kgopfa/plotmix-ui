@@ -1064,8 +1064,13 @@ export default function EditorCanvas() {
         })() && (
           <>
             <div
-              className="absolute right-20 bg-white border border-gray-200 rounded-lg shadow-sm overflow-y-auto z-30 transition-all duration-300 mb-2"
-              style={{ width: `${panelState.rightPanelWidth / 16}rem`, top: '8px', bottom: `${panelState.timelineHeight + 8}px` }}
+              className="absolute right-20 bg-white border border-gray-200 rounded-lg shadow-sm overflow-y-auto z-30 mb-2 transform transition-all duration-300 ease-out animate-slide-in-right"
+              style={{ 
+                width: `${panelState.rightPanelWidth / 16}rem`, 
+                top: '8px', 
+                bottom: `${panelState.timelineHeight + 8}px`,
+                animation: 'slideInFromRight 0.3s ease-out'
+              }}
             >
               { activeRightPanel === 'properties' && hasSelection && (
                 <PropertiesPanel

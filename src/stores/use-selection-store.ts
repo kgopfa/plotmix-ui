@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
+import { useUIStore } from '@/stores/use-ui-store';
 
 interface SelectionState {
   selectedElements: AnimatedCanvasObject[];
@@ -48,6 +49,14 @@ export const useSelectionStore = create<SelectionStore>((set, get) => ({
     } else if (Array.isArray(element)) {
       set({ selectedElements: [...element] });
       state.updateSelectedGroupsInternal(state.currentGroups);
+      
+      // Auto-activate properties panel when elements are selected
+      if (element.length > 0) {
+        const uiStore = useUIStore.getState();
+        if (!uiStore.activeRightPanel) {
+          uiStore.setActiveRightPanel('properties');
+        }
+      }
     } else {
       let newSelectedElements: AnimatedCanvasObject[];
       
@@ -62,6 +71,14 @@ export const useSelectionStore = create<SelectionStore>((set, get) => ({
       
       set({ selectedElements: newSelectedElements });
       state.updateSelectedGroupsInternal(state.currentGroups);
+      
+      // Auto-activate properties panel when an element is selected
+      if (newSelectedElements.length > 0) {
+        const uiStore = useUIStore.getState();
+        if (!uiStore.activeRightPanel) {
+          uiStore.setActiveRightPanel('properties');
+        }
+      }
     }
   },
 
@@ -85,11 +102,27 @@ export const useSelectionStore = create<SelectionStore>((set, get) => ({
         selectedGroups: [group] 
       });
     }
+    
+    // Auto-activate properties panel when a group is selected
+    if (elementsInGroup.length > 0) {
+      const uiStore = useUIStore.getState();
+      if (!uiStore.activeRightPanel) {
+        uiStore.setActiveRightPanel('properties');
+      }
+    }
   },
 
   selectAll: (elements) => {
     set({ selectedElements: [...elements] });
     get().updateSelectedGroupsInternal(get().currentGroups);
+    
+    // Auto-activate properties panel when selecting all elements
+    if (elements.length > 0) {
+      const uiStore = useUIStore.getState();
+      if (!uiStore.activeRightPanel) {
+        uiStore.setActiveRightPanel('properties');
+      }
+    }
   },
 
   clearSelections: () => {
