@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronDown, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { ChevronDown, Plus } from 'lucide-react';
 import { useCanvasState, useCanvasActions } from '@/stores/use-ui-store';
 
 export const CanvasSizeSelector: React.FC = () => {
@@ -57,7 +56,7 @@ export const CanvasSizeSelector: React.FC = () => {
       <Menu as="div" className="relative">
         <MenuButton className="flex items-center h-9 gap-2 px-3 py-1.5 text-gray-600 text-sm font-medium hover:bg-gray-100 border border-gray-200 rounded-md transition-colors">
           <span className="text-gray-600 font-medium">{displayText}</span>
-          <FontAwesomeIcon icon={faChevronDown} className="mb-0.5 size-3 text-gray-600" />
+                      <ChevronDown className="mb-0.5 size-3 text-gray-600" />
         </MenuButton>
 
         <MenuItems
@@ -99,7 +98,7 @@ export const CanvasSizeSelector: React.FC = () => {
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <FontAwesomeIcon icon={faPlus} className="size-3" />
+                  <Plus className="size-3" />
                   <span>Custom Size...</span>
                 </div>
                 {canvasState.currentSizeId === 'custom' && canvasState.customSize && (
