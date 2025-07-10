@@ -299,8 +299,9 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
       </div>
 
       {/* Scrollable timeline container (ruler + tracks) - only visible when not collapsed */}
-      {!isTimelineCollapsed && (
-        <div className="flex-1 overflow-y-auto">
+      <div className={`flex-1 overflow-y-auto transition-all duration-600 ease-in-out ${
+        isTimelineCollapsed ? 'opacity-0 max-h-0' : 'opacity-100 max-h-full'
+      }`}>
           <div
             className="relative w-max"
             style={{ width: `${timelineUI.scale * 120 + 128}px` }} // 128 = w-32 name column
@@ -308,7 +309,9 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
             onScroll={handleScroll}
           >
             {/* Ruler (scrolls with timeline) */}
-            <div className="h-6 relative border-b border-gray-200">
+            <div className={`h-6 relative border-b border-gray-200 transition-all duration-300 ease-in-out ${
+              isTimelineCollapsed ? 'opacity-0 scale-y-0' : 'opacity-100 scale-y-100'
+            }`}>
               <div className="absolute top-0 left-32 h-full w-full" style={{ transform: `translateX(-${scrollLeft}px)` }}>
                 {rulerTicks.map((tick) => (
                   <div
@@ -358,7 +361,6 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
             )}
           </div>
         </div>
-      )}
     </div>
   );
 } 
