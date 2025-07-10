@@ -2,13 +2,13 @@
 
 import React, { useRef, useEffect } from 'react'
 import {
-  CloudUpload,
   Video,
   Clapperboard,
   WandSparkles,
   Palette,
   VolumeOff,
   Hourglass,
+  CircleFadingPlus,
 } from 'lucide-react'
 import { useActiveNav, useSetActiveNav, useSetHoverNav, useHoverNav, usePanelActions, usePanelState } from '@/stores/use-ui-store';
 import { VideoSettingsPreview, AIToolsPreview, UploadsPreview, SceneExplorerPreview } from './tabs';
@@ -19,7 +19,7 @@ type NavItem = { name: string; key: 'video' | 'scenes' | 'uploads' | 'ai' | 'too
 const navigation: NavItem[] = [
   { name: 'Video Settings', key: 'video', icon: Video },
   { name: 'Scenes', key: 'scenes', icon: Clapperboard },
-  { name: 'Uploads', key: 'uploads', icon: CloudUpload },
+  { name: 'Uploads', key: 'uploads', icon: CircleFadingPlus },
   { name: 'AI', key: 'ai', icon: WandSparkles },
   { name: 'Tools', key: 'tools', icon: Palette },
 ];
