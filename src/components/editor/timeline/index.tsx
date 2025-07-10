@@ -248,7 +248,7 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
         <div className="flex items-center gap-4">
           <button
             onClick={handlePlayPause}
-            className="h-12 w-12 flex items-center justify-center bg-fuchsia-400 text-white rounded-full shadow-lg shadow-fuchsia-200 transition-all duration-200 cursor-pointer hover:scale-110"
+            className="h-12 w-12 flex items-center justify-center bg-fuchsia-500 text-white rounded-full shadow-lg shadow-fuchsia-200 transition-all duration-200 cursor-pointer hover:scale-110"
           >
             {playback.isPlaying ? <Pause size={24} fill="currentColor" strokeWidth={0} /> : <Play size={24} fill="currentColor" strokeWidth={0} />}
           </button>

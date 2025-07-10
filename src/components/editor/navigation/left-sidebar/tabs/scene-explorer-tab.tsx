@@ -1,5 +1,5 @@
 import React from 'react';
-import { FilmIcon, EyeIcon } from '@heroicons/react/24/outline';
+import { Film, Eye } from 'lucide-react';
 import { useCanvasElements, useCanvasGroups } from '@/stores/use-canvas-store';
 import { useActiveSceneId, useScenes } from '@/stores/use-scene-store';
 
@@ -29,7 +29,7 @@ export const SceneExplorerTab: React.FC = () => {
     <div className="h-full w-96 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
       <div className="p-4 border-b border-gray-100">
         <div className="flex items-center gap-2">
-          <FilmIcon className="w-5 h-5 text-blue-600" />
+          <Film className="w-5 h-5 text-blue-600" />
           <h3 className="font-semibold text-gray-900">Scenes</h3>
         </div>
       </div>
@@ -72,7 +72,7 @@ export const SceneExplorerTab: React.FC = () => {
                   <div key={element.id} className="flex items-center gap-2 text-xs p-1">
                     <span>{getElementIcon(element.type)}</span>
                     <span className="flex-1 truncate">{element.name}</span>
-                    <EyeIcon className="w-3 h-3 text-green-600" />
+                    <Eye className="w-3 h-3 text-green-600" />
                   </div>
                 ))}
                 {visibleElements.length > 6 && (

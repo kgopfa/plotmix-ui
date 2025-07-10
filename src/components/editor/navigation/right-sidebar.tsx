@@ -2,10 +2,10 @@
 
 import React from 'react';
 import {
-  Cog6ToothIcon,
-  PlayCircleIcon,
-  ClockIcon,
-} from '@heroicons/react/24/outline';
+  PencilRuler,
+  Blend,
+  History,
+} from 'lucide-react';
 import { useActiveRightPanel, useSetActiveRightPanel, useHoverRightPanel, useSetHoverRightPanel } from '@/stores/use-ui-store';
 
 // Navigation item type for right sidebar
@@ -17,9 +17,9 @@ interface RightNavItem {
 }
 
 const navigation: RightNavItem[] = [
-  { name: 'Properties', key: 'properties', icon: Cog6ToothIcon },
-  { name: 'Animations', key: 'animations', icon: PlayCircleIcon },
-  { name: 'History', key: 'history', icon: ClockIcon },
+  { name: 'Properties', key: 'properties', icon: PencilRuler },
+  { name: 'Animations', key: 'animations', icon: Blend },
+  { name: 'History', key: 'history', icon: History },
 ];
 
 export const RightSidebar: React.FC = () => {
@@ -41,7 +41,7 @@ export const RightSidebar: React.FC = () => {
           {navigation.map((item) => (
             <li key={item.key}>
               <button
-                className={`${(activePanel === item.key || hoverPanel === item.key) ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'} group flex flex-col gap-x-3 rounded-md p-3 text-sm/6 font-semibold`}
+                className={`${(activePanel === item.key || hoverPanel === item.key) ? 'bg-fuchsia-500 text-white' : 'text-gray-400 hover:bg-fuchsia-500 hover:text-white'} group flex flex-col gap-x-3 rounded-md p-3 text-sm/6 font-semibold`}
                 onClick={() => handleClick(item.key)}
                 onMouseEnter={() => setHoverPanel(item.key)}
                 onMouseLeave={() => setHoverPanel(null)}

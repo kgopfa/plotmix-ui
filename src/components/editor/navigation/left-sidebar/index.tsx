@@ -2,14 +2,14 @@
 
 import React, { useRef, useEffect } from 'react'
 import {
-  CloudArrowUpIcon,
-  FilmIcon,
-  SparklesIcon,
-  VideoCameraIcon,
-  ClockIcon,
-  MusicalNoteIcon,
-  PaintBrushIcon,
-} from '@heroicons/react/24/outline'
+  CloudUpload,
+  Video,
+  Clapperboard,
+  WandSparkles,
+  Palette,
+  VolumeOff,
+  Hourglass,
+} from 'lucide-react'
 import { useActiveNav, useSetActiveNav, useSetHoverNav, useHoverNav, usePanelActions, usePanelState } from '@/stores/use-ui-store';
 import { VideoSettingsPreview, AIToolsPreview, UploadsPreview, SceneExplorerPreview } from './tabs';
 import { ToolbarTab } from './tabs/toolbar-tab';
@@ -17,16 +17,16 @@ import { ToolbarTab } from './tabs/toolbar-tab';
 type NavItem = { name: string; key: 'video' | 'scenes' | 'uploads' | 'ai' | 'tools' | 'audio' | 'timeline'; icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; };
 
 const navigation: NavItem[] = [
-  { name: 'Video Settings', key: 'video', icon: VideoCameraIcon },
-  { name: 'Scenes', key: 'scenes', icon: FilmIcon },
-  { name: 'Uploads', key: 'uploads', icon: CloudArrowUpIcon },
-  { name: 'AI', key: 'ai', icon: SparklesIcon },
-  { name: 'Tools', key: 'tools', icon: PaintBrushIcon },
+  { name: 'Video Settings', key: 'video', icon: Video },
+  { name: 'Scenes', key: 'scenes', icon: Clapperboard },
+  { name: 'Uploads', key: 'uploads', icon: CloudUpload },
+  { name: 'AI', key: 'ai', icon: WandSparkles },
+  { name: 'Tools', key: 'tools', icon: Palette },
 ];
 
 const bottomNavigation: NavItem[] = [
-  { name: 'Audio', key: 'audio', icon: MusicalNoteIcon },
-  { name: 'Timeline', key: 'timeline', icon: ClockIcon },
+  { name: 'Audio', key: 'audio', icon: VolumeOff },
+  { name: 'Timeline', key: 'timeline', icon: Hourglass },
 ];
 
 function classNames(...classes: string[]) {
@@ -131,7 +131,7 @@ export const LeftSidebar: React.FC = () => {
                 <button
                   type="button"
                   className={classNames(
-                    activeNav === item.key ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white',
+                    activeNav === item.key ? 'bg-fuchsia-500 text-white' : 'text-gray-400 hover:bg-fuchsia-500 hover:text-white',
                     'group flex flex-col gap-x-3 rounded-md p-3 text-sm/6 font-semibold',
                   )}
                   onClick={()=>{
@@ -156,8 +156,8 @@ export const LeftSidebar: React.FC = () => {
                 <button
                   type="button"
                   className={classNames(
-                    item.key === 'timeline' && isTimelineCollapsed ? 'bg-gray-800 text-white' : 
-                    activeNav === item.key ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white',
+                    item.key === 'timeline' && isTimelineCollapsed ? 'bg-fuchsia-500 text-white' : 
+                    activeNav === item.key ? 'bg-fuchsia-500 text-white' : 'text-gray-400 hover:bg-fuchsia-500 hover:text-white',
                     'group flex flex-col gap-x-3 rounded-md p-3 text-sm/6 font-semibold',
                   )}
                   onClick={()=>{

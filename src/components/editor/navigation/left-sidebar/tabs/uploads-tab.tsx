@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { CloudArrowUpIcon, DocumentIcon, PhotoIcon, VideoCameraIcon, MusicalNoteIcon } from '@heroicons/react/24/outline';
+import { CloudUpload, FileText, Image, Video, Music } from 'lucide-react';
 
 export const UploadsTab: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -7,28 +7,28 @@ export const UploadsTab: React.FC = () => {
   const supportedFormats = [
     {
       category: 'Images',
-      icon: PhotoIcon,
+      icon: Image,
       formats: ['JPG', 'PNG', 'SVG', 'WebP'],
       color: 'text-green-600',
       bgColor: 'bg-green-50'
     },
     {
       category: 'Videos',
-      icon: VideoCameraIcon,
+      icon: Video,
       formats: ['MP4', 'WebM', 'MOV'],
       color: 'text-blue-600',
       bgColor: 'bg-blue-50'
     },
     {
       category: 'Audio',
-      icon: MusicalNoteIcon,
+      icon: Music,
       formats: ['MP3', 'WAV', 'OGG'],
       color: 'text-purple-600',
       bgColor: 'bg-purple-50'
     },
     {
       category: 'Documents',
-      icon: DocumentIcon,
+      icon: FileText,
       formats: ['PDF', 'TXT'],
       color: 'text-orange-600',
       bgColor: 'bg-orange-50'
@@ -52,7 +52,7 @@ export const UploadsTab: React.FC = () => {
     <div className="h-full w-96 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
       <div className="p-4 border-b border-gray-100">
         <div className="flex items-center gap-2">
-          <CloudArrowUpIcon className="w-5 h-5 text-green-600" />
+          <CloudUpload className="w-5 h-5 text-green-600" />
           <h3 className="font-semibold text-gray-900">Uploads</h3>
         </div>
       </div>
@@ -63,7 +63,7 @@ export const UploadsTab: React.FC = () => {
           className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center mb-4 hover:border-green-400 hover:bg-green-50 transition-colors cursor-pointer"
           onClick={handleUploadClick}
         >
-          <CloudArrowUpIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+          <CloudUpload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
           <div className="font-medium text-gray-700">Drag files here</div>
           <div className="text-xs text-gray-500">or click to browse</div>
         </div>

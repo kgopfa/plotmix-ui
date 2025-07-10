@@ -1,5 +1,5 @@
 import React from 'react';
-import { VideoCameraIcon } from '@heroicons/react/24/outline';
+import { Video } from 'lucide-react';
 import { useCanvasState } from '@/stores/use-ui-store';
 
 export const VideoSettingsTab: React.FC = () => {
@@ -14,7 +14,7 @@ export const VideoSettingsTab: React.FC = () => {
     <div className="h-full w-96 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
       <div className="p-4 border-b border-gray-100">
         <div className="flex items-center gap-2">
-          <VideoCameraIcon className="w-5 h-5 text-blue-600" />
+          <Video className="w-5 h-5 text-blue-600" />
           <h3 className="font-semibold text-gray-900">Video Settings</h3>
         </div>
       </div>

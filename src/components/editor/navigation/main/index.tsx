@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
-import { MagnifyingGlassIcon } from '@heroicons/react/20/solid'
-import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { Search } from 'lucide-react'
+import { Menu as MenuIcon, Bell, X } from 'lucide-react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowUpFromBracket, faCloudArrowUp, faArrowRotateLeft, faArrowRotateRight, faGear, faChevronDown } from '@fortawesome/free-solid-svg-icons'
 import { ProjectControls } from './project-controls';
@@ -36,8 +36,8 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
               <DisclosureButton className="group relative inline-flex items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-500 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden focus:ring-inset">
                 <span className="absolute -inset-0.5" />
                 <span className="sr-only">Open options menu</span>
-                <Bars3Icon aria-hidden="true" className="block size-6 group-data-open:hidden" />
-                <XMarkIcon aria-hidden="true" className="hidden size-6 group-data-open:block" />
+                <MenuIcon aria-hidden="true" className="block size-6 group-data-open:hidden" />
+                <X aria-hidden="true" className="hidden size-6 group-data-open:block" />
               </DisclosureButton>
             </div>
             <div className="flex shrink-0 items-center">
@@ -209,7 +209,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                 onChange={(e) => setProjectName(e.target.value)}
                 className="col-start-1 row-start-1 block w-full rounded-md bg-white py-2 pr-3 pl-10 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
               />
-              <MagnifyingGlassIcon
+              <Search
                 aria-hidden="true"
                 className="pointer-events-none col-start-1 row-start-1 ml-3 size-5 self-center text-gray-400"
               />
@@ -235,7 +235,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
             >
               <span className="absolute -inset-1.5" />
               <span className="sr-only">View notifications</span>
-              <BellIcon aria-hidden="true" className="size-6" />
+              <Bell aria-hidden="true" className="size-6" />
             </button>
           </div>
           <div className="mt-3 space-y-1">
