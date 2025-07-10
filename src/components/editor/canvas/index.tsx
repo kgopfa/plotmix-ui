@@ -45,8 +45,8 @@ interface ContextMenuPosition {
 
 interface CanvasProps {
   dimensions: { width: number; height: number };
-  zoom?: number; // External zoom control
-  onZoomChange?: (zoom: number) => void; // Callback when zoom changes
+  zoom?: number; // External zoom control - kept for interface compatibility
+  onZoomChange?: (zoom: number) => void; // Callback when zoom changes - kept for interface compatibility
   // Add grid configuration
   gridConfig?: GridConfig;
   // Add snap guides
@@ -56,16 +56,16 @@ interface CanvasProps {
 export interface CanvasRef {
   getShapeRefs: () => Record<string, Container>;
   getGroupContainers: () => Record<string, Container>;
-  zoomIn: () => void;
-  zoomOut: () => void;
+  zoomIn: () => void; // Kept as stub for UI compatibility
+  zoomOut: () => void; // Kept as stub for UI compatibility
   getViewport: () => Viewport | null;
   centerOnElement: (id?: string) => void;
   zoomToFitElement: (id?: string) => void;
-  getCurrentZoom: () => number;
-  setZoom: (scale: number) => void;
+  getCurrentZoom: () => number; // Kept as stub for UI compatibility
+  setZoom: (scale: number) => void; // Kept as stub for UI compatibility
   getViewportCenter: () => { x: number; y: number };
   resetToCenter: () => void;
-  resetZoomToOneHundredPercent: () => void;
+  resetZoomToOneHundredPercent: () => void; // Kept as stub for UI compatibility
 }
 
 // Define resize handle positions
@@ -88,13 +88,18 @@ const setCursor = (cursor: string) => {
 export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   {
     dimensions,
-    zoom = 1,
-    onZoomChange,
+    zoom = 1, // Kept for interface compatibility but not used
+    onZoomChange, // Kept for interface compatibility but not used
     gridConfig,
     snapGuides = [],
   },
   ref
 ) {
+  // Suppress unused variable warning for interface compatibility
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _onZoomChange = onZoomChange;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _zoom = zoom;
   // Get data from stores instead of props
   const elements = useCanvasElements();
   const groups = useCanvasGroups();
@@ -151,9 +156,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
   // Add mouse position for line preview
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
-
-  // Optional: Track zoom state for external components (like zoom indicators)
-  const [currentZoom, setCurrentZoom] = useState(1);
 
   // Calculate the canvas scale factor based on device pixel ratio and any additional scaling
   const canvasScaleFactor = useRef(window.devicePixelRatio || 1);
@@ -451,44 +453,17 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     getShapeRefs: () => shapeRefs.current,
     getGroupContainers: () => groupContainers.current,
     zoomIn: () => {
-      const viewport = viewportRef.current;
-      if (!viewport) return;
-      const currentScale = viewport.scale.x;
-      const newScale = Math.min(currentScale * 1.1, 5); // Limit to 5x max zoom
-
-      // Zoom towards the center of the viewport (like wheel zoom)
-      const zoomPercent = (newScale / currentScale - 1);
-      viewport.zoom(zoomPercent, true); // Center around viewport center
-
-      setCurrentZoom(newScale);
-      if (onZoomChange) onZoomChange(newScale);
+      // Zoom functionality removed - kept as stub for UI compatibility
+      console.log('Zoom in - functionality removed');
     },
     zoomOut: () => {
-      const viewport = viewportRef.current;
-      if (!viewport) return;
-      const currentScale = viewport.scale.x;
-      const newScale = Math.max(currentScale * 0.9, 0.1); // Limit to 0.1x min zoom
-
-      // Zoom towards the center of the viewport (like wheel zoom)
-      const zoomPercent = (newScale / currentScale - 1);
-      viewport.zoom(zoomPercent, true); // Center around viewport center
-
-      setCurrentZoom(newScale);
-      if (onZoomChange) onZoomChange(newScale);
+      // Zoom functionality removed - kept as stub for UI compatibility
+      console.log('Zoom out - functionality removed');
     },
-    getCurrentZoom: () => currentZoom,
+    getCurrentZoom: () => 1, // Always return 1 as stub
     setZoom: (scale: number) => {
-      const viewport = viewportRef.current;
-      if (!viewport) return;
-      const currentScale = viewport.scale.x;
-      const clampedScale = Math.min(Math.max(scale, 0.1), 5); // Limit between 0.1x and 5x
-
-      // Zoom towards the center of the viewport (like wheel zoom)
-      const zoomPercent = (clampedScale / currentScale - 1);
-      viewport.zoom(zoomPercent, true); // Center around viewport center
-
-      setCurrentZoom(clampedScale);
-      if (onZoomChange) onZoomChange(clampedScale);
+      // Zoom functionality removed - kept as stub for UI compatibility
+      console.log('Set zoom to', scale, '- functionality removed');
     },
     getViewport: () => viewportRef.current,
     centerOnElement: (id?: string) => {
@@ -509,6 +484,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       });
     },
     zoomToFitElement: (id?: string) => {
+      // Zoom functionality removed - center element instead
       const targetId = id || selectedIds[0];
       if (!targetId) return;
 
@@ -517,32 +493,13 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       if (!shape || !viewport) return;
 
       const bounds = shape.getBounds();
-
-      // Handle edge cases where bounds might be 0
-      if (bounds.width <= 0 || bounds.height <= 0) {
-        console.warn('Element has invalid bounds for zoom to fit');
-        return;
-      }
-
-      const margin = 40;
-      const availableWidth = viewport.screenWidth - margin * 2;
-      const availableHeight = viewport.screenHeight - margin * 2;
-
-      // Ensure we don't divide by zero
-      const scaleX = availableWidth > 0 ? availableWidth / bounds.width : 1;
-      const scaleY = availableHeight > 0 ? availableHeight / bounds.height : 1;
-      const scale = Math.min(Math.min(scaleX, scaleY), 8); // Respect maxScale updated for large canvas
-      const clampedScale = Math.max(scale, 0.1); // Respect minScale updated for large canvas
-
       viewport.animate({
-        scale: clampedScale,
         position: {
-          x: viewport.screenWidth / 2 - (bounds.x + bounds.width / 2) * clampedScale,
-          y: viewport.screenHeight / 2 - (bounds.y + bounds.height / 2) * clampedScale
+          x: viewport.worldScreenWidth / 2 - (bounds.x + bounds.width / 2),
+          y: viewport.worldScreenHeight / 2 - (bounds.y + bounds.height / 2)
         },
         time: 400
       });
-      setCurrentZoom(clampedScale);
     },
     getViewportCenter: () => {
       const viewport = viewportRef.current;
@@ -560,17 +517,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       }
     },
     resetZoomToOneHundredPercent: () => {
-      const viewport = viewportRef.current;
-      if (!viewport) return;
-
-      // Zoom to 100% towards the center of the viewport (like wheel zoom)
-      const currentScale = viewport.scale.x;
-      const targetScale = 1;
-      const zoomPercent = (targetScale / currentScale - 1);
-      viewport.zoom(zoomPercent, true); // Center around viewport center
-
-      setCurrentZoom(1);
-      if (onZoomChange) onZoomChange(1);
+      // Zoom functionality removed - kept as stub for UI compatibility
+      console.log('Reset zoom to 100% - functionality removed');
     }
   }));
 
@@ -697,40 +645,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     }
   }, [dimensions]); // Re-run when dimensions change (canvas recreation)
 
-  // Sync external zoom with viewport
-  useEffect(() => {
-    const viewport = viewportRef.current;
-    if (!viewport) return;
-
-    // Apply external zoom to viewport
-    if (Math.abs(viewport.scale.x - zoom) > 0.01) { // Only if there's a meaningful difference
-      viewport.setZoom(zoom, true);
-      setCurrentZoom(zoom);
-    }
-  }, [zoom]);
-
-  // Sync zoom state with viewport's actual scale and notify parent
-  useEffect(() => {
-    const viewport = viewportRef.current;
-    if (!viewport) return;
-
-    const handleZoomChange = () => {
-      const currentScale = viewport.scale.x;
-      setCurrentZoom(currentScale);
-      if (onZoomChange) {
-        onZoomChange(currentScale);
-      }
-    };
-
-    // Listen for zoom changes from user interactions (wheel, pinch, etc.)
-    viewport.on('zoomed', handleZoomChange);
-    viewport.on('moved', handleZoomChange); // Also listen for viewport moves which can include zoom
-
-    return () => {
-      viewport.off('zoomed', handleZoomChange);
-      viewport.off('moved', handleZoomChange);
-    };
-  }, [onZoomChange]);
+  // Zoom functionality removed - keeping component structure
 
   // Add this useEffect in your Canvas component
   useEffect(() => {
@@ -1654,7 +1569,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     }
   }, [elements, selectElement, clearSelections]);
 
-  // Add viewport clamping to restrict panning
+  // Add viewport clamping to restrict panning - zoom functionality removed
   useEffect(() => {
     const viewport = viewportRef.current;
     if (viewport) {
@@ -1688,7 +1603,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
                 width: dimensions.width,
                 height: dimensions.height
               }}
-              zoom={zoom}
             />
           )}
 

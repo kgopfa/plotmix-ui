@@ -5,13 +5,13 @@ import { GridConfig, calculateGridLines, Rectangle } from '../../../utils/grid-u
 interface GridOverlayProps {
   gridConfig: GridConfig;
   viewportBounds: Rectangle;
-  zoom: number;
+  zoom?: number; // Made optional since zoom functionality is removed
 }
 
 export const GridOverlay: React.FC<GridOverlayProps> = ({ 
   gridConfig, 
   viewportBounds, 
-  zoom 
+  zoom = 1 // Default to 1 since zoom functionality is removed
 }) => {
   const drawGrid = (graphics: PIXIGraphics) => {
     graphics.clear();
