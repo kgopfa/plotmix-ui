@@ -909,11 +909,29 @@ export default function EditorCanvas() {
     e.target.value = '';
   }, [handleImageFile]);
 
-  // Add event listener for image import from toolbar
+  // Add event listener for image import from uploads tab
   useEffect(() => {
     const handleImageImport = (event: CustomEvent) => {
-      const file = event.detail.file;
-      if (file) {
+      const { file, imageData } = event.detail;
+      if (file && imageData) {
+        // Create new image element directly from the provided data
+        const newImage = createNewObject(
+          'image',
+          0, // Center of canvas
+          0, // Center of canvas
+          canvasObjects,
+          undefined, // pathPoints
+          false, // isPath
+          imageData,
+          200, // default width
+          150  // default height
+        );
+
+        // Add to canvas and select
+        setCanvasObjects(prev => [...prev, newImage]);
+        selectElement([newImage]);
+      } else if (file) {
+        // Fallback to old method for backward compatibility
         handleImageFile(file);
       }
     };
@@ -922,7 +940,7 @@ export default function EditorCanvas() {
     return () => {
       window.removeEventListener('image-import', handleImageImport as EventListener);
     };
-  }, [handleImageFile]);
+  }, [canvasObjects, setCanvasObjects, selectElement, handleImageFile]);
 
   const activeNav = useActiveNav();
 

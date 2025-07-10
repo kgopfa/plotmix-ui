@@ -1,8 +1,10 @@
-import React, { useRef } from 'react';
-import { CloudUpload, FileText, Image, Video, Music } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { CloudUpload, FileText, Image, Video, Music, CheckCircle, AlertCircle } from 'lucide-react';
 
 export const UploadsTab: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
 
   const supportedFormats = [
     {
@@ -42,9 +44,73 @@ export const UploadsTab: React.FC = () => {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files && files.length > 0) {
-      // Handle file upload logic here
-      console.log('Files selected:', Array.from(files));
-      // You can add actual upload functionality here
+      handleFileUpload(Array.from(files));
+    }
+  };
+
+  const handleFileUpload = async (files: File[]) => {
+    setUploading(true);
+    setUploadStatus(null);
+
+    try {
+      for (const file of files) {
+        if (file.type.startsWith('image/')) {
+          await handleImageUpload(file);
+        } else {
+          // For now, we'll focus on image uploads
+          // Other file types can be handled later
+          console.log('File type not yet supported for canvas:', file.type);
+        }
+      }
+      setUploadStatus(`Successfully uploaded ${files.length} file(s)`);
+    } catch (error) {
+      setUploadStatus('Upload failed. Please try again.');
+      console.error('Upload error:', error);
+    } finally {
+      setUploading(false);
+      // Clear status after 3 seconds
+      setTimeout(() => setUploadStatus(null), 3000);
+    }
+  };
+
+  const handleImageUpload = (file: File): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = (event) => {
+        const imageData = event.target?.result as string;
+        if (imageData) {
+          // Dispatch custom event to handle image import in the main editor
+          const imageImportEvent = new CustomEvent('image-import', {
+            detail: { file, imageData }
+          });
+          window.dispatchEvent(imageImportEvent);
+          resolve();
+        } else {
+          reject(new Error('Failed to read image data'));
+        }
+      };
+
+      reader.onerror = () => {
+        reject(new Error('Error reading image file'));
+      };
+
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleDragOver = (event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const handleDrop = (event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const files = Array.from(event.dataTransfer.files);
+    if (files.length > 0) {
+      handleFileUpload(files);
     }
   };
 
@@ -62,11 +128,35 @@ export const UploadsTab: React.FC = () => {
         <div 
           className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center mb-4 hover:border-green-400 hover:bg-green-50 transition-colors cursor-pointer"
           onClick={handleUploadClick}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
         >
           <CloudUpload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
           <div className="font-medium text-gray-700">Drag files here</div>
           <div className="text-xs text-gray-500">or click to browse</div>
         </div>
+
+        {/* Upload Status */}
+        {(uploading || uploadStatus) && (
+          <div className="mb-4 p-3 rounded-lg flex items-center gap-2">
+            {uploading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                <span className="text-sm text-blue-600">Uploading...</span>
+              </>
+            ) : uploadStatus?.includes('Successfully') ? (
+              <>
+                <CheckCircle className="w-4 h-4 text-green-600" />
+                <span className="text-sm text-green-600">{uploadStatus}</span>
+              </>
+            ) : uploadStatus ? (
+              <>
+                <AlertCircle className="w-4 h-4 text-red-600" />
+                <span className="text-sm text-red-600">{uploadStatus}</span>
+              </>
+            ) : null}
+          </div>
+        )}
 
         {/* Supported Formats */}
         <div className="space-y-2">
