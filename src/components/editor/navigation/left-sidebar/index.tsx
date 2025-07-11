@@ -9,18 +9,27 @@ import {
   VolumeOff,
   Hourglass,
   CircleFadingPlus,
+  Text as TextIcon,
 } from 'lucide-react'
 import { useActiveNav, useSetActiveNav, useSetHoverNav, useHoverNav, usePanelActions, usePanelState } from '@/stores/use-ui-store';
-import { VideoSettingsPreview, AIToolsPreview, UploadsPreview, SceneExplorerPreview } from './tabs';
-import { ToolbarTab } from './tabs/toolbar-tab';
 
-type NavItem = { name: string; key: 'video' | 'scenes' | 'uploads' | 'ai' | 'tools' | 'audio' | 'timeline'; icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; };
+import { ToolbarTab } from './tabs/toolbar-tab';
+import { SceneExplorerTab } from './tabs/scene-explorer-tab';
+import { VideoSettingsTab } from './tabs/video-settings-tab';
+import { UploadsTab } from './tabs/uploads-tab';
+import { TextTab } from './tabs/text-tab';
+import { AIToolsTab } from './tabs/ai-tools-tab';
+import { AnimationsTab } from './tabs/animations-tab';
+
+type NavItem = { name: string; key: 'video' | 'scenes' | 'uploads' | 'ai' | 'text' | 'animations' | 'tools' | 'audio' | 'timeline'; icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; };
 
 const navigation: NavItem[] = [
   { name: 'Video Settings', key: 'video', icon: Video },
   { name: 'Scenes', key: 'scenes', icon: Clapperboard },
   { name: 'Uploads', key: 'uploads', icon: CircleFadingPlus },
   { name: 'AI', key: 'ai', icon: WandSparkles },
+  { name: 'Text', key: 'text', icon: TextIcon },
+  { name: 'Animations', key: 'animations', icon: Hourglass },
   { name: 'Tools', key: 'tools', icon: Palette },
 ];
 
@@ -37,16 +46,22 @@ function classNames(...classes: string[]) {
 const TabContent: React.FC<{ navKey: string }> = ({ navKey }) => {
   switch (navKey) {
     case 'scenes':
-      return <SceneExplorerPreview />;
+      return <SceneExplorerTab />;
     
     case 'video':
-      return <VideoSettingsPreview />;
+      return <VideoSettingsTab />;
     
     case 'uploads':
-      return <UploadsPreview />;
+      return <UploadsTab />;
+
+    case 'text':
+      return <TextTab />;
+    
+    case 'animations':
+      return <AnimationsTab />;
     
     case 'ai':
-      return <AIToolsPreview />;
+      return <AIToolsTab />;
     
     case 'tools':
       return <ToolbarTab />;

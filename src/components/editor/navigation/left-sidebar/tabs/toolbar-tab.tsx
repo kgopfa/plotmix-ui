@@ -97,23 +97,6 @@ export function ToolbarTab() {
       >
         <span className="text-xl">✏️</span>
       </button>
-      <button
-        className={getButtonClass('text')}
-        onClick={() => handleToolClick('text')}
-        title={isToolDisabled('text') ? "Text (disabled in path mode)" : "Text"}
-        disabled={isToolDisabled('text')}
-      >
-        <span className="text-xl text-black">T</span>
-      </button>
-
-      <button
-        className={getButtonClass('textGroup')}
-        onClick={() => handleToolClick('textGroup')}
-        title={isToolDisabled('textGroup') ? "Text Group (disabled in path mode)" : "Text Group"}
-        disabled={isToolDisabled('textGroup')}
-      >
-        <span className="text-xl text-black">TG</span>
-      </button>
 
       <button
         className={getButtonClass('select')}

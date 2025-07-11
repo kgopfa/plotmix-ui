@@ -945,9 +945,9 @@ export default function EditorCanvas() {
   const activeNav = useActiveNav();
 
   // Timeline should shift when any tab with content panels is active (not toggle buttons or compact tabs)
-  // Include: scenes, uploads, ai, video
+  // Include: scenes, uploads, ai, video, text, animations
   // Exclude: tools (compact), audio (toggle), timeline (toggle)
-  const tabsWithPanels = ['scenes', 'uploads', 'ai', 'video'];
+  const tabsWithPanels = ['scenes', 'uploads', 'ai', 'video', 'text', 'animations'];
   const timelineLeftOffset = 80 + (panelState.leftPanelVisible && activeNav && tabsWithPanels.includes(activeNav) ? panelState.leftPanelWidth + 8 : 0);
 
   return (
