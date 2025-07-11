@@ -30,6 +30,18 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
       }}
       onClick={(e) => e.stopPropagation()}
     >
+      {isElement && (
+        <button
+          className="w-full px-3 py-2 text-left text-sm hover:bg-purple-50 hover:text-purple-600 flex items-center gap-2"
+          onClick={() => onAction('animate')}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          Animate
+        </button>
+      )}
+
       <button
         className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
         onClick={() => onAction('copy')}
@@ -73,6 +85,21 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
         </svg>
         Move to Back
       </button>
+      
+      {isElement && (
+        <>
+          <div className="border-t border-gray-100 my-1" />
+          <button
+            className="w-full px-3 py-2 text-left text-sm hover:bg-red-50 hover:text-red-600 flex items-center gap-2"
+            onClick={() => onAction('delete')}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            Delete
+          </button>
+        </>
+      )}
     </div>
   );
 }; 

@@ -4,6 +4,8 @@ import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
 import { ContextMenu } from '../canvas/context-menu';
 import { contextMenuManager } from '@/lib/context-menu-manager';
 import { useSelectionStore } from '@/stores/use-selection-store';
+import { useUIStore } from '@/stores/use-ui-store';
+import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useDragAndDrop } from '@/hooks/use-drag-and-drop';
 
 interface ContextMenuPosition {
@@ -208,6 +210,30 @@ export function ElementHierarchy({
     const { targetId, targetType } = contextMenu;
     
     switch (action) {
+      case 'animate':
+        if (targetType === 'element') {
+          // Find and select the element
+          const element = elements.find(el => el.id === targetId);
+          if (element) {
+            onElementSelect(element);
+            
+            // Open the left sidebar animations tab
+            const { setActiveNav, setActiveRightPanel } = useUIStore.getState();
+            setActiveNav('animations');
+            setActiveRightPanel('animations');
+          }
+        }
+        break;
+      case 'delete':
+        if (targetType === 'element') {
+          // Find and remove the element
+          const elementToDelete = elements.find(el => el.id === targetId);
+          if (elementToDelete) {
+            const { removeElement } = useCanvasStore.getState();
+            removeElement(targetId);
+          }
+        }
+        break;
       case 'copy':
         if (targetType === 'element' && onCopyElement) {
           onCopyElement(targetId);

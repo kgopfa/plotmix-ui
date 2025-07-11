@@ -20,6 +20,7 @@ import { AnimatedTextGroup } from './animated-text-group';
 import { CanvasContent } from './canvas-content';
 import { GroupSelection } from './group-selection';
 import { ContextMenu } from './context-menu';
+import { SelectionMenu } from './selection-menu';
 import { Viewport } from 'pixi-viewport';
 import { GridOverlay } from './grid-overlay';
 import { GridConfig } from '../../../utils/grid-utils';
@@ -29,7 +30,7 @@ import { eventManager } from '@/lib/event-manager';
 import { contextMenuManager } from '@/lib/context-menu-manager';
 
 // Import Zustand stores
-import { useCanvasElements, useCanvasGroups, useCanvasOperations } from '@/stores/use-canvas-store';
+import { useCanvasElements, useCanvasGroups, useCanvasOperations, useCanvasStore } from '@/stores/use-canvas-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useUIStore } from '@/stores/use-ui-store';
 import { useTimelineStore } from '@/stores/use-timeline-store';
@@ -142,6 +143,9 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
   // Context menu state
   const [contextMenu, setContextMenu] = useState<ContextMenuPosition | null>(null);
+  
+  // Selection menu state
+  const [selectionMenuPosition, setSelectionMenuPosition] = useState<{ x: number; y: number } | null>(null);
 
   // Helper function to check if an element is part of a custom or polygon group
   const isElementInCustomOrPolygonGroup = (element: AnimatedCanvasObject): boolean => {
@@ -169,6 +173,45 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       }
     });
   }, [groups]);
+
+  // Calculate selection menu position when selection changes
+  useEffect(() => {
+    if (selectedElements.length === 0) {
+      setSelectionMenuPosition(null);
+      return;
+    }
+
+    // Calculate the center position of selected elements for menu positioning
+    const bounds = selectedElements.reduce(
+      (acc, element) => {
+        const left = element.x - element.width / 2;
+        const right = element.x + element.width / 2;
+        const top = element.y - element.height / 2;
+        const bottom = element.y + element.height / 2;
+
+        return {
+          left: Math.min(acc.left, left),
+          right: Math.max(acc.right, right),
+          top: Math.min(acc.top, top),
+          bottom: Math.max(acc.bottom, bottom),
+        };
+      },
+      { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity }
+    );
+
+    // Convert canvas coordinates to screen coordinates
+    const canvasElement = document.querySelector('canvas');
+    if (canvasElement) {
+      const rect = canvasElement.getBoundingClientRect();
+      const centerX = (bounds.left + bounds.right) / 2;
+      const centerY = bounds.top;
+
+      setSelectionMenuPosition({
+        x: rect.left + centerX,
+        y: rect.top + centerY,
+      });
+    }
+  }, [selectedElements]);
 
   // Canvas click handler - handles tool-specific actions
   const handleCanvasClick = useCallback((e: FederatedPointerEvent) => {
@@ -448,6 +491,46 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     // This would need to be implemented with z-index management
     console.log('Move to back:', elementId);
   }, []);
+
+  // Selection menu handlers
+  const handleSelectionMenuAnimate = useCallback(() => {
+    if (selectedElements.length === 1) {
+      const element = selectedElements[0];
+      // Open the left sidebar animations tab and right sidebar animations panel
+      const { setActiveNav, setActiveRightPanel } = useUIStore.getState();
+      setActiveNav('animations');
+      setActiveRightPanel('animations');
+    }
+  }, [selectedElements]);
+
+  const handleSelectionMenuDelete = useCallback(() => {
+    if (selectedElements.length > 0) {
+      const { removeElement } = useCanvasStore.getState();
+      selectedElements.forEach(element => {
+        removeElement(element.id);
+      });
+      // Add a small delay before clearing selections to keep menu visible briefly
+      setTimeout(() => {
+        clearSelections();
+      }, 100);
+    }
+  }, [selectedElements, clearSelections]);
+
+  const handleSelectionMenuOptions = useCallback(() => {
+    if (selectedElements.length > 0 && selectionMenuPosition) {
+      // Use context menu manager to ensure only one menu is shown
+      const menuId = 'selection-context-menu';
+      contextMenuManager.openContextMenu(menuId);
+
+      // Position the context menu near the selection menu
+      setContextMenu({
+        x: selectionMenuPosition.x,
+        y: selectionMenuPosition.y + 20, // Position below the selection menu
+        targetId: selectedElements[0].id, // Use first selected element as target
+        targetType: 'element'
+      });
+    }
+  }, [selectedElements, selectionMenuPosition]);
 
   useImperativeHandle(ref, () => ({
     getShapeRefs: () => shapeRefs.current,
@@ -1306,6 +1389,27 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     const { targetId } = contextMenu;
     
     switch (action) {
+      case 'animate':
+        // Select the element first to ensure it's active
+        const element = elements.find(el => el.id === targetId);
+        if (element) {
+          selectElement([element]);
+          
+          // Open the left sidebar animations tab
+          const { setActiveNav, setActiveRightPanel } = useUIStore.getState();
+          setActiveNav('animations');
+          setActiveRightPanel('animations');
+        }
+        break;
+      case 'delete':
+        // Find and remove the element
+        const elementToDelete = elements.find(el => el.id === targetId);
+        if (elementToDelete) {
+          const { removeElement } = useCanvasStore.getState();
+          removeElement(targetId);
+          clearSelections();
+        }
+        break;
       case 'copy':
         if (onCopyElement) {
           onCopyElement(targetId);
@@ -2260,6 +2364,17 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         onAction={handleContextMenuAction}
         onClose={() => setContextMenu(null)}
       />
+
+      {/* Selection Menu */}
+      {selectionMenuPosition && selectedElements.length > 0 && (
+        <SelectionMenu
+          selectedElements={selectedElements}
+          position={selectionMenuPosition}
+          onAnimate={handleSelectionMenuAnimate}
+          onDelete={handleSelectionMenuDelete}
+          onOptions={handleSelectionMenuOptions}
+        />
+      )}
       
       {/* Text Editor Overlay */}
       {editingTextId && (() => {
