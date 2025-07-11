@@ -55,6 +55,13 @@ export const AnimationsTab: React.FC = () => {
       description: 'Follow custom paths',
       icon: '〰️',
       category: 'Motion'
+    },
+    {
+      name: 'Physics',
+      type: 'physics' as AnimationType,
+      description: 'Physics-based motion',
+      icon: '⚽',
+      category: 'Motion'
     }
   ];
 
@@ -71,6 +78,16 @@ export const AnimationsTab: React.FC = () => {
         pathPoints: [],
         pathDirection: 'clockwise' as 'clockwise' | 'counterclockwise',
         yoyo: false,
+      },
+      physics: {
+        velocity: 400,
+        angle: 60,
+        gravity: 800,
+        acceleration: undefined,
+        accelerationAngle: undefined,
+        friction: undefined,
+        xProp: '',
+        yProp: ''
       },
     };
 

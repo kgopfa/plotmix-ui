@@ -23,7 +23,7 @@ export const SelectionMenu: React.FC<SelectionMenuProps> = ({
 
   return (
     <div
-      className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-lg flex items-center p-1"
+      className="fixed z-50 bg-white border border-gray-200 rounded-sm shadow-sm flex items-center p-1"
       style={{
         left: position.x,
         top: position.y - 50, // Position above the element

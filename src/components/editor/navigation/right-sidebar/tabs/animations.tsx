@@ -1,10 +1,8 @@
 import {
   AnimatedCanvasObject,
-  ElementAnimation,
-  AnimationType,
-  GsapEase
+  ElementAnimation
 } from '@/types/canvas';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
 import { useTimelineStore } from '@/stores/use-timeline-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
@@ -23,8 +21,6 @@ export function AnimationsTab({
   // Local state is the single source of truth for this component
   const [animations, setAnimations] = useState<ElementAnimation[]>(localAnimations);
   const [selectedAnimationId, setSelectedAnimationId] = useState<string | null>(null);
-  const [showAddDropdown, setShowAddDropdown] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const animationSelectionManager = AnimationSelectionManager.getInstance();
 
   // Get stores for direct updates
@@ -75,22 +71,7 @@ export function AnimationsTab({
     });
   }, [animationSelectionManager, selectedElement.id]);
 
-  // Handle click outside to close dropdown
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowAddDropdown(false);
-      }
-    };
 
-    if (showAddDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showAddDropdown]);
 
   // Simplified sync to stores (Timeline rebuild handled by useEffect above)
   const syncToStores = (updatedAnimations: ElementAnimation[], changedField?: string, animationId?: string) => {
@@ -120,76 +101,7 @@ export function AnimationsTab({
     // Note: Canvas Store update and timeline rebuild handled by useEffect
   };
 
-  // Available animation types with descriptions
-  const animationTypes: Array<{ value: AnimationType; label: string; description: string }> = [
-    { value: 'move', label: 'Move', description: 'Change position (X, Y)' },
-    { value: 'scale', label: 'Scale', description: 'Change size (Scale X, Y)' },
-    { value: 'rotate', label: 'Rotate', description: 'Rotate around center' },
-    { value: 'fade', label: 'Fade', description: 'Change opacity' },
-    { value: 'color', label: 'Color', description: 'Change fill color' },
-    { value: 'path', label: 'Path', description: 'Follow a custom path' },
-    { value: 'physics', label: 'Physics', description: 'Physics-based motion' },
-    { value: 'typewriter', label: 'Typewriter', description: 'Text appears character by character' },
-    { value: 'textScale', label: 'Text Scale', description: 'Scale text characters individually' },
-  ];
 
-  // Handle adding animations with specific type
-  const handleAddAnimationWithType = (type: AnimationType) => {
-    const defaultProperties = {
-      rotate: { rotation: 0 },
-      scale: { scaleX: 1, scaleY: 1 },
-      move: { x: 0, y: 0 },
-      color: { fillColor: selectedElement.fill },
-      fade: { alpha: selectedElement.opacity ?? 1 },
-      path: {
-        pathPoints: [],
-        pathDirection: 'clockwise' as 'clockwise' | 'counterclockwise',
-        yoyo: false,
-      },
-      physics: {
-        velocity: 400,
-        angle: 60,
-        gravity: 800,
-        acceleration: undefined,
-        accelerationAngle: undefined,
-        friction: undefined,
-        xProp: '',
-        yProp: ''
-      },
-      typewriter: {
-        text: selectedElement.text || '',
-        characters: selectedElement.characters || [],
-        characterOpacity: []
-      },
-      textScale: {
-        characters: selectedElement.characters || [],
-        characterScale: []
-      }
-    };
-
-    const newAnimation: ElementAnimation = {
-      id: `${type}-${Date.now()}`,
-      type,
-      startTime: 0,
-      duration: 2,
-      properties: defaultProperties[type],
-      easing: 'power1.inOut' as GsapEase,
-      repeat: 0,
-      repeatDelay: 0,
-      yoyo: false
-    };
-
-    const updatedAnimations = [...animations, newAnimation];
-
-    // Update local state immediately
-    setAnimations(updatedAnimations);
-
-    // Sync to stores
-    syncToStores(updatedAnimations);
-
-    // Close dropdown
-    setShowAddDropdown(false);
-  };
 
   // Handle deleting animations internally
   const handleDeleteAnimationInternal = (animationId: string) => {
@@ -271,38 +183,12 @@ export function AnimationsTab({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="relative" ref={dropdownRef}>
-        <button
-          type="button"
-          onClick={() => setShowAddDropdown(!showAddDropdown)}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center justify-between w-full"
-        >
-          <span>+ Add Animation</span>
-          <svg className={`w-4 h-4 transition-transform ${showAddDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-        {showAddDropdown && (
-          <div className="absolute top-full left-0 w-full mt-1 bg-white border border-gray-300 rounded shadow-lg z-10">
-            {animationTypes.map(({ value, label, description }) => (
-              <button
-                key={value}
-                onClick={() => handleAddAnimationWithType(value)}
-                className="w-full px-4 py-3 text-left hover:bg-blue-50 border-b border-gray-100 last:border-b-0 focus:bg-blue-50 focus:outline-none"
-              >
-                <div className="font-medium text-gray-900">{label}</div>
-                <div className="text-sm text-gray-600">{description}</div>
-              </button>
-            ))}
-            <button
-              onClick={() => setShowAddDropdown(false)}
-              className="w-full px-4 py-2 text-center text-gray-500 hover:bg-gray-50 text-sm border-t"
-            >
-              Cancel
-            </button>
-          </div>
-        )}
-      </div>
+      {animations.length === 0 && (
+        <div className="p-4 text-center text-gray-500 bg-gray-50 rounded-lg">
+          <p className="text-sm">No animations yet</p>
+          <p className="text-xs mt-1">Use the left sidebar to add animations</p>
+        </div>
+      )}
       <div className="flex flex-col gap-2">
         {animations.map((animation) => (
           <div key={animation.id} className={`border rounded p-2 ${selectedAnimationId === animation.id ? 'border-green-500 bg-green-50' : ''
