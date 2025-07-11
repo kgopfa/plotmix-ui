@@ -1,5 +1,15 @@
 import { useToolState, useToolActions } from '@/stores/use-ui-store';
 import type { ToolType } from '@/types/tool';
+import { 
+  Square, 
+  Circle, 
+  Triangle, 
+  RotateCcw,
+  Minus,
+  Pen,
+  MousePointer2,
+  Route
+} from 'lucide-react';
 
 export function ToolbarTab() {
   const { activeTool, isPathMode } = useToolState();
@@ -15,7 +25,7 @@ export function ToolbarTab() {
   
   // Function to get button class based on tool state
   const getButtonClass = (tool: ToolType) => {
-    const baseClass = 'flex flex-col items-center justify-center p-2';
+    const baseClass = 'group flex flex-col items-center justify-center p-3 rounded-md';
     const disabled = isToolDisabled(tool);
     
     if (disabled) {
@@ -23,10 +33,25 @@ export function ToolbarTab() {
     }
     
     if (activeTool === tool) {
-      return `${baseClass} ${isPathMode ? 'bg-blue-100' : 'bg-gray-100'}`;
+      return `${baseClass} bg-fuchsia-500 text-white`;
     }
     
-    return `${baseClass} hover:bg-gray-100`;
+    return `${baseClass} text-gray-400 hover:bg-fuchsia-500 hover:text-white`;
+  };
+
+  // Function to get icon class based on tool state
+  const getIconClass = (tool: ToolType) => {
+    const disabled = isToolDisabled(tool);
+    
+    if (disabled) {
+      return 'w-5 h-5 text-gray-400';
+    }
+    
+    if (activeTool === tool) {
+      return 'w-5 h-5 text-white';
+    }
+    
+    return 'w-5 h-5 text-gray-400 group-hover:text-white';
   };
   
   // Function to handle tool click
@@ -39,47 +64,47 @@ export function ToolbarTab() {
 
   
   const renderVerticalToolbar = () => (
-    <div className="bg-white shadow-lg border border-gray-200 rounded-lg flex flex-col gap-2 p-2 w-16 items-center">
+    <div className="bg-white shadow-lg border border-gray-200 rounded-lg flex flex-col gap-1 pt-8 pb-4 px-2 w-16 items-center">
 
       <button
-        className={getButtonClass('rectangle')}
+        className={`${getButtonClass('rectangle')} mt-1`}
         onClick={() => handleToolClick('rectangle')}
         title={isToolDisabled('rectangle') ? "Rectangle (disabled in path mode)" : "Rectangle"}
         disabled={isToolDisabled('rectangle')}
       >
-        <span className="text-xl">🔲</span>
+        <Square className={getIconClass('rectangle')} />
       </button>
       <button
-        className={getButtonClass('circle')}
+        className={`${getButtonClass('circle')} mt-1`}
         onClick={() => handleToolClick('circle')}
         title={isToolDisabled('circle') ? "Circle (disabled in path mode)" : "Circle"}
         disabled={isToolDisabled('circle')}
       >
-        <span className="text-xl">⭕</span>
+        <Circle className={getIconClass('circle')} />
       </button>
       <button
-        className={getButtonClass('triangle')}
+        className={`${getButtonClass('triangle')} mt-1`}
         onClick={() => handleToolClick('triangle')}
         title={isToolDisabled('triangle') ? "Triangle (disabled in path mode)" : "Triangle"}
         disabled={isToolDisabled('triangle')}
       >
-        <span className="text-xl text-black">△</span>
+        <Triangle className={getIconClass('triangle')} />
       </button>
       <button
-        className={getButtonClass('arc')}
+        className={`${getButtonClass('arc')} mt-1`}
         onClick={() => handleToolClick('arc')}
         title={isToolDisabled('arc') ? "Arc (disabled in path mode)" : "Arc"}
         disabled={isToolDisabled('arc')}
       >
-        <span className="text-xl">◐</span>
+        <RotateCcw className={getIconClass('arc')} />
       </button>
       <button
-        className={getButtonClass('line')}
+        className={`${getButtonClass('line')} mt-1`}
         onClick={() => handleToolClick('line')}
         title="Line"
         disabled={isToolDisabled('line')}
       >
-        <span className="text-xl">🔗</span>
+        <Route className={getIconClass('line')} />
       </button>
       <button
         className={getButtonClass('simpleLine')}
@@ -87,24 +112,24 @@ export function ToolbarTab() {
         title="Simple Line"
         disabled={isToolDisabled('simpleLine')}
       >
-        <span className="text-xl">📏</span>
+        <Minus className={getIconClass('simpleLine')} />
       </button>
       <button
-        className={getButtonClass('draw')}
+        className={`${getButtonClass('draw')} mt-1`}
         onClick={() => handleToolClick('draw')}
         title="Free Draw"
         disabled={isToolDisabled('draw')}
       >
-        <span className="text-xl">✏️</span>
+        <Pen className={getIconClass('draw')} />
       </button>
 
       <button
-        className={getButtonClass('select')}
+        className={`${getButtonClass('select')} mt-2`}
         onClick={() => handleToolClick('select')}
         title={isToolDisabled('select') ? "Selection Tool (disabled in path mode)" : "Selection Tool"}
         disabled={isToolDisabled('select')}
       >
-        <span className="text-xl">👆</span>
+        <MousePointer2 className={getIconClass('select')} />
       </button>
 
     </div>

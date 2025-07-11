@@ -9,7 +9,7 @@ import {
   VolumeOff,
   Hourglass,
   CircleFadingPlus,
-  Text as TextIcon,
+  Type as TypeIcon,
 } from 'lucide-react'
 import { useActiveNav, useSetActiveNav, useSetHoverNav, useHoverNav, usePanelActions, usePanelState } from '@/stores/use-ui-store';
 
@@ -28,7 +28,7 @@ const navigation: NavItem[] = [
   { name: 'Scenes', key: 'scenes', icon: Clapperboard },
   { name: 'Uploads', key: 'uploads', icon: CircleFadingPlus },
   { name: 'AI', key: 'ai', icon: WandSparkles },
-  { name: 'Text', key: 'text', icon: TextIcon },
+  { name: 'Text', key: 'text', icon: TypeIcon },
   { name: 'Animations', key: 'animations', icon: Hourglass },
   { name: 'Tools', key: 'tools', icon: Palette },
 ];
