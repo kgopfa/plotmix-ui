@@ -1,29 +1,12 @@
 import React from 'react';
-import { Film, Eye } from 'lucide-react';
-import { useCanvasElements, useCanvasGroups } from '@/stores/use-canvas-store';
+import { Film } from 'lucide-react';
+import { useCanvasElements } from '@/stores/use-canvas-store';
 import { useActiveSceneId, useScenes } from '@/stores/use-scene-store';
 
 export const SceneExplorerTab: React.FC = () => {
   const canvasObjects = useCanvasElements();
-  const groups = useCanvasGroups();
   const activeSceneId = useActiveSceneId();
   const scenes = useScenes();
-
-  const getElementIcon = (type: string) => {
-    switch (type) {
-      case 'rectangle': return '▭';
-      case 'circle': return '⭕';
-      case 'text': return 'T';
-      case 'textGroup': return '📝';
-      case 'image': return '🖼️';
-      case 'line': return '📏';
-      case 'arrow': return '➡️';
-      default: return '🔷';
-    }
-  };
-
-  const visibleElements = canvasObjects.filter(el => el.visible !== false);
-  const visibleGroups = groups.filter(group => group.visible !== false);
 
   return (
     <div className="h-full w-96 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
@@ -57,74 +40,64 @@ export const SceneExplorerTab: React.FC = () => {
                 <div className="text-gray-600">Total Scenes</div>
               </div>
               <div className="text-center p-2 bg-white rounded">
-                <div className="font-bold text-lg text-green-600">{visibleElements.length}</div>
+                <div className="font-bold text-lg text-green-600">{canvasObjects.length}</div>
                 <div className="text-gray-600">Elements</div>
               </div>
             </div>
           </div>
 
-          {/* Elements in Current Scene */}
-          {visibleElements.length > 0 && (
-            <div className="p-3 bg-green-50 rounded-lg">
-              <div className="font-medium text-gray-700 mb-2">Elements</div>
-              <div className="space-y-1 max-h-32 overflow-y-auto">
-                {visibleElements.slice(0, 6).map((element) => (
-                  <div key={element.id} className="flex items-center gap-2 text-xs p-1">
-                    <span>{getElementIcon(element.type)}</span>
-                    <span className="flex-1 truncate">{element.name}</span>
-                    <Eye className="w-3 h-3 text-green-600" />
-                  </div>
-                ))}
-                {visibleElements.length > 6 && (
-                  <div className="text-xs text-gray-500 text-center py-1">
-                    +{visibleElements.length - 6} more elements
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Groups in Current Scene */}
-          {visibleGroups.length > 0 && (
-            <div className="p-3 bg-purple-50 rounded-lg">
-              <div className="font-medium text-gray-700 mb-2">Groups</div>
-              <div className="space-y-1">
-                {visibleGroups.slice(0, 3).map((group) => (
-                  <div key={group.id} className="flex items-center gap-2 text-xs p-1">
-                    <span>📁</span>
-                    <span className="flex-1 truncate">{group.name}</span>
-                    <span className="text-purple-600 bg-purple-100 px-1 rounded text-xs">
-                      {group.elementIds.length}
-                    </span>
-                  </div>
-                ))}
-                {visibleGroups.length > 3 && (
-                  <div className="text-xs text-gray-500 text-center py-1">
-                    +{visibleGroups.length - 3} more groups
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Quick Actions */}
-          <div className="p-3 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg">
-            <div className="text-xs font-medium text-gray-700 mb-1">Quick Actions</div>
-            <div className="text-xs text-gray-600 space-y-1">
-              <div>• Create new scene</div>
-              <div>• Organize elements</div>
-              <div>• Manage visibility</div>
+          {/* Scene Management */}
+          <div className="p-3 bg-green-50 rounded-lg">
+            <div className="font-medium text-gray-700 mb-2">Scene Management</div>
+            <div className="space-y-2">
+              <button className="w-full p-2 bg-white rounded border text-left hover:bg-gray-50 transition-colors">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">➕</span>
+                  <span className="text-sm font-medium text-gray-700">Create New Scene</span>
+                </div>
+              </button>
+              <button className="w-full p-2 bg-white rounded border text-left hover:bg-gray-50 transition-colors">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">📋</span>
+                  <span className="text-sm font-medium text-gray-700">Duplicate Scene</span>
+                </div>
+              </button>
+              <button className="w-full p-2 bg-white rounded border text-left hover:bg-gray-50 transition-colors">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">🗂️</span>
+                  <span className="text-sm font-medium text-gray-700">Scene Templates</span>
+                </div>
+              </button>
             </div>
           </div>
 
-          {/* Empty State */}
-          {visibleElements.length === 0 && visibleGroups.length === 0 && (
-            <div className="p-4 text-center text-gray-500">
-              <span className="text-2xl block mb-2">🎨</span>
-              <div className="text-sm">No elements in scene</div>
-              <div className="text-xs">Start by adding shapes or text</div>
+          {/* Scene List */}
+          <div className="p-3 bg-purple-50 rounded-lg">
+            <div className="font-medium text-gray-700 mb-2">All Scenes</div>
+            <div className="space-y-1 max-h-32 overflow-y-auto">
+              {scenes.map((scene) => (
+                <div key={scene.id} className={`flex items-center gap-2 text-xs p-2 rounded ${
+                  scene.id === activeSceneId ? 'bg-blue-100 border border-blue-200' : 'bg-white border border-gray-200'
+                }`}>
+                  <span className="text-lg">🎬</span>
+                  <span className="flex-1 truncate font-medium">{scene.name}</span>
+                  {scene.id === activeSceneId && (
+                    <span className="text-xs px-1 bg-blue-200 text-blue-700 rounded">Active</span>
+                  )}
+                </div>
+              ))}
             </div>
-          )}
+          </div>
+
+          {/* Scene Tips */}
+          <div className="p-3 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg">
+            <div className="text-xs font-medium text-gray-700 mb-1">Scene Tips</div>
+            <div className="text-xs text-gray-600 space-y-1">
+              <div>• Use scenes to organize different shots</div>
+              <div>• Each scene has its own timeline</div>
+              <div>• Switch between scenes to compare</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

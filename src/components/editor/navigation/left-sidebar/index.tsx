@@ -11,6 +11,7 @@ import {
   CircleFadingPlus,
   Type as TypeIcon,
   Rocket,
+  Layers,
 } from 'lucide-react'
 import { useActiveNav, useSetActiveNav, useSetHoverNav, useHoverNav, usePanelActions, usePanelState } from '@/stores/use-ui-store';
 
@@ -21,8 +22,9 @@ import { UploadsTab } from './tabs/uploads-tab';
 import { TextTab } from './tabs/text-tab';
 import { AIToolsTab } from './tabs/ai-tools-tab';
 import { AnimationsTab } from './tabs/animations-tab';
+import { LayersTab } from './tabs/layers-tab';
 
-type NavItem = { name: string; key: 'video' | 'scenes' | 'uploads' | 'ai' | 'text' | 'animations' | 'tools' | 'audio' | 'timeline'; icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; };
+type NavItem = { name: string; key: 'video' | 'scenes' | 'uploads' | 'ai' | 'text' | 'animations' | 'layers' | 'tools' | 'audio' | 'timeline'; icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; };
 
 const navigation: NavItem[] = [
   { name: 'Video Settings', key: 'video', icon: Video },
@@ -31,6 +33,7 @@ const navigation: NavItem[] = [
   { name: 'AI', key: 'ai', icon: WandSparkles },
   { name: 'Text', key: 'text', icon: (props: React.SVGProps<SVGSVGElement>) => <TypeIcon {...props} strokeWidth={2.5} /> },
   { name: 'Animations', key: 'animations', icon: Rocket },
+  { name: 'Layers', key: 'layers', icon: Layers },
   { name: 'Tools', key: 'tools', icon: Palette },
 ];
 
@@ -60,6 +63,9 @@ const TabContent: React.FC<{ navKey: string }> = ({ navKey }) => {
     
     case 'animations':
       return <AnimationsTab />;
+    
+    case 'layers':
+      return <LayersTab />;
     
     case 'ai':
       return <AIToolsTab />;
