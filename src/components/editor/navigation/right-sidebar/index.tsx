@@ -34,7 +34,7 @@ export const RightSidebar: React.FC = () => {
 
   return (
     <div
-      className="m-2 fixed right-0 top-16 z-40 w-16 overflow-visible border border-gray-200 shadow-lg pb-8 rounded-lg flex flex-col items-center bg-white/95 backdrop-blur-sm"
+      className="m-2 fixed right-0 top-16 z-40 w-16 overflow-visible border border-fuchsia-200 shadow-fuchsia-200 shadow-lg pb-8 rounded-lg flex flex-col items-center bg-white/95 backdrop-blur-sm"
     >
       <nav className="mt-8">
         <ul role="list" className="flex flex-col items-center space-y-1">
