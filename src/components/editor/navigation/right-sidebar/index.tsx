@@ -2,9 +2,9 @@
 
 import React from 'react';
 import {
-  PencilRuler,
-  Blend,
   History,
+  SwatchBook,
+  VectorSquare,
 } from 'lucide-react';
 import { useActiveRightPanel, useSetActiveRightPanel, useHoverRightPanel, useSetHoverRightPanel } from '@/stores/use-ui-store';
 
@@ -17,8 +17,8 @@ interface RightNavItem {
 }
 
 const navigation: RightNavItem[] = [
-  { name: 'Properties', key: 'properties', icon: PencilRuler },
-  { name: 'Animations', key: 'animations', icon: Blend },
+  { name: 'Properties', key: 'properties', icon: SwatchBook },
+  { name: 'Animations', key: 'animations', icon: VectorSquare },
   { name: 'History', key: 'history', icon: History },
 ];
 

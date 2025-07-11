@@ -10,6 +10,7 @@ import {
   Hourglass,
   CircleFadingPlus,
   Type as TypeIcon,
+  Rocket,
 } from 'lucide-react'
 import { useActiveNav, useSetActiveNav, useSetHoverNav, useHoverNav, usePanelActions, usePanelState } from '@/stores/use-ui-store';
 
@@ -28,8 +29,8 @@ const navigation: NavItem[] = [
   { name: 'Scenes', key: 'scenes', icon: Clapperboard },
   { name: 'Uploads', key: 'uploads', icon: CircleFadingPlus },
   { name: 'AI', key: 'ai', icon: WandSparkles },
-  { name: 'Text', key: 'text', icon: TypeIcon },
-  { name: 'Animations', key: 'animations', icon: Hourglass },
+  { name: 'Text', key: 'text', icon: (props: React.SVGProps<SVGSVGElement>) => <TypeIcon {...props} strokeWidth={2.5} /> },
+  { name: 'Animations', key: 'animations', icon: Rocket },
   { name: 'Tools', key: 'tools', icon: Palette },
 ];
 
