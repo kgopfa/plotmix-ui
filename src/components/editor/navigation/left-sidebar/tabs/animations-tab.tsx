@@ -1,6 +1,5 @@
 import React from 'react';
-import { Play, Pause, RotateCw, Move, Scale, Zap, Plus } from 'lucide-react';
-import { useTimelineStore } from '@/stores/use-timeline-store';
+import { Zap, Plus } from 'lucide-react';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useSetActiveRightPanel } from '@/stores/use-ui-store';
@@ -8,7 +7,6 @@ import { AnimationType, ElementAnimation, GsapEase } from '@/types/canvas';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
 
 export const AnimationsTab: React.FC = () => {
-  const { isPlaying, currentTime, totalDuration } = useTimelineStore(state => state.playback);
   const { selectedElements, select } = useSelectionStore();
   const { addElementAnimation, getElementById } = useCanvasStore();
   const setActiveRightPanel = useSetActiveRightPanel();
@@ -129,12 +127,6 @@ export const AnimationsTab: React.FC = () => {
     }, 50);
   };
 
-  const formatTime = (time: number) => {
-    const minutes = Math.floor(time / 60);
-    const seconds = (time % 60).toFixed(1);
-    return `${minutes}:${seconds.padStart(4, '0')}`;
-  };
-
   return (
     <div className="h-full w-96 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
       <div className="p-4 border-b border-gray-100">
@@ -200,76 +192,6 @@ export const AnimationsTab: React.FC = () => {
               </div>
             </div>
           )}
-
-          {/* Timeline Status */}
-          <div className="p-3 bg-purple-50 rounded-lg">
-            <div className="font-medium text-gray-700 mb-2 text-xs">Timeline Status</div>
-            <div className="flex items-center gap-2 mb-2">
-              {isPlaying ? (
-                <Pause className="w-4 h-4 text-purple-600" />
-              ) : (
-                <Play className="w-4 h-4 text-gray-400" />
-              )}
-              <span className="text-xs font-mono">
-                {formatTime(currentTime)} / {formatTime(totalDuration)}
-              </span>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${
-                isPlaying ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'
-              }`}>
-                {isPlaying ? 'Playing' : 'Paused'}
-              </span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-1">
-              <div 
-                className="bg-purple-600 h-1 rounded-full transition-all duration-100"
-                style={{ width: `${totalDuration > 0 ? (currentTime / totalDuration) * 100 : 0}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Animation Controls */}
-          <div className="p-3 bg-green-50 rounded-lg">
-            <div className="font-medium text-gray-700 mb-2 text-xs">Timeline Controls</div>
-            <div className="flex flex-wrap gap-2">
-              <button className="flex items-center gap-1 p-2 bg-white rounded border hover:bg-gray-50 text-xs">
-                <Play className="w-3 h-3" />
-                Play
-              </button>
-              <button className="flex items-center gap-1 p-2 bg-white rounded border hover:bg-gray-50 text-xs">
-                <Pause className="w-3 h-3" />
-                Pause
-              </button>
-              <button className="flex items-center gap-1 p-2 bg-white rounded border hover:bg-gray-50 text-xs">
-                <RotateCw className="w-3 h-3" />
-                Restart
-              </button>
-            </div>
-          </div>
-
-          {/* Properties */}
-          <div className="p-3 bg-yellow-50 rounded-lg">
-            <div className="font-medium text-gray-700 mb-2 text-xs">Animatable Properties</div>
-            <div className="flex flex-wrap gap-2">
-              <span className="flex items-center gap-1 text-xs px-2 py-1 bg-white rounded border">
-                <Move className="w-3 h-3" />
-                Position
-              </span>
-              <span className="flex items-center gap-1 text-xs px-2 py-1 bg-white rounded border">
-                <Scale className="w-3 h-3" />
-                Scale
-              </span>
-              <span className="flex items-center gap-1 text-xs px-2 py-1 bg-white rounded border">
-                <RotateCw className="w-3 h-3" />
-                Rotation
-              </span>
-              <span className="text-xs px-2 py-1 bg-white rounded border">
-                Opacity
-              </span>
-              <span className="text-xs px-2 py-1 bg-white rounded border">
-                Color
-              </span>
-            </div>
-          </div>
 
           {/* Tips */}
           <div className="p-3 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg">
