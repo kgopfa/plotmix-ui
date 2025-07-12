@@ -3,12 +3,16 @@ import { Play, Pause, RotateCw, Move, Scale, Zap, Plus } from 'lucide-react';
 import { useTimelineStore } from '@/stores/use-timeline-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
+import { useSetActiveRightPanel } from '@/stores/use-ui-store';
 import { AnimationType, ElementAnimation, GsapEase } from '@/types/canvas';
+import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
 
 export const AnimationsTab: React.FC = () => {
   const { isPlaying, currentTime, totalDuration } = useTimelineStore(state => state.playback);
-  const { selectedElements } = useSelectionStore();
-  const { addElementAnimation } = useCanvasStore();
+  const { selectedElements, select } = useSelectionStore();
+  const { addElementAnimation, getElementById } = useCanvasStore();
+  const setActiveRightPanel = useSetActiveRightPanel();
+  const animationSelectionManager = AnimationSelectionManager.getInstance();
 
   const selectedElement = selectedElements.length === 1 ? selectedElements[0] : null;
   const hasSelection = selectedElements.length > 0;
@@ -103,7 +107,26 @@ export const AnimationsTab: React.FC = () => {
       yoyo: false
     };
 
+    // Add the animation to the element
     addElementAnimation(selectedElement.id, newAnimation);
+
+    // Get the updated element from canvas store and refresh selection store
+    const updatedElement = getElementById(selectedElement.id);
+    if (updatedElement) {
+      select(updatedElement);
+    }
+
+    // Switch to the right sidebar animations panel
+    setActiveRightPanel('animations');
+
+    // Select the newly created animation in the animations panel after the next render cycle
+    setTimeout(() => {
+      // Use the updated element for selection
+      const finalUpdatedElement = getElementById(selectedElement.id);
+      if (finalUpdatedElement) {
+        animationSelectionManager.selectAnimation(finalUpdatedElement, newAnimation);
+      }
+    }, 50);
   };
 
   const formatTime = (time: number) => {
