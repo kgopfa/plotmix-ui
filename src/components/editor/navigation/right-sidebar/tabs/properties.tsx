@@ -25,7 +25,10 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
   
   // Sync with parent component when selected element changes
   useEffect(() => {
-    setLocalElement(selectedElement);
+    // Exclude animations from local element state - they should only be managed by AnimationsTab
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { animations: _, ...elementWithoutAnimations } = selectedElement;
+    setLocalElement({ ...elementWithoutAnimations, animations: [] } as AnimatedCanvasObject);
     setIsDirty({});
   }, [selectedElement]);
   
@@ -36,6 +39,11 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
     if (dirtyKeys.length > 0) {
       // Apply each dirty property to the global state
       dirtyKeys.forEach(key => {
+        // Skip animations - these should only be managed by the AnimationsTab
+        if (key === 'animations') {
+          return;
+        }
+        
         // Special handling for lineOptions - compare stringified values
         if (key === 'lineOptions') {
           const lineOptions = localElement.lineOptions;
@@ -43,7 +51,7 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
             onInspectorChange(key, lineOptions);
           }
         } 
-        // Regular property updates
+        // Regular property updates (excluding animations)
         else if (key in localElement) {
           const value = localElement[key as keyof AnimatedCanvasObject];
           // Ensure value is of the expected type before passing to onInspectorChange
