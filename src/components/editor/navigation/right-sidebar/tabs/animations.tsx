@@ -182,377 +182,310 @@ export function AnimationsTab({
   };
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-6 p-4">
+      {/* Header */}
+      <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+        <h3 className="font-semibold text-gray-900">Animations</h3>
+      </div>
+
+      {/* No animations state */}
       {animations.length === 0 && (
-        <div className="p-4 text-center text-gray-500 bg-gray-50 rounded-lg">
-          <p className="text-sm">No animations yet</p>
-          <p className="text-xs mt-1">Use the left sidebar to add animations</p>
+        <div className="p-6 text-center bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg border border-purple-200/50">
+          <div className="w-12 h-12 mx-auto mb-3 bg-purple-100 rounded-full flex items-center justify-center">
+            <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <p className="text-sm font-medium text-gray-700 mb-1">No animations yet</p>
+          <p className="text-xs text-gray-500">Use the left sidebar to add animations</p>
         </div>
       )}
-      <div className="flex flex-col gap-2">
+
+      {/* Animation List */}
+      <div className="space-y-4">
         {animations.map((animation) => (
-          <div key={animation.id} className={`border rounded p-2 ${selectedAnimationId === animation.id ? 'border-green-500 bg-green-50' : ''
-            }`}>
-            <div className="flex justify-between items-center mb-2 border-b pb-2">
-              <span className="font-medium text-blue-600">{animation.type}</span>
-              <div className="flex gap-2">
+          <div 
+            key={animation.id} 
+            className={`
+              bg-white rounded-xl border transition-all duration-200 overflow-hidden
+              ${selectedAnimationId === animation.id 
+                ? 'border-purple-300 shadow-lg shadow-purple-500/10 bg-purple-50/50' 
+                : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+              }
+            `}
+          >
+            {/* Animation Header */}
+            <div className="flex justify-between items-center p-4 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">
+                    {animation.type.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-900 capitalize">{animation.type}</h4>
+                  <p className="text-xs text-gray-500">
+                    {animation.startTime}s → {(animation.startTime + animation.duration).toFixed(1)}s
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleDuplicateAnimation(animation.id)}
-                  className="text-blue-500 hover:text-blue-700 px-1"
+                  className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
                   title="Duplicate animation"
                 >
-                  📄
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
                 </button>
                 <button
                   onClick={() => handleDeleteAnimationInternal(animation.id)}
-                  className="text-red-500 hover:text-red-700"
+                  className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                   title="Delete animation"
                 >
-                  ×
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
                 </button>
               </div>
             </div>
-            <div className="flex flex-col gap-2">
-              <div className="grid grid-cols-2 gap-2">
-                <label>
-                  Start Time:
-                  <input
-                    type="number"
-                    value={animation.startTime}
-                    onChange={e => handleAnimationChange(animation.id, 'startTime', e.target.value)}
-                    className="w-full"
-                  />
-                </label>
-                <label>
-                  Duration:
-                  <input
-                    type="number"
-                    value={animation.duration}
-                    onChange={e => handleAnimationChange(animation.id, 'duration', e.target.value)}
-                    className="w-full"
-                  />
-                </label>
+
+            {/* Animation Content */}
+            <div className="p-4 space-y-6">
+              {/* Basic Settings */}
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="flex flex-col gap-1">
+                    <span className="text-sm font-medium text-gray-700">Start Time</span>
+                    <input
+                      type="number"
+                      value={animation.startTime}
+                      onChange={e => handleAnimationChange(animation.id, 'startTime', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                      step="0.1"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-sm font-medium text-gray-700">Duration</span>
+                    <input
+                      type="number"
+                      value={animation.duration}
+                      onChange={e => handleAnimationChange(animation.id, 'duration', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                      step="0.1"
+                      min="0.1"
+                    />
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="flex flex-col gap-1">
+                    <span className="text-sm font-medium text-gray-700">Type</span>
+                    <input
+                      type="text"
+                      value={animation.type}
+                      readOnly
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-600 cursor-not-allowed"
+                      title="Animation type cannot be changed after creation"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-sm font-medium text-gray-700">Easing</span>
+                    <select
+                      value={animation.easing ?? 'none'}
+                      onChange={e => handleAnimationChange(animation.id, 'easing', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                    >
+                      {[
+                        'power1.in', 'power1.out', 'power1.inOut',
+                        'power2.in', 'power2.out', 'power2.inOut',
+                        'power3.in', 'power3.out', 'power3.inOut',
+                        'power4.in', 'power4.out', 'power4.inOut',
+                        'back.in', 'back.out', 'back.inOut',
+                        'elastic.in', 'elastic.out', 'elastic.inOut',
+                        'bounce.in', 'bounce.out', 'bounce.inOut',
+                        'steps(5)', 'steps(10)', 'steps(20)',
+                        'circ.in', 'circ.out', 'circ.inOut',
+                        'expo.in', 'expo.out', 'expo.inOut',
+                        'sine.in', 'sine.out', 'sine.inOut',
+                        'none', 'linear'
+                      ].map(ease => (
+                        <option key={ease} value={ease}>
+                          {ease}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
               </div>
-              <label>
-                Type:
-                <input
-                  type="text"
-                  value={animation.type}
-                  readOnly
-                  className="w-full bg-gray-100 text-gray-600 cursor-not-allowed"
-                  title="Animation type cannot be changed after creation"
-                />
-              </label>
-              <label>
-                Easing:
-                <select
-                  value={animation.easing ?? 'none'}
-                  onChange={e => handleAnimationChange(animation.id, 'easing', e.target.value)}
-                  className="w-full"
-                >
-                  {[
-                    'power1.in', 'power1.out', 'power1.inOut',
-                    'power2.in', 'power2.out', 'power2.inOut',
-                    'power3.in', 'power3.out', 'power3.inOut',
-                    'power4.in', 'power4.out', 'power4.inOut',
-                    'back.in', 'back.out', 'back.inOut',
-                    'elastic.in', 'elastic.out', 'elastic.inOut',
-                    'bounce.in', 'bounce.out', 'bounce.inOut',
-                    'steps(5)', 'steps(10)', 'steps(20)',
-                    'circ.in', 'circ.out', 'circ.inOut',
-                    'expo.in', 'expo.out', 'expo.inOut',
-                    'sine.in', 'sine.out', 'sine.inOut',
-                    'none', 'linear'
-                  ].map(ease => (
-                    <option key={ease} value={ease}>
-                      {ease}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="mt-2">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={animation.yoyo || false}
-                    onChange={e => handleAnimationChange(animation.id, 'yoyo', e.target.checked)}
-                    className="mr-2"
-                  />
-                  <span>Yoyo (return to start)</span>
-                </label>
-                {animation.yoyo && (
-                  <div className="mt-2 ml-6">
-                    <label>
-                      Return Easing:
-                      <select
-                        value={animation.yoyoReturnEasing ?? animation.easing ?? 'none'}
-                        onChange={e => handleAnimationChange(animation.id, 'yoyoReturnEasing', e.target.value)}
-                        className="w-full"
-                      >
-                        {[
-                          'power1.in', 'power1.out', 'power1.inOut',
-                          'power2.in', 'power2.out', 'power2.inOut',
-                          'power3.in', 'power3.out', 'power3.inOut',
-                          'power4.in', 'power4.out', 'power4.inOut',
-                          'back.in', 'back.out', 'back.inOut',
-                          'elastic.in', 'elastic.out', 'elastic.inOut',
-                          'bounce.in', 'bounce.out', 'bounce.inOut',
-                          'steps(5)', 'steps(10)', 'steps(20)',
-                          'circ.in', 'circ.out', 'circ.inOut',
-                          'expo.in', 'expo.out', 'expo.inOut',
-                          'sine.in', 'sine.out', 'sine.inOut',
-                          'none', 'linear'
-                        ].map(ease => (
-                          <option key={ease} value={ease}>
-                            {ease}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-                )}
-              </div>
-              <div className="mt-2">
-                <h4 className="font-medium mb-2">Properties</h4>
-                <div className="grid grid-cols-2 gap-2">
-                  {animation.type === 'rotate' && (
-                    <label>
-                      Rotation (degrees):
-                      <input
-                        type="number"
-                        value={animation.properties.rotation ?? 0}
-                        onChange={e => handleAnimationChange(animation.id, 'properties.rotation', e.target.value)}
-                        className="w-full"
-                        step="1"
-                      />
-                    </label>
-                  )}
-                  {animation.type === 'scale' && (
-                    <>
-                      <label>
-                        Scale X:
+
+              {/* Properties Section */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+                  <div className="w-1 h-1 bg-blue-500 rounded-full"></div>
+                  <h4 className="font-medium text-gray-800">Properties</h4>
+                </div>
+                
+                <div className="bg-blue-50/50 p-4 rounded-lg border border-blue-200/50">
+                  <div className="grid grid-cols-2 gap-3">
+                    {animation.type === 'rotate' && (
+                      <label className="flex flex-col gap-1">
+                        <span className="text-sm font-medium text-gray-700">Rotation (degrees)</span>
                         <input
                           type="number"
-                          value={animation.properties.scaleX ?? 1}
-                          onChange={e => handleAnimationChange(animation.id, 'properties.scaleX', e.target.value)}
-                          className="w-full"
-                          step="0.1"
-                        />
-                      </label>
-                      <label>
-                        Scale Y:
-                        <input
-                          type="number"
-                          value={animation.properties.scaleY ?? 1}
-                          onChange={e => handleAnimationChange(animation.id, 'properties.scaleY', e.target.value)}
-                          className="w-full"
-                          step="0.1"
-                        />
-                      </label>
-                    </>
-                  )}
-                  {animation.type === 'move' && (
-                    <>
-                      <label>
-                        Move X:
-                        <input
-                          type="number"
-                          value={animation.properties.x ?? 0}
-                          onChange={e => handleAnimationChange(animation.id, 'properties.x', e.target.value)}
-                          className="w-full"
+                          value={animation.properties.rotation ?? 0}
+                          onChange={e => handleAnimationChange(animation.id, 'properties.rotation', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                           step="1"
                         />
                       </label>
-                      <label>
-                        Move Y:
+                    )}
+                    {animation.type === 'scale' && (
+                      <>
+                        <label className="flex flex-col gap-1">
+                          <span className="text-sm font-medium text-gray-700">Scale X</span>
+                          <input
+                            type="number"
+                            value={animation.properties.scaleX ?? 1}
+                            onChange={e => handleAnimationChange(animation.id, 'properties.scaleX', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                            step="0.1"
+                          />
+                        </label>
+                        <label className="flex flex-col gap-1">
+                          <span className="text-sm font-medium text-gray-700">Scale Y</span>
+                          <input
+                            type="number"
+                            value={animation.properties.scaleY ?? 1}
+                            onChange={e => handleAnimationChange(animation.id, 'properties.scaleY', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                            step="0.1"
+                          />
+                        </label>
+                      </>
+                    )}
+                    {animation.type === 'move' && (
+                      <>
+                        <label className="flex flex-col gap-1">
+                          <span className="text-sm font-medium text-gray-700">Target X</span>
+                          <input
+                            type="number"
+                            value={animation.properties.x ?? selectedElement.x}
+                            onChange={e => handleAnimationChange(animation.id, 'properties.x', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                          />
+                        </label>
+                        <label className="flex flex-col gap-1">
+                          <span className="text-sm font-medium text-gray-700">Target Y</span>
+                          <input
+                            type="number"
+                            value={animation.properties.y ?? selectedElement.y}
+                            onChange={e => handleAnimationChange(animation.id, 'properties.y', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                          />
+                        </label>
+                      </>
+                    )}
+                    {animation.type === 'color' && (
+                      <label className="flex flex-col gap-1">
+                        <span className="text-sm font-medium text-gray-700">Target Color</span>
                         <input
-                          type="number"
-                          value={animation.properties.y ?? 0}
-                          onChange={e => handleAnimationChange(animation.id, 'properties.y', e.target.value)}
-                          className="w-full"
-                          step="1"
+                          type="color"
+                          value={animation.properties.fillColor ?? selectedElement.fill ?? '#000000'}
+                          onChange={e => handleAnimationChange(animation.id, 'properties.fillColor', e.target.value)}
+                          className="w-full h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                         />
                       </label>
-                    </>
-                  )}
-                  {animation.type === 'color' && (
-                    <label>
-                      Color:
-                      <input
-                        type="color"
-                        value={animation.properties.fillColor ?? selectedElement.fill}
-                        onChange={e => handleAnimationChange(animation.id, 'properties.fillColor', e.target.value)}
-                        className="w-full"
-                      />
-                    </label>
-                  )}
-                  {animation.type === 'fade' && (
-                    <label>
-                      Opacity:
-                      <input
-                        type="number"
-                        min="0"
-                        max="1"
-                        step="0.1"
-                        value={animation.properties.alpha ?? selectedElement.opacity ?? 1}
-                        onChange={e => handleAnimationChange(animation.id, 'properties.alpha', e.target.value)}
-                        className="w-full"
-                      />
-                    </label>
-                  )}
-                  {animation.type === 'path' && (
-                    <div className="col-span-2 grid grid-cols-2 gap-2">
+                    )}
+                    {animation.type === 'fade' && (
+                      <label className="flex flex-col gap-1">
+                        <span className="text-sm font-medium text-gray-700">Target Opacity</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="1"
+                          step="0.1"
+                          value={animation.properties.alpha ?? selectedElement.opacity ?? 1}
+                          onChange={e => handleAnimationChange(animation.id, 'properties.alpha', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        />
+                      </label>
+                    )}
+                    {animation.type === 'path' && (
                       <div className="col-span-2">
-                        <label className="block text-sm font-medium mb-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
                           Path Animation
                         </label>
                         <button
                           onClick={() => onEnterPathMode(animation.id)}
-                          className="w-full py-2 px-3 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center justify-center"
+                          className="w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 flex items-center justify-center gap-2 transition-all"
                         >
-                          <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M3 17.25V21H6.75L17.81 9.94L14.06 6.19L3 17.25Z" fill="currentColor" />
                             <path d="M20.71 7.04C21.1 6.65 21.1 6.02 20.71 5.63L18.37 3.29C17.98 2.9 17.35 2.9 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04Z" fill="currentColor" />
                           </svg>
                           Draw Path
                         </button>
                       </div>
-                    </div>
-                  )}
-                  {animation.type === 'physics' && (
-                    <>
-                      <label>
-                        Velocity:
-                        <input
-                          type="number"
-                          value={animation.properties.velocity ?? 400}
-                          onChange={e => handleAnimationChange(animation.id, 'properties.velocity', e.target.value)}
-                          className="w-full"
-                          step="10"
-                        />
-                      </label>
-                      <label>
-                        Angle (degrees):
-                        <input
-                          type="number"
-                          value={animation.properties.angle ?? 60}
-                          onChange={e => handleAnimationChange(animation.id, 'properties.angle', e.target.value)}
-                          className="w-full"
-                          step="1"
-                        />
-                      </label>
-                      <label>
-                        Gravity:
-                        <input
-                          type="number"
-                          value={animation.properties.gravity ?? 800}
-                          onChange={e => handleAnimationChange(animation.id, 'properties.gravity', e.target.value)}
-                          className="w-full"
-                          step="10"
-                        />
-                      </label>
-                      <label>
-                        Acceleration:
-                        <input
-                          type="number"
-                          value={animation.properties.acceleration ?? ''}
-                          onChange={e => handleAnimationChange(animation.id, 'properties.acceleration', e.target.value)}
-                          className="w-full"
-                          step="10"
-                          placeholder="Optional"
-                        />
-                      </label>
-                      <label>
-                        Acceleration Angle (degrees):
-                        <input
-                          type="number"
-                          value={animation.properties.accelerationAngle ?? ''}
-                          onChange={e => handleAnimationChange(animation.id, 'properties.accelerationAngle', e.target.value)}
-                          className="w-full"
-                          step="1"
-                          placeholder="Optional"
-                        />
-                      </label>
-                      <label>
-                        Friction:
-                        <input
-                          type="number"
-                          value={animation.properties.friction ?? ''}
-                          onChange={e => handleAnimationChange(animation.id, 'properties.friction', e.target.value)}
-                          className="w-full"
-                          step="0.1"
-                          min="0"
-                          max="1"
-                          placeholder="0-1 (Optional)"
-                        />
-                      </label>
-                      <label>
-                        X Property:
-                        <input
-                          type="text"
-                          value={animation.properties.xProp ?? ''}
-                          onChange={e => handleAnimationChange(animation.id, 'properties.xProp', e.target.value)}
-                          className="w-full"
-                          placeholder="e.g., x, rotation (Optional)"
-                        />
-                      </label>
-                      <label>
-                        Y Property:
-                        <input
-                          type="text"
-                          value={animation.properties.yProp ?? ''}
-                          onChange={e => handleAnimationChange(animation.id, 'properties.yProp', e.target.value)}
-                          className="w-full"
-                          placeholder="e.g., y, scaleY (Optional)"
-                        />
-                      </label>
-                    </>
-                  )}
-                </div>
-              </div>
-              <div className="mt-2">
-                <h4 className="font-medium mb-2">Repeat Settings</h4>
-                <div className="grid grid-cols-2 gap-2">
-                  <label>
-                    Repeat Count:
-                    <input
-                      type="number"
-                      min="-1"
-                      value={animation.repeat ?? 0}
-                      onChange={e => {
-                        console.log(`Setting repeat for ${animation.id} to ${e.target.value}`);
-                        handleAnimationChange(animation.id, 'repeat', e.target.value);
-                      }}
-                      className="w-full"
-                      placeholder="0 = no repeat, -1 = infinite"
-                      title="0 = no repeat, -1 = infinite loop, positive numbers = specific count"
-                    />
-                  </label>
-                  <label>
-                    Repeat Delay:
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.1"
-                      value={animation.repeatDelay ?? 0}
-                      onChange={e => handleAnimationChange(animation.id, 'repeatDelay', e.target.value)}
-                      className="w-full"
-                      placeholder="0"
-                      disabled={!animation.repeat || animation.repeat === 0}
-                    />
-                  </label>
-                </div>
-
-                {(animation.repeat ?? 0) !== 0 && (
-                  <div className="mt-2 p-2 bg-blue-50 rounded text-sm text-blue-700">
-                    <strong>Note:</strong> Repeats happen within the {animation.duration}s duration.
-                    {animation.repeat === -1 ? (
-                      <span> Animation will loop infinitely with compressed cycles.</span>
-                    ) : (
-                      <span> Each cycle will be compressed to fit {animation.repeat} repeat{animation.repeat !== 1 ? 's' : ''} + delays.</span>
                     )}
                   </div>
-                )}
+                </div>
+              </div>
+
+              {/* Repeat Settings */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+                  <div className="w-1 h-1 bg-green-500 rounded-full"></div>
+                  <h4 className="font-medium text-gray-800">Repeat Settings</h4>
+                </div>
+                
+                <div className="bg-green-50/50 p-4 rounded-lg border border-green-200/50">
+                  <div className="grid grid-cols-2 gap-3">
+                    <label className="flex flex-col gap-1">
+                      <span className="text-sm font-medium text-gray-700">Repeat Count</span>
+                      <input
+                        type="number"
+                        min="-1"
+                        value={animation.repeat ?? 0}
+                        onChange={e => {
+                          console.log(`Setting repeat for ${animation.id} to ${e.target.value}`);
+                          handleAnimationChange(animation.id, 'repeat', e.target.value);
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                        placeholder="0 = no repeat, -1 = infinite"
+                        title="0 = no repeat, -1 = infinite loop, positive numbers = specific count"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1">
+                      <span className="text-sm font-medium text-gray-700">Repeat Delay</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        value={animation.repeatDelay ?? 0}
+                        onChange={e => handleAnimationChange(animation.id, 'repeatDelay', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors disabled:opacity-50"
+                        placeholder="0"
+                        disabled={!animation.repeat || animation.repeat === 0}
+                      />
+                    </label>
+                  </div>
+                  
+                  <div className="mt-3">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={animation.yoyo ?? false}
+                        onChange={e => handleAnimationChange(animation.id, 'yoyo', e.target.checked)}
+                        className="rounded border-gray-300 focus:ring-2 focus:ring-green-500"
+                        disabled={!animation.repeat || animation.repeat === 0}
+                      />
+                      <span className="text-sm font-medium text-gray-700">Yoyo (reverse on repeat)</span>
+                    </label>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
