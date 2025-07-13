@@ -1,13 +1,19 @@
-import React from 'react';
-import { Layers, Eye, EyeOff, Square, Circle, Type, Image, Minus, Group } from 'lucide-react';
-import { useCanvasElements, useCanvasGroups } from '@/stores/use-canvas-store';
+import { useEffect, FC } from 'react';
+import { Layers, Eye, EyeOff, Square, Circle, Type, Image, Minus, Group, Users, Ungroup } from 'lucide-react';
+import { useCanvasElements, useCanvasGroups, useCanvasOperations } from '@/stores/use-canvas-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 
-export const LayersTab: React.FC = () => {
+export const LayersTab: FC = () => {
   const canvasObjects = useCanvasElements();
   const groups = useCanvasGroups();
-  const { selectedElements, selectedGroups, select: selectElement, selectGroup } = useSelectionStore();
+  const { setElementVisibility, setGroupVisibility, createGroupFromElements, ungroupElements } = useCanvasOperations();
+  const { selectedElements, selectedGroups, select: selectElement, selectGroup, canGroup, canUngroup, createGroupFromSelected, updateSelectedGroups } = useSelectionStore();
+
+  // Keep selection store in sync with current groups
+  useEffect(() => {
+    updateSelectedGroups(groups);
+  }, [groups, updateSelectedGroups]);
 
   const getElementIcon = (type: string) => {
     switch (type) {
@@ -43,6 +49,39 @@ export const LayersTab: React.FC = () => {
     selectGroup(group);
   };
 
+  const handleElementVisibilityToggle = (e: React.MouseEvent, element: AnimatedCanvasObject) => {
+    e.stopPropagation(); // Prevent element selection
+    setElementVisibility(element.id, element.visible === false);
+  };
+
+  const handleGroupVisibilityToggle = (e: React.MouseEvent, group: CanvasGroup) => {
+    e.stopPropagation(); // Prevent group selection
+    setGroupVisibility(group.id, group.visible === false);
+  };
+
+  const handleCreateGroup = () => {
+    if (!canGroup()) return;
+    
+    const groupInfo = createGroupFromSelected();
+    if (groupInfo) {
+      const elementIds = selectedElements.map(el => el.id);
+      createGroupFromElements(elementIds, groupInfo);
+      
+      // Clear selection after grouping
+      selectElement(null);
+    }
+  };
+
+  const handleUngroup = () => {
+    if (!canUngroup() || selectedGroups.length === 0) return;
+    
+    const group = selectedGroups[0];
+    ungroupElements(group.id);
+    
+    // Clear selection after ungrouping
+    selectElement(null);
+  };
+
   const isElementSelected = (elementId: string) => {
     return selectedElements.some(el => el.id === elementId);
   };
@@ -51,9 +90,17 @@ export const LayersTab: React.FC = () => {
     return selectedGroups.some(group => group.id === groupId);
   };
 
-  // Group elements by their groupId
-  const ungroupedElements = canvasObjects.filter(el => !el.groupId || el.groupId === '');
-  const groupedElements = canvasObjects.filter(el => el.groupId && el.groupId !== '');
+  // Group elements by their groupId, treating default groups as ungrouped
+  const ungroupedElements = canvasObjects.filter(el => {
+    if (!el.groupId) return true;
+    const group = groups.find(g => g.id === el.groupId);
+    return !group || group.isDefaultGroup;
+  });
+  const groupedElements = canvasObjects.filter(el => {
+    if (!el.groupId) return false;
+    const group = groups.find(g => g.id === el.groupId);
+    return group && !group.isDefaultGroup;
+  });
 
   return (
     <div className="h-full w-96 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
@@ -81,6 +128,35 @@ export const LayersTab: React.FC = () => {
             </div>
           </div>
 
+          {/* Grouping Controls */}
+          {(canGroup() || canUngroup()) && (
+            <div className="p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200">
+              <div className="font-medium text-gray-700 mb-2 text-xs">Group Management</div>
+              <div className="flex gap-2">
+                {canGroup() && (
+                  <button
+                    onClick={handleCreateGroup}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-purple-600 text-white text-xs rounded-md hover:bg-purple-700 transition-colors"
+                    title={`Group ${selectedElements.length} selected elements`}
+                  >
+                    <Users className="w-3 h-3" />
+                    Group ({selectedElements.length})
+                  </button>
+                )}
+                {canUngroup() && (
+                  <button
+                    onClick={handleUngroup}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-orange-600 text-white text-xs rounded-md hover:bg-orange-700 transition-colors"
+                    title="Ungroup selected group"
+                  >
+                    <Ungroup className="w-3 h-3" />
+                    Ungroup
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Groups */}
           {groups.filter(group => !group.isDefaultGroup).length > 0 && (
             <div className="space-y-1">
@@ -90,9 +166,8 @@ export const LayersTab: React.FC = () => {
               </div>
               {groups.filter(group => !group.isDefaultGroup).map((group) => (
                 <div key={group.id} className="space-y-1">
-                  <button
-                    onClick={() => handleGroupClick(group)}
-                    className={`w-full p-2 rounded-lg text-left transition-colors ${
+                  <div
+                    className={`w-full p-2 rounded-lg transition-colors ${
                       isGroupSelected(group.id) 
                         ? 'bg-indigo-100 border border-indigo-200' 
                         : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
@@ -100,21 +175,30 @@ export const LayersTab: React.FC = () => {
                   >
                     <div className="flex items-center gap-2">
                       <Group className="w-4 h-4 text-purple-600" />
-                      <span className="font-medium text-gray-700 flex-1 truncate">
+                      <button
+                        onClick={() => handleGroupClick(group)}
+                        className="font-medium text-gray-700 flex-1 truncate text-left hover:text-indigo-600 transition-colors"
+                      >
                         {group.name}
-                      </span>
+                      </button>
                       <div className="flex items-center gap-1">
                         <span className="text-xs px-1 bg-purple-100 text-purple-700 rounded">
                           {group.elementIds.length}
                         </span>
-                        {group.visible !== false ? (
-                          <Eye className="w-3 h-3 text-green-600" />
-                        ) : (
-                          <EyeOff className="w-3 h-3 text-gray-400" />
-                        )}
+                        <button
+                          onClick={(e) => handleGroupVisibilityToggle(e, group)}
+                          className="p-1 hover:bg-white rounded transition-colors"
+                          title={group.visible !== false ? 'Hide group' : 'Show group'}
+                        >
+                          {group.visible !== false ? (
+                            <Eye className="w-3 h-3 text-green-600" />
+                          ) : (
+                            <EyeOff className="w-3 h-3 text-gray-400" />
+                          )}
+                        </button>
                       </div>
                     </div>
-                  </button>
+                  </div>
                   
                   {/* Group Elements */}
                   <div className="ml-4 space-y-1">
@@ -123,10 +207,9 @@ export const LayersTab: React.FC = () => {
                       .map((element) => {
                         const IconComponent = getElementIcon(element.type);
                         return (
-                          <button
+                          <div
                             key={element.id}
-                            onClick={() => handleElementClick(element)}
-                            className={`w-full p-2 rounded text-left transition-colors ${
+                            className={`w-full p-2 rounded transition-colors ${
                               isElementSelected(element.id) 
                                 ? 'bg-blue-100 border border-blue-200' 
                                 : 'bg-white hover:bg-gray-50 border border-gray-200'
@@ -134,16 +217,25 @@ export const LayersTab: React.FC = () => {
                           >
                             <div className="flex items-center gap-2">
                               <IconComponent className={`w-3 h-3 ${getElementColor(element.type)}`} />
-                              <span className="text-xs text-gray-700 flex-1 truncate">
+                              <button
+                                onClick={() => handleElementClick(element)}
+                                className="text-xs text-gray-700 flex-1 truncate text-left hover:text-blue-600 transition-colors"
+                              >
                                 {element.name}
-                              </span>
-                              {element.visible !== false ? (
-                                <Eye className="w-3 h-3 text-green-600" />
-                              ) : (
-                                <EyeOff className="w-3 h-3 text-gray-400" />
-                              )}
+                              </button>
+                              <button
+                                onClick={(e) => handleElementVisibilityToggle(e, element)}
+                                className="p-1 hover:bg-gray-100 rounded transition-colors"
+                                title={element.visible !== false ? 'Hide element' : 'Show element'}
+                              >
+                                {element.visible !== false ? (
+                                  <Eye className="w-3 h-3 text-green-600" />
+                                ) : (
+                                  <EyeOff className="w-3 h-3 text-gray-400" />
+                                )}
+                              </button>
                             </div>
-                          </button>
+                          </div>
                         );
                       })}
                   </div>
@@ -162,10 +254,9 @@ export const LayersTab: React.FC = () => {
               {ungroupedElements.map((element) => {
                 const IconComponent = getElementIcon(element.type);
                 return (
-                  <button
+                  <div
                     key={element.id}
-                    onClick={() => handleElementClick(element)}
-                    className={`w-full p-2 rounded-lg text-left transition-colors ${
+                    className={`w-full p-2 rounded-lg transition-colors ${
                       isElementSelected(element.id) 
                         ? 'bg-blue-100 border border-blue-200' 
                         : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
@@ -173,16 +264,25 @@ export const LayersTab: React.FC = () => {
                   >
                     <div className="flex items-center gap-2">
                       <IconComponent className={`w-4 h-4 ${getElementColor(element.type)}`} />
-                      <span className="font-medium text-gray-700 flex-1 truncate">
+                      <button
+                        onClick={() => handleElementClick(element)}
+                        className="font-medium text-gray-700 flex-1 truncate text-left hover:text-blue-600 transition-colors"
+                      >
                         {element.name}
-                      </span>
-                      {element.visible !== false ? (
-                        <Eye className="w-4 h-4 text-green-600" />
-                      ) : (
-                        <EyeOff className="w-4 h-4 text-gray-400" />
-                      )}
+                      </button>
+                      <button
+                        onClick={(e) => handleElementVisibilityToggle(e, element)}
+                        className="p-1 hover:bg-gray-200 rounded transition-colors"
+                        title={element.visible !== false ? 'Hide element' : 'Show element'}
+                      >
+                        {element.visible !== false ? (
+                          <Eye className="w-4 h-4 text-green-600" />
+                        ) : (
+                          <EyeOff className="w-4 h-4 text-gray-400" />
+                        )}
+                      </button>
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>
