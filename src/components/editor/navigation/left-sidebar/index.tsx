@@ -206,7 +206,9 @@ export const LeftSidebar: React.FC = () => {
         <>
           {/* Transparent bridge to ensure seamless hover */}
           <div
-            className="fixed z-[60] pointer-events-auto"
+            className={`fixed pointer-events-auto ${
+              activeNav === 'animations' ? 'z-20' : 'z-[60]'
+            }`}
             style={{ 
               left: '72px', // Start right after sidebar
               top: '72px',
@@ -223,7 +225,9 @@ export const LeftSidebar: React.FC = () => {
           
           {/* Actual tab panel */}
           <div
-            className="fixed z-[60] pointer-events-none tab-panel-area"
+            className={`fixed pointer-events-none tab-panel-area ${
+              activeNav === 'animations' ? 'z-20' : 'z-[60]'
+            }`}
             style={{ 
               left: '80px', // Position after bridge
               top: '72px',
@@ -232,7 +236,12 @@ export const LeftSidebar: React.FC = () => {
             }}
           >
             <div 
-              className="pointer-events-auto animate-in slide-in-from-left-2 fade-in duration-200 h-full"
+              className={`pointer-events-auto h-full ${
+                activeNav === 'animations' 
+                  ? 'transform transition-all duration-300 ease-out' 
+                  : 'animate-in slide-in-from-left-2 fade-in duration-200'
+              }`}
+              style={activeNav === 'animations' ? { animation: 'slideInFromLeft 0.3s ease-out' } : {}}
               onMouseEnter={() => {
                 // Keep hover state active when entering tab content
                 clearHoverTimeout();
