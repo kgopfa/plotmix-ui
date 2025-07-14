@@ -1,5 +1,5 @@
-import { useEffect, FC } from 'react';
-import { Layers, Eye, EyeOff, Square, Circle, Type, Image, Minus, Group, Users, Ungroup } from 'lucide-react';
+import { useEffect, FC, useState } from 'react';
+import { Layers, Eye, EyeOff, Square, Circle, Type, Image, Minus, Group, Users, Ungroup, ChevronDown, ChevronRight } from 'lucide-react';
 import { useCanvasElements, useCanvasGroups, useCanvasOperations } from '@/stores/use-canvas-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
@@ -10,10 +10,25 @@ export const LayersTab: FC = () => {
   const { setElementVisibility, setGroupVisibility, createGroupFromElements, ungroupElements } = useCanvasOperations();
   const { selectedElements, selectedGroups, select: selectElement, selectGroup, canGroup, canUngroup, createGroupFromSelected, updateSelectedGroups } = useSelectionStore();
 
+  // State for collapsed groups
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+
   // Keep selection store in sync with current groups
   useEffect(() => {
     updateSelectedGroups(groups);
   }, [groups, updateSelectedGroups]);
+
+  const toggleGroupCollapse = (groupId: string) => {
+    setCollapsedGroups(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(groupId)) {
+        newSet.delete(groupId);
+      } else {
+        newSet.add(groupId);
+      }
+      return newSet;
+    });
+  };
 
   const getElementIcon = (type: string) => {
     switch (type) {
@@ -119,20 +134,6 @@ export const LayersTab: FC = () => {
       
       <div className="flex-1 p-4 overflow-y-auto">
         <div className="space-y-2 text-sm">
-          {/* Canvas Overview */}
-          <div className="p-3 bg-indigo-50 rounded-lg">
-            <div className="font-medium text-gray-700 mb-2 text-xs">Canvas Overview</div>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="text-center p-2 bg-white rounded">
-                <div className="font-bold text-lg text-indigo-600">{canvasObjects.length}</div>
-                <div className="text-gray-600">Elements</div>
-              </div>
-              <div className="text-center p-2 bg-white rounded">
-                <div className="font-bold text-lg text-purple-600">{groups.filter(g => !g.isDefaultGroup).length}</div>
-                <div className="text-gray-600">Groups</div>
-              </div>
-            </div>
-          </div>
 
           {/* Grouping Controls */}
           {(canGroup() || canUngroup()) && (
@@ -170,83 +171,102 @@ export const LayersTab: FC = () => {
                 <Group className="w-3 h-3" />
                 Groups
               </div>
-              {groups.filter(group => !group.isDefaultGroup).map((group) => (
-                <div key={group.id} className="space-y-1">
-                  <div
-                    className={`w-full p-2 rounded-lg transition-colors ${
-                      isGroupSelected(group.id) 
-                        ? 'bg-indigo-100 border border-indigo-200' 
-                        : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Group className="w-4 h-4 text-purple-600" />
-                      <button
-                        onClick={() => handleGroupClick(group)}
-                        className="font-medium text-gray-700 flex-1 truncate text-left hover:text-indigo-600 transition-colors"
-                      >
-                        {group.name}
-                      </button>
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs px-1 bg-purple-100 text-purple-700 rounded">
-                          {group.elementIds.length}
-                        </span>
-                        <button
-                          onClick={(e) => handleGroupVisibilityToggle(e, group)}
-                          className="p-1 hover:bg-white rounded transition-colors"
-                          title={group.visible !== false ? 'Hide group' : 'Show group'}
-                        >
-                          {group.visible !== false ? (
-                            <Eye className="w-3 h-3 text-green-600" />
-                          ) : (
-                            <EyeOff className="w-3 h-3 text-gray-400" />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Group Elements */}
-                  <div className="ml-4 space-y-1">
-                    {groupedElements
-                      .filter(el => el.groupId === group.id)
-                      .map((element) => {
-                        const IconComponent = getElementIcon(element.type);
-                        return (
-                          <div
-                            key={element.id}
-                            className={`w-full p-2 rounded transition-colors ${
-                              isElementSelected(element.id) 
-                                ? 'bg-blue-100 border border-blue-200' 
-                                : 'bg-white hover:bg-gray-50 border border-gray-200'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2">
-                              <IconComponent className={`w-3 h-3 ${getElementColor(element.type)}`} />
-                                                             <button
-                                 onClick={(e) => handleElementClick(element, e)}
-                                 className="text-xs text-gray-700 flex-1 truncate text-left hover:text-blue-600 transition-colors"
+                             {groups.filter(group => !group.isDefaultGroup).map((group) => {
+                 const isCollapsed = collapsedGroups.has(group.id);
+                 return (
+                   <div key={group.id} className="space-y-1">
+                     <div
+                       className={`w-full p-2 rounded-lg transition-colors ${
+                         isGroupSelected(group.id) 
+                           ? 'bg-indigo-100 border border-indigo-200' 
+                           : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
+                       }`}
+                     >
+                       <div className="flex items-center gap-2">
+                         <button
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             toggleGroupCollapse(group.id);
+                           }}
+                           className="p-0.5 hover:bg-gray-200 rounded transition-colors"
+                           title={isCollapsed ? 'Expand group' : 'Collapse group'}
+                         >
+                           {isCollapsed ? (
+                             <ChevronRight className="w-3 h-3 text-gray-500" />
+                           ) : (
+                             <ChevronDown className="w-3 h-3 text-gray-500" />
+                           )}
+                         </button>
+                         <Group className="w-4 h-4 text-purple-600" />
+                         <button
+                           onClick={() => handleGroupClick(group)}
+                           className="font-medium text-gray-700 flex-1 truncate text-left hover:text-indigo-600 transition-colors"
+                         >
+                           {group.name}
+                         </button>
+                         <div className="flex items-center gap-1">
+                           <span className="text-xs px-1 bg-purple-100 text-purple-700 rounded">
+                             {group.elementIds.length}
+                           </span>
+                           <button
+                             onClick={(e) => handleGroupVisibilityToggle(e, group)}
+                             className="p-1 hover:bg-white rounded transition-colors"
+                             title={group.visible !== false ? 'Hide group' : 'Show group'}
+                           >
+                             {group.visible !== false ? (
+                               <Eye className="w-3 h-3 text-green-600" />
+                             ) : (
+                               <EyeOff className="w-3 h-3 text-gray-400" />
+                             )}
+                           </button>
+                         </div>
+                       </div>
+                     </div>
+                     
+                     {/* Group Elements - only show if not collapsed */}
+                     {!isCollapsed && (
+                       <div className="ml-4 space-y-1">
+                         {groupedElements
+                           .filter(el => el.groupId === group.id)
+                           .map((element) => {
+                             const IconComponent = getElementIcon(element.type);
+                             return (
+                               <div
+                                 key={element.id}
+                                 className={`w-full p-2 rounded transition-colors ${
+                                   isElementSelected(element.id) 
+                                     ? 'bg-blue-100 border border-blue-200' 
+                                     : 'bg-white hover:bg-gray-50 border border-gray-200'
+                                 }`}
                                >
-                                 {element.name}
-                               </button>
-                              <button
-                                onClick={(e) => handleElementVisibilityToggle(e, element)}
-                                className="p-1 hover:bg-gray-100 rounded transition-colors"
-                                title={element.visible !== false ? 'Hide element' : 'Show element'}
-                              >
-                                {element.visible !== false ? (
-                                  <Eye className="w-3 h-3 text-green-600" />
-                                ) : (
-                                  <EyeOff className="w-3 h-3 text-gray-400" />
-                                )}
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                  </div>
-                </div>
-              ))}
+                                 <div className="flex items-center gap-2">
+                                   <IconComponent className={`w-3 h-3 ${getElementColor(element.type)}`} />
+                                   <button
+                                     onClick={(e) => handleElementClick(element, e)}
+                                     className="text-xs text-gray-700 flex-1 truncate text-left hover:text-blue-600 transition-colors"
+                                   >
+                                     {element.name}
+                                   </button>
+                                   <button
+                                     onClick={(e) => handleElementVisibilityToggle(e, element)}
+                                     className="p-1 hover:bg-gray-100 rounded transition-colors"
+                                     title={element.visible !== false ? 'Hide element' : 'Show element'}
+                                   >
+                                     {element.visible !== false ? (
+                                       <Eye className="w-3 h-3 text-green-600" />
+                                     ) : (
+                                       <EyeOff className="w-3 h-3 text-gray-400" />
+                                     )}
+                                   </button>
+                                 </div>
+                               </div>
+                             );
+                           })}
+                       </div>
+                     )}
+                   </div>
+                 );
+               })}
             </div>
           )}
 
@@ -302,16 +322,6 @@ export const LayersTab: FC = () => {
               <div className="text-xs">Create shapes or add text to get started</div>
             </div>
           )}
-
-          {/* Layer Tips */}
-          <div className="p-3 bg-gradient-to-r from-indigo-100 to-blue-100 rounded-lg">
-            <div className="text-xs font-medium text-gray-700 mb-1">Layer Management</div>
-            <div className="text-xs text-gray-600 space-y-1">
-              <div>• Click elements to select them</div>
-              <div>• Group related elements together</div>
-              <div>• Use eye icon to toggle visibility</div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
