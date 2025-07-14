@@ -41,8 +41,14 @@ export const LayersTab: FC = () => {
     }
   };
 
-  const handleElementClick = (element: AnimatedCanvasObject) => {
-    selectElement([element]);
+  const handleElementClick = (element: AnimatedCanvasObject, event?: React.MouseEvent) => {
+    if (event && (event.metaKey || event.ctrlKey)) {
+      // Multi-select: add to or remove from selection
+      selectElement(element, true);
+    } else {
+      // Single select: replace selection
+      selectElement([element]);
+    }
   };
 
   const handleGroupClick = (group: CanvasGroup) => {
@@ -217,12 +223,12 @@ export const LayersTab: FC = () => {
                           >
                             <div className="flex items-center gap-2">
                               <IconComponent className={`w-3 h-3 ${getElementColor(element.type)}`} />
-                              <button
-                                onClick={() => handleElementClick(element)}
-                                className="text-xs text-gray-700 flex-1 truncate text-left hover:text-blue-600 transition-colors"
-                              >
-                                {element.name}
-                              </button>
+                                                             <button
+                                 onClick={(e) => handleElementClick(element, e)}
+                                 className="text-xs text-gray-700 flex-1 truncate text-left hover:text-blue-600 transition-colors"
+                               >
+                                 {element.name}
+                               </button>
                               <button
                                 onClick={(e) => handleElementVisibilityToggle(e, element)}
                                 className="p-1 hover:bg-gray-100 rounded transition-colors"
@@ -264,12 +270,12 @@ export const LayersTab: FC = () => {
                   >
                     <div className="flex items-center gap-2">
                       <IconComponent className={`w-4 h-4 ${getElementColor(element.type)}`} />
-                      <button
-                        onClick={() => handleElementClick(element)}
-                        className="font-medium text-gray-700 flex-1 truncate text-left hover:text-blue-600 transition-colors"
-                      >
-                        {element.name}
-                      </button>
+                                             <button
+                         onClick={(e) => handleElementClick(element, e)}
+                         className="font-medium text-gray-700 flex-1 truncate text-left hover:text-blue-600 transition-colors"
+                       >
+                         {element.name}
+                       </button>
                       <button
                         onClick={(e) => handleElementVisibilityToggle(e, element)}
                         className="p-1 hover:bg-gray-200 rounded transition-colors"
