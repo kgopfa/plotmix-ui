@@ -18,7 +18,13 @@ import {
   Redo2, 
   Search, 
   Undo2, 
-  CloudCheck
+  CloudCheck,
+  Monitor,
+  Layers,
+  FolderOpen,
+  Download,
+  Palette,
+  Sliders
 } from 'lucide-react'
 import { ProjectControls } from './project-controls';
 import { PathModeIndicator } from './path-mode-indicator';
@@ -34,6 +40,20 @@ interface MainNavBarProps {
   onResetZoom: () => void;
   onGroupElements: () => void;
   onUngroupElements: () => void;
+}
+
+// Settings navigation configuration
+const settingsNavigation = [
+  { name: 'Canvas Settings', href: '#', icon: Monitor, current: true },
+  { name: 'Animation Settings', href: '#', icon: Layers, current: false },
+  { name: 'Project Settings', href: '#', icon: FolderOpen, current: false },
+  { name: 'Export Settings', href: '#', icon: Download, current: false },
+  { name: 'Theme & Appearance', href: '#', icon: Palette, current: false },
+  { name: 'Preferences', href: '#', icon: Sliders, current: false },
+];
+
+function classNames(...classes: (string | boolean | undefined)[]): string {
+  return classes.filter(Boolean).join(' ');
 }
 
 export const MainNavBar: React.FC<MainNavBarProps> = ({
@@ -70,9 +90,51 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                 <button className="ml-2 p-1.5 text-gray-500 hover:text-gray-700 pr-3 border-r border-gray-200 hover:bg-gray-100">
                   <Redo2 className="size-5" />
                 </button>
-                <button className="ml-4 p-1.5 text-gray-500 hover:text-gray-700 rounded-sm hover:bg-gray-100">
-                  <Settings className="size-5" />
-                </button>
+                
+                {/* Settings dropdown */}
+                <Menu as="div" className="relative ml-4">
+                  <div>
+                    <MenuButton className="p-1.5 text-gray-500 hover:text-gray-700 rounded-sm hover:bg-gray-100 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2">
+                      <span className="sr-only">Open settings menu</span>
+                      <Settings className="size-5" />
+                    </MenuButton>
+                  </div>
+                  <MenuItems
+                    transition
+                    className="absolute left-0 z-10 mt-2 -ml-2 w-56 origin-top-left rounded-md bg-white pt-3 pb-3 shadow-lg ring-1 ring-black/5 transition focus:outline-hidden data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
+                  >
+                    <nav aria-label="Settings menu" className="flex flex-1 flex-col">
+                      <ul role="list" className="space-y-4 px-2">
+                        {settingsNavigation.map((item) => (
+                          <li key={item.name}>
+                            <MenuItem>
+                              <a
+                                href={item.href}
+                                className={classNames(
+                                  item.current 
+                                    ? 'bg-gray-50 text-indigo-600' 
+                                    : 'text-gray-500 hover:bg-gray-50 hover:text-indigo-600 data-focus:bg-gray-50 data-focus:text-indigo-600',
+                                  'group flex gap-x-3 rounded-md p-2 text-sm font-semibold data-focus:outline-hidden',
+                                )}
+                              >
+                                <item.icon
+                                  aria-hidden="true"
+                                  className={classNames(
+                                    item.current 
+                                      ? 'text-indigo-600' 
+                                      : 'text-gray-500 group-hover:text-indigo-600',
+                                    'size-5 shrink-0',
+                                  )}
+                                />
+                                {item.name}
+                              </a>
+                            </MenuItem>
+                          </li>
+                        ))}
+                      </ul>
+                    </nav>
+                  </MenuItems>
+                </Menu>
               </div>
             </div>
           </div>
