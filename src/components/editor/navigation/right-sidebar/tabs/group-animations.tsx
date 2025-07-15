@@ -1,6 +1,7 @@
 import { 
   CanvasGroup, 
-  ElementAnimation
+  ElementAnimation,
+  EASING_OPTIONS
 } from '@/types/canvas';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import debounce from 'lodash/debounce';
@@ -163,20 +164,7 @@ export function GroupAnimationsTab({
                   onChange={e => handleAnimationChange(animation.id, 'easing', e.target.value)}
                   className="w-full"
                 >
-                  {[
-                    'power1.in', 'power1.out', 'power1.inOut',
-                    'power2.in', 'power2.out', 'power2.inOut',
-                    'power3.in', 'power3.out', 'power3.inOut',
-                    'power4.in', 'power4.out', 'power4.inOut',
-                    'back.in', 'back.out', 'back.inOut',
-                    'elastic.in', 'elastic.out', 'elastic.inOut',
-                    'bounce.in', 'bounce.out', 'bounce.inOut',
-                    'steps(5)', 'steps(10)', 'steps(20)',
-                    'circ.in', 'circ.out', 'circ.inOut',
-                    'expo.in', 'expo.out', 'expo.inOut',
-                    'sine.in', 'sine.out', 'sine.inOut',
-                    'none', 'linear'
-                  ].map(ease => (
+                  {EASING_OPTIONS.map(ease => (
                     <option key={ease} value={ease}>
                       {ease}
                     </option>
@@ -202,20 +190,7 @@ export function GroupAnimationsTab({
                         onChange={e => handleAnimationChange(animation.id, 'yoyoReturnEasing', e.target.value)}
                         className="w-full"
                       >
-                        {[
-                          'power1.in', 'power1.out', 'power1.inOut',
-                          'power2.in', 'power2.out', 'power2.inOut',
-                          'power3.in', 'power3.out', 'power3.inOut',
-                          'power4.in', 'power4.out', 'power4.inOut',
-                          'back.in', 'back.out', 'back.inOut',
-                          'elastic.in', 'elastic.out', 'elastic.inOut',
-                          'bounce.in', 'bounce.out', 'bounce.inOut',
-                          'steps(5)', 'steps(10)', 'steps(20)',
-                          'circ.in', 'circ.out', 'circ.inOut',
-                          'expo.in', 'expo.out', 'expo.inOut',
-                          'sine.in', 'sine.out', 'sine.inOut',
-                          'none', 'linear'
-                        ].map(ease => (
+                        {EASING_OPTIONS.map(ease => (
                           <option key={ease} value={ease}>
                             {ease}
                           </option>

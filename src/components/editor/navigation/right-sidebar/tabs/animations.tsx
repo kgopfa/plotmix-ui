@@ -1,11 +1,13 @@
 import {
   AnimatedCanvasObject,
-  ElementAnimation
+  ElementAnimation,
+  EASING_OPTIONS
 } from '@/types/canvas';
 import { useState, useEffect } from 'react';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
 import { useTimelineStore } from '@/stores/use-timeline-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
+import { ChevronDown } from 'lucide-react';
 
 interface AnimationsTabProps {
   selectedElement: AnimatedCanvasObject;
@@ -182,7 +184,7 @@ export function AnimationsTab({
   };
 
   return (
-    <div className="flex flex-col gap-6 p-4">
+    <div className="flex flex-col gap-6 p-2">
       {/* Header */}
       <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
         <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
@@ -280,43 +282,23 @@ export function AnimationsTab({
                   </label>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <label className="flex flex-col gap-1">
-                    <span className="text-sm font-medium text-gray-700">Type</span>
-                    <input
-                      type="text"
-                      value={animation.type}
-                      readOnly
-                      className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-600 cursor-not-allowed"
-                      title="Animation type cannot be changed after creation"
-                    />
-                  </label>
+                <div className="grid grid-cols-1 gap-3">
                   <label className="flex flex-col gap-1">
                     <span className="text-sm font-medium text-gray-700">Easing</span>
-                    <select
-                      value={animation.easing ?? 'none'}
-                      onChange={e => handleAnimationChange(animation.id, 'easing', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
-                    >
-                      {[
-                        'power1.in', 'power1.out', 'power1.inOut',
-                        'power2.in', 'power2.out', 'power2.inOut',
-                        'power3.in', 'power3.out', 'power3.inOut',
-                        'power4.in', 'power4.out', 'power4.inOut',
-                        'back.in', 'back.out', 'back.inOut',
-                        'elastic.in', 'elastic.out', 'elastic.inOut',
-                        'bounce.in', 'bounce.out', 'bounce.inOut',
-                        'steps(5)', 'steps(10)', 'steps(20)',
-                        'circ.in', 'circ.out', 'circ.inOut',
-                        'expo.in', 'expo.out', 'expo.inOut',
-                        'sine.in', 'sine.out', 'sine.inOut',
-                        'none', 'linear'
-                      ].map(ease => (
-                        <option key={ease} value={ease}>
-                          {ease}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <select
+                        value={animation.easing ?? 'none'}
+                        onChange={e => handleAnimationChange(animation.id, 'easing', e.target.value)}
+                        className="w-full px-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors appearance-none"
+                      >
+                        {EASING_OPTIONS.map(ease => (
+                          <option key={ease} value={ease}>
+                            {ease}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="size-3 absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+                    </div>
                   </label>
                 </div>
               </div>

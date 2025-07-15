@@ -62,7 +62,7 @@ export const AnimationsPanel: React.FC<AnimationsPanelProps> = ({
   }
 
   return (
-    <div className="h-full overflow-y-auto p-2 text-gray-800 pb-80">
+    <div className="h-full overflow-y-auto p-1 text-gray-800 pb-80">
       {hasGroupSelection ? (
         <GroupAnimationsTab
           selectedGroup={selectedGroup!}
