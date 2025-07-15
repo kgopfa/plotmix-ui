@@ -500,10 +500,9 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   // Selection menu handlers
   const handleSelectionMenuAnimate = useCallback(() => {
     if (selectedElements.length === 1) {
-      // Show the animations tab and activate the right panel for animations
-      const { setShowAnimationsTab, setActiveRightPanel } = useUIStore.getState();
+      // Show the animations tab (but don't switch right panel)
+      const { setShowAnimationsTab } = useUIStore.getState();
       setShowAnimationsTab(true);
-      setActiveRightPanel('animations');
     }
   }, [selectedElements]);
 
@@ -1399,10 +1398,9 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         if (element) {
           selectElement([element]);
           
-          // Show the animations tab and activate the right panel for animations
-          const { setShowAnimationsTab, setActiveRightPanel } = useUIStore.getState();
+          // Show the animations tab (but don't switch right panel)
+          const { setShowAnimationsTab } = useUIStore.getState();
           setShowAnimationsTab(true);
-          setActiveRightPanel('animations');
         }
         break;
       case 'delete':

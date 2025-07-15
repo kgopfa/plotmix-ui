@@ -217,10 +217,9 @@ export function ElementHierarchy({
           if (element) {
             onElementSelect(element);
             
-            // Show the animations tab and activate the right panel for animations
-            const { setShowAnimationsTab, setActiveRightPanel } = useUIStore.getState();
+            // Show the animations tab (but don't switch right panel)
+            const { setShowAnimationsTab } = useUIStore.getState();
             setShowAnimationsTab(true);
-            setActiveRightPanel('animations');
           }
         }
         break;
