@@ -2,7 +2,7 @@ import React from 'react';
 import { Zap, Plus } from 'lucide-react';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
-import { useSetActiveRightPanel } from '@/stores/use-ui-store';
+import { useSetActiveRightPanel, useUIStore } from '@/stores/use-ui-store';
 import { AnimationType, ElementAnimation, GsapEase } from '@/types/canvas';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
 
@@ -116,6 +116,10 @@ export const AnimationsTab: React.FC = () => {
 
     // Switch to the right sidebar animations panel
     setActiveRightPanel('animations');
+
+    // Close the left sidebar animations tab
+    const { setShowAnimationsTab } = useUIStore.getState();
+    setShowAnimationsTab(false);
 
     // Select the newly created animation in the animations panel after the next render cycle
     setTimeout(() => {
