@@ -215,7 +215,7 @@ export function AnimationCard({
                 )}
                 {animation.type === 'fade' && (
                   <label className="flex flex-col gap-1">
-                    <span className="text-sm font-medium text-gray-700">Target Opacity</span>
+                    <span className="text-sm font-medium text-gray-700">Opacity</span>
                     <input
                       type="number"
                       min="0"
