@@ -2,8 +2,6 @@
 
 import React, { useRef, useEffect } from 'react'
 import {
-  Video,
-  Clapperboard,
   WandSparkles,
   Palette,
   VolumeOff,
@@ -16,8 +14,6 @@ import {
 import { useActiveNav, useSetActiveNav, useSetHoverNav, useHoverNav, usePanelActions, usePanelState } from '@/stores/use-ui-store';
 
 import { ToolbarTab } from './tabs/toolbar-tab';
-import { SceneExplorerTab } from './tabs/scene-explorer-tab';
-import { VideoSettingsTab } from './tabs/video-settings-tab';
 import { UploadsTab } from './tabs/uploads-tab';
 import { TextTab } from './tabs/text-tab';
 import { AIToolsTab } from './tabs/ai-tools-tab';
@@ -27,8 +23,6 @@ import { LayersTab } from './tabs/layers-tab';
 type NavItem = { name: string; key: 'video' | 'scenes' | 'uploads' | 'ai' | 'text' | 'animations' | 'layers' | 'tools' | 'audio' | 'timeline'; icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; };
 
 const navigation: NavItem[] = [
-  { name: 'Video Settings', key: 'video', icon: Video },
-  { name: 'Scenes', key: 'scenes', icon: Clapperboard },
   { name: 'Uploads', key: 'uploads', icon: CircleFadingPlus },
   { name: 'AI', key: 'ai', icon: WandSparkles },
   { name: 'Text', key: 'text', icon: (props: React.SVGProps<SVGSVGElement>) => <TypeIcon {...props} strokeWidth={2.5} /> },
@@ -49,12 +43,6 @@ function classNames(...classes: string[]) {
 // Tab Content Component - Used for both hover and sticky tabs
 const TabContent: React.FC<{ navKey: string }> = ({ navKey }) => {
   switch (navKey) {
-    case 'scenes':
-      return <SceneExplorerTab />;
-    
-    case 'video':
-      return <VideoSettingsTab />;
-    
     case 'uploads':
       return <UploadsTab />;
 
