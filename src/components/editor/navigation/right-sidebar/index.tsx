@@ -7,6 +7,7 @@ import {
   VectorSquare,
 } from 'lucide-react';
 import { useActiveRightPanel, useSetActiveRightPanel } from '@/stores/use-ui-store';
+import { useSelectionStore } from '@/stores/use-selection-store';
 
 // Navigation item type for right sidebar
 type RightNavKey = 'properties' | 'animations' | 'history';
@@ -49,20 +50,28 @@ const navigation: RightNavItem[] = [
 export const RightSidebar: React.FC = () => {
   const activePanel = useActiveRightPanel();
   const setActivePanel = useSetActiveRightPanel();
+  const { selectedElements, selectedGroups } = useSelectionStore();
+
+  const hasSelection = selectedElements.length > 0 || selectedGroups.length > 0;
 
   const handleClick = (key: RightNavKey) => {
     setActivePanel(key);
   };
 
   return (
-    <div className="m-2 fixed right-0 top-16 z-40 w-16 overflow-visible">
+    <div className={`m-2 fixed right-0 top-16 z-40 w-16 overflow-visible transition-all duration-300 ease-out ${
+      hasSelection || activePanel === 'history' 
+        ? 'translate-x-0 opacity-100' 
+        : 'translate-x-full opacity-0'
+    }`}>
       <div className="relative bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-xl shadow-gray-200/50 rounded-2xl flex flex-col items-center">
         <nav className="mt-6 pb-6">
           <ul role="list" className="flex flex-col items-center space-y-3">
-                         {navigation.map((item) => {
-               const isActive = activePanel === item.key;
-               
-               return (
+            {navigation.map((item) => {
+              const isActive = activePanel === item.key;
+              const isDisabled = !hasSelection && item.key !== 'history';
+              
+              return (
                 <li key={item.key}>
                   <div className="relative">
                     <button
@@ -71,13 +80,16 @@ export const RightSidebar: React.FC = () => {
                         w-12 h-12 rounded-xl font-medium
                         transition-all duration-200 ease-out
                         transform hover:scale-105 active:scale-95
-                        ${isActive 
-                          ? item.activeColor 
-                          : `${item.color} ${item.hoverColor} hover:shadow-md`
+                        ${isDisabled 
+                          ? 'opacity-50 cursor-not-allowed' 
+                          : isActive 
+                            ? item.activeColor 
+                            : `${item.color} ${item.hoverColor} hover:shadow-md`
                         }
                       `}
-                                             onClick={() => handleClick(item.key)}
-                       title={item.name}
+                      onClick={() => !isDisabled && handleClick(item.key)}
+                      title={isDisabled ? `${item.name} (select an element first)` : item.name}
+                      disabled={isDisabled}
                     >
                       <item.icon 
                         aria-hidden="true" 
@@ -91,8 +103,8 @@ export const RightSidebar: React.FC = () => {
                       {isActive && (
                         <div className="absolute -right-1 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-white rounded-full shadow-sm"></div>
                       )}
-                                         </button>
-                   </div>
+                    </button>
+                  </div>
                 </li>
               );
             })}

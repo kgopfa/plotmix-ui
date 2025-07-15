@@ -1075,6 +1075,7 @@ export default function EditorCanvas() {
 
         {/* Floating Right Panel - Content */}
         {(() => {
+          // Only show right panel when there's a selection (except for history)
           const shouldShow = panelState.rightPanelVisible && activeRightPanel && (
             activeRightPanel === 'history' || (hasSelection && (activeRightPanel === 'properties' || activeRightPanel === 'animations'))
           );
@@ -1082,12 +1083,15 @@ export default function EditorCanvas() {
         })() && (
           <>
             <div
-              className="absolute right-20 bg-white border border-gray-200 rounded-lg shadow-sm overflow-y-auto z-30 mb-2 transform transition-all duration-300 ease-out animate-slide-in-right"
+              className={`absolute right-20 bg-white border border-gray-200 rounded-lg shadow-sm overflow-y-auto z-30 mb-2 transform transition-all duration-300 ease-out ${
+                hasSelection || activeRightPanel === 'history' 
+                  ? 'translate-x-0 opacity-100' 
+                  : 'translate-x-full opacity-0'
+              }`}
               style={{ 
                 width: `${panelState.rightPanelWidth / 16}rem`, 
                 top: '8px', 
                 bottom: `${panelState.timelineHeight + 8}px`,
-                animation: 'slideInFromRight 0.3s ease-out'
               }}
             >
               { activeRightPanel === 'properties' && hasSelection && (
