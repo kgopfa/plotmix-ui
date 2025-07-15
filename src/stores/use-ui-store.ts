@@ -95,6 +95,7 @@ interface UIState {
   navigation: NavigationState;
   activeRightPanel: RightPanelKey | null;
   hoverRightPanel: RightPanelKey | null;
+  showAnimationsTab: boolean;
 }
 
 // Actions
@@ -145,6 +146,9 @@ interface UIActions {
   setHoverNav: (nav: NavKey | null) => void;
   setActiveRightPanel: (panel: RightPanelKey) => void;
   setHoverRightPanel: (panel: RightPanelKey | null) => void;
+  
+  // Animations tab (independent of navigation)
+  setShowAnimationsTab: (show: boolean) => void;
   
   // Canvas Actions
   setCanvasSize: (sizeId: string) => void;
@@ -270,6 +274,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
       navigation: { activeNav: null, hoverNav: null },
       activeRightPanel: null,
       hoverRightPanel: null,
+      showAnimationsTab: false,
 
   // Panel Actions
   toggleLeftPanel: () => {
@@ -569,6 +574,13 @@ export const useUIStore = create<UIStore>((set, get) => ({
   setHoverRightPanel: (panel: RightPanelKey | null) => {
     set(produce((state) => {
       state.hoverRightPanel = panel;
+    }));
+  },
+
+  // Animations tab action
+  setShowAnimationsTab: (show: boolean) => {
+    set(produce((state) => {
+      state.showAnimationsTab = show;
     }));
   },
 

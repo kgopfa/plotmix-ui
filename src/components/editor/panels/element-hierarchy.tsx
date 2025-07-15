@@ -217,9 +217,10 @@ export function ElementHierarchy({
           if (element) {
             onElementSelect(element);
             
-            // Open the left sidebar animations tab (keep right sidebar on current panel)
-            const { setActiveNav } = useUIStore.getState();
-            setActiveNav('animations');
+            // Show the animations tab and activate the right panel for animations
+            const { setShowAnimationsTab, setActiveRightPanel } = useUIStore.getState();
+            setShowAnimationsTab(true);
+            setActiveRightPanel('animations');
           }
         }
         break;

@@ -8,10 +8,17 @@ import {
   Hourglass,
   CircleFadingPlus,
   Type as TypeIcon,
-  Rocket,
   Layers,
 } from 'lucide-react'
-import { useActiveNav, useSetActiveNav, useSetHoverNav, useHoverNav, usePanelActions, usePanelState } from '@/stores/use-ui-store';
+import {
+  useActiveNav, 
+  useSetActiveNav, 
+  useSetHoverNav, 
+  useHoverNav, 
+  usePanelActions, 
+  usePanelState, 
+  useUIStore 
+} from '@/stores/use-ui-store';
 
 import { ToolbarTab } from './tabs/toolbar-tab';
 import { UploadsTab } from './tabs/uploads-tab';
@@ -20,13 +27,12 @@ import { AIToolsTab } from './tabs/ai-tools-tab';
 import { AnimationsTab } from './tabs/animations-tab';
 import { LayersTab } from './tabs/layers-tab';
 
-type NavItem = { name: string; key: 'video' | 'scenes' | 'uploads' | 'ai' | 'text' | 'animations' | 'layers' | 'tools' | 'audio' | 'timeline'; icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; };
+type NavItem = { name: string; key: 'video' | 'scenes' | 'uploads' | 'ai' | 'text' | 'layers' | 'tools' | 'audio' | 'timeline'; icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; };
 
 const navigation: NavItem[] = [
   { name: 'Uploads', key: 'uploads', icon: CircleFadingPlus },
   { name: 'AI', key: 'ai', icon: WandSparkles },
   { name: 'Text', key: 'text', icon: (props: React.SVGProps<SVGSVGElement>) => <TypeIcon {...props} strokeWidth={2.5} /> },
-  { name: 'Animations', key: 'animations', icon: Rocket },
   { name: 'Layers', key: 'layers', icon: Layers },
   { name: 'Tools', key: 'tools', icon: Palette },
 ];
@@ -78,6 +84,8 @@ export const LeftSidebar: React.FC = () => {
   const setHoverNav = useSetHoverNav();
   const { toggleTimelineCollapse } = usePanelActions();
   const { isTimelineCollapsed } = usePanelState();
+  const showAnimationsTab = useUIStore(state => state.showAnimationsTab);
+  const setShowAnimationsTab = useUIStore(state => state.setShowAnimationsTab);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Clear any pending hover timeout
@@ -123,6 +131,10 @@ export const LeftSidebar: React.FC = () => {
     if (!target.closest('button')) {
       setActiveNav(null);
       setHoverNav(null);
+      // Also hide animations tab if it's open
+      if (showAnimationsTab) {
+        setShowAnimationsTab(false);
+      }
     }
   };
 
@@ -189,13 +201,13 @@ export const LeftSidebar: React.FC = () => {
         </nav>
       </div>
 
-      {/* Tab Panel - Shows on hover (when no active tab) OR when active (sticky) */}
-      {(activeNav || (!activeNav && hoverNav)) && (
+      {/* Tab Panel - Shows on hover (when no active tab) OR when active (sticky) OR when animations tab is shown */}
+      {(activeNav || (!activeNav && hoverNav) || showAnimationsTab) && (
         <>
           {/* Transparent bridge to ensure seamless hover */}
           <div
             className={`fixed pointer-events-auto ${
-              activeNav === 'animations' ? 'z-20' : 'z-[60]'
+              showAnimationsTab ? 'z-20' : 'z-[60]'
             }`}
             style={{ 
               left: '72px', // Start right after sidebar
@@ -214,7 +226,7 @@ export const LeftSidebar: React.FC = () => {
           {/* Actual tab panel */}
           <div
             className={`fixed pointer-events-none tab-panel-area ${
-              activeNav === 'animations' ? 'z-20' : 'z-[60]'
+              showAnimationsTab ? 'z-20' : 'z-[60]'
             }`}
             style={{ 
               left: '80px', // Position after bridge
@@ -225,11 +237,11 @@ export const LeftSidebar: React.FC = () => {
           >
             <div 
               className={`pointer-events-auto h-full ${
-                activeNav === 'animations' 
+                showAnimationsTab 
                   ? 'transform transition-all duration-300 ease-out' 
                   : 'animate-in slide-in-from-left-2 fade-in duration-200'
               }`}
-              style={activeNav === 'animations' ? { animation: 'slideInFromLeft 0.3s ease-out' } : {}}
+              style={showAnimationsTab ? { animation: 'slideInFromLeft 0.3s ease-out' } : {}}
               onMouseEnter={() => {
                 // Keep hover state active when entering tab content
                 clearHoverTimeout();
@@ -242,10 +254,14 @@ export const LeftSidebar: React.FC = () => {
                 if (!activeNav) {
                   handleHoverLeave();
                 }
+                // Hide animations tab when leaving tab area
+                if (showAnimationsTab && !activeNav && !hoverNav) {
+                  setShowAnimationsTab(false);
+                }
               }}
             >
               <div className={`h-full ${(activeNav || hoverNav) === 'tools' ? '' : 'overflow-hidden'}`}>
-                <TabContent navKey={activeNav || hoverNav!} />
+                <TabContent navKey={showAnimationsTab ? 'animations' : (activeNav || hoverNav!)} />
               </div>
             </div>
           </div>

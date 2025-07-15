@@ -215,10 +215,12 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
   // Canvas click handler - handles tool-specific actions
   const handleCanvasClick = useCallback((e: FederatedPointerEvent) => {
-    const { setActiveTool, setMaskPos, setLineStartPoint, setLineChaining, addChainedLineId, setClosingShape } = useUIStore.getState();
+    const { setActiveTool, setMaskPos, setLineStartPoint, setLineChaining, addChainedLineId, setClosingShape, setShowAnimationsTab } = useUIStore.getState();
     
     if (tool === 'select') {
       clearSelections();
+      // Hide animations tab when clearing selections
+      setShowAnimationsTab(false);
       return;
     }
 
@@ -362,6 +364,9 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       }
     } else {
       clearSelections();
+      // Hide animations tab when clearing selections
+      const { setShowAnimationsTab } = useUIStore.getState();
+      setShowAnimationsTab(false);
     }
   }, [elements, selectElement, clearSelections]);
 
@@ -495,9 +500,10 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   // Selection menu handlers
   const handleSelectionMenuAnimate = useCallback(() => {
     if (selectedElements.length === 1) {
-      // Open the left sidebar animations tab (keep right sidebar on current panel)
-      const { setActiveNav } = useUIStore.getState();
-      setActiveNav('animations');
+      // Show the animations tab and activate the right panel for animations
+      const { setShowAnimationsTab, setActiveRightPanel } = useUIStore.getState();
+      setShowAnimationsTab(true);
+      setActiveRightPanel('animations');
     }
   }, [selectedElements]);
 
@@ -1393,9 +1399,10 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         if (element) {
           selectElement([element]);
           
-          // Open the left sidebar animations tab (keep right sidebar on current panel)
-          const { setActiveNav } = useUIStore.getState();
-          setActiveNav('animations');
+          // Show the animations tab and activate the right panel for animations
+          const { setShowAnimationsTab, setActiveRightPanel } = useUIStore.getState();
+          setShowAnimationsTab(true);
+          setActiveRightPanel('animations');
         }
         break;
       case 'delete':
