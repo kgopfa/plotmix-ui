@@ -24,13 +24,17 @@ import {
   FolderOpen,
   Download,
   Palette,
-  Sliders
+  Sliders,
+  Move3D
 } from 'lucide-react'
 import { ProjectControls } from './project-controls';
 import { PathModeIndicator } from './path-mode-indicator';
 import { PanelToggleButtons } from './panel-toggle-buttons';
 import { SnappingControls } from './snapping-controls';
 import { SelectionIndicator } from './selection-indicator';
+import { SnappingOptions } from './snap-options';
+import { useGridSnapping } from '@/hooks/use-grid-snapping';
+import { useElementSnapping } from '@/hooks/use-element-snapping';
 
 // Simplified interface - only for props that can't be accessed via stores
 interface MainNavBarProps {
@@ -44,12 +48,13 @@ interface MainNavBarProps {
 
 // Settings navigation configuration
 const settingsNavigation = [
-  { name: 'Canvas Settings', href: '#', icon: Monitor, current: true },
-  { name: 'Animation Settings', href: '#', icon: Layers, current: false },
-  { name: 'Project Settings', href: '#', icon: FolderOpen, current: false },
-  { name: 'Export Settings', href: '#', icon: Download, current: false },
-  { name: 'Theme & Appearance', href: '#', icon: Palette, current: false },
-  { name: 'Preferences', href: '#', icon: Sliders, current: false },
+  { name: 'Canvas Settings', href: '#', icon: Monitor },
+  { name: 'Animation Settings', href: '#', icon: Layers },
+  { name: 'Project Settings', href: '#', icon: FolderOpen },
+  { name: 'Snapping Settings', href: '#', icon: Move3D },
+  { name: 'Export Settings', href: '#', icon: Download },
+  { name: 'Theme & Appearance', href: '#', icon: Palette },
+  { name: 'Preferences', href: '#', icon: Sliders },
 ];
 
 function classNames(...classes: (string | boolean | undefined)[]): string {
@@ -61,6 +66,50 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
   onUngroupElements
 }) => {
   const [projectName, setProjectName] = useState('Project Name');
+  const [showSnappingSettings, setShowSnappingSettings] = useState(false);
+  const [currentSettingsItem, setCurrentSettingsItem] = useState('Canvas Settings');
+
+  // Grid snapping hook
+  const { 
+    gridConfig, 
+    setGridConfig, 
+    toggleGrid, 
+    toggleSnapEnabled,
+    isSnapTemporarilyDisabled 
+  } = useGridSnapping({
+    size: 10,
+    enabled: true,
+    visible: false,
+    snapThreshold: 8
+  });
+
+  // Element snapping hook
+  const {
+    config: elementSnapConfig,
+    setConfig: setElementSnapConfig,
+    toggleEnabled: toggleElementSnap,
+    toggleGuides: toggleElementSnapGuides,
+    toggleSpacing: toggleElementSpacing,
+    toggleDistribution: toggleElementDistribution,
+    isSnapTemporarilyDisabled: isElementSnapDisabled
+  } = useElementSnapping({
+    enabled: true,
+    snapThreshold: 10,
+    showGuides: true,
+    enableSpacing: true,
+    enableDistribution: true
+  });
+
+  const handleSettingsClick = (settingName: string) => {
+    setCurrentSettingsItem(settingName);
+    
+    if (settingName === 'Snapping Settings') {
+      setShowSnappingSettings(true);
+    } else {
+      setShowSnappingSettings(false);
+    }
+    // Handle other settings here in the future
+  };
 
   return (
     <Disclosure as="nav" className="bg-white border-b border-gray-200 shadow-lg">
@@ -110,17 +159,21 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                             <MenuItem>
                               <a
                                 href={item.href}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handleSettingsClick(item.name);
+                                }}
                                 className={classNames(
-                                  item.current 
+                                  currentSettingsItem === item.name
                                     ? 'bg-gray-50 text-indigo-600' 
                                     : 'text-gray-500 hover:bg-gray-50 hover:text-indigo-600 data-focus:bg-gray-50 data-focus:text-indigo-600',
-                                  'group flex gap-x-3 rounded-md p-2 text-sm font-semibold data-focus:outline-hidden',
+                                  'group flex gap-x-3 rounded-md p-2 text-sm font-semibold data-focus:outline-hidden cursor-pointer',
                                 )}
                               >
                                 <item.icon
                                   aria-hidden="true"
                                   className={classNames(
-                                    item.current 
+                                    currentSettingsItem === item.name
                                       ? 'text-indigo-600' 
                                       : 'text-gray-500 group-hover:text-indigo-600',
                                     'size-5 shrink-0',
@@ -134,6 +187,32 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                       </ul>
                     </nav>
                   </MenuItems>
+                  
+                  {/* Snapping Settings Panel - positioned next to settings menu */}
+                  {showSnappingSettings && (
+                    <div className="absolute left-60 top-0 z-20">
+                      <div 
+                        className="fixed inset-0 z-10" 
+                        onClick={() => setShowSnappingSettings(false)}
+                      />
+                      <div className="relative z-20">
+                        <SnappingOptions
+                          gridConfig={gridConfig}
+                          onToggleGrid={toggleGrid}
+                          onToggleGridSnap={toggleSnapEnabled}
+                          onGridSizeChange={(size: number) => setGridConfig({ size })}
+                          elementSnapConfig={elementSnapConfig}
+                          onToggleElementSnap={toggleElementSnap}
+                          onToggleGuides={toggleElementSnapGuides}
+                          onToggleSpacing={toggleElementSpacing}
+                          onToggleDistribution={toggleElementDistribution}
+                          onSnapThresholdChange={(threshold: number) => setElementSnapConfig({ snapThreshold: threshold })}
+                          isGridSnapTemporarilyDisabled={isSnapTemporarilyDisabled}
+                          isElementSnapTemporarilyDisabled={isElementSnapDisabled}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </Menu>
               </div>
             </div>
@@ -224,6 +303,8 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
           </div>
         </div>
       </div>
+
+
 
       {/* Mobile menu */}
       <DisclosurePanel className="lg:hidden">
