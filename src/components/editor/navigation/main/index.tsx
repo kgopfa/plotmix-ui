@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Disclosure, 
   DisclosureButton, 
@@ -19,12 +19,7 @@ import {
   Search, 
   Undo2, 
   CloudCheck,
-  Monitor,
-  Layers,
-  FolderOpen,
-  Download,
-  Palette,
-  Sliders,
+  Video,
   Move3D
 } from 'lucide-react'
 import { ProjectControls } from './project-controls';
@@ -33,6 +28,7 @@ import { PanelToggleButtons } from './panel-toggle-buttons';
 import { SnappingControls } from './snapping-controls';
 import { SelectionIndicator } from './selection-indicator';
 import { SnappingOptions } from './snap-options';
+import { VideoOptions } from './video-options';
 import { useGridSnapping } from '@/hooks/use-grid-snapping';
 import { useElementSnapping } from '@/hooks/use-element-snapping';
 
@@ -48,13 +44,8 @@ interface MainNavBarProps {
 
 // Settings navigation configuration
 const settingsNavigation = [
-  { name: 'Canvas Settings', href: '#', icon: Monitor },
-  { name: 'Animation Settings', href: '#', icon: Layers },
-  { name: 'Project Settings', href: '#', icon: FolderOpen },
+  { name: 'Video Settings', href: '#', icon: Video },
   { name: 'Snapping Settings', href: '#', icon: Move3D },
-  { name: 'Export Settings', href: '#', icon: Download },
-  { name: 'Theme & Appearance', href: '#', icon: Palette },
-  { name: 'Preferences', href: '#', icon: Sliders },
 ];
 
 function classNames(...classes: (string | boolean | undefined)[]): string {
@@ -67,7 +58,10 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
 }) => {
   const [projectName, setProjectName] = useState('Project Name');
   const [showSnappingSettings, setShowSnappingSettings] = useState(false);
-  const [currentSettingsItem, setCurrentSettingsItem] = useState('Canvas Settings');
+  const [showVideoSettings, setShowVideoSettings] = useState(false);
+  const [currentSettingsItem, setCurrentSettingsItem] = useState('Video Settings');
+  const [hoveredSettingsItem, setHoveredSettingsItem] = useState<string | null>(null);
+  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
 
   // Grid snapping hook
   const { 
@@ -102,14 +96,48 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
 
   const handleSettingsClick = (settingName: string) => {
     setCurrentSettingsItem(settingName);
+  };
+
+  const handleSettingsHover = (settingName: string) => {
+    // Clear any existing timeout
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout);
+      setHoverTimeout(null);
+    }
+    
+    setHoveredSettingsItem(settingName);
     
     if (settingName === 'Snapping Settings') {
       setShowSnappingSettings(true);
+      setShowVideoSettings(false);
+    } else if (settingName === 'Video Settings') {
+      setShowVideoSettings(true);
+      setShowSnappingSettings(false);
     } else {
       setShowSnappingSettings(false);
+      setShowVideoSettings(false);
     }
-    // Handle other settings here in the future
   };
+
+  const handleSettingsLeave = () => {
+    // Add a small delay before hiding the panels
+    const timeout = setTimeout(() => {
+      setHoveredSettingsItem(null);
+      setShowSnappingSettings(false);
+      setShowVideoSettings(false);
+    }, 150); // 150ms delay
+    
+    setHoverTimeout(timeout);
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeout) {
+        clearTimeout(hoverTimeout);
+      }
+    };
+  }, [hoverTimeout]);
 
   return (
     <Disclosure as="nav" className="bg-white border-b border-gray-200 shadow-lg">
@@ -152,7 +180,11 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                     transition
                     className="absolute left-0 z-10 mt-2 -ml-2 w-56 origin-top-left rounded-md bg-white pt-3 pb-3 shadow-lg ring-1 ring-black/5 transition focus:outline-hidden data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
                   >
-                    <nav aria-label="Settings menu" className="flex flex-1 flex-col">
+                    <nav 
+                      aria-label="Settings menu" 
+                      className="flex flex-1 flex-col"
+                      onMouseLeave={handleSettingsLeave}
+                    >
                       <ul role="list" className="space-y-4 px-2">
                         {settingsNavigation.map((item) => (
                           <li key={item.name}>
@@ -163,8 +195,9 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                                   e.preventDefault();
                                   handleSettingsClick(item.name);
                                 }}
+                                onMouseEnter={() => handleSettingsHover(item.name)}
                                 className={classNames(
-                                  currentSettingsItem === item.name
+                                  currentSettingsItem === item.name || hoveredSettingsItem === item.name
                                     ? 'bg-gray-50 text-indigo-600' 
                                     : 'text-gray-500 hover:bg-gray-50 hover:text-indigo-600 data-focus:bg-gray-50 data-focus:text-indigo-600',
                                   'group flex gap-x-3 rounded-md p-2 text-sm font-semibold data-focus:outline-hidden cursor-pointer',
@@ -173,7 +206,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                                 <item.icon
                                   aria-hidden="true"
                                   className={classNames(
-                                    currentSettingsItem === item.name
+                                    currentSettingsItem === item.name || hoveredSettingsItem === item.name
                                       ? 'text-indigo-600' 
                                       : 'text-gray-500 group-hover:text-indigo-600',
                                     'size-5 shrink-0',
@@ -188,13 +221,13 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                     </nav>
                   </MenuItems>
                   
-                  {/* Snapping Settings Panel - positioned next to settings menu */}
+                  {/* Settings Panels - positioned next to settings menu */}
                   {showSnappingSettings && (
-                    <div className="absolute left-60 top-0 z-20">
-                      <div 
-                        className="fixed inset-0 z-10" 
-                        onClick={() => setShowSnappingSettings(false)}
-                      />
+                    <div 
+                      className="absolute left-60 top-0 z-20"
+                      onMouseEnter={() => handleSettingsHover('Snapping Settings')}
+                      onMouseLeave={handleSettingsLeave}
+                    >
                       <div className="relative z-20">
                         <SnappingOptions
                           gridConfig={gridConfig}
@@ -210,6 +243,19 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                           isGridSnapTemporarilyDisabled={isSnapTemporarilyDisabled}
                           isElementSnapTemporarilyDisabled={isElementSnapDisabled}
                         />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Video Settings Panel - positioned next to settings menu */}
+                  {showVideoSettings && (
+                    <div 
+                      className="absolute left-60 top-0 z-20"
+                      onMouseEnter={() => handleSettingsHover('Video Settings')}
+                      onMouseLeave={handleSettingsLeave}
+                    >
+                      <div className="relative z-20">
+                        <VideoOptions />
                       </div>
                     </div>
                   )}
