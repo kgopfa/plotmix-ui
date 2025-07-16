@@ -15,6 +15,7 @@ import ResizeHandle from './resize-handle';
 import RadiusHandle from './radius-handle';
 import { AnimatedTextGroup } from './animated-text-group';
 import { GroupSelection } from './group-selection';
+import { useCanvasState } from '@/stores/use-ui-store';
 
 interface DesignCanvasProps {
   dimensions: { width: number; height: number };
@@ -95,9 +96,17 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
     isElementInCustomOrPolygonGroup
   } = props;
 
-  // Define canvas frame dimensions (like a typical design canvas)
-  const canvasFrameWidth = 1920;
-  const canvasFrameHeight = 1080;
+  // Get canvas size from UI store
+  const canvasState = useCanvasState();
+  
+  // Get current canvas size
+  const currentSize = canvasState.currentSizeId === 'custom' 
+    ? canvasState.customSize 
+    : canvasState.availableSizes.find(size => size.id === canvasState.currentSizeId);
+
+  // Use current canvas size or fallback to default
+  const canvasFrameWidth = currentSize?.width || 1280;
+  const canvasFrameHeight = currentSize?.height || 720;
   
   // Calculate position to center the canvas frame
   const canvasX = (dimensions.width - canvasFrameWidth) / 2;
