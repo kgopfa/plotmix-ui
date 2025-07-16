@@ -998,6 +998,16 @@ export default function EditorCanvas() {
             }
           }}
           onMouseLeave={() => setMaskPos(null)}
+          onClick={e => {
+            // Only handle clicks on the main container itself (not on canvas or other elements)
+            if (e.target === e.currentTarget) {
+              // Deselect all elements when clicking on empty space
+              selectElement(null);
+              // Hide animations tab when clearing selections
+              const { setShowAnimationsTab } = useUIStore.getState();
+              setShowAnimationsTab(false);
+            }
+          }}
         >
           {/* Path Mode Banner */}
           {toolState.isPathMode && (

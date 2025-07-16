@@ -1251,6 +1251,31 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   };
 
   const handleCanvasPointerDown = (e: FederatedPointerEvent) => {
+    // Handle deselection when clicking on empty canvas areas (only for select tool)
+    if (tool === 'select') {
+      // Check if we clicked on an empty area (no element was hit)
+      const hitElement = elements.find(element => {
+        const shapeRef = shapeRefs.current[element.id];
+        if (!shapeRef) return false;
+        
+        // Check if the click point is within the element's bounds
+        const bounds = shapeRef.getBounds();
+        return e.global.x >= bounds.x && 
+               e.global.x <= bounds.x + bounds.width && 
+               e.global.y >= bounds.y && 
+               e.global.y <= bounds.y + bounds.height;
+      });
+      
+      // If no element was hit, deselect all elements
+      if (!hitElement) {
+        clearSelections();
+        // Hide animations tab when clearing selections
+        const { setShowAnimationsTab } = useUIStore.getState();
+        setShowAnimationsTab(false);
+        return;
+      }
+    }
+    
     if (tool === 'draw') {
       setIsDrawing(true);
       const newPoint = { x: e.global.x, y: e.global.y };
