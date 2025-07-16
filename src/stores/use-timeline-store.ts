@@ -8,6 +8,7 @@ import { AnimatedCanvasObject, CanvasGroup, ElementAnimation } from '@/types/can
 import { TimelineTrackData } from '@/types/timeline';
 import { calculateEffectiveEndTime, calculateEffectiveDuration } from '@/utils/animation-utils';
 import { useCanvasStore } from '@/stores/use-canvas-store';
+import { useSelectionStore } from '@/stores/use-selection-store';
 
 // Enable Immer MapSet plugin for Map support
 enableMapSet();
@@ -855,6 +856,23 @@ export const useTimelineStore = create<TimelineStore>()(
             }
           }
         }));
+        
+        // Update the canvas store second (to maintain consistency)
+        const canvasStore = useCanvasStore.getState();
+        canvasStore.updateElementAnimation(elementId, animationId, { 
+          duration: newEffectiveDuration, 
+          startTime: startTime 
+        });
+        
+        // Update the selection store to ensure the animations tab gets the updated data
+        const selectionStore = useSelectionStore.getState();
+        const updatedElement = canvasStore.getElementById(elementId);
+        if (updatedElement && selectionStore.isSelected(updatedElement)) {
+          // Re-select the element to update the selection store with fresh data
+          selectionStore.select(updatedElement);
+        }
+        
+        // Update tracks after both stores are consistent
         get().updateTracks();
       },
 

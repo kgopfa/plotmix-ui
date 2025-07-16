@@ -205,6 +205,7 @@ export function TimelineTrack({
           <AnimationBlock
             key={animation.id}
             animation={animation}
+            elementId={id}
             scale={scale}
             isSelected={isSelected}
             onClick={() => onAnimationClick?.(animation)}

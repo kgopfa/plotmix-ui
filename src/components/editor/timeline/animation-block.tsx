@@ -4,6 +4,7 @@ import { useTimelineStore } from '@/stores/use-timeline-store';
 
 interface AnimationBlockProps {
   animation: ElementAnimation;
+  elementId: string; // Add elementId prop
   scale: number;
   isSelected: boolean;
   onClick?: () => void;
@@ -23,6 +24,7 @@ const BLOCK_COLORS = [
 
 export const AnimationBlock: React.FC<AnimationBlockProps> = ({
   animation,
+  elementId, // Add elementId to destructuring
   scale,
   isSelected,
   onClick,
@@ -83,8 +85,8 @@ export const AnimationBlock: React.FC<AnimationBlockProps> = ({
     
     const newEffectiveDuration = Math.max(0.1, newWidth / scale);
     
-    // Update through Zustand instead of onChange callback
-    updateAnimationFromTimeline(animation.id, "elementId", newEffectiveDuration, animation.startTime);
+    // Use the actual elementId instead of hardcoded string
+    updateAnimationFromTimeline(animation.id, elementId, newEffectiveDuration, animation.startTime);
   };
 
   const handleMouseUp = () => {
