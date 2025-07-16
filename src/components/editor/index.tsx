@@ -26,8 +26,6 @@ import { MainNavBar } from './navigation/main';
 import { LeftSidebar } from './navigation/left-sidebar';
 import { RightSidebar } from './navigation/right-sidebar';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
-import { ZoomWrapper } from './zoom-wrapper';
-import { EditorZoomRef } from '@/hooks/use-editor-zoom';
 
 
 export default function EditorCanvas() {
@@ -91,14 +89,13 @@ export default function EditorCanvas() {
 
   const canvasRef = useRef<CanvasRef | null>(null);
   const imageFileInputRef = useRef<HTMLInputElement>(null);
-  const zoomRef = useRef<EditorZoomRef | null>(null);
 
   // Timeline store integration
   const {
     setCanvasRef: setTimelineCanvasRef,
   } = useTimelineIntegration();
 
-  // Canvas zoom state - will migrate this to UI store in next iteration
+  // Canvas zoom state - will be implemented with pixi-viewport
   const [canvasZoom, setCanvasZoom] = useState(1);
 
   // Element snapping functionality - only keep what's needed for canvas operations
@@ -952,22 +949,6 @@ export default function EditorCanvas() {
     <div className="h-screen w-screen flex flex-col">
       {/* Options Bar */}
       <MainNavBar
-        canvasZoom={canvasZoom}
-        onZoomIn={() => {
-          if (zoomRef.current) {
-            zoomRef.current.zoomIn();
-          }
-        }}
-        onZoomOut={() => {
-          if (zoomRef.current) {
-            zoomRef.current.zoomOut();
-          }
-        }}
-        onResetZoom={() => {
-          if (zoomRef.current) {
-            zoomRef.current.resetZoomToOneHundredPercent();
-          }
-        }}
         onGroupElements={handleGroupElements}
         onUngroupElements={handleUngroupElements}
       />
@@ -978,101 +959,94 @@ export default function EditorCanvas() {
 
       {/* Main Body - Fixed centered canvas */}
       <div className="flex-1 relative overflow-hidden">
-        {/* Zoom Wrapper for the entire editor area */}
-        <ZoomWrapper
-          ref={zoomRef}
-          onZoomChange={setCanvasZoom}
-          className="absolute inset-0"
+        {/* Fixed Canvas Container */}
+        <main
+          ref={containerRef}
+          className="absolute inset-0 bg-slate-100 flex items-start justify-start pt-16 pl-20"
+          onMouseMove={e => {
+            if (toolState.activeTool !== 'select') {
+              const rect = e.currentTarget.getBoundingClientRect();
+              setMaskPos({
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top,
+              });
+            }
+          }}
+          onMouseLeave={() => setMaskPos(null)}
+          onClick={e => {
+            // Only handle clicks on the main container itself (not on canvas or other elements)
+            if (e.target === e.currentTarget) {
+              // Deselect all elements when clicking on empty space
+              selectElement(null);
+              // Hide animations tab when clearing selections
+              const { setShowAnimationsTab } = useUIStore.getState();
+              setShowAnimationsTab(false);
+            }
+          }}
         >
-          {/* Fixed Canvas Container */}
-          <main
-            ref={containerRef}
-            className="absolute inset-0 flex items-start justify-start pt-16 pl-20"
-            onMouseMove={e => {
-              if (toolState.activeTool !== 'select') {
-                const rect = e.currentTarget.getBoundingClientRect();
-                setMaskPos({
-                  x: e.clientX - rect.left,
-                  y: e.clientY - rect.top,
-                });
-              }
-            }}
-            onMouseLeave={() => setMaskPos(null)}
-            onClick={e => {
-              // Only handle clicks on the main container itself (not on canvas or other elements)
-              if (e.target === e.currentTarget) {
-                // Deselect all elements when clicking on empty space
-                selectElement(null);
-                // Hide animations tab when clearing selections
-                const { setShowAnimationsTab } = useUIStore.getState();
-                setShowAnimationsTab(false);
-              }
-            }}
-          >
-          {/* Path Mode Banner */}
-          {toolState.isPathMode && (
-            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-blue-100 text-blue-800 px-4 py-2 rounded-lg shadow-md z-50 flex items-center gap-4">
-              <span>
-                <strong>Path Drawing Mode:</strong> Select a tool and draw a path that your element will follow.
-              </span>
-              <button
-                className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
-                onClick={() => {
-                  togglePathMode();
-                  setAnimationTarget(null);
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          )}
-
-          {/* Navigation and Path Controls */}
-          <div
-            className="absolute bottom-4 z-20 flex flex-col gap-2 transition-all duration-300"
-            style={{ right: `${panelState.rightPanelVisible ? panelState.rightPanelWidth + 16 + 80 : 16 + 80}px` }}
-          >
-            {/* Path visibility toggle - only show if paths exist */}
-            {canvasObjects.some(el => el.isAnimationPath) && (
-              <button
-                className={`px-3 py-1.5 rounded shadow flex items-center ${toolState.showPaths ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'}`}
-                onClick={() => toggleShowPaths()}
-                title={toolState.showPaths ? 'Hide Animation Paths' : 'Show Animation Paths'}
-              >
-                <svg className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M3 17.25V21H6.75L17.81 9.94L14.06 6.19L3 17.25Z"
-                    fill={toolState.showPaths ? "white" : "currentColor"} />
-                  <path d="M20.71 7.04C21.1 6.65 21.1 6.02 20.71 5.63L18.37 3.29C17.98 2.9 17.35 2.9 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04Z"
-                    fill={toolState.showPaths ? "white" : "currentColor"} />
-                </svg>
-                {toolState.showPaths ? 'Paths Visible' : 'Paths Hidden'}
-              </button>
-            )}
+        {/* Path Mode Banner */}
+        {toolState.isPathMode && (
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-blue-100 text-blue-800 px-4 py-2 rounded-lg shadow-md z-50 flex items-center gap-4">
+            <span>
+              <strong>Path Drawing Mode:</strong> Select a tool and draw a path that your element will follow.
+            </span>
+            <button
+              className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+              onClick={() => {
+                togglePathMode();
+                setAnimationTarget(null);
+              }}
+            >
+              Cancel
+            </button>
           </div>
+        )}
 
-          {/* Fixed Centered Canvas */}
-          {dimensions.width > 0 && dimensions.height > 0 ? (
-            <CanvasFrame>
-              <Canvas
-                ref={canvasRef}
-                dimensions={{
-                  // Use logical canvas dimensions from store
-                  width: canvasState.currentSizeId === 'custom' 
-                    ? canvasState.customSize?.width || 1920 
-                    : canvasState.availableSizes.find(s => s.id === canvasState.currentSizeId)?.width || 1920,
-                  height: canvasState.currentSizeId === 'custom' 
-                    ? canvasState.customSize?.height || 1080 
-                    : canvasState.availableSizes.find(s => s.id === canvasState.currentSizeId)?.height || 1080
-                }}
-              />
-            </CanvasFrame>
-          ) : (
-            <div className="flex items-center justify-center bg-gray-100 rounded-lg shadow-lg border border-gray-200 w-2/3 aspect-video">
-              <div className="text-gray-500">Loading canvas...</div>
-            </div>
+        {/* Navigation and Path Controls */}
+        <div
+          className="absolute bottom-4 z-20 flex flex-col gap-2 transition-all duration-300"
+          style={{ right: `${panelState.rightPanelVisible ? panelState.rightPanelWidth + 16 + 80 : 16 + 80}px` }}
+        >
+          {/* Path visibility toggle - only show if paths exist */}
+          {canvasObjects.some(el => el.isAnimationPath) && (
+            <button
+              className={`px-3 py-1.5 rounded shadow flex items-center ${toolState.showPaths ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'}`}
+              onClick={() => toggleShowPaths()}
+              title={toolState.showPaths ? 'Hide Animation Paths' : 'Show Animation Paths'}
+            >
+              <svg className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 17.25V21H6.75L17.81 9.94L14.06 6.19L3 17.25Z"
+                  fill={toolState.showPaths ? "white" : "currentColor"} />
+                <path d="M20.71 7.04C21.1 6.65 21.1 6.02 20.71 5.63L18.37 3.29C17.98 2.9 17.35 2.9 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04Z"
+                  fill={toolState.showPaths ? "white" : "currentColor"} />
+              </svg>
+              {toolState.showPaths ? 'Paths Visible' : 'Paths Hidden'}
+            </button>
           )}
+        </div>
+
+        {/* Fixed Centered Canvas */}
+        {dimensions.width > 0 && dimensions.height > 0 ? (
+          <CanvasFrame>
+            <Canvas
+              ref={canvasRef}
+              dimensions={{
+                // Use logical canvas dimensions from store
+                width: canvasState.currentSizeId === 'custom' 
+                  ? canvasState.customSize?.width || 1920 
+                  : canvasState.availableSizes.find(s => s.id === canvasState.currentSizeId)?.width || 1920,
+                height: canvasState.currentSizeId === 'custom' 
+                  ? canvasState.customSize?.height || 1080 
+                  : canvasState.availableSizes.find(s => s.id === canvasState.currentSizeId)?.height || 1080
+              }}
+            />
+          </CanvasFrame>
+        ) : (
+          <div className="flex items-center justify-center bg-gray-100 rounded-lg shadow-lg border border-gray-200 w-2/3 aspect-video">
+            <div className="text-gray-500">Loading canvas...</div>
+          </div>
+        )}
         </main>
-        </ZoomWrapper>
 
         {/* Mask Overlay - Fixed position relative to viewport */}
         <MaskOverlay

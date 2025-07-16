@@ -36,10 +36,10 @@ import { ProjectManager } from '@/lib/project-manager';
 
 // Simplified interface - only for props that can't be accessed via stores
 interface MainNavBarProps {
-  canvasZoom: number;
-  onZoomIn: () => void;
-  onZoomOut: () => void;
-  onResetZoom: () => void;
+  canvasZoom?: number;
+  onZoomIn?: () => void;
+  onZoomOut?: () => void;
+  onResetZoom?: () => void;
   onGroupElements: () => void;
   onUngroupElements: () => void;
 }

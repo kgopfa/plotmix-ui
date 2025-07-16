@@ -8,8 +8,8 @@ import { usePanelState } from '@/stores/use-ui-store';
 import { useShallow } from 'zustand/react/shallow';
 
 interface TimelineProps {
-  canvasZoom: number;
-  onCanvasZoom: (zoom: number) => void;
+  canvasZoom?: number;
+  onCanvasZoom?: (zoom: number) => void;
 }
 
 export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
@@ -47,7 +47,7 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
   const [zoomMode, setZoomMode] = useState<'time' | 'view'>('view');
 
   // Slider value derived from mode
-  const sliderValue = zoomMode === 'time' ? timelineUI.scale : canvasZoom * 100;
+  const sliderValue = zoomMode === 'time' ? timelineUI.scale : (canvasZoom || 1) * 100;
 
   // Pre-warm animation durations for newly detected animations
   useEffect(() => {
@@ -294,7 +294,7 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
               if (zoomMode === 'time') {
                 setScale(val);
               } else {
-                onCanvasZoom(val / 100);
+                onCanvasZoom?.(val / 100);
               }
             }}
             className="h-2 w-32 cursor-pointer appearance-none bg-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-400 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-blue-400 [&::-moz-range-thumb]:border-none [&::-moz-range-thumb]:cursor-pointer"
