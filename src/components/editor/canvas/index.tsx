@@ -17,11 +17,11 @@ import RadiusHandle from './radius-handle';
 import { TextEditor } from './text-editor';
 import { TextGroupEditor } from './textgroup-editor';
 import { AnimatedTextGroup } from './animated-text-group';
-import { CanvasContent } from './canvas-content';
+// CanvasContent import removed - zoom functionality removed
 import { GroupSelection } from './group-selection';
 import { ContextMenu } from './context-menu';
 import { SelectionMenu } from './selection-menu';
-import { Viewport } from 'pixi-viewport';
+// Viewport import removed - zoom functionality removed
 import { GridOverlay } from './grid-overlay';
 import { GridConfig } from '../../../utils/grid-utils';
 import { SnapGuides } from './snap-guides';
@@ -59,13 +59,13 @@ export interface CanvasRef {
   getGroupContainers: () => Record<string, Container>;
   zoomIn: () => void; // Kept as stub for UI compatibility
   zoomOut: () => void; // Kept as stub for UI compatibility
-  getViewport: () => Viewport | null;
-  centerOnElement: (id?: string) => void;
-  zoomToFitElement: (id?: string) => void;
+  getViewport: () => Container | null; // Changed from Viewport to Container
+  centerOnElement: (id?: string) => void; // Kept as stub for UI compatibility
+  zoomToFitElement: (id?: string) => void; // Kept as stub for UI compatibility
   getCurrentZoom: () => number; // Kept as stub for UI compatibility
   setZoom: (scale: number) => void; // Kept as stub for UI compatibility
-  getViewportCenter: () => { x: number; y: number };
-  resetToCenter: () => void;
+  getViewportCenter: () => { x: number; y: number }; // Kept as stub for UI compatibility
+  resetToCenter: () => void; // Kept as stub for UI compatibility
   resetZoomToOneHundredPercent: () => void; // Kept as stub for UI compatibility
 }
 
@@ -130,7 +130,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
   const shapeRefs = useRef<Record<string, Container>>({});
   const groupContainers = useRef<Record<string, Container>>({});
-  const viewportRef = useRef<Viewport | null>(null);
   const HANDLE_SIZE = 10;
   const drawingRef = useRef<Graphics | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -551,56 +550,22 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       // Zoom functionality removed - kept as stub for UI compatibility
       console.log('Set zoom to', scale, '- functionality removed');
     },
-    getViewport: () => viewportRef.current,
+    getViewport: () => null, // Zoom functionality removed
     centerOnElement: (id?: string) => {
-      const targetId = id || selectedIds[0];
-      if (!targetId) return;
-
-      const shape = shapeRefs.current[targetId];
-      const viewport = viewportRef.current;
-      if (!shape || !viewport) return;
-
-      const bounds = shape.getBounds();
-      viewport.animate({
-        position: {
-          x: viewport.worldScreenWidth / 2 - (bounds.x + bounds.width / 2),
-          y: viewport.worldScreenHeight / 2 - (bounds.y + bounds.height / 2)
-        },
-        time: 300
-      });
+      // Zoom functionality removed - kept as stub for UI compatibility
+      console.log('Center on element', id, '- functionality removed');
     },
     zoomToFitElement: (id?: string) => {
-      // Zoom functionality removed - center element instead
-      const targetId = id || selectedIds[0];
-      if (!targetId) return;
-
-      const shape = shapeRefs.current[targetId];
-      const viewport = viewportRef.current;
-      if (!shape || !viewport) return;
-
-      const bounds = shape.getBounds();
-      viewport.animate({
-        position: {
-          x: viewport.worldScreenWidth / 2 - (bounds.x + bounds.width / 2),
-          y: viewport.worldScreenHeight / 2 - (bounds.y + bounds.height / 2)
-        },
-        time: 400
-      });
+      // Zoom functionality removed - kept as stub for UI compatibility
+      console.log('Zoom to fit element', id, '- functionality removed');
     },
     getViewportCenter: () => {
-      const viewport = viewportRef.current;
-      if (!viewport) return { x: 50000, y: 50000 }; // Default to world center
-
-      // Get the center point of what's currently visible
-      const centerX = viewport.center.x;
-      const centerY = viewport.center.y;
-      return { x: centerX, y: centerY };
+      // Zoom functionality removed - kept as stub for UI compatibility
+      return { x: 50000, y: 50000 }; // Default to world center
     },
     resetToCenter: () => {
-      const viewport = viewportRef.current;
-      if (viewport) {
-        viewport.moveCenter(dimensions.width / 2, dimensions.height / 2);
-      }
+      // Zoom functionality removed - kept as stub for UI compatibility
+      console.log('Reset to center - functionality removed');
     },
     resetZoomToOneHundredPercent: () => {
       // Zoom functionality removed - kept as stub for UI compatibility
@@ -859,20 +824,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     const isMultiSelect = (e.nativeEvent && 'metaKey' in e.nativeEvent) ?
       (e.nativeEvent.metaKey || e.nativeEvent.ctrlKey) : false;
 
-    // Convert to screen coordinates for consistency with global move handler
-    const canvas = document.querySelector('canvas');
-    let screenX: number, screenY: number;
-    
-    if (canvas && e.nativeEvent) {
-      const rect = canvas.getBoundingClientRect();
-      const nativeEvent = e.nativeEvent as PointerEvent;
-      screenX = nativeEvent.clientX - rect.left;
-      screenY = nativeEvent.clientY - rect.top;
-    } else {
-      // Fallback to PIXI coordinates if screen coordinates unavailable
-      screenX = e.global.x;
-      screenY = e.global.y;
-    }
+    // Screen coordinate conversion removed - zoom functionality removed
 
     // Also keep PIXI world coordinates for certain operations
     const pos = e.global;
@@ -933,13 +885,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         setDraggingId(parentTextGroup.id);
         
         // Convert screen coordinates to world coordinates for offset calculation
-        const viewport = viewportRef.current;
-        if (viewport) {
-          const worldPoint = viewport.toWorld(screenX, screenY);
-          setDragOffset({ x: worldPoint.x - parentTextGroup.x, y: worldPoint.y - parentTextGroup.y });
-        } else {
-          setDragOffset({ x: pos.x - parentTextGroup.x, y: pos.y - parentTextGroup.y });
-        }
+        setDragOffset({ x: pos.x - parentTextGroup.x, y: pos.y - parentTextGroup.y });
         setIsDraggingGroup(false);
         return;
       }
@@ -979,14 +925,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         setDraggingId(id);
         setInitialSize({ width: element.width, height: element.height });
         
-        // Convert screen coordinates to world coordinates for consistency with move handler
-        const viewport = viewportRef.current;
-        if (viewport) {
-          const worldPoint = viewport.toWorld(screenX, screenY);
-          setInitialMouse({ x: worldPoint.x, y: worldPoint.y });
-        } else {
-          setInitialMouse({ x: pos.x, y: pos.y });
-        }
+        // Use direct coordinates since zoom functionality removed
+        setInitialMouse({ x: pos.x, y: pos.y });
         onElementSelect(id, isMultiSelect);
 
         // Set cursor for resize operation
@@ -1026,26 +966,16 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
 
     // Regular shape drag - check if multiple elements are selected for group dragging
     if (selectedIds.length > 1 && selectedIds.includes(id)) {
-      // Group dragging: calculate offsets for all selected elements using world coordinates
-      const viewport = viewportRef.current;
+      // Group dragging: calculate offsets for all selected elements
       const offsets = selectedIds.map(selectedId => {
         const selectedElement = elements.find(el => el.id === selectedId);
         if (!selectedElement) return { id: selectedId, offsetX: 0, offsetY: 0 };
         
-        if (viewport) {
-          const worldPoint = viewport.toWorld(screenX, screenY);
-          return {
-            id: selectedId,
-            offsetX: worldPoint.x - selectedElement.x,
-            offsetY: worldPoint.y - selectedElement.y
-          };
-        } else {
-          return {
-            id: selectedId,
-            offsetX: pos.x - selectedElement.x,
-            offsetY: pos.y - selectedElement.y
-          };
-        }
+        return {
+          id: selectedId,
+          offsetX: pos.x - selectedElement.x,
+          offsetY: pos.y - selectedElement.y
+        };
       });
 
       setGroupDragOffsets(offsets);
@@ -1053,17 +983,11 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       setDraggingId(id); // Still track the primary dragged element
       onElementSelect(id, isMultiSelect);
     } else {
-      // Single element drag - use consistent coordinate system
+      // Single element drag - use direct coordinates
       setDraggingId(id);
       onElementSelect(id, isMultiSelect);
       
-      const viewport = viewportRef.current;
-      if (viewport) {
-        const worldPoint = viewport.toWorld(screenX, screenY);
-        setDragOffset({ x: worldPoint.x - shapeX, y: worldPoint.y - shapeY });
-      } else {
-        setDragOffset({ x: pos.x - shapeX, y: pos.y - shapeY });
-      }
+      setDragOffset({ x: pos.x - shapeX, y: pos.y - shapeY });
       setIsDraggingGroup(false);
     }
   };
@@ -1139,14 +1063,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         const canvasX = e.clientX - rect.left;
         const canvasY = e.clientY - rect.top;
         
-        // Convert screen coordinates to world coordinates for line chaining
-        const viewport = viewportRef.current;
-        if (viewport) {
-          const worldPoint = viewport.toWorld(canvasX, canvasY);
-          setMousePos({ x: worldPoint.x, y: worldPoint.y });
-        } else {
-          setMousePos({ x: canvasX, y: canvasY });
-        }
+        // Use direct coordinates since zoom functionality removed
+        setMousePos({ x: canvasX, y: canvasY });
       }
     }
 
@@ -1160,13 +1078,9 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     const canvasX = e.clientX - rect.left;
     const canvasY = e.clientY - rect.top;
 
-    // Convert screen coordinates to world coordinates using viewport
-    const viewport = viewportRef.current;
-    if (!viewport) return;
-
-    const worldPoint = viewport.toWorld(canvasX, canvasY);
-    const worldX = worldPoint.x;
-    const worldY = worldPoint.y;
+    // Use direct coordinates since zoom functionality removed
+    const worldX = canvasX;
+    const worldY = canvasY;
 
     // Handle virtual group dragging first
     if (draggingId === 'virtual-group') {
@@ -1700,18 +1614,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     }
   }, [elements, selectElement, clearSelections]);
 
-  // Add viewport clamping to restrict panning - zoom functionality removed
-  useEffect(() => {
-    const viewport = viewportRef.current;
-    if (viewport) {
-      viewport.clamp({
-        left: 0,
-        top: 0,
-        right: dimensions.width,
-        bottom: dimensions.height,
-      });
-    }
-  }, [dimensions]);
+  // Viewport clamping removed - zoom functionality removed
 
   return (
     <>
@@ -1723,7 +1626,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         resolution={window.devicePixelRatio || 2}
         autoDensity={true}
       >
-        <CanvasContent ref={viewportRef}>
+        <pixiContainer>
           {/* Grid overlay */}
           {gridConfig && (
             <GridOverlay
@@ -2382,7 +2285,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
               />
             );
           })()}
-        </CanvasContent>
+        </pixiContainer>
       </Application>
       
       {/* Context Menu */}

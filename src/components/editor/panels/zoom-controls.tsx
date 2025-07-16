@@ -6,17 +6,20 @@ interface ZoomControlsProps {
   currentZoom: number;
 }
 
-export const ZoomControls: React.FC<ZoomControlsProps> = ({ canvasRef, currentZoom }) => {
+export const ZoomControls: React.FC<ZoomControlsProps> = ({ currentZoom }) => {
   const handleZoomIn = () => {
-    canvasRef.current?.zoomIn();
+    // Zoom functionality removed
+    console.log('Zoom in - functionality removed');
   };
 
   const handleZoomOut = () => {
-    canvasRef.current?.zoomOut();
+    // Zoom functionality removed
+    console.log('Zoom out - functionality removed');
   };
 
   const handleResetZoom = () => {
-    canvasRef.current?.resetZoomToOneHundredPercent();
+    // Zoom functionality removed
+    console.log('Reset zoom - functionality removed');
   };
 
   // Format zoom percentage for display
