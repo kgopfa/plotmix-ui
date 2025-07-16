@@ -6,6 +6,7 @@ import {
   AnimationType, 
   AnimatableProperties 
 } from '@/types/canvas';
+import { generateAnimationDisplayName } from '@/utils/animation-utils';
 
 type InspectorChangeHandler = (
   prop: string,
@@ -143,6 +144,7 @@ export function useAnimationHandlers(
           ...anim, 
           type: newType,
           id: `${newType}-${animationId.split('-')[1]}`,
+          displayName: generateAnimationDisplayName(newType, localAnimations),
           properties: defaultProperties[newType]
         };
       } else if (field === 'startTime' || field === 'duration') {
@@ -189,8 +191,9 @@ export function useAnimationHandlers(
           }
     };
 
-    const newAnimation = {
+    const newAnimation: ElementAnimation = {
       id: `${type}-${localAnimations.length + 1}`,
+      displayName: generateAnimationDisplayName(type, localAnimations),
       type,
       startTime: 0,
       duration: 2,

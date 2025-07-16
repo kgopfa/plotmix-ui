@@ -5,6 +5,7 @@ import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useSetActiveRightPanel, useUIStore } from '@/stores/use-ui-store';
 import { AnimationType, ElementAnimation, GsapEase } from '@/types/canvas';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
+import { generateAnimationDisplayName } from '@/utils/animation-utils';
 
 export const AnimationsTab: React.FC = () => {
   const { selectedElements, select } = useSelectionStore();
@@ -95,6 +96,7 @@ export const AnimationsTab: React.FC = () => {
 
     const newAnimation: ElementAnimation = {
       id: `${animationType}-${Date.now()}`,
+      displayName: generateAnimationDisplayName(animationType, selectedElement.animations),
       type: animationType,
       startTime: 0,
       duration: 1,

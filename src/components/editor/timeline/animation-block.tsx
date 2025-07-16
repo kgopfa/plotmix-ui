@@ -103,7 +103,7 @@ export const AnimationBlock: React.FC<AnimationBlockProps> = ({
       onClick={onClick}
     >
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-xs text-white truncate px-1">{animation.id}</span>
+        <span className="text-xs text-white truncate px-1">{animation.displayName}</span>
       </div>
       {/* Resize Handle */}
       <div

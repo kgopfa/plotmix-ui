@@ -78,6 +78,7 @@ export type AnimationType = 'rotate' | 'scale' | 'move' | 'color' | 'fade' | 'pa
 
 export interface ElementAnimation {
   id: string;
+  displayName: string; // Human-readable name like "path-1", "move-2", etc.
   type: AnimationType;
   startTime: number;
   duration: number;

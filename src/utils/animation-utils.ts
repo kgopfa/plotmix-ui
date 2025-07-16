@@ -74,3 +74,41 @@ export function getRepeatInfo(animation: ElementAnimation): {
     cycleDuration: calculateCompressedCycleDuration(animation)
   };
 } 
+
+/**
+ * Generates a human-readable display name for an animation with an incrementing counter
+ * @param animationType - The type of animation (e.g., 'path', 'move', 'scale')
+ * @param existingAnimations - Array of existing animations to check for counter
+ * @returns A display name like "path-1", "move-2", etc.
+ */
+export function generateAnimationDisplayName(
+  animationType: string, 
+  existingAnimations: ElementAnimation[]
+): string {
+  // Count existing animations of the same type
+  const sameTypeCount = existingAnimations.filter(
+    anim => anim.displayName.startsWith(`${animationType}-`)
+  ).length;
+  
+  // Return the next number in sequence
+  return `${animationType}-${sameTypeCount + 1}`;
+}
+
+/**
+ * Updates display names for all animations to ensure they have proper sequential numbering
+ * @param animations - Array of animations to update
+ * @returns Updated array with corrected display names
+ */
+export function updateAnimationDisplayNames(animations: ElementAnimation[]): ElementAnimation[] {
+  const typeCounts: Record<string, number> = {};
+  
+  return animations.map(animation => {
+    const baseType = animation.displayName.split('-')[0];
+    typeCounts[baseType] = (typeCounts[baseType] || 0) + 1;
+    
+    return {
+      ...animation,
+      displayName: `${baseType}-${typeCounts[baseType]}`
+    };
+  });
+} 

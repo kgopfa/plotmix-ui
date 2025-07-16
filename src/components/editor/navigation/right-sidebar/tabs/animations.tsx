@@ -7,6 +7,7 @@ import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
 import { useTimelineStore } from '@/stores/use-timeline-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { AnimationCard } from './animation-card';
+import { generateAnimationDisplayName, updateAnimationDisplayNames } from '@/utils/animation-utils';
 
 interface AnimationsTabProps {
   selectedElement: AnimatedCanvasObject;
@@ -30,8 +31,22 @@ export function AnimationsTab({
 
   // Sync local state when props change (initial load or element switch)
   useEffect(() => {
-    setAnimations(localAnimations);
-  }, [localAnimations, selectedElement.id]); // Reset when element changes
+    // Migrate existing animations to include displayName if missing
+    const migratedAnimations = localAnimations.map(animation => {
+      if (!animation.displayName) {
+        return {
+          ...animation,
+          displayName: generateAnimationDisplayName(animation.type, localAnimations)
+        };
+      }
+      return animation;
+    });
+    
+    // Update display names to ensure proper sequential numbering
+    const updatedAnimations = updateAnimationDisplayNames(migratedAnimations);
+    
+    setAnimations(updatedAnimations);
+  }, [localAnimations, localAnimations.length, selectedElement.id]); // Reset when element changes
 
   // Auto-rebuild timeline when animations change
   useEffect(() => {
@@ -120,10 +135,11 @@ export function AnimationsTab({
     const originalAnimation = animations.find(anim => anim.id === animationId);
     if (!originalAnimation) return;
 
-    // Create a copy with a new ID and slightly offset start time
+    // Create a copy with a new ID, display name, and slightly offset start time
     const duplicatedAnimation: ElementAnimation = {
       ...originalAnimation,
       id: `${originalAnimation.type}-${Date.now()}`,
+      displayName: generateAnimationDisplayName(originalAnimation.type, animations),
       startTime: originalAnimation.startTime + originalAnimation.duration + 0.1 // Offset to avoid overlap
     };
 

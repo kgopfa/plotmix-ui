@@ -57,7 +57,7 @@ export function AnimationCard({
             </span>
           </div>
           <div>
-            <h4 className="font-medium text-gray-900 capitalize">{animation.type}</h4>
+            <h4 className="font-medium text-gray-900 capitalize">{animation.displayName}</h4>
             <p className="text-xs text-gray-500">
               {animation.startTime}s → {(animation.startTime + animation.duration).toFixed(1)}s
             </p>

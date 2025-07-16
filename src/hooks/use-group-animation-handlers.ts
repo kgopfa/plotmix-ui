@@ -5,6 +5,7 @@ import type {
   AnimationType, 
   GsapEase
 } from '@/types/canvas';
+import { generateAnimationDisplayName } from '@/utils/animation-utils';
 
 type GroupInspectorChangeHandler = (
   groupId: string,
@@ -56,6 +57,7 @@ export function useGroupAnimationHandlers(
           ...anim, 
           type: newType,
           id: `${newType}-${animationId.split('-')[1]}`,
+          displayName: generateAnimationDisplayName(newType, localGroupAnimations),
           properties: defaultProperties
         };
       } else if (field.includes('.')) {
@@ -93,13 +95,17 @@ export function useGroupAnimationHandlers(
     
     const type = 'rotate' as AnimationType;
     
-    const newAnimation = {
+    const newAnimation: ElementAnimation = {
       id: `${type}-${localGroupAnimations.length + 1}`,
+      displayName: generateAnimationDisplayName(type, localGroupAnimations),
       type,
       startTime: 0,
       duration: 2,
       properties: { rotation: 0 },
-      easing: 'power1.inOut' as GsapEase
+      easing: 'power1.inOut' as GsapEase,
+      repeat: 0,
+      repeatDelay: 0,
+      yoyo: false
     };
 
     const updatedAnimations = [...localGroupAnimations, newAnimation];
@@ -121,10 +127,11 @@ export function useGroupAnimationHandlers(
     const originalAnimation = localGroupAnimations.find(anim => anim.id === animationId);
     if (!originalAnimation) return;
 
-    // Create a copy with a new ID and slightly offset start time
+    // Create a copy with a new ID, display name, and slightly offset start time
     const duplicatedAnimation: ElementAnimation = {
       ...originalAnimation,
       id: `${originalAnimation.type}-${Date.now()}`,
+      displayName: generateAnimationDisplayName(originalAnimation.type, localGroupAnimations),
       startTime: originalAnimation.startTime + originalAnimation.duration + 0.1 // Offset to avoid overlap
     };
 
