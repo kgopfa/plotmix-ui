@@ -35,9 +35,9 @@ class ViewportWrapper extends BaseViewport {
         direction: 'all',
         underflow: 'center'
       })
-      // Add smooth zoom configuration
-      .setZoom(1, true) // Set initial zoom with animation
-      .moveCenter(0, 0); // Center the viewport initially
+      // Always center the design canvas
+      .setZoom(1, true)
+      .moveCenter(640, 360); // Center on the design canvas (1280/2, 720/2)
   }
 }
 
@@ -222,11 +222,8 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       getViewport: () => viewportRef.current,
       centerOnDesign: () => {
         if (viewportRef.current) {
-          const designWidth = 1280;
-          const designHeight = 720;
-          const centerX = (dimensions.width - designWidth) / 2 + designWidth / 2;
-          const centerY = (dimensions.height - designHeight) / 2 + designHeight / 2;
-          viewportRef.current.moveCenter(centerX, centerY);
+          // Always center on the design canvas (640, 360)
+          viewportRef.current.moveCenter(640, 360);
         }
       },
       zoomToFit: () => {
@@ -238,16 +235,16 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
           const scaleY = (dimensions.height - padding * 2) / designHeight;
           const scale = Math.min(scaleX, scaleY, 5);
           
-          // Use smooth zoom with animation
+          // Use smooth zoom with animation and center on design canvas
           viewportRef.current.setZoom(scale, true);
-          viewportRef.current.moveCenter(dimensions.width / 2, dimensions.height / 2);
+          viewportRef.current.moveCenter(640, 360);
         }
       },
       resetZoom: () => {
         if (viewportRef.current) {
-          // Use smooth zoom with animation
+          // Use smooth zoom with animation and center on design canvas
           viewportRef.current.setZoom(1, true);
-          viewportRef.current.moveCenter(dimensions.width / 2, dimensions.height / 2);
+          viewportRef.current.moveCenter(640, 360);
         }
       }
     }));
