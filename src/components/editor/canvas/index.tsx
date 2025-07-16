@@ -46,8 +46,6 @@ interface ContextMenuPosition {
 
 interface CanvasProps {
   dimensions: { width: number; height: number };
-  zoom?: number; // External zoom control - kept for interface compatibility
-  onZoomChange?: (zoom: number) => void; // Callback when zoom changes - kept for interface compatibility
   // Add grid configuration
   gridConfig?: GridConfig;
   // Add snap guides
@@ -57,16 +55,6 @@ interface CanvasProps {
 export interface CanvasRef {
   getShapeRefs: () => Record<string, Container>;
   getGroupContainers: () => Record<string, Container>;
-  zoomIn: () => void; // Kept as stub for UI compatibility
-  zoomOut: () => void; // Kept as stub for UI compatibility
-  getViewport: () => Container | null; // Changed from Viewport to Container
-  centerOnElement: (id?: string) => void; // Kept as stub for UI compatibility
-  zoomToFitElement: (id?: string) => void; // Kept as stub for UI compatibility
-  getCurrentZoom: () => number; // Kept as stub for UI compatibility
-  setZoom: (scale: number) => void; // Kept as stub for UI compatibility
-  getViewportCenter: () => { x: number; y: number }; // Kept as stub for UI compatibility
-  resetToCenter: () => void; // Kept as stub for UI compatibility
-  resetZoomToOneHundredPercent: () => void; // Kept as stub for UI compatibility
 }
 
 // Define resize handle positions
@@ -89,18 +77,11 @@ const setCursor = (cursor: string) => {
 export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   {
     dimensions,
-    zoom = 1, // Kept for interface compatibility but not used
-    onZoomChange, // Kept for interface compatibility but not used
     gridConfig,
     snapGuides = [],
   },
   ref
 ) {
-  // Suppress unused variable warning for interface compatibility
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _onZoomChange = onZoomChange;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _zoom = zoom;
   // Get data from stores instead of props
   const elements = useCanvasElements();
   const groups = useCanvasGroups();
@@ -537,40 +518,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   useImperativeHandle(ref, () => ({
     getShapeRefs: () => shapeRefs.current,
     getGroupContainers: () => groupContainers.current,
-    zoomIn: () => {
-      // Zoom functionality removed - kept as stub for UI compatibility
-      console.log('Zoom in - functionality removed');
-    },
-    zoomOut: () => {
-      // Zoom functionality removed - kept as stub for UI compatibility
-      console.log('Zoom out - functionality removed');
-    },
-    getCurrentZoom: () => 1, // Always return 1 as stub
-    setZoom: (scale: number) => {
-      // Zoom functionality removed - kept as stub for UI compatibility
-      console.log('Set zoom to', scale, '- functionality removed');
-    },
-    getViewport: () => null, // Zoom functionality removed
-    centerOnElement: (id?: string) => {
-      // Zoom functionality removed - kept as stub for UI compatibility
-      console.log('Center on element', id, '- functionality removed');
-    },
-    zoomToFitElement: (id?: string) => {
-      // Zoom functionality removed - kept as stub for UI compatibility
-      console.log('Zoom to fit element', id, '- functionality removed');
-    },
-    getViewportCenter: () => {
-      // Zoom functionality removed - kept as stub for UI compatibility
-      return { x: 50000, y: 50000 }; // Default to world center
-    },
-    resetToCenter: () => {
-      // Zoom functionality removed - kept as stub for UI compatibility
-      console.log('Reset to center - functionality removed');
-    },
-    resetZoomToOneHundredPercent: () => {
-      // Zoom functionality removed - kept as stub for UI compatibility
-      console.log('Reset zoom to 100% - functionality removed');
-    }
   }));
 
   const [draggingId, setDraggingId] = useState<string | null>(null);

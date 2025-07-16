@@ -26,6 +26,8 @@ import { MainNavBar } from './navigation/main';
 import { LeftSidebar } from './navigation/left-sidebar';
 import { RightSidebar } from './navigation/right-sidebar';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
+import { ZoomWrapper } from './zoom-wrapper';
+import { EditorZoomRef } from '@/hooks/use-editor-zoom';
 
 
 export default function EditorCanvas() {
@@ -89,6 +91,7 @@ export default function EditorCanvas() {
 
   const canvasRef = useRef<CanvasRef | null>(null);
   const imageFileInputRef = useRef<HTMLInputElement>(null);
+  const zoomRef = useRef<EditorZoomRef | null>(null);
 
   // Timeline store integration
   const {
@@ -97,11 +100,6 @@ export default function EditorCanvas() {
 
   // Canvas zoom state - will migrate this to UI store in next iteration
   const [canvasZoom, setCanvasZoom] = useState(1);
-
-  // Handle zoom changes from the Canvas component
-  const handleZoomChange = useCallback((newZoom: number) => {
-    setCanvasZoom(newZoom);
-  }, []);
 
   // Element snapping functionality - only keep what's needed for canvas operations
   const {
@@ -956,22 +954,18 @@ export default function EditorCanvas() {
       <MainNavBar
         canvasZoom={canvasZoom}
         onZoomIn={() => {
-          if (canvasRef.current) {
-            canvasRef.current.zoomIn();
-          } else {
-            setCanvasZoom(prev => Math.min(prev * 1.1, 5));
+          if (zoomRef.current) {
+            zoomRef.current.zoomIn();
           }
         }}
         onZoomOut={() => {
-          if (canvasRef.current) {
-            canvasRef.current.zoomOut();
-          } else {
-            setCanvasZoom(prev => Math.max(prev * 0.9, 0.1));
+          if (zoomRef.current) {
+            zoomRef.current.zoomOut();
           }
         }}
         onResetZoom={() => {
-          if (canvasRef.current) {
-            canvasRef.current.resetZoomToOneHundredPercent();
+          if (zoomRef.current) {
+            zoomRef.current.resetZoomToOneHundredPercent();
           }
         }}
         onGroupElements={handleGroupElements}
@@ -984,31 +978,37 @@ export default function EditorCanvas() {
 
       {/* Main Body - Fixed centered canvas */}
       <div className="flex-1 relative overflow-hidden">
-        {/* Fixed Canvas Container */}
-        <main
-          ref={containerRef}
-          className="absolute inset-0 bg-slate-100 flex items-start justify-start pt-16 pl-20"
-          onMouseMove={e => {
-            if (toolState.activeTool !== 'select') {
-              const rect = e.currentTarget.getBoundingClientRect();
-              setMaskPos({
-                x: e.clientX - rect.left,
-                y: e.clientY - rect.top,
-              });
-            }
-          }}
-          onMouseLeave={() => setMaskPos(null)}
-          onClick={e => {
-            // Only handle clicks on the main container itself (not on canvas or other elements)
-            if (e.target === e.currentTarget) {
-              // Deselect all elements when clicking on empty space
-              selectElement(null);
-              // Hide animations tab when clearing selections
-              const { setShowAnimationsTab } = useUIStore.getState();
-              setShowAnimationsTab(false);
-            }
-          }}
+        {/* Zoom Wrapper for the entire editor area */}
+        <ZoomWrapper
+          ref={zoomRef}
+          onZoomChange={setCanvasZoom}
+          className="absolute inset-0"
         >
+          {/* Fixed Canvas Container */}
+          <main
+            ref={containerRef}
+            className="absolute inset-0 flex items-start justify-start pt-16 pl-20"
+            onMouseMove={e => {
+              if (toolState.activeTool !== 'select') {
+                const rect = e.currentTarget.getBoundingClientRect();
+                setMaskPos({
+                  x: e.clientX - rect.left,
+                  y: e.clientY - rect.top,
+                });
+              }
+            }}
+            onMouseLeave={() => setMaskPos(null)}
+            onClick={e => {
+              // Only handle clicks on the main container itself (not on canvas or other elements)
+              if (e.target === e.currentTarget) {
+                // Deselect all elements when clicking on empty space
+                selectElement(null);
+                // Hide animations tab when clearing selections
+                const { setShowAnimationsTab } = useUIStore.getState();
+                setShowAnimationsTab(false);
+              }
+            }}
+          >
           {/* Path Mode Banner */}
           {toolState.isPathMode && (
             <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-blue-100 text-blue-800 px-4 py-2 rounded-lg shadow-md z-50 flex items-center gap-4">
@@ -1064,8 +1064,6 @@ export default function EditorCanvas() {
                     ? canvasState.customSize?.height || 1080 
                     : canvasState.availableSizes.find(s => s.id === canvasState.currentSizeId)?.height || 1080
                 }}
-                zoom={canvasZoom}
-                onZoomChange={handleZoomChange}
               />
             </CanvasFrame>
           ) : (
@@ -1074,6 +1072,7 @@ export default function EditorCanvas() {
             </div>
           )}
         </main>
+        </ZoomWrapper>
 
         {/* Mask Overlay - Fixed position relative to viewport */}
         <MaskOverlay
