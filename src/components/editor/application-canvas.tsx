@@ -23,7 +23,10 @@ class ViewportWrapper extends BaseViewport {
       ...rest,
       events: app.renderer.events,
     });
-    this.drag().pinch().wheel().decelerate()
+    this.drag().pinch().wheel().decelerate({
+      friction: 0.95,
+      bounce: 0.8
+    })
       .clampZoom({
         minScale: 0.1,
         maxScale: 5
@@ -31,7 +34,10 @@ class ViewportWrapper extends BaseViewport {
       .clamp({
         direction: 'all',
         underflow: 'center'
-      });
+      })
+      // Add smooth zoom configuration
+      .setZoom(1, true) // Set initial zoom with animation
+      .moveCenter(0, 0); // Center the viewport initially
   }
 }
 
@@ -231,13 +237,16 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
           const scaleX = (dimensions.width - padding * 2) / designWidth;
           const scaleY = (dimensions.height - padding * 2) / designHeight;
           const scale = Math.min(scaleX, scaleY, 5);
-          viewportRef.current.setZoom(scale);
+          
+          // Use smooth zoom with animation
+          viewportRef.current.setZoom(scale, true);
           viewportRef.current.moveCenter(dimensions.width / 2, dimensions.height / 2);
         }
       },
       resetZoom: () => {
         if (viewportRef.current) {
-          viewportRef.current.setZoom(1);
+          // Use smooth zoom with animation
+          viewportRef.current.setZoom(1, true);
           viewportRef.current.moveCenter(dimensions.width / 2, dimensions.height / 2);
         }
       }
