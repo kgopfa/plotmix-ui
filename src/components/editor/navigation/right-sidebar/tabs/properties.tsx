@@ -136,8 +136,9 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
               <input
                 type="number"
                 value={Math.round(localElement.x)}
-                onChange={e => updateLocalProperty('x', Number(e.target.value))}
+                onChange={e => updateLocalProperty('x', Math.round(Number(e.target.value)))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                step="1"
               />
             </label>
             <label className="flex flex-col gap-1">
@@ -145,8 +146,9 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
               <input
                 type="number"
                 value={Math.round(localElement.y)}
-                onChange={e => updateLocalProperty('y', Number(e.target.value))}
+                onChange={e => updateLocalProperty('y', Math.round(Number(e.target.value)))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                step="1"
               />
             </label>
           </div>
@@ -252,18 +254,20 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                 <span className="text-sm font-medium text-gray-700">Width</span>
                 <input
                   type="number"
-                  value={localElement.width}
-                  onChange={e => updateLocalProperty('width', Number(e.target.value))}
+                  value={Math.round(localElement.width)}
+                  onChange={e => updateLocalProperty('width', Math.round(Number(e.target.value)))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  step="1"
                 />
               </label>
               <label className="flex flex-col gap-1">
                 <span className="text-sm font-medium text-gray-700">Height</span>
                 <input
                   type="number"
-                  value={localElement.height}
-                  onChange={e => updateLocalProperty('height', Number(e.target.value))}
+                  value={Math.round(localElement.height)}
+                  onChange={e => updateLocalProperty('height', Math.round(Number(e.target.value)))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  step="1"
                 />
               </label>
             </div>
@@ -273,10 +277,11 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                 <span className="text-sm font-medium text-gray-700">Rotation</span>
                 <input
                   type="number"
-                  value={localElement.rotation || 0}
-                  onChange={e => updateLocalProperty('rotation', Number(e.target.value))}
+                  value={Math.round(localElement.rotation || 0)}
+                  onChange={e => updateLocalProperty('rotation', Math.round(Number(e.target.value)))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   placeholder="0"
+                  step="1"
                 />
               </label>
               <label className="flex flex-col gap-1">

@@ -74,7 +74,7 @@ export const AnimationsTab: React.FC = () => {
     const defaultProperties = {
       rotate: { rotation: 360 },
       scale: { scaleX: 1.5, scaleY: 1.5 },
-      move: { x: selectedElement.x + 100, y: selectedElement.y },
+      move: { x: 0, y: 0 },
       color: { fillColor: '#ff6b6b' },
       fade: { alpha: 0 },
       path: {

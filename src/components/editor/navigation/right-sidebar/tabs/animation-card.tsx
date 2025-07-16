@@ -149,8 +149,8 @@ export function AnimationCard({
                     <span className="text-sm font-medium text-gray-700">Rotation (degrees)</span>
                     <input
                       type="number"
-                      value={animation.properties.rotation ?? 0}
-                      onChange={e => onAnimationChange(animation.id, 'properties.rotation', e.target.value)}
+                      value={Math.round(animation.properties.rotation ?? 0)}
+                      onChange={e => onAnimationChange(animation.id, 'properties.rotation', Math.round(Number(e.target.value)))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                       step="1"
                     />
@@ -183,21 +183,23 @@ export function AnimationCard({
                 {animation.type === 'move' && (
                   <>
                     <label className="flex flex-col gap-1">
-                      <span className="text-sm font-medium text-gray-700">Target X</span>
+                      <span className="text-sm font-medium text-gray-700">X Distance</span>
                       <input
                         type="number"
-                        value={animation.properties.x ?? selectedElement.x}
-                        onChange={e => onAnimationChange(animation.id, 'properties.x', e.target.value)}
+                        value={Math.round(animation.properties.x ?? 0)}
+                        onChange={e => onAnimationChange(animation.id, 'properties.x', Math.round(Number(e.target.value)))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        step="1"
                       />
                     </label>
                     <label className="flex flex-col gap-1">
-                      <span className="text-sm font-medium text-gray-700">Target Y</span>
+                      <span className="text-sm font-medium text-gray-700">Y Distance</span>
                       <input
                         type="number"
-                        value={animation.properties.y ?? selectedElement.y}
-                        onChange={e => onAnimationChange(animation.id, 'properties.y', e.target.value)}
+                        value={Math.round(animation.properties.y ?? 0)}
+                        onChange={e => onAnimationChange(animation.id, 'properties.y', Math.round(Number(e.target.value)))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        step="1"
                       />
                     </label>
                   </>
@@ -294,9 +296,8 @@ export function AnimationCard({
                     checked={animation.yoyo ?? false}
                     onChange={e => onAnimationChange(animation.id, 'yoyo', e.target.checked)}
                     className="rounded border-gray-300 focus:ring-2 focus:ring-green-500"
-                    disabled={!animation.repeat || animation.repeat === 0}
                   />
-                  <span className="text-sm font-medium text-gray-700">Yoyo (reverse on repeat)</span>
+                  <span className="text-sm font-medium text-gray-700">Yoyo (return to original position)</span>
                 </label>
               </div>
             </div>
