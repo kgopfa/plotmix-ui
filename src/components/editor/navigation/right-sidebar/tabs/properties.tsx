@@ -135,7 +135,7 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
               <span className="text-sm font-medium text-gray-700">X Position</span>
               <input
                 type="number"
-                value={localElement.x}
+                value={Math.round(localElement.x)}
                 onChange={e => updateLocalProperty('x', Number(e.target.value))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               />
@@ -144,7 +144,7 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
               <span className="text-sm font-medium text-gray-700">Y Position</span>
               <input
                 type="number"
-                value={localElement.y}
+                value={Math.round(localElement.y)}
                 onChange={e => updateLocalProperty('y', Number(e.target.value))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               />
