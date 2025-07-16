@@ -19,10 +19,49 @@
   }
 }
 
+html, body {
+  /* Don't set touch-action here - let browser handle zoom normally */
+  overflow: hidden; /* Only prevent scrollbars since you have a fixed layout */
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Only prevent browser zoom within the canvas area */
+.canvas-area {
+  touch-action: none; /* Prevent browser zoom, allow PIXI to handle */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none; /* Prevent iOS context menu */
+}
+
+/* Ensure other UI elements allow normal browser zoom */
+.main-nav-bar, 
+.left-sidebar, 
+.right-sidebar, 
+.timeline,
+.floating-panel {
+  /* Don't set touch-action - allow normal browser zoom */
+  touch-action: auto;
+}
+
+/* Allow text selection in input areas */
+input, 
+textarea, 
+[contenteditable="true"] {
+  touch-action: manipulation; /* Allow normal touch but prevent double-tap zoom */
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Prevent double-tap zoom on buttons while allowing browser zoom */
+button, 
+a, 
+[role="button"] {
+  touch-action: manipulation;
 }
 
 @tailwind base;

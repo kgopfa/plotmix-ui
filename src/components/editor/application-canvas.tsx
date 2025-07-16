@@ -109,6 +109,7 @@ interface ApplicationCanvasProps {
   handleGroupSelectionDragStart: (virtualElement: AnimatedCanvasObject, mouseX: number, mouseY: number, allElements?: AnimatedCanvasObject[], gridConfig?: GridConfig) => void;
   isTextGroupCharacter: (element: AnimatedCanvasObject) => boolean;
   isElementInCustomOrPolygonGroup: (element: AnimatedCanvasObject) => boolean;
+  onZoomChange?: (zoom: number) => void;
 }
 
 export interface ApplicationCanvasRef {
@@ -123,6 +124,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
   (props, ref) => {
     const appRef = useRef<ApplicationRef | null>(null);
     const viewportRef = useRef<ViewportWrapper | null>(null);
+    const canvasContainerRef = useRef<HTMLDivElement | null>(null);
     const [dimensions, setDimensions] = useState({ 
       width: typeof window !== 'undefined' ? window.innerWidth : 0, 
       height: typeof window !== 'undefined' ? window.innerHeight : 0 
@@ -146,12 +148,74 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       }
     }, []);
 
+    // Prevent browser zoom only within canvas area
+    useEffect(() => {
+      const container = canvasContainerRef.current;
+      if (!container) return;
+
+      // Prevent browser zoom gestures within the canvas area
+      const preventBrowserZoom = (e: TouchEvent) => {
+        // Prevent browser zoom for multi-touch gestures
+        if (e.touches.length > 1) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      };
+
+      const preventWheelZoom = (e: WheelEvent) => {
+        // Prevent Ctrl+scroll zoom within canvas area
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      };
+
+      const preventGestureZoom = (e: Event) => {
+        // Prevent gesture-based zoom on Safari
+        e.preventDefault();
+        e.stopPropagation();
+      };
+
+      // Add event listeners to the canvas container
+      container.addEventListener('touchstart', preventBrowserZoom, { passive: false });
+      container.addEventListener('touchmove', preventBrowserZoom, { passive: false });
+      container.addEventListener('wheel', preventWheelZoom, { passive: false });
+      
+      // Safari-specific gesture events
+      container.addEventListener('gesturestart', preventGestureZoom, { passive: false });
+      container.addEventListener('gesturechange', preventGestureZoom, { passive: false });
+      container.addEventListener('gestureend', preventGestureZoom, { passive: false });
+
+      return () => {
+        container.removeEventListener('touchstart', preventBrowserZoom);
+        container.removeEventListener('touchmove', preventBrowserZoom);
+        container.removeEventListener('wheel', preventWheelZoom);
+        container.removeEventListener('gesturestart', preventGestureZoom);
+        container.removeEventListener('gesturechange', preventGestureZoom);
+        container.removeEventListener('gestureend', preventGestureZoom);
+      };
+    }, []);
+
+    // Configure PIXI canvas for custom touch handling
+    useEffect(() => {
+      // @ts-expect-error - @pixi/react doesn't expose the PIXI Application instance in types
+      const pixiApp = appRef.current?.app;
+      const canvas = pixiApp?.view;
+      if (!canvas) return;
+
+      // Allow PIXI viewport to handle all touch interactions
+      canvas.style.touchAction = 'none';
+
+      return () => {
+        // Cleanup if needed
+      };
+    }, [appRef]);
+
     useImperativeHandle(ref, () => ({
       getApplication: () => appRef.current,
       getViewport: () => viewportRef.current,
       centerOnDesign: () => {
         if (viewportRef.current) {
-          // Center on the design area (assuming 1280x720 design area)
           const designWidth = 1280;
           const designHeight = 720;
           const centerX = (dimensions.width - designWidth) / 2 + designWidth / 2;
@@ -161,13 +225,12 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       },
       zoomToFit: () => {
         if (viewportRef.current) {
-          // Fit the design area to the viewport
           const designWidth = 1280;
           const designHeight = 720;
-          const padding = 50; // Add some padding around the design
+          const padding = 50;
           const scaleX = (dimensions.width - padding * 2) / designWidth;
           const scaleY = (dimensions.height - padding * 2) / designHeight;
-          const scale = Math.min(scaleX, scaleY, 5); // Don't zoom in more than 5x
+          const scale = Math.min(scaleX, scaleY, 5);
           viewportRef.current.setZoom(scale);
           viewportRef.current.moveCenter(dimensions.width / 2, dimensions.height / 2);
         }
@@ -181,7 +244,17 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
     }));
 
     return (
-      <div className="absolute inset-0 bg-slate-100">
+      <div 
+        ref={canvasContainerRef}
+        className="absolute inset-0 bg-slate-100 canvas-area"
+        style={{
+          // Prevent browser zoom within this area
+          touchAction: 'none',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          WebkitTouchCallout: 'none'
+        }}
+      >
         <Application
           ref={appRef}
           width={dimensions.width}
@@ -199,7 +272,6 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
             stopPropagation={true}
             ref={viewportRef}
           >
-            {/* Render DesignCanvas - it will be affected by the viewport */}
             <DesignCanvas {...props} dimensions={dimensions} />
           </Viewport>
         </Application>
