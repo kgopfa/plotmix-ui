@@ -90,7 +90,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
           ref={appRef}
           width={dimensions.width}
           height={dimensions.height}
-          backgroundColor={0xFFFFFF}
+          backgroundColor={0xF1F5F9}
           antialias={true}
           resolution={typeof window !== 'undefined' ? window.devicePixelRatio || 2 : 2}
           autoDensity={true}
