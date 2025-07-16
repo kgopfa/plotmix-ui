@@ -2368,7 +2368,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       />
 
       {/* Selection Menu */}
-      {selectionMenuPosition && selectedElements.length > 0 && (
+      {!isPlaying && selectionMenuPosition && selectedElements.length > 0 && (
         <SelectionMenu
           selectedElements={selectedElements}
           position={selectionMenuPosition}
