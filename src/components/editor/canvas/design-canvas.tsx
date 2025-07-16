@@ -141,7 +141,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           g.rect(canvasX, canvasY, canvasFrameWidth, canvasFrameHeight);
           g.fill({ color: 0xFFFFFF, alpha: 1 });
           // Add a subtle border to show the canvas boundaries
-          g.stroke({ color: 0xE2E8F0, width: 2 });
+          g.stroke({ color: 0xE2E8F0, width: 1 });
         }}
         interactive={false}
         eventMode="none"
