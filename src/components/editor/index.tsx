@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { TimelineManager } from '@/lib/timeline-manager';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useCanvasElements, useCanvasGroups } from '@/stores/use-canvas-store';
-import { useUIStore, useActiveNav, useActiveRightPanel, useCanvasState } from '@/stores/use-ui-store';
+import { useUIStore, useActiveNav, useActiveRightPanel } from '@/stores/use-ui-store';
 import { useTimelineSync } from '@/stores/use-timeline-store';
 import { useCanvasMigration } from '@/hooks/use-canvas-migration';
 import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
@@ -14,10 +14,9 @@ import { AnimationsPanel } from './navigation/right-sidebar/animations-panel';
 import { HistoryPanel } from './panels/history-panel';
 import { Timeline } from './timeline';
 import { MaskOverlay } from './canvas/mask-overlay';
-import { CanvasFrame } from './canvas/canvas-frame';
 import { AnimatedCanvasObject, ElementAnimation, CanvasGroup } from '@/types/canvas';
-import { Canvas } from './canvas';
-import type { CanvasRef } from './canvas';
+
+import dynamic from 'next/dynamic';
 import { createNewObject } from '@/lib/canvas-object-factory';
 import { useCanvasDimensions } from '@/hooks/use-canvas-dimensions';
 import { useTimelineIntegration } from '@/hooks/use-timeline-integration';
@@ -26,6 +25,10 @@ import { MainNavBar } from './navigation/main';
 import { LeftSidebar } from './navigation/left-sidebar';
 import { RightSidebar } from './navigation/right-sidebar';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
+import type { ApplicationCanvasRef } from './application-canvas';
+
+
+const ApplicationCanvas = dynamic(() => import('./application-canvas').then(m => m.ApplicationCanvas), { ssr: false });
 
 
 export default function EditorCanvas() {
@@ -37,8 +40,7 @@ export default function EditorCanvas() {
     setGroups,
   } = useCanvasMigration();
   
-  // Canvas state for logical dimensions
-  const canvasState = useCanvasState();
+
 
   // Use Zustand store for selection state
   const {
@@ -87,7 +89,7 @@ export default function EditorCanvas() {
   const MASK_OFFSET_X = 0;
   const MASK_OFFSET_Y = 0;
 
-  const canvasRef = useRef<CanvasRef | null>(null);
+  const fullscreenCanvasRef = useRef<ApplicationCanvasRef | null>(null);
   const imageFileInputRef = useRef<HTMLInputElement>(null);
 
   // Timeline store integration
@@ -161,7 +163,22 @@ export default function EditorCanvas() {
   const timelineManager = useMemo(() => TimelineManager.getInstance(), []);
 
   // Use the canvas dimensions hook
-  const { dimensions, containerRef } = useCanvasDimensions();
+  const { dimensions } = useCanvasDimensions();
+  
+  // Grid and snap configuration (will be enhanced in next steps)
+  const gridConfig = undefined; // Will be implemented with grid system
+  const snapGuides: Array<{
+    type: 'vertical' | 'horizontal' | 'spacing';
+    position: number;
+    sourceElementId: string;
+    targetElementId: string;
+    alignmentType: 'left' | 'right' | 'top' | 'bottom' | 'centerX' | 'centerY' | 'spacingX' | 'spacingY' | 'distributionX' | 'distributionY';
+    spacingInfo?: {
+      spacing: number;
+      referenceElements: string[];
+      direction: 'horizontal' | 'vertical';
+    };
+  }> = []; // Will be implemented with snapping system
 
   // Initialize timeline subscriptions on mount
   useEffect(() => {
@@ -206,14 +223,15 @@ export default function EditorCanvas() {
   // Enhanced keyboard shortcuts hook will be called after handlers are defined
 
   useEffect(() => {
-    gsapManager.setCanvasRef(canvasRef);
-    setTimelineCanvasRef(canvasRef); // Also set for timeline store
+    // For now, we'll handle canvas ref integration in the next step
+    // when we integrate pixi-viewport
+    console.log('FullscreenCanvas ref available:', fullscreenCanvasRef.current);
 
     // Cleanup on unmount
     return () => {
       gsapManager.clearTimeline();
     };
-  }, [gsapManager, setTimelineCanvasRef]);
+  }, [gsapManager, setTimelineCanvasRef, fullscreenCanvasRef]);
 
   useEffect(() => {
     if (dimensions.width > 0 && canvasObjects.length > 0 && gsapManager) {
@@ -957,33 +975,46 @@ export default function EditorCanvas() {
       <LeftSidebar />
       <RightSidebar />
 
-      {/* Main Body - Fixed centered canvas */}
+      {/* Main Body - Full-screen PIXI Application */}
       <div className="flex-1 relative overflow-hidden">
-        {/* Fixed Canvas Container */}
-        <main
-          ref={containerRef}
-          className="absolute inset-0 bg-slate-100 flex items-start justify-start pt-16 pl-20"
-          onMouseMove={e => {
-            if (toolState.activeTool !== 'select') {
-              const rect = e.currentTarget.getBoundingClientRect();
-              setMaskPos({
-                x: e.clientX - rect.left,
-                y: e.clientY - rect.top,
-              });
-            }
-          }}
-          onMouseLeave={() => setMaskPos(null)}
-          onClick={e => {
-            // Only handle clicks on the main container itself (not on canvas or other elements)
-            if (e.target === e.currentTarget) {
-              // Deselect all elements when clicking on empty space
-              selectElement(null);
-              // Hide animations tab when clearing selections
-              const { setShowAnimationsTab } = useUIStore.getState();
-              setShowAnimationsTab(false);
-            }
-          }}
-        >
+        <ApplicationCanvas 
+          ref={fullscreenCanvasRef}
+          dimensions={dimensions}
+          gridConfig={gridConfig}
+          snapGuides={snapGuides}
+          elements={canvasObjects}
+          groups={groups}
+          selectedIds={selectedObjects.map(el => el.id)}
+          hoveredId={null}
+          isPlaying={false}
+          editingTextId={null}
+          tool={toolState.activeTool}
+          isPathMode={toolState.isPathMode}
+          animationTarget={toolState.animationTarget}
+          lineStartPoint={toolState.lineStartPoint}
+          isLineChaining={toolState.isLineChaining}
+          chainedLineIds={toolState.chainedLineIds}
+          mousePos={null}
+          currentPath={[]}
+          isDrawing={false}
+          shapeRefs={{ current: {} }}
+          groupContainers={{ current: {} }}
+          drawingRef={{ current: null }}
+          canvasScaleFactor={{ current: 1 }}
+          handleCanvasPointerDown={() => {}}
+          handleCanvasPointerMove={() => {}}
+          handlePointerUp={() => {}}
+          handleSelectElement={() => {}}
+          handleCanvasClick={() => {}}
+          handlePointerDown={() => () => {}}
+          handleElementMouseMove={() => () => {}}
+          handleElementMouseLeave={() => () => {}}
+          onPathStartClick={() => {}}
+          handleGroupSelectionDragStart={() => {}}
+          isTextGroupCharacter={() => false}
+          isElementInCustomOrPolygonGroup={() => false}
+        />
+
         {/* Path Mode Banner */}
         {toolState.isPathMode && (
           <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-blue-100 text-blue-800 px-4 py-2 rounded-lg shadow-md z-50 flex items-center gap-4">
@@ -1024,29 +1055,6 @@ export default function EditorCanvas() {
             </button>
           )}
         </div>
-
-        {/* Fixed Centered Canvas */}
-        {dimensions.width > 0 && dimensions.height > 0 ? (
-          <CanvasFrame>
-            <Canvas
-              ref={canvasRef}
-              dimensions={{
-                // Use logical canvas dimensions from store
-                width: canvasState.currentSizeId === 'custom' 
-                  ? canvasState.customSize?.width || 1920 
-                  : canvasState.availableSizes.find(s => s.id === canvasState.currentSizeId)?.width || 1920,
-                height: canvasState.currentSizeId === 'custom' 
-                  ? canvasState.customSize?.height || 1080 
-                  : canvasState.availableSizes.find(s => s.id === canvasState.currentSizeId)?.height || 1080
-              }}
-            />
-          </CanvasFrame>
-        ) : (
-          <div className="flex items-center justify-center bg-gray-100 rounded-lg shadow-lg border border-gray-200 w-2/3 aspect-video">
-            <div className="text-gray-500">Loading canvas...</div>
-          </div>
-        )}
-        </main>
 
         {/* Mask Overlay - Fixed position relative to viewport */}
         <MaskOverlay
