@@ -96,7 +96,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
           autoDensity={true}
         >
           <pixiContainer>
-            <DesignCanvas {...props} />
+            <DesignCanvas {...props} dimensions={dimensions} />
           </pixiContainer>
         </Application>
       </div>

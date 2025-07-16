@@ -95,6 +95,14 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
     isElementInCustomOrPolygonGroup
   } = props;
 
+  // Define canvas frame dimensions (like a typical design canvas)
+  const canvasFrameWidth = 1920;
+  const canvasFrameHeight = 1080;
+  
+  // Calculate position to center the canvas frame
+  const canvasX = (dimensions.width - canvasFrameWidth) / 2;
+  const canvasY = (dimensions.height - canvasFrameHeight) / 2;
+
   return (
     <pixiContainer>
       {/* Grid overlay */}
@@ -102,10 +110,10 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         <GridOverlay
           gridConfig={gridConfig}
           viewportBounds={{
-            x: 0,
-            y: 0,
-            width: dimensions.width,
-            height: dimensions.height
+            x: canvasX,
+            y: canvasY,
+            width: canvasFrameWidth,
+            height: canvasFrameHeight
           }}
         />
       )}
@@ -113,15 +121,28 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
       {/* Snap guides */}
       <SnapGuides
         guides={snapGuides}
-        canvasWidth={dimensions.width}
-        canvasHeight={dimensions.height}
+        canvasWidth={canvasFrameWidth}
+        canvasHeight={canvasFrameHeight}
       />
 
-      {/* Full-size transparent interactive layer to capture background clicks */}
+      {/* Canvas frame background - positioned in center */}
       <pixiGraphics
         draw={(g) => {
           g.clear();
-          g.rect(0, 0, dimensions.width, dimensions.height);
+          g.rect(canvasX, canvasY, canvasFrameWidth, canvasFrameHeight);
+          g.fill({ color: 0xFFFFFF, alpha: 1 });
+          // Add a subtle border to show the canvas boundaries
+          g.stroke({ color: 0xE2E8F0, width: 2 });
+        }}
+        interactive={false}
+        eventMode="none"
+      />
+
+      {/* Interactive layer for the canvas frame */}
+      <pixiGraphics
+        draw={(g) => {
+          g.clear();
+          g.rect(canvasX, canvasY, canvasFrameWidth, canvasFrameHeight);
           g.fill({ color: 0xFFFFFF, alpha: 0 });
         }}
         interactive={true}
@@ -146,8 +167,8 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         return (
           <pixiContainer
             key={`group-${group.id}`}
-            x={group.x}
-            y={group.y}
+            x={group.x + canvasX}
+            y={group.y + canvasY}
             rotation={(group.rotation || 0) * Math.PI / 180}
             ref={(node) => {
               if (node) groupContainers.current[group.id] = node;
@@ -284,8 +305,8 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         return (
           <pixiContainer
             key={el.id}
-            x={el.x}
-            y={el.y}
+            x={el.x + canvasX}
+            y={el.y + canvasY}
             pivot={{ x: 0, y: 0 }}
             interactive={true}
             eventMode="dynamic"
@@ -413,9 +434,9 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           draw={(g) => {
             g.clear();
             if (currentPath.length > 1) {
-              g.moveTo(currentPath[0].x, currentPath[0].y);
+              g.moveTo(currentPath[0].x + canvasX, currentPath[0].y + canvasY);
               currentPath.slice(1).forEach(point => {
-                g.lineTo(point.x, point.y);
+                g.lineTo(point.x + canvasX, point.y + canvasY);
               });
               g.stroke({ 
                 width: 2, 
@@ -470,10 +491,10 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
               const startRatio = (i * totalDashLength) / distance;
               const endRatio = Math.min((i * totalDashLength + dashLength) / distance, 1);
 
-              const startX = lineStartPoint.x + dx * startRatio;
-              const startY = lineStartPoint.y + dy * startRatio;
-              const endX = lineStartPoint.x + dx * endRatio;
-              const endY = lineStartPoint.y + dy * endRatio;
+              const startX = lineStartPoint.x + dx * startRatio + canvasX;
+              const startY = lineStartPoint.y + dy * startRatio + canvasY;
+              const endX = lineStartPoint.x + dx * endRatio + canvasX;
+              const endY = lineStartPoint.y + dy * endRatio + canvasY;
 
               g.moveTo(startX, startY);
               g.lineTo(endX, endY);
@@ -490,7 +511,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
             if (chainedLineIds.length === 0) {
               const HANDLE_SIZE = 7;
               const halfSize = HANDLE_SIZE / 2;
-              g.rect(lineStartPoint.x - halfSize, lineStartPoint.y - halfSize, HANDLE_SIZE, HANDLE_SIZE);
+              g.rect(lineStartPoint.x - halfSize + canvasX, lineStartPoint.y - halfSize + canvasY, HANDLE_SIZE, HANDLE_SIZE);
               g.fill({ color: 0xFFFFFF, alpha: 1 });
               g.stroke({ width: 1, color: 0x74b9ff, alpha: 0.8 });
             }
@@ -498,16 +519,16 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
             // Draw end point indicator - special styling if can close shape
             if (canCloseShape) {
               // Draw a larger, green circle to indicate shape closing
-              g.circle(snapToPoint.x, snapToPoint.y, 8);
+              g.circle(snapToPoint.x + canvasX, snapToPoint.y + canvasY, 8);
               g.fill({ color: 0x4CAF50, alpha: 0.8 });
               g.stroke({ color: 0x2E7D32, width: 2 });
 
               // Draw inner circle
-              g.circle(snapToPoint.x, snapToPoint.y, 4);
+              g.circle(snapToPoint.x + canvasX, snapToPoint.y + canvasY, 4);
               g.fill({ color: 0xFFFFFF, alpha: 0.9 });
             } else {
               // Regular end point indicator
-              g.circle(snapToPoint.x, snapToPoint.y, 4);
+              g.circle(snapToPoint.x + canvasX, snapToPoint.y + canvasY, 4);
               g.fill({ color: 0x888888, alpha: 0.7 });
             }
           }}
@@ -542,8 +563,8 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
 
             return {
               top: {
-                x: selectedElement.x + localPosition.x * cos - localPosition.y * sin,
-                y: selectedElement.y + localPosition.x * sin + localPosition.y * cos
+                x: selectedElement.x + localPosition.x * cos - localPosition.y * sin + canvasX,
+                y: selectedElement.y + localPosition.x * sin + localPosition.y * cos + canvasY
               }
             };
           } else {
@@ -561,20 +582,20 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
 
             return {
               tl: {
-                x: selectedElement.x + localPositions.tl.x * cos - localPositions.tl.y * sin,
-                y: selectedElement.y + localPositions.tl.x * sin + localPositions.tl.y * cos
+                x: selectedElement.x + localPositions.tl.x * cos - localPositions.tl.y * sin + canvasX,
+                y: selectedElement.y + localPositions.tl.x * sin + localPositions.tl.y * cos + canvasY
               },
               tr: {
-                x: selectedElement.x + localPositions.tr.x * cos - localPositions.tr.y * sin,
-                y: selectedElement.y + localPositions.tr.x * sin + localPositions.tr.y * cos
+                x: selectedElement.x + localPositions.tr.x * cos - localPositions.tr.y * sin + canvasX,
+                y: selectedElement.y + localPositions.tr.x * sin + localPositions.tr.y * cos + canvasY
               },
               bl: {
-                x: selectedElement.x + localPositions.bl.x * cos - localPositions.bl.y * sin,
-                y: selectedElement.y + localPositions.bl.x * sin + localPositions.bl.y * cos
+                x: selectedElement.x + localPositions.bl.x * cos - localPositions.bl.y * sin + canvasX,
+                y: selectedElement.y + localPositions.bl.x * sin + localPositions.bl.y * cos + canvasY
               },
               br: {
-                x: selectedElement.x + localPositions.br.x * cos - localPositions.br.y * sin,
-                y: selectedElement.y + localPositions.br.x * sin + localPositions.br.y * cos
+                x: selectedElement.x + localPositions.br.x * cos - localPositions.br.y * sin + canvasX,
+                y: selectedElement.y + localPositions.br.x * sin + localPositions.br.y * cos + canvasY
               }
             };
           }
@@ -586,8 +607,8 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           <React.Fragment key={`handles-${selectedId}`}>
             {/* Resize Handles */}
             <ResizeHandle
-              elementX={selectedElement.x}
-              elementY={selectedElement.y}
+              elementX={selectedElement.x + canvasX}
+              elementY={selectedElement.y + canvasY}
               elementWidth={selectedElement.width}
               elementHeight={selectedElement.height}
               elementRotation={selectedElement.rotation || 0}
@@ -595,8 +616,8 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
               elementId={selectedElement.id}
             />
             <ResizeHandle
-              elementX={selectedElement.x}
-              elementY={selectedElement.y}
+              elementX={selectedElement.x + canvasX}
+              elementY={selectedElement.y + canvasY}
               elementWidth={selectedElement.width}
               elementHeight={selectedElement.height}
               elementRotation={selectedElement.rotation || 0}
@@ -604,8 +625,8 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
               elementId={selectedElement.id}
             />
             <ResizeHandle
-              elementX={selectedElement.x}
-              elementY={selectedElement.y}
+              elementX={selectedElement.x + canvasX}
+              elementY={selectedElement.y + canvasY}
               elementWidth={selectedElement.width}
               elementHeight={selectedElement.height}
               elementRotation={selectedElement.rotation || 0}
@@ -613,8 +634,8 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
               elementId={selectedElement.id}
             />
             <ResizeHandle
-              elementX={selectedElement.x}
-              elementY={selectedElement.y}
+              elementX={selectedElement.x + canvasX}
+              elementY={selectedElement.y + canvasY}
               elementWidth={selectedElement.width}
               elementHeight={selectedElement.height}
               elementRotation={selectedElement.rotation || 0}
