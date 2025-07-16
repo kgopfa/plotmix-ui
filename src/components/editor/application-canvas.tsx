@@ -12,8 +12,6 @@ import type { FederatedPointerEvent } from 'pixi.js';
 
 extend({ Container, Viewport });
 
-
-
 interface ApplicationCanvasProps {
   children?: React.ReactNode;
   // DesignCanvas props
@@ -90,57 +88,47 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
 
     // Set up viewport after application is created
     useEffect(() => {
-      if (appRef.current) {
+      if (appRef.current && !viewportRef.current) {
         // Access the PIXI Application instance through the ref
         // @ts-expect-error - @pixi/react doesn't expose the PIXI Application instance in types
         const pixiApp = appRef.current?.app;
-        if (pixiApp && !viewportRef.current) {
+        if (pixiApp) {
           const viewport = new Viewport({
             screenWidth: dimensions.width,
             screenHeight: dimensions.height,
             worldWidth: dimensions.width * 2,
             worldHeight: dimensions.height * 2,
             events: pixiApp.renderer.events,
-            stopPropagation: true // Stop event propagation to prevent browser zoom
+            stopPropagation: true
           });
           
           viewportRef.current = viewport;
           
           // Configure viewport interactions
           viewport
-            .drag() // Enable dragging
-            .pinch() // Enable pinch-to-zoom
-            .wheel() // Enable wheel zoom
-            .decelerate() // Add deceleration for smooth movement
-            .clampZoom({ // Set zoom limits
+            .drag()
+            .pinch()
+            .wheel()
+            .decelerate()
+            .clampZoom({
               minScale: 0.1,
               maxScale: 5
             })
-            .clamp({ // Set drag boundaries (optional - can be removed for infinite pan)
+            .clamp({
               direction: 'all',
               underflow: 'center'
             });
 
           // Set initial zoom and position
           viewport.setZoom(1);
-          
-          // Center the viewport initially
           viewport.moveCenter(dimensions.width / 2, dimensions.height / 2);
           
           // Replace the stage's children with the viewport
           pixiApp.stage.removeChildren();
           pixiApp.stage.addChild(viewport);
-          
-          // Create a container for the design canvas and add it to the viewport
-          const designContainer = new Container();
-          viewport.addChild(designContainer);
-          
-          // Store the design container for later use
-          // @ts-expect-error - Adding custom property to viewport
-          viewport.designContainer = designContainer;
         }
       }
-    }, [appRef.current, dimensions.width, dimensions.height]);
+    }, [dimensions.width, dimensions.height]);
 
     useImperativeHandle(ref, () => ({
       getApplication: () => appRef.current,
@@ -187,6 +175,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
           resolution={typeof window !== 'undefined' ? window.devicePixelRatio || 2 : 2}
           autoDensity={true}
         >
+          {/* Render DesignCanvas - it will be affected by the viewport */}
           <DesignCanvas {...props} dimensions={dimensions} />
         </Application>
       </div>
