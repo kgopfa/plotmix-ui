@@ -1,16 +1,76 @@
+/* eslint-disable @typescript-eslint/no-namespace */
 'use client';
 
 import React, { forwardRef, useImperativeHandle, useRef, useEffect, useState } from 'react';
-import { Application, extend, ApplicationRef } from '@pixi/react';
-import { Container, Graphics } from 'pixi.js';
-import { Viewport } from 'pixi-viewport';
+import { Application, extend, useApplication, type ApplicationRef } from '@pixi/react';
+import { Container, Graphics, type Application as PixiApplication } from 'pixi.js';
+import { Viewport as BaseViewport, type IViewportOptions } from 'pixi-viewport';
 import { DesignCanvas } from './canvas/design-canvas';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import type { GridConfig } from '../../utils/grid-utils';
 import type { SnapGuide } from '../../utils/element-snapping';
 import type { FederatedPointerEvent } from 'pixi.js';
 
-extend({ Container, Viewport });
+extend({ Container, Graphics });
+
+// Custom Viewport wrapper that properly integrates with @pixi/react
+type ViewportProps = Omit<IViewportOptions, "events">;
+
+class ViewportWrapper extends BaseViewport {
+  constructor(options: ViewportProps & { app: PixiApplication }) {
+    const { app, ...rest } = options;
+    super({
+      ...rest,
+      events: app.renderer.events,
+    });
+    this.drag().pinch().wheel().decelerate()
+      .clampZoom({
+        minScale: 0.1,
+        maxScale: 5
+      })
+      .clamp({
+        direction: 'all',
+        underflow: 'center'
+      });
+  }
+}
+
+extend({ ViewportWrapper });
+
+const Viewport = React.forwardRef<ViewportWrapper, React.PropsWithChildren<ViewportProps>>(
+  (props, ref) => {
+    const { children, ...rest } = props;
+    const { app } = useApplication();
+
+    return (
+      app?.renderer && (
+        <pixiViewportWrapper ref={ref} app={app} {...rest}>
+          {children}
+        </pixiViewportWrapper>
+      )
+    );
+  }
+);
+
+Viewport.displayName = 'Viewport';
+
+// Type declarations for the custom pixi element
+// eslint-disable-next-line @typescript-eslint/no-namespace
+declare global {
+  namespace React.JSX {
+    interface IntrinsicElements {
+      pixiViewportWrapper: React.PropsWithChildren<{
+        app: PixiApplication;
+        screenWidth?: number;
+        screenHeight?: number;
+        worldWidth?: number | null;
+        worldHeight?: number | null;
+        stopPropagation?: boolean;
+        ref?: React.Ref<ViewportWrapper>;
+      }>;
+    }
+  }
+}
 
 interface ApplicationCanvasProps {
   children?: React.ReactNode;
@@ -53,7 +113,7 @@ interface ApplicationCanvasProps {
 
 export interface ApplicationCanvasRef {
   getApplication: () => ApplicationRef | null;
-  getViewport: () => Viewport | null;
+  getViewport: () => ViewportWrapper | null;
   centerOnDesign: () => void;
   zoomToFit: () => void;
   resetZoom: () => void;
@@ -62,7 +122,7 @@ export interface ApplicationCanvasRef {
 export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCanvasProps>(
   (props, ref) => {
     const appRef = useRef<ApplicationRef | null>(null);
-    const viewportRef = useRef<Viewport | null>(null);
+    const viewportRef = useRef<ViewportWrapper | null>(null);
     const [dimensions, setDimensions] = useState({ 
       width: typeof window !== 'undefined' ? window.innerWidth : 0, 
       height: typeof window !== 'undefined' ? window.innerHeight : 0 
@@ -85,50 +145,6 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
         return () => window.removeEventListener('resize', updateDimensions);
       }
     }, []);
-
-    // Set up viewport after application is created
-    useEffect(() => {
-      if (appRef.current && !viewportRef.current) {
-        // Access the PIXI Application instance through the ref
-        // @ts-expect-error - @pixi/react doesn't expose the PIXI Application instance in types
-        const pixiApp = appRef.current?.app;
-        if (pixiApp) {
-          const viewport = new Viewport({
-            screenWidth: dimensions.width,
-            screenHeight: dimensions.height,
-            worldWidth: dimensions.width * 2,
-            worldHeight: dimensions.height * 2,
-            events: pixiApp.renderer.events,
-            stopPropagation: true
-          });
-          
-          viewportRef.current = viewport;
-          
-          // Configure viewport interactions
-          viewport
-            .drag()
-            .pinch()
-            .wheel()
-            .decelerate()
-            .clampZoom({
-              minScale: 0.1,
-              maxScale: 5
-            })
-            .clamp({
-              direction: 'all',
-              underflow: 'center'
-            });
-
-          // Set initial zoom and position
-          viewport.setZoom(1);
-          viewport.moveCenter(dimensions.width / 2, dimensions.height / 2);
-          
-          // Replace the stage's children with the viewport
-          pixiApp.stage.removeChildren();
-          pixiApp.stage.addChild(viewport);
-        }
-      }
-    }, [dimensions.width, dimensions.height]);
 
     useImperativeHandle(ref, () => ({
       getApplication: () => appRef.current,
@@ -175,8 +191,17 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
           resolution={typeof window !== 'undefined' ? window.devicePixelRatio || 2 : 2}
           autoDensity={true}
         >
-          {/* Render DesignCanvas - it will be affected by the viewport */}
-          <DesignCanvas {...props} dimensions={dimensions} />
+          <Viewport
+            screenWidth={dimensions.width}
+            screenHeight={dimensions.height}
+            worldWidth={dimensions.width * 2}
+            worldHeight={dimensions.height * 2}
+            stopPropagation={true}
+            ref={viewportRef}
+          >
+            {/* Render DesignCanvas - it will be affected by the viewport */}
+            <DesignCanvas {...props} dimensions={dimensions} />
+          </Viewport>
         </Application>
       </div>
     );
