@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { GridOverlay } from './grid-overlay';
 import { SnapGuides } from './snap-guides';
 import type { GridConfig } from '../../../utils/grid-utils';
@@ -83,11 +83,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
     groupContainers,
     drawingRef,
     canvasScaleFactor,
-    handleCanvasPointerDown,
-    handleCanvasPointerMove,
     handlePointerUp,
-    handleSelectElement,
-    handleCanvasClick,
     handlePointerDown,
     handleElementMouseMove,
     handleElementMouseLeave,
@@ -127,6 +123,20 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
   const isDragging = useRef(false);
   const dragData = useRef<FederatedPointerEvent['data'] | null>(null);
   const dragOffset = useRef<{ x: number; y: number } | null>(null);
+  const containerRef = useRef<Container | null>(null);
+
+  // Update PIXI container properties when lock state changes
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.interactive = !isLocked;
+      containerRef.current.eventMode = isLocked ? "none" : "static";
+      console.log('[DesignCanvas] Updated container properties:', {
+        interactive: !isLocked,
+        eventMode: isLocked ? "none" : "static",
+        isLocked
+      });
+    }
+  }, [isLocked]);
 
   return (
     <pixiContainer 
@@ -135,6 +145,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
       interactive={!isLocked}
       eventMode={isLocked ? "none" : "static"}
       ref={(container) => {
+        containerRef.current = container;
         if (container) {
           console.log('Design Canvas container position:', {
             x: container.x,
@@ -142,9 +153,23 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
             centerX,
             centerY
           });
+          console.log('Design Canvas container settings:', {
+            interactive: !isLocked,
+            eventMode: isLocked ? "none" : "static",
+            isLocked
+          });
         }
       }}
       onPointerDown={(e: FederatedPointerEvent) => {
+        console.log('[DesignCanvas] onPointerDown called. isLocked:', isLocked);
+        console.log('[DesignCanvas] Container properties at onPointerDown:', {
+          interactive: containerRef.current?.interactive,
+          eventMode: containerRef.current?.eventMode
+        });
+        if (isLocked) {
+          console.log('[DesignCanvas] Blocked onPointerDown due to lock');
+          return;
+        }
         console.log('Design Canvas clicked at:', e.global);
         console.log('Design Canvas position:', { x: centerX, y: centerY });
         console.log('Design Canvas drag start at:', e.global);
@@ -160,6 +185,15 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         };
       }}
       onPointerMove={(e: FederatedPointerEvent) => {
+        console.log('[DesignCanvas] onPointerMove called. isLocked:', isLocked);
+        console.log('[DesignCanvas] Container properties at onPointerMove:', {
+          interactive: containerRef.current?.interactive,
+          eventMode: containerRef.current?.eventMode
+        });
+        if (isLocked) {
+          console.log('[DesignCanvas] Blocked onPointerMove due to lock');
+          return;
+        }
         if (isDragging.current && dragData.current && dragOffset.current) {
           const container = e.currentTarget as Container;
           const mousePos = dragData.current.getLocalPosition(container.parent);
@@ -172,6 +206,8 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         }
       }}
       onPointerUp={(e: FederatedPointerEvent) => {
+        console.log('[DesignCanvas] onPointerUp called. isLocked:', isLocked);
+        if (isLocked) return;
         if (isDragging.current) {
           const container = e.currentTarget as Container;
           console.log('Design Canvas drag end at:', { x: container.x, y: container.y });
@@ -181,6 +217,8 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         }
       }}
       onPointerUpOutside={(e: FederatedPointerEvent) => {
+        console.log('[DesignCanvas] onPointerUpOutside called. isLocked:', isLocked);
+        if (isLocked) return;
         if (isDragging.current) {
           const container = e.currentTarget as Container;
           console.log('Design Canvas drag end outside at:', { x: container.x, y: container.y });
@@ -188,6 +226,9 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           dragData.current = null;
           dragOffset.current = null;
         }
+      }}
+      onClick={() => {
+        console.log('[DesignCanvas] onClick triggered. isLocked:', isLocked);
       }}
     >
       {/* Grid overlay */}
@@ -216,33 +257,11 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           g.clear();
           g.rect(-canvasFrameWidth / 2, -canvasFrameHeight / 2, canvasFrameWidth, canvasFrameHeight);
           g.fill({ color: 0xFFFFFF, alpha: 1 });
-          // Add a subtle border to show the canvas boundaries
+          // Always use the default border color
           g.stroke({ color: 0xE2E8F0, width: 1 });
         }}
         interactive={false}
         eventMode="none"
-      />
-
-      {/* Interactive layer for the canvas frame */}
-      <pixiGraphics
-        draw={(g) => {
-          g.clear();
-          g.rect(-canvasFrameWidth / 2, -canvasFrameHeight / 2, canvasFrameWidth, canvasFrameHeight);
-          g.fill({ color: 0xFFFFFF, alpha: 0 });
-        }}
-        interactive={true}
-        eventMode="static"
-        onPointerDown={(e: FederatedPointerEvent) => {
-          if (tool === 'draw') {
-            handleCanvasPointerDown(e);
-          } else {
-            handleSelectElement(null);
-            handleCanvasClick(e);
-          }
-        }}
-        onPointerMove={handleCanvasPointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerUpOutside={handlePointerUp}
       />
 
       {/* Render group containers first */}

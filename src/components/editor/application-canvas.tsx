@@ -166,6 +166,22 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       };
     }, [onCanvasZoomChange]);
 
+    // Control viewport drag based on lock state
+    useEffect(() => {
+      if (viewportRef.current) {
+        const viewport = viewportRef.current;
+        if (props.isLocked) {
+          // Disable viewport drag when locked
+          viewport.plugins.remove('drag');
+          console.log('[ApplicationCanvas] Disabled viewport drag due to lock');
+        } else {
+          // Enable viewport drag when unlocked
+          viewport.drag();
+          console.log('[ApplicationCanvas] Enabled viewport drag');
+        }
+      }
+    }, [props.isLocked]);
+
     useImperativeHandle(ref, () => ({
       getApplication: () => appRef.current,
       getViewport: () => viewportRef.current,

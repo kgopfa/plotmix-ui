@@ -19,10 +19,7 @@ export class ViewportWrapper extends BaseViewport {
         minScale: 0.1,
         maxScale: 5
       })
-      .clamp({
-        direction: 'all',
-        underflow: 'center'
-      })
+      // Removed clamp to allow free movement
       .setZoom(1, true)
       .moveCenter(0, 0);
   }
