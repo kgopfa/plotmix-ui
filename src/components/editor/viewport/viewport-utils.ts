@@ -1,15 +1,11 @@
 import type { ViewportWrapper } from './viewport-wrapper';
 
-// Viewport utility functions that accept dynamic canvas dimensions
-export const centerOnDesign = (
-  viewport: ViewportWrapper | null, 
-  canvasWidth: number, 
-  canvasHeight: number
-) => {
+// Viewport utility functions
+export const centerOnDesign = (viewport: ViewportWrapper | null, canvasWidth: number, canvasHeight: number) => {
   if (viewport) {
-    const centerX = canvasWidth / 2;
-    const centerY = canvasHeight / 2;
-    viewport.moveCenter(centerX, centerY);
+    // Center on the design canvas at its adjusted position using ratio
+    const centerY = (canvasHeight * 3) * 0.321; // Use ratio based on canvas height
+    viewport.moveCenter(canvasWidth / 2, centerY);
   }
 };
 
@@ -26,24 +22,17 @@ export const zoomToFit = (
     const scaleY = (containerHeight - padding * 2) / canvasHeight;
     const scale = Math.min(scaleX, scaleY, 5);
 
-    // Use smooth zoom with animation and center on design canvas
+    // Use smooth zoom with animation and center on design canvas at (0,0)
     viewport.setZoom(scale, true);
-    const centerX = canvasWidth / 2;
-    const centerY = canvasHeight / 2;
-    viewport.moveCenter(centerX, centerY);
+    viewport.moveCenter(0, 0);
   }
 };
 
-export const resetZoom = (
-  viewport: ViewportWrapper | null,
-  canvasWidth: number,
-  canvasHeight: number
-) => {
+export const resetZoom = (viewport: ViewportWrapper | null, canvasWidth: number, canvasHeight: number) => {
   if (viewport) {
-    // Use smooth zoom with animation and center on design canvas
+    // Use smooth zoom with animation and center on design canvas at the adjusted position using ratio
+    const centerY = (canvasHeight * 3) * 0.207; // Use ratio based on canvas height
     viewport.setZoom(1, true);
-    const centerX = canvasWidth / 2;
-    const centerY = canvasHeight / 2;
-    viewport.moveCenter(centerX, centerY);
+    viewport.moveCenter(canvasWidth / 2, centerY);
   }
 }; 

@@ -121,17 +121,26 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
     // Handle canvas zoom changes from timeline
     useEffect(() => {
       if (viewportRef.current && canvasZoom !== undefined) {
-        // Apply zoom while maintaining the current center position
-        const currentCenter = viewportRef.current.center;
         const currentZoom = viewportRef.current.scale.x;
         
         // Only update if the zoom values are significantly different to prevent infinite loops
         if (Math.abs(currentZoom - canvasZoom) > 0.001) {
           viewportRef.current.setZoom(canvasZoom, false);
-          viewportRef.current.moveCenter(currentCenter.x, currentCenter.y);
+          viewportRef.current.moveCenter((canvasWidth * 3) / 2, (canvasHeight * 3) * 0.207);
         }
       }
-    }, [canvasZoom]);
+    }, [canvasZoom, canvasWidth, canvasHeight]);
+
+    // Initialize viewport to center on design canvas
+    useEffect(() => {
+      if (viewportRef.current) {
+        // Center the viewport on the design canvas at the center of the world
+        const centerX = (canvasWidth * 3) / 2;
+        const centerY = (canvasHeight * 3) * 0.207;
+        
+        viewportRef.current.moveCenter(centerX, centerY);
+      } 
+    }, [canvasWidth, canvasHeight]);
 
     // Listen for viewport zoom changes and sync back to timeline
     useEffect(() => {
@@ -156,9 +165,9 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
     useImperativeHandle(ref, () => ({
       getApplication: () => appRef.current,
       getViewport: () => viewportRef.current,
-      centerOnDesign: () => centerOnDesign(viewportRef.current, canvasWidth, canvasHeight),
+      centerOnDesign: () => centerOnDesign(viewportRef.current, canvasWidth * 3, canvasHeight * 3),
       zoomToFit: () => zoomToFit(viewportRef.current, dimensions.width, dimensions.height, canvasWidth, canvasHeight),
-      resetZoom: () => resetZoom(viewportRef.current, canvasWidth, canvasHeight)
+      resetZoom: () => resetZoom(viewportRef.current, canvasWidth * 3, canvasHeight * 3)
     }));
 
     return (
@@ -185,11 +194,9 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
           <Viewport
             screenWidth={dimensions.width}
             screenHeight={dimensions.height}
-            worldWidth={dimensions.width * 2}
-            worldHeight={dimensions.height * 2}
+            worldWidth={canvasWidth * 3}
+            worldHeight={canvasHeight * 3}
             stopPropagation={true}
-            canvasWidth={canvasWidth}
-            canvasHeight={canvasHeight}
             ref={viewportRef}
           >
             <DesignCanvas {...props} dimensions={dimensions} />
@@ -198,6 +205,6 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       </div>
     );
   }
-);
-
+  );
+  
 ApplicationCanvas.displayName = 'ApplicationCanvas'; 
