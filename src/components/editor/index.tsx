@@ -1,5 +1,7 @@
 // app/layout.tsx or pages/index.tsx depending on routing
 'use client';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { TimelineManager } from '@/lib/timeline-manager';
@@ -9,6 +11,7 @@ import { useUIStore, useActiveNav, useActiveRightPanel, useCanvasLock } from '@/
 import { useTimelineSync } from '@/stores/use-timeline-store';
 import { useCanvasMigration } from '@/hooks/use-canvas-migration';
 import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
+import { Graphics, FederatedPointerEvent } from 'pixi.js';
 import { PropertiesPanel } from './navigation/right-sidebar/properties-panel';
 import { AnimationsPanel } from './navigation/right-sidebar/animations-panel';
 
@@ -102,6 +105,19 @@ export default function EditorCanvas() {
   
   // Canvas lock state
   const isCanvasLocked = useCanvasLock();
+
+  // Interactive state for canvas operations
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [currentPath, setCurrentPath] = useState<Array<{ x: number; y: number }>>([]);
+  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
+  const [editingTextId] = useState<string | null>(null);
+
+  // Refs for canvas operations
+  const shapeRefs = useRef<Record<string, unknown>>({});
+  const groupContainers = useRef<Record<string, unknown>>({});
+  const drawingRef = useRef<Graphics | null>(null);
+  const canvasScaleFactor = useRef<number>(1);
 
   // Element snapping functionality - only keep what's needed for canvas operations
   const {
@@ -960,6 +976,258 @@ export default function EditorCanvas() {
 
   const activeNav = useActiveNav();
 
+  // Canvas interaction handlers
+  const handleCanvasClick = useCallback((e: FederatedPointerEvent) => {
+    const { setActiveTool, setMaskPos, setLineStartPoint, setLineChaining, addChainedLineId, setClosingShape, setShowAnimationsTab } = useUIStore.getState();
+    
+    // Convert global coordinates to local coordinates within the design canvas
+    // The event target is the design canvas container itself
+    const designCanvasContainer = e.currentTarget as any;
+    if (!designCanvasContainer) {
+      console.error('Design canvas container not found');
+      return;
+    }
+    
+    // Use PIXI's built-in coordinate transformation
+    const localPos = designCanvasContainer.toLocal(e.global);
+    
+    console.log('handleCanvasClick fired', {
+      tool: toolState.activeTool,
+      isShapeTool: ['rectangle', 'circle', 'triangle', 'arc', 'text', 'textGroup'].includes(toolState.activeTool),
+      coords: { x: e.global.x, y: e.global.y },
+      localCoords: { x: localPos.x, y: localPos.y }
+    });
+    
+    if (toolState.activeTool === 'select') {
+      // Clear selections when clicking on empty canvas
+      selectElement(null);
+      setShowAnimationsTab(false);
+      return;
+    }
+
+    // Handle line and polygon drawing with two-click system
+    if (toolState.activeTool === 'line' || toolState.activeTool === 'simpleLine') {
+      // Check if we're in polygon chaining mode and trying to close the shape
+      if (toolState.isLineChaining && toolState.chainedLineIds.length > 0) {
+        const firstLineId = toolState.chainedLineIds[0];
+        const firstLine = canvasObjects.find(el => el.id === firstLineId);
+        
+        if (firstLine?.lineOptions?.points) {
+          const startPoint = firstLine.lineOptions.points.start;
+          const clickDistance = Math.hypot(localPos.x - startPoint.x, localPos.y - startPoint.y);
+          
+          if (clickDistance <= 30) { // Within 30px of start point - close the polygon
+            // Create the final closing line from current position to the origin
+            const finalLine = createNewObject(
+              'line', 
+              0, 0, // Position will be calculated in createLine
+              canvasObjects,
+              undefined, // pathPoints
+              toolState.isPathMode, // isPath
+              undefined, // imageData
+              undefined, // width
+              undefined, // height
+              undefined, // text
+              toolState.lineStartPoint!, // Start from current line start point
+              startPoint // End at the polygon's origin point
+            );
+            
+            // If in path mode, mark it as a path
+            if (toolState.isPathMode) {
+              finalLine.isAnimationPath = true;
+            }
+
+            setCanvasObjects(prev => {
+              const updated = [...prev, finalLine];
+              console.log('setCanvasObjects called (polygon close), new length:', updated.length);
+              return updated;
+            });
+            addChainedLineId(finalLine.id);
+            
+            // Now trigger polygon closure
+            setClosingShape(true);
+            return;
+          }
+        }
+      }
+
+      if (!toolState.lineStartPoint) {
+        // First click: Set the start point
+        setLineStartPoint({ x: localPos.x, y: localPos.y });
+        if (toolState.activeTool === 'line') {
+          setLineChaining(true);
+        }
+      } else {
+        // Second click: Create the line from start to end point
+        const startPoint = toolState.lineStartPoint;
+        const endPoint = { x: localPos.x, y: localPos.y };
+        
+        const newElement = createNewObject(
+          'line', 
+          0, 0, // Position will be calculated in createLine
+          canvasObjects,
+          undefined, // pathPoints
+          toolState.isPathMode, // isPath
+          undefined, // imageData
+          undefined, // width
+          undefined, // height
+          undefined, // text
+          startPoint,
+          endPoint
+        );
+        
+        // If in path mode, mark it as a path
+        if (toolState.isPathMode) {
+          newElement.isAnimationPath = true;
+        }
+
+        console.log('About to create line element:', newElement);
+        setCanvasObjects(prev => {
+          const updated = [...prev, newElement];
+          console.log('setCanvasObjects called (line), new length:', updated.length);
+          return updated;
+        });
+        selectElement([newElement]);
+
+        // Handle line chaining for polygon creation
+        if (toolState.activeTool === 'line') {
+          addChainedLineId(newElement.id);
+          // Set the end point as the new start point for the next line
+          setLineStartPoint(endPoint);
+        } else {
+          // For simpleLine, complete the line and exit
+          setLineStartPoint(null);
+          setActiveTool('select');
+          setMaskPos(null);
+        }
+      }
+      return;
+    }
+
+    // Handle other creation tools (non-line tools)
+    if (['rectangle', 'circle', 'triangle', 'arc', 'text', 'textGroup'].includes(toolState.activeTool)) {
+      console.log('About to create element:', toolState.activeTool, { x: localPos.x, y: localPos.y });
+      const newElement = createNewObject(toolState.activeTool as 'rectangle' | 'circle' | 'triangle' | 'arc' | 'text' | 'textGroup', localPos.x, localPos.y, canvasObjects);
+      
+      // If in path mode, mark it as a path
+      if (toolState.isPathMode) {
+        newElement.isAnimationPath = true;
+      }
+
+      setCanvasObjects(prev => {
+        const updated = [...prev, newElement];
+        console.log('setCanvasObjects called (shape), new length:', updated.length);
+        return updated;
+      });
+      selectElement([newElement]);
+      
+      // Switch to select tool after creating elements
+      setActiveTool('select');
+      setMaskPos(null);
+    }
+  }, [toolState, canvasObjects, setCanvasObjects, selectElement]);
+
+  const handleSelectElement = useCallback((id: string | null, isMultiSelect?: boolean) => {
+    if (id) {
+      const element = canvasObjects.find(e => e.id === id);
+      if (element) {
+        selectElement(isMultiSelect ? [element] : [element], isMultiSelect);
+      }
+    } else {
+      selectElement(null);
+      const { setShowAnimationsTab } = useUIStore.getState();
+      setShowAnimationsTab(false);
+    }
+  }, [canvasObjects, selectElement]);
+
+  const handleCanvasPointerDown = useCallback((e: FederatedPointerEvent) => {
+    if (toolState.activeTool === 'select') {
+      // Check if we clicked on an empty area (no element was hit)
+      const hitElement = canvasObjects.find(element => {
+        const shapeRef = shapeRefs.current[element.id];
+        if (!shapeRef) return false;
+        
+        // Check if the click point is within the element's bounds
+        const bounds = (shapeRef as any).getBounds();
+        return e.global.x >= bounds.x && 
+               e.global.x <= bounds.x + bounds.width && 
+               e.global.y >= bounds.y && 
+               e.global.y <= bounds.y + bounds.height;
+      });
+      
+      // If no element was hit, deselect all elements
+      if (!hitElement) {
+        selectElement(null);
+        const { setShowAnimationsTab } = useUIStore.getState();
+        setShowAnimationsTab(false);
+        return;
+      }
+    }
+    
+    if (toolState.activeTool === 'draw') {
+      setIsDrawing(true);
+      const newPoint = { x: e.global.x, y: e.global.y };
+      setCurrentPath([newPoint]);
+    }
+  }, [toolState.activeTool, canvasObjects, selectElement]);
+
+  const handleCanvasPointerMove = useCallback((e: FederatedPointerEvent) => {
+    setMousePos({ x: e.global.x, y: e.global.y });
+    
+    if (isDrawing && toolState.activeTool === 'draw') {
+      const newPoint = { x: e.global.x, y: e.global.y };
+      setCurrentPath(prev => [...prev, newPoint]);
+    }
+  }, [isDrawing, toolState.activeTool]);
+
+  const handlePointerUp = useCallback(() => {
+    if (isDrawing && toolState.activeTool === 'draw') {
+      setIsDrawing(false);
+      // Handle draw completion logic here
+      setCurrentPath([]);
+    }
+  }, [isDrawing, toolState.activeTool]);
+
+  const handlePointerDown = useCallback((id: string, _shapeX: number, _shapeY: number) => (e: FederatedPointerEvent) => {
+    // Handle element pointer down
+    const isMultiSelect = (e.nativeEvent && 'metaKey' in e.nativeEvent) ?
+      (e.nativeEvent.metaKey || e.nativeEvent.ctrlKey) : false;
+
+    if (toolState.activeTool !== 'select' && toolState.activeTool !== 'draw') {
+      e.stopPropagation();
+      handleCanvasClick(e);
+      return;
+    }
+
+    // Handle element selection
+    handleSelectElement(id, isMultiSelect);
+  }, [toolState.activeTool, handleCanvasClick, handleSelectElement]);
+
+  const handleElementMouseMove = useCallback((id: string) => (_e: FederatedPointerEvent) => {
+    setHoveredId(id);
+  }, []);
+
+  const handleElementMouseLeave = useCallback((_id: string) => () => {
+    setHoveredId(null);
+  }, []);
+
+  const handleGroupSelectionDragStart = useCallback((_virtualElement: AnimatedCanvasObject, _mouseX: number, _mouseY: number, _allElements?: AnimatedCanvasObject[], _gridConfig?: unknown) => {
+    // Handle group selection drag start
+  }, []);
+
+  const isTextGroupCharacter = useCallback((element: AnimatedCanvasObject) => {
+    return !!(element.type === 'character' && element.parentTextGroupId);
+  }, []);
+
+  const isElementInCustomOrPolygonGroup = useCallback((element: AnimatedCanvasObject) => {
+    const group = groups.find(g => g.id === element.groupId);
+    return !!(group && !group.isDefaultGroup && (group.type === 'custom' || group.type === 'polygon'));
+  }, [groups]);
+
+  const onPathStartClick = useCallback((_elementId: string, _x: number, _y: number) => {
+    // Handle path start click
+  }, []);
+
   // Timeline should shift when any tab with content panels is active (not toggle buttons or compact tabs)
   // Include: scenes, uploads, ai, video, text, animations, layers
   // Exclude: tools (compact), audio (toggle), timeline (toggle)
@@ -988,34 +1256,34 @@ export default function EditorCanvas() {
           elements={canvasObjects}
           groups={groups}
           selectedIds={selectedObjects.map(el => el.id)}
-          hoveredId={null}
+          hoveredId={hoveredId}
           isPlaying={false}
-          editingTextId={null}
+          editingTextId={editingTextId}
           tool={toolState.activeTool}
           isPathMode={toolState.isPathMode}
           animationTarget={toolState.animationTarget}
           lineStartPoint={toolState.lineStartPoint}
           isLineChaining={toolState.isLineChaining}
           chainedLineIds={toolState.chainedLineIds}
-          mousePos={null}
-          currentPath={[]}
-          isDrawing={false}
-          shapeRefs={{ current: {} }}
-          groupContainers={{ current: {} }}
-          drawingRef={{ current: null }}
-          canvasScaleFactor={{ current: 1 }}
-          handleCanvasPointerDown={() => {}}
-          handleCanvasPointerMove={() => {}}
-          handlePointerUp={() => {}}
-          handleSelectElement={() => {}}
-          handleCanvasClick={() => {}}
-          handlePointerDown={() => () => {}}
-          handleElementMouseMove={() => () => {}}
-          handleElementMouseLeave={() => () => {}}
-          onPathStartClick={() => {}}
-          handleGroupSelectionDragStart={() => {}}
-          isTextGroupCharacter={() => false}
-          isElementInCustomOrPolygonGroup={() => false}
+          mousePos={mousePos}
+          currentPath={currentPath}
+          isDrawing={isDrawing}
+          shapeRefs={shapeRefs}
+          groupContainers={groupContainers}
+          drawingRef={drawingRef}
+          canvasScaleFactor={canvasScaleFactor}
+          handleCanvasPointerDown={handleCanvasPointerDown}
+          handleCanvasPointerMove={handleCanvasPointerMove}
+          handlePointerUp={handlePointerUp}
+          handleSelectElement={handleSelectElement}
+          handleCanvasClick={handleCanvasClick}
+          handlePointerDown={handlePointerDown}
+          handleElementMouseMove={handleElementMouseMove}
+          handleElementMouseLeave={handleElementMouseLeave}
+          onPathStartClick={onPathStartClick}
+          handleGroupSelectionDragStart={handleGroupSelectionDragStart}
+          isTextGroupCharacter={isTextGroupCharacter}
+          isElementInCustomOrPolygonGroup={isElementInCustomOrPolygonGroup}
           canvasZoom={canvasZoom}
           onCanvasZoomChange={setCanvasZoom}
           isLocked={isCanvasLocked}

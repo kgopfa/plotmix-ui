@@ -135,10 +135,17 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
       y={centerY}
       interactive={!isLocked}
       eventMode={isLocked ? "none" : "static"}
+      hitArea={new Rectangle(-canvasFrameWidth / 2, -canvasFrameHeight / 2, canvasFrameWidth, canvasFrameHeight)}
       ref={(container) => {
         containerRef.current = container;
       }}
       onPointerDown={(e: FederatedPointerEvent) => {
+        console.log('[DesignCanvas] onPointerDown called', { x: e.global.x, y: e.global.y });
+        
+        // Call the canvas click handler first for element creation
+        props.handleCanvasClick(e);
+        
+        // Then handle dragging if needed
         isDragging.current = true;
         dragData.current = e.data;
         
@@ -151,6 +158,10 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         };
       }}
       onPointerMove={(e: FederatedPointerEvent) => {
+        // Call the canvas pointer move handler for drawing and other interactions
+        props.handleCanvasPointerMove(e);
+        
+        // Then handle dragging if needed
         if (isDragging.current && dragData.current && dragOffset.current) {
           const container = e.currentTarget as Container;
           const mousePos = dragData.current.getLocalPosition(container.parent);
@@ -161,6 +172,9 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         }
       }}
       onPointerUp={() => {
+        // Call the canvas pointer up handler
+        props.handlePointerUp();
+        
         if (isLocked) return;
         if (isDragging.current) {
           isDragging.current = false;
@@ -169,6 +183,9 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         }
       }}
       onPointerUpOutside={() => {
+        // Call the canvas pointer up handler
+        props.handlePointerUp();
+        
         if (isLocked) return;
         if (isDragging.current) {
           isDragging.current = false;
@@ -176,7 +193,11 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           dragOffset.current = null;
         }
       }}
-      onClick={() => {}}
+      onClick={(e: FederatedPointerEvent) => {
+        console.log('[DesignCanvas] onClick called', { x: e.global.x, y: e.global.y });
+        // Call the canvas click handler for element creation
+        props.handleCanvasClick(e);
+      }}
     >
       {/* Grid overlay */}
       {gridConfig && (

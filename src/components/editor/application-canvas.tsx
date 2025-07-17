@@ -198,6 +198,12 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
           WebkitUserSelect: 'none',
           WebkitTouchCallout: 'none'
         }}
+        onMouseDown={(e) => {
+          console.log('[ApplicationCanvas] Mouse down on container', { x: e.clientX, y: e.clientY });
+        }}
+        onClick={(e) => {
+          console.log('[ApplicationCanvas] Click on container', { x: e.clientX, y: e.clientY });
+        }}
       >
 
 
@@ -215,7 +221,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
             screenHeight={dimensions.height}
             worldWidth={canvasWidth * 3}
             worldHeight={canvasHeight * 3}
-            stopPropagation={true}
+            stopPropagation={false}
             ref={viewportRef}
           >
             <DesignCanvas {...props} dimensions={dimensions} isLocked={props.isLocked} />
