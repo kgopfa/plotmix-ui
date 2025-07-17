@@ -106,18 +106,9 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
   const canvasFrameWidth = currentSize?.width || 1280;
   const canvasFrameHeight = currentSize?.height || 720;
   
-  // Center position for the design canvas in world coordinates
-  const centerX = (canvasFrameWidth * 3) / 2;
-  const centerY = (canvasFrameHeight * 3) * 0.207; // Ratio to position close to (1875, 693)
-
-  // Debug logging
-  console.log('Design Canvas Debug:', {
-    canvasFrameWidth,
-    canvasFrameHeight,
-    centerX,
-    centerY,
-    applicationDimensions: props.dimensions
-  });
+  // Position the design canvas at the origin of the world
+  const centerX = 0;
+  const centerY = -155;
 
   // Drag state refs
   const isDragging = useRef(false);
@@ -146,33 +137,8 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
       eventMode={isLocked ? "none" : "static"}
       ref={(container) => {
         containerRef.current = container;
-        if (container) {
-          console.log('Design Canvas container position:', {
-            x: container.x,
-            y: container.y,
-            centerX,
-            centerY
-          });
-          console.log('Design Canvas container settings:', {
-            interactive: !isLocked,
-            eventMode: isLocked ? "none" : "static",
-            isLocked
-          });
-        }
       }}
       onPointerDown={(e: FederatedPointerEvent) => {
-        console.log('[DesignCanvas] onPointerDown called. isLocked:', isLocked);
-        console.log('[DesignCanvas] Container properties at onPointerDown:', {
-          interactive: containerRef.current?.interactive,
-          eventMode: containerRef.current?.eventMode
-        });
-        if (isLocked) {
-          console.log('[DesignCanvas] Blocked onPointerDown due to lock');
-          return;
-        }
-        console.log('Design Canvas clicked at:', e.global);
-        console.log('Design Canvas position:', { x: centerX, y: centerY });
-        console.log('Design Canvas drag start at:', e.global);
         isDragging.current = true;
         dragData.current = e.data;
         
@@ -185,15 +151,6 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         };
       }}
       onPointerMove={(e: FederatedPointerEvent) => {
-        console.log('[DesignCanvas] onPointerMove called. isLocked:', isLocked);
-        console.log('[DesignCanvas] Container properties at onPointerMove:', {
-          interactive: containerRef.current?.interactive,
-          eventMode: containerRef.current?.eventMode
-        });
-        if (isLocked) {
-          console.log('[DesignCanvas] Blocked onPointerMove due to lock');
-          return;
-        }
         if (isDragging.current && dragData.current && dragOffset.current) {
           const container = e.currentTarget as Container;
           const mousePos = dragData.current.getLocalPosition(container.parent);
@@ -201,35 +158,25 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           // Position the container so the mouse stays at the same relative position
           container.x = mousePos.x - dragOffset.current.x;
           container.y = mousePos.y - dragOffset.current.y;
-          
-          console.log('Design Canvas dragged to:', { x: container.x, y: container.y });
         }
       }}
-      onPointerUp={(e: FederatedPointerEvent) => {
-        console.log('[DesignCanvas] onPointerUp called. isLocked:', isLocked);
+      onPointerUp={() => {
         if (isLocked) return;
         if (isDragging.current) {
-          const container = e.currentTarget as Container;
-          console.log('Design Canvas drag end at:', { x: container.x, y: container.y });
           isDragging.current = false;
           dragData.current = null;
           dragOffset.current = null;
         }
       }}
-      onPointerUpOutside={(e: FederatedPointerEvent) => {
-        console.log('[DesignCanvas] onPointerUpOutside called. isLocked:', isLocked);
+      onPointerUpOutside={() => {
         if (isLocked) return;
         if (isDragging.current) {
-          const container = e.currentTarget as Container;
-          console.log('Design Canvas drag end outside at:', { x: container.x, y: container.y });
           isDragging.current = false;
           dragData.current = null;
           dragOffset.current = null;
         }
       }}
-      onClick={() => {
-        console.log('[DesignCanvas] onClick triggered. isLocked:', isLocked);
-      }}
+      onClick={() => {}}
     >
       {/* Grid overlay */}
       {gridConfig && (

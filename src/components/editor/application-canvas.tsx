@@ -130,7 +130,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
         // Only update if the zoom values are significantly different to prevent infinite loops
         if (Math.abs(currentZoom - canvasZoom) > 0.001) {
           viewportRef.current.setZoom(canvasZoom, false);
-          viewportRef.current.moveCenter((canvasWidth * 3) / 2, (canvasHeight * 3) * 0.207);
+          viewportRef.current.moveCenter(0, 0);
         }
       }
     }, [canvasZoom, canvasWidth, canvasHeight]);
@@ -138,11 +138,8 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
     // Initialize viewport to center on design canvas
     useEffect(() => {
       if (viewportRef.current) {
-        // Center the viewport on the design canvas at the center of the world
-        const centerX = (canvasWidth * 3) / 2;
-        const centerY = (canvasHeight * 3) * 0.207;
-        
-        viewportRef.current.moveCenter(centerX, centerY);
+        // Center the viewport on the design canvas at the origin
+        viewportRef.current.moveCenter(0, 0);
       } 
     }, [canvasWidth, canvasHeight]);
 
@@ -185,9 +182,9 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
     useImperativeHandle(ref, () => ({
       getApplication: () => appRef.current,
       getViewport: () => viewportRef.current,
-      centerOnDesign: () => centerOnDesign(viewportRef.current, canvasWidth * 3, canvasHeight * 3),
+      centerOnDesign: () => centerOnDesign(viewportRef.current),
       zoomToFit: () => zoomToFit(viewportRef.current, dimensions.width, dimensions.height, canvasWidth, canvasHeight),
-      resetZoom: () => resetZoom(viewportRef.current, canvasWidth * 3, canvasHeight * 3)
+      resetZoom: () => resetZoom(viewportRef.current)
     }));
 
     return (
