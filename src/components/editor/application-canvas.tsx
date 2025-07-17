@@ -1,82 +1,16 @@
-/* eslint-disable @typescript-eslint/no-namespace */
 'use client';
 
 import React, { forwardRef, useImperativeHandle, useRef, useEffect, useState } from 'react';
-import { Application, extend, useApplication, type ApplicationRef } from '@pixi/react';
-import { Container, Graphics, type Application as PixiApplication } from 'pixi.js';
-import { Viewport as BaseViewport, type IViewportOptions } from 'pixi-viewport';
+import { Application, extend, type ApplicationRef } from '@pixi/react';
+import { Container, Graphics } from 'pixi.js';
 import { DesignCanvas } from './canvas/design-canvas';
+import { Viewport, ViewportWrapper, centerOnDesign, zoomToFit, resetZoom } from './viewport';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import type { GridConfig } from '../../utils/grid-utils';
 import type { SnapGuide } from '../../utils/element-snapping';
 import type { FederatedPointerEvent } from 'pixi.js';
 
 extend({ Container, Graphics });
-
-// Custom Viewport wrapper that properly integrates with @pixi/react
-type ViewportProps = Omit<IViewportOptions, "events">;
-
-class ViewportWrapper extends BaseViewport {
-  constructor(options: ViewportProps & { app: PixiApplication }) {
-    const { app, ...rest } = options;
-    super({
-      ...rest,
-      events: app.renderer.events,
-    });
-    this.drag().pinch().wheel().decelerate({
-      friction: 0.95,
-      bounce: 0.8
-    })
-      .clampZoom({
-        minScale: 0.1,
-        maxScale: 5
-      })
-      .clamp({
-        direction: 'all',
-        underflow: 'center'
-      })
-      // Always center the design canvas
-      .setZoom(1, true)
-      .moveCenter(640, 360); // Center on the design canvas (1280/2, 720/2)
-  }
-}
-
-extend({ ViewportWrapper });
-
-const Viewport = React.forwardRef<ViewportWrapper, React.PropsWithChildren<ViewportProps>>(
-  (props, ref) => {
-    const { children, ...rest } = props;
-    const { app } = useApplication();
-
-    return (
-      app?.renderer && (
-        <pixiViewportWrapper ref={ref} app={app} {...rest}>
-          {children}
-        </pixiViewportWrapper>
-      )
-    );
-  }
-);
-
-Viewport.displayName = 'Viewport';
-
-// Type declarations for the custom pixi element
-// eslint-disable-next-line @typescript-eslint/no-namespace
-declare global {
-  namespace React.JSX {
-    interface IntrinsicElements {
-      pixiViewportWrapper: React.PropsWithChildren<{
-        app: PixiApplication;
-        screenWidth?: number;
-        screenHeight?: number;
-        worldWidth?: number | null;
-        worldHeight?: number | null;
-        stopPropagation?: boolean;
-        ref?: React.Ref<ViewportWrapper>;
-      }>;
-    }
-  }
-}
 
 interface ApplicationCanvasProps {
   children?: React.ReactNode;
@@ -131,9 +65,9 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
     const appRef = useRef<ApplicationRef | null>(null);
     const viewportRef = useRef<ViewportWrapper | null>(null);
     const canvasContainerRef = useRef<HTMLDivElement | null>(null);
-    const [dimensions, setDimensions] = useState({ 
-      width: typeof window !== 'undefined' ? window.innerWidth : 0, 
-      height: typeof window !== 'undefined' ? window.innerHeight : 0 
+    const [dimensions, setDimensions] = useState({
+      width: typeof window !== 'undefined' ? window.innerWidth : 0,
+      height: typeof window !== 'undefined' ? window.innerHeight : 0
     });
 
     // Update dimensions when window resizes
@@ -154,54 +88,6 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       }
     }, []);
 
-    // Prevent browser zoom only within canvas area
-    useEffect(() => {
-      const container = canvasContainerRef.current;
-      if (!container) return;
-
-      // Prevent browser zoom gestures within the canvas area
-      const preventBrowserZoom = (e: TouchEvent) => {
-        // Prevent browser zoom for multi-touch gestures
-        if (e.touches.length > 1) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-      };
-
-      const preventWheelZoom = (e: WheelEvent) => {
-        // Prevent Ctrl+scroll zoom within canvas area
-        if (e.ctrlKey || e.metaKey) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-      };
-
-      const preventGestureZoom = (e: Event) => {
-        // Prevent gesture-based zoom on Safari
-        e.preventDefault();
-        e.stopPropagation();
-      };
-
-      // Add event listeners to the canvas container
-      container.addEventListener('touchstart', preventBrowserZoom, { passive: false });
-      container.addEventListener('touchmove', preventBrowserZoom, { passive: false });
-      container.addEventListener('wheel', preventWheelZoom, { passive: false });
-      
-      // Safari-specific gesture events
-      container.addEventListener('gesturestart', preventGestureZoom, { passive: false });
-      container.addEventListener('gesturechange', preventGestureZoom, { passive: false });
-      container.addEventListener('gestureend', preventGestureZoom, { passive: false });
-
-      return () => {
-        container.removeEventListener('touchstart', preventBrowserZoom);
-        container.removeEventListener('touchmove', preventBrowserZoom);
-        container.removeEventListener('wheel', preventWheelZoom);
-        container.removeEventListener('gesturestart', preventGestureZoom);
-        container.removeEventListener('gesturechange', preventGestureZoom);
-        container.removeEventListener('gestureend', preventGestureZoom);
-      };
-    }, []);
-
     // Configure PIXI canvas for custom touch handling
     useEffect(() => {
       // @ts-expect-error - @pixi/react doesn't expose the PIXI Application instance in types
@@ -220,37 +106,13 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
     useImperativeHandle(ref, () => ({
       getApplication: () => appRef.current,
       getViewport: () => viewportRef.current,
-      centerOnDesign: () => {
-        if (viewportRef.current) {
-          // Always center on the design canvas (640, 360)
-          viewportRef.current.moveCenter(640, 360);
-        }
-      },
-      zoomToFit: () => {
-        if (viewportRef.current) {
-          const designWidth = 1280;
-          const designHeight = 720;
-          const padding = 50;
-          const scaleX = (dimensions.width - padding * 2) / designWidth;
-          const scaleY = (dimensions.height - padding * 2) / designHeight;
-          const scale = Math.min(scaleX, scaleY, 5);
-          
-          // Use smooth zoom with animation and center on design canvas
-          viewportRef.current.setZoom(scale, true);
-          viewportRef.current.moveCenter(640, 360);
-        }
-      },
-      resetZoom: () => {
-        if (viewportRef.current) {
-          // Use smooth zoom with animation and center on design canvas
-          viewportRef.current.setZoom(1, true);
-          viewportRef.current.moveCenter(640, 360);
-        }
-      }
+      centerOnDesign: () => centerOnDesign(viewportRef.current),
+      zoomToFit: () => zoomToFit(viewportRef.current, dimensions.width, dimensions.height),
+      resetZoom: () => resetZoom(viewportRef.current)
     }));
 
     return (
-      <div 
+      <div
         ref={canvasContainerRef}
         className="absolute inset-0 bg-slate-100 canvas-area"
         style={{
