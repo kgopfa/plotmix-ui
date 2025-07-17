@@ -198,9 +198,25 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     const { setActiveTool, setMaskPos, setLineStartPoint, setLineChaining, addChainedLineId, setClosingShape, setShowAnimationsTab } = useUIStore.getState();
     
     if (tool === 'select') {
-      clearSelections();
-      // Hide animations tab when clearing selections
-      setShowAnimationsTab(false);
+      // Check if we clicked on an element - if so, don't clear selections
+      const hitElement = elements.find(element => {
+        const shapeRef = shapeRefs.current[element.id];
+        if (!shapeRef) return false;
+        
+        // Check if the click point is within the element's bounds
+        const bounds = shapeRef.getBounds();
+        return e.global.x >= bounds.x && 
+               e.global.x <= bounds.x + bounds.width && 
+               e.global.y >= bounds.y && 
+               e.global.y <= bounds.y + bounds.height;
+      });
+      
+      // Only clear selections if no element was hit
+      if (!hitElement) {
+        clearSelections();
+        // Hide animations tab when clearing selections
+        setShowAnimationsTab(false);
+      }
       return;
     }
 
@@ -1053,8 +1069,9 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         // Hide animations tab when clearing selections
         const { setShowAnimationsTab } = useUIStore.getState();
         setShowAnimationsTab(false);
-        return;
       }
+      // If an element was hit, don't do anything - let the element's own handler deal with it
+      return;
     }
     
     if (tool === 'draw') {

@@ -142,8 +142,24 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
       onPointerDown={(e: FederatedPointerEvent) => {
         console.log('[DesignCanvas] onPointerDown called', { x: e.global.x, y: e.global.y });
         
-        // Call the canvas click handler first for element creation
-        props.handleCanvasClick(e);
+        // Only call canvas click handler if no element was clicked
+        // This prevents deselection when clicking on elements
+        const hitElement = props.elements.find(element => {
+          const shapeRef = props.shapeRefs.current[element.id];
+          if (!shapeRef) return false;
+          
+          // Check if the click point is within the element's bounds
+          const bounds = (shapeRef as Container).getBounds();
+          return e.global.x >= bounds.x && 
+                 e.global.x <= bounds.x + bounds.width && 
+                 e.global.y >= bounds.y && 
+                 e.global.y <= bounds.y + bounds.height;
+        });
+        
+        // Only call canvas click handler if no element was hit
+        if (!hitElement) {
+          props.handleCanvasClick(e);
+        }
         
         // Then handle dragging if needed
         isDragging.current = true;
@@ -195,8 +211,24 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
       }}
       onClick={(e: FederatedPointerEvent) => {
         console.log('[DesignCanvas] onClick called', { x: e.global.x, y: e.global.y });
-        // Call the canvas click handler for element creation
-        props.handleCanvasClick(e);
+        // Only call canvas click handler if no element was clicked
+        // This prevents deselection when clicking on elements
+        const hitElement = props.elements.find(element => {
+          const shapeRef = props.shapeRefs.current[element.id];
+          if (!shapeRef) return false;
+          
+          // Check if the click point is within the element's bounds
+          const bounds = (shapeRef as Container).getBounds();
+          return e.global.x >= bounds.x && 
+                 e.global.x <= bounds.x + bounds.width && 
+                 e.global.y >= bounds.y && 
+                 e.global.y <= bounds.y + bounds.height;
+        });
+        
+        // Only call canvas click handler if no element was hit
+        if (!hitElement) {
+          props.handleCanvasClick(e);
+        }
       }}
     >
       {/* Grid overlay */}
