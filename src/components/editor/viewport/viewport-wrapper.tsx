@@ -5,8 +5,8 @@ import type { Application as PixiApplication } from 'pixi.js';
 export type ViewportProps = Omit<IViewportOptions, "events">;
 
 export class ViewportWrapper extends BaseViewport {
-  constructor(options: ViewportProps & { app: PixiApplication }) {
-    const { app, ...rest } = options;
+  constructor(options: ViewportProps & { app: PixiApplication; canvasWidth?: number; canvasHeight?: number }) {
+    const { app, canvasWidth = 1280, canvasHeight = 720, ...rest } = options;
     super({
       ...rest,
       events: app.renderer.events,
@@ -25,6 +25,6 @@ export class ViewportWrapper extends BaseViewport {
       })
       // Always center the design canvas
       .setZoom(1, true)
-      .moveCenter(640, 360); // Center on the design canvas (1280/2, 720/2)
+      .moveCenter(canvasWidth / 2, canvasHeight / 2);
   }
 } 

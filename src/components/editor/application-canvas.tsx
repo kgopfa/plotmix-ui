@@ -5,6 +5,7 @@ import { Application, extend, type ApplicationRef } from '@pixi/react';
 import { Container, Graphics } from 'pixi.js';
 import { DesignCanvas } from './canvas/design-canvas';
 import { Viewport, ViewportWrapper, centerOnDesign, zoomToFit, resetZoom } from './viewport';
+import { useCanvasState } from '@/stores/use-ui-store';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import type { GridConfig } from '../../utils/grid-utils';
 import type { SnapGuide } from '../../utils/element-snapping';
@@ -70,6 +71,16 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       height: typeof window !== 'undefined' ? window.innerHeight : 0
     });
 
+    // Get current canvas size from UI store
+    const canvasState = useCanvasState();
+    const currentSize = canvasState.currentSizeId === 'custom' 
+      ? canvasState.customSize 
+      : canvasState.availableSizes.find(size => size.id === canvasState.currentSizeId);
+    
+    // Use current canvas size or fallback to default
+    const canvasWidth = currentSize?.width || 1280;
+    const canvasHeight = currentSize?.height || 720;
+
     // Update dimensions when window resizes
     useEffect(() => {
       const updateDimensions = () => {
@@ -106,9 +117,9 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
     useImperativeHandle(ref, () => ({
       getApplication: () => appRef.current,
       getViewport: () => viewportRef.current,
-      centerOnDesign: () => centerOnDesign(viewportRef.current),
-      zoomToFit: () => zoomToFit(viewportRef.current, dimensions.width, dimensions.height),
-      resetZoom: () => resetZoom(viewportRef.current)
+      centerOnDesign: () => centerOnDesign(viewportRef.current, canvasWidth, canvasHeight),
+      zoomToFit: () => zoomToFit(viewportRef.current, dimensions.width, dimensions.height, canvasWidth, canvasHeight),
+      resetZoom: () => resetZoom(viewportRef.current, canvasWidth, canvasHeight)
     }));
 
     return (
@@ -138,6 +149,8 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
             worldWidth={dimensions.width * 2}
             worldHeight={dimensions.height * 2}
             stopPropagation={true}
+            canvasWidth={canvasWidth}
+            canvasHeight={canvasHeight}
             ref={viewportRef}
           >
             <DesignCanvas {...props} dimensions={dimensions} />

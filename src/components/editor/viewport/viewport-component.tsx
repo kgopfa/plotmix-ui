@@ -5,14 +5,19 @@ import { ViewportWrapper, type ViewportProps } from './viewport-wrapper';
 
 extend({ ViewportWrapper });
 
-const Viewport = React.forwardRef<ViewportWrapper, React.PropsWithChildren<ViewportProps>>(
+interface ViewportComponentProps extends ViewportProps {
+  canvasWidth?: number;
+  canvasHeight?: number;
+}
+
+const Viewport = React.forwardRef<ViewportWrapper, React.PropsWithChildren<ViewportComponentProps>>(
   (props, ref) => {
-    const { children, ...rest } = props;
+    const { children, canvasWidth = 1280, canvasHeight = 720, ...rest } = props;
     const { app } = useApplication();
 
     return (
       app?.renderer && (
-        <pixiViewportWrapper ref={ref} app={app} {...rest}>
+        <pixiViewportWrapper ref={ref} app={app} canvasWidth={canvasWidth} canvasHeight={canvasHeight} {...rest}>
           {children}
         </pixiViewportWrapper>
       )
@@ -34,6 +39,8 @@ declare global {
         worldWidth?: number | null;
         worldHeight?: number | null;
         stopPropagation?: boolean;
+        canvasWidth?: number;
+        canvasHeight?: number;
         ref?: React.Ref<ViewportWrapper>;
       }>;
     }

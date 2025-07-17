@@ -1,39 +1,49 @@
 import type { ViewportWrapper } from './viewport-wrapper';
 
-// Design canvas constants
-export const DESIGN_CANVAS_WIDTH = 1280;
-export const DESIGN_CANVAS_HEIGHT = 720;
-export const DESIGN_CANVAS_CENTER_X = DESIGN_CANVAS_WIDTH / 2; // 640
-export const DESIGN_CANVAS_CENTER_Y = DESIGN_CANVAS_HEIGHT / 2; // 360
-
-// Viewport utility functions
-export const centerOnDesign = (viewport: ViewportWrapper | null) => {
+// Viewport utility functions that accept dynamic canvas dimensions
+export const centerOnDesign = (
+  viewport: ViewportWrapper | null, 
+  canvasWidth: number, 
+  canvasHeight: number
+) => {
   if (viewport) {
-    viewport.moveCenter(DESIGN_CANVAS_CENTER_X, DESIGN_CANVAS_CENTER_Y);
+    const centerX = canvasWidth / 2;
+    const centerY = canvasHeight / 2;
+    viewport.moveCenter(centerX, centerY);
   }
 };
 
 export const zoomToFit = (
   viewport: ViewportWrapper | null, 
   containerWidth: number, 
-  containerHeight: number
+  containerHeight: number,
+  canvasWidth: number,
+  canvasHeight: number
 ) => {
   if (viewport) {
     const padding = 50;
-    const scaleX = (containerWidth - padding * 2) / DESIGN_CANVAS_WIDTH;
-    const scaleY = (containerHeight - padding * 2) / DESIGN_CANVAS_HEIGHT;
+    const scaleX = (containerWidth - padding * 2) / canvasWidth;
+    const scaleY = (containerHeight - padding * 2) / canvasHeight;
     const scale = Math.min(scaleX, scaleY, 5);
 
     // Use smooth zoom with animation and center on design canvas
     viewport.setZoom(scale, true);
-    viewport.moveCenter(DESIGN_CANVAS_CENTER_X, DESIGN_CANVAS_CENTER_Y);
+    const centerX = canvasWidth / 2;
+    const centerY = canvasHeight / 2;
+    viewport.moveCenter(centerX, centerY);
   }
 };
 
-export const resetZoom = (viewport: ViewportWrapper | null) => {
+export const resetZoom = (
+  viewport: ViewportWrapper | null,
+  canvasWidth: number,
+  canvasHeight: number
+) => {
   if (viewport) {
     // Use smooth zoom with animation and center on design canvas
     viewport.setZoom(1, true);
-    viewport.moveCenter(DESIGN_CANVAS_CENTER_X, DESIGN_CANVAS_CENTER_Y);
+    const centerX = canvasWidth / 2;
+    const centerY = canvasHeight / 2;
+    viewport.moveCenter(centerX, centerY);
   }
 }; 
