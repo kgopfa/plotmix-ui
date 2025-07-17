@@ -51,6 +51,9 @@ interface ApplicationCanvasProps {
   isTextGroupCharacter: (element: AnimatedCanvasObject) => boolean;
   isElementInCustomOrPolygonGroup: (element: AnimatedCanvasObject) => boolean;
   onZoomChange?: (zoom: number) => void;
+  // Viewport zoom props
+  canvasZoom?: number;
+  onCanvasZoomChange?: (zoom: number) => void;
 }
 
 export interface ApplicationCanvasRef {
@@ -63,6 +66,7 @@ export interface ApplicationCanvasRef {
 
 export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCanvasProps>(
   (props, ref) => {
+    const { canvasZoom, onCanvasZoomChange } = props;
     const appRef = useRef<ApplicationRef | null>(null);
     const viewportRef = useRef<ViewportWrapper | null>(null);
     const canvasContainerRef = useRef<HTMLDivElement | null>(null);
@@ -113,6 +117,41 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
         // Cleanup if needed
       };
     }, [appRef]);
+
+    // Handle canvas zoom changes from timeline
+    useEffect(() => {
+      if (viewportRef.current && canvasZoom !== undefined) {
+        // Apply zoom while maintaining the current center position
+        const currentCenter = viewportRef.current.center;
+        const currentZoom = viewportRef.current.scale.x;
+        
+        // Only update if the zoom values are significantly different to prevent infinite loops
+        if (Math.abs(currentZoom - canvasZoom) > 0.001) {
+          viewportRef.current.setZoom(canvasZoom, false);
+          viewportRef.current.moveCenter(currentCenter.x, currentCenter.y);
+        }
+      }
+    }, [canvasZoom]);
+
+    // Listen for viewport zoom changes and sync back to timeline
+    useEffect(() => {
+      if (!viewportRef.current || !onCanvasZoomChange) return;
+
+      const viewport = viewportRef.current;
+      const handleZoomChange = () => {
+        const currentZoom = viewport.scale.x; // PIXI viewport scale
+        onCanvasZoomChange?.(currentZoom);
+      };
+
+      // Listen for zoom events from the viewport
+      viewport.on('zoomed', handleZoomChange);
+      viewport.on('zoomed-end', handleZoomChange);
+
+      return () => {
+        viewport.off('zoomed', handleZoomChange);
+        viewport.off('zoomed-end', handleZoomChange);
+      };
+    }, [onCanvasZoomChange]);
 
     useImperativeHandle(ref, () => ({
       getApplication: () => appRef.current,

@@ -1013,6 +1013,8 @@ export default function EditorCanvas() {
           handleGroupSelectionDragStart={() => {}}
           isTextGroupCharacter={() => false}
           isElementInCustomOrPolygonGroup={() => false}
+          canvasZoom={canvasZoom}
+          onCanvasZoomChange={setCanvasZoom}
         />
 
         {/* Path Mode Banner */}
