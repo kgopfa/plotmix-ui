@@ -11,6 +11,7 @@ import type { GridConfig } from '../../utils/grid-utils';
 import type { SnapGuide } from '../../utils/element-snapping';
 import type { FederatedPointerEvent } from 'pixi.js';
 
+
 extend({ Container, Graphics });
 
 interface ApplicationCanvasProps {
@@ -54,6 +55,8 @@ interface ApplicationCanvasProps {
   // Viewport zoom props
   canvasZoom?: number;
   onCanvasZoomChange?: (zoom: number) => void;
+  // Lock state
+  isLocked?: boolean;
 }
 
 export interface ApplicationCanvasRef {
@@ -74,6 +77,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       width: typeof window !== 'undefined' ? window.innerWidth : 0,
       height: typeof window !== 'undefined' ? window.innerHeight : 0
     });
+
 
     // Get current canvas size from UI store
     const canvasState = useCanvasState();
@@ -182,6 +186,8 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
           WebkitTouchCallout: 'none'
         }}
       >
+
+
         <Application
           ref={appRef}
           width={dimensions.width}
@@ -199,7 +205,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
             stopPropagation={true}
             ref={viewportRef}
           >
-            <DesignCanvas {...props} dimensions={dimensions} />
+            <DesignCanvas {...props} dimensions={dimensions} isLocked={props.isLocked} />
           </Viewport>
         </Application>
       </div>

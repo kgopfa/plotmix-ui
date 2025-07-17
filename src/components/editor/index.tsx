@@ -5,13 +5,13 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { TimelineManager } from '@/lib/timeline-manager';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useCanvasElements, useCanvasGroups } from '@/stores/use-canvas-store';
-import { useUIStore, useActiveNav, useActiveRightPanel } from '@/stores/use-ui-store';
+import { useUIStore, useActiveNav, useActiveRightPanel, useCanvasLock } from '@/stores/use-ui-store';
 import { useTimelineSync } from '@/stores/use-timeline-store';
 import { useCanvasMigration } from '@/hooks/use-canvas-migration';
 import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
 import { PropertiesPanel } from './navigation/right-sidebar/properties-panel';
 import { AnimationsPanel } from './navigation/right-sidebar/animations-panel';
-import { HistoryPanel } from './panels/history-panel';
+
 import { Timeline } from './timeline';
 import { MaskOverlay } from './canvas/mask-overlay';
 import { AnimatedCanvasObject, ElementAnimation, CanvasGroup } from '@/types/canvas';
@@ -99,6 +99,9 @@ export default function EditorCanvas() {
 
   // Canvas zoom state - will be implemented with pixi-viewport
   const [canvasZoom, setCanvasZoom] = useState(1);
+  
+  // Canvas lock state
+  const isCanvasLocked = useCanvasLock();
 
   // Element snapping functionality - only keep what's needed for canvas operations
   const {
@@ -1015,6 +1018,7 @@ export default function EditorCanvas() {
           isElementInCustomOrPolygonGroup={() => false}
           canvasZoom={canvasZoom}
           onCanvasZoomChange={setCanvasZoom}
+          isLocked={isCanvasLocked}
         />
 
         {/* Path Mode Banner */}
@@ -1068,16 +1072,16 @@ export default function EditorCanvas() {
 
         {/* Floating Right Panel - Content */}
         {(() => {
-          // Only show right panel when there's a selection (except for history)
-          const shouldShow = panelState.rightPanelVisible && activeRightPanel && (
-            activeRightPanel === 'history' || (hasSelection && (activeRightPanel === 'properties' || activeRightPanel === 'animations'))
+          // Only show right panel when there's a selection
+          const shouldShow = panelState.rightPanelVisible && activeRightPanel && hasSelection && (
+            activeRightPanel === 'properties' || activeRightPanel === 'animations'
           );
           return shouldShow;
         })() && (
           <>
             <div
               className={`absolute right-20 bg-white border border-gray-200 rounded-lg shadow-sm overflow-y-auto z-30 mb-2 transform transition-all duration-300 ease-out ${
-                hasSelection || activeRightPanel === 'history' 
+                hasSelection 
                   ? 'translate-x-0 opacity-100' 
                   : 'translate-x-full opacity-0'
               }`}
@@ -1098,9 +1102,6 @@ export default function EditorCanvas() {
                   onInspectorChange={handleInspectorChange}
                   onGroupInspectorChange={handleGroupInspectorChange}
                 />
-              )}
-              { activeRightPanel === 'history' && (
-                <HistoryPanel />
               )}
             </div>
           </>

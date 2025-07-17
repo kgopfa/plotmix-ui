@@ -57,6 +57,8 @@ interface DesignCanvasProps {
   // Helper functions
   isTextGroupCharacter: (element: AnimatedCanvasObject) => boolean;
   isElementInCustomOrPolygonGroup: (element: AnimatedCanvasObject) => boolean;
+  // Lock state
+  isLocked?: boolean;
 }
 
 export const DesignCanvas = (props: DesignCanvasProps) => {
@@ -92,7 +94,8 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
     onPathStartClick,
     handleGroupSelectionDragStart,
     isTextGroupCharacter,
-    isElementInCustomOrPolygonGroup
+    isElementInCustomOrPolygonGroup,
+    isLocked
   } = props;
 
   // Get canvas size from UI store
@@ -129,8 +132,8 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
     <pixiContainer 
       x={centerX} 
       y={centerY}
-      interactive={true}
-      eventMode="static"
+      interactive={!isLocked}
+      eventMode={isLocked ? "none" : "static"}
       ref={(container) => {
         if (container) {
           console.log('Design Canvas container position:', {

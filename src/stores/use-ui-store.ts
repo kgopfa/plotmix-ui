@@ -77,7 +77,7 @@ interface KeyboardShortcut {
 export type NavKey = 'video' | 'scenes' | 'uploads' | 'ai' | 'text' | 'animations' | 'layers' | 'tools' | 'audio' | 'timeline';
 
 // Right sidebar keys
-export type RightPanelKey = 'properties' | 'animations' | 'history';
+export type RightPanelKey = 'properties' | 'animations' | 'lock';
 
 interface NavigationState {
   activeNav: NavKey | null; // sticks after click
@@ -96,6 +96,7 @@ interface UIState {
   activeRightPanel: RightPanelKey | null;
   hoverRightPanel: RightPanelKey | null;
   showAnimationsTab: boolean;
+  isCanvasLocked: boolean;
 }
 
 // Actions
@@ -155,6 +156,10 @@ interface UIActions {
   setCustomCanvasSize: (width: number, height: number) => void;
   addCanvasSize: (size: CanvasSize) => void;
   removeCanvasSize: (sizeId: string) => void;
+  
+  // Lock Actions
+  toggleCanvasLock: () => void;
+  setCanvasLock: (locked: boolean) => void;
 }
 
 type UIStore = UIState & UIActions;
@@ -275,6 +280,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
       activeRightPanel: null,
       hoverRightPanel: null,
       showAnimationsTab: false,
+      isCanvasLocked: false,
 
   // Panel Actions
   toggleLeftPanel: () => {
@@ -619,6 +625,19 @@ export const useUIStore = create<UIStore>((set, get) => ({
       }
     }));
   },
+
+  // Lock Actions
+  toggleCanvasLock: () => {
+    set(produce((state) => {
+      state.isCanvasLocked = !state.isCanvasLocked;
+    }));
+  },
+
+  setCanvasLock: (locked: boolean) => {
+    set(produce((state) => {
+      state.isCanvasLocked = locked;
+    }));
+  },
 }));
 
 // Selector hooks for specific parts of the UI state
@@ -636,6 +655,11 @@ export const useActiveRightPanel = () => useUIStore((state) => state.activeRight
 export const useSetActiveRightPanel = () => useUIStore((state) => state.setActiveRightPanel);
 export const useHoverRightPanel = () => useUIStore((state) => state.hoverRightPanel);
 export const useSetHoverRightPanel = () => useUIStore((state) => state.setHoverRightPanel);
+
+// Lock state hooks
+export const useCanvasLock = () => useUIStore((state) => state.isCanvasLocked);
+export const useToggleCanvasLock = () => useUIStore((state) => state.toggleCanvasLock);
+export const useSetCanvasLock = () => useUIStore((state) => state.setCanvasLock);
 
 // Action hooks
 export const usePanelActions = () => useUIStore(
