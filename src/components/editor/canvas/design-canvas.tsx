@@ -123,6 +123,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
   // Drag state refs
   const isDragging = useRef(false);
   const dragData = useRef<FederatedPointerEvent['data'] | null>(null);
+  const dragOffset = useRef<{ x: number; y: number } | null>(null);
 
   return (
     <pixiContainer 
@@ -146,13 +147,24 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         console.log('Design Canvas drag start at:', e.global);
         isDragging.current = true;
         dragData.current = e.data;
+        
+        // Calculate the offset between mouse and container position
+        const container = e.currentTarget as Container;
+        const mousePos = e.data.getLocalPosition(container.parent);
+        dragOffset.current = {
+          x: mousePos.x - container.x,
+          y: mousePos.y - container.y
+        };
       }}
       onPointerMove={(e: FederatedPointerEvent) => {
-        if (isDragging.current && dragData.current) {
+        if (isDragging.current && dragData.current && dragOffset.current) {
           const container = e.currentTarget as Container;
-          const newPosition = dragData.current.getLocalPosition(container.parent);
-          container.x = newPosition.x;
-          container.y = newPosition.y;
+          const mousePos = dragData.current.getLocalPosition(container.parent);
+          
+          // Position the container so the mouse stays at the same relative position
+          container.x = mousePos.x - dragOffset.current.x;
+          container.y = mousePos.y - dragOffset.current.y;
+          
           console.log('Design Canvas dragged to:', { x: container.x, y: container.y });
         }
       }}
@@ -162,6 +174,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           console.log('Design Canvas drag end at:', { x: container.x, y: container.y });
           isDragging.current = false;
           dragData.current = null;
+          dragOffset.current = null;
         }
       }}
       onPointerUpOutside={(e: FederatedPointerEvent) => {
@@ -170,6 +183,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           console.log('Design Canvas drag end outside at:', { x: container.x, y: container.y });
           isDragging.current = false;
           dragData.current = null;
+          dragOffset.current = null;
         }
       }}
     >
