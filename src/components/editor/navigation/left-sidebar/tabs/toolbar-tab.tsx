@@ -70,9 +70,9 @@ export function ToolbarTab() {
         };
       case 'select':
         return {
-          active: 'bg-gradient-to-r from-indigo-500 to-indigo-600 shadow-indigo-500/30',
-          hover: 'hover:bg-indigo-50 hover:text-indigo-700',
-          text: 'text-indigo-600'
+          active: 'bg-gradient-to-r from-orange-500 to-orange-600 shadow-orange-500/30',
+          hover: 'hover:bg-orange-50 hover:text-orange-700',
+          text: 'text-orange-600'
         };
       default:
         return {
