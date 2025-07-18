@@ -217,10 +217,10 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                 <button className="group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 hover:text-green-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95">
                   <CloudCheck className="size-5 transition-all duration-200 group-hover:scale-110" />
                 </button>
-                <button className="ml-4 group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 hover:text-blue-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 pl-3 border-l border-gray-200/50">
+                <button className="ml-4 group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 hover:text-blue-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95">
                   <Undo2 className="size-5 transition-all duration-200 group-hover:scale-110" />
                 </button>
-                <button className="ml-2 group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 hover:text-blue-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 pr-3 border-r border-gray-200/50">
+                <button className="ml-4 group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 hover:text-blue-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95">
                   <Redo2 className="size-5 transition-all duration-200 group-hover:scale-110" />
                 </button>
                 
@@ -318,7 +318,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                 </Menu>
 
                 {/* Scene selector */}
-                <div className="relative ml-4">
+                <div className="relative ml-8">
                   <div className="grid w-48 max-w-sm grid-cols-1 relative">
                     {editingSceneId === activeSceneId ? (
                       <input
@@ -350,7 +350,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                             startEditingSceneName(currentScene.id, currentScene.name);
                           }
                         }}
-                        className="col-start-1 row-start-1 flex items-center w-full h-9 rounded-xl bg-white/95 backdrop-blur-sm py-1.5 pr-10 pl-3 text-sm text-gray-900 font-medium outline-2 -outline-offset-1 outline-gray-400 hover:outline-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 border border-gray-200/50 shadow-sm transition-all duration-200 ease-out hover:shadow-md"
+                        className="col-start-1 row-start-1 flex items-center w-full h-9 rounded-xl bg-white/95 backdrop-blur-sm py-1.5 pr-10 pl-3 text-sm text-gray-900 font-medium outline-1 -outline-offset-1 outline-gray-500 hover:outline-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 border border-gray-200/50 shadow-sm transition-all duration-200 ease-out hover:shadow-md"
                       >
                         <span className="truncate">{currentScene?.name || 'Scene 1'}</span>
                       </button>
@@ -417,7 +417,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                   type="text"
                   value="100%"
                   onChange={() => {}}
-                  className="col-start-1 row-start-1 block w-full h-9 rounded-xl bg-white/95 backdrop-blur-sm py-1.5 pr-3 pl-6 text-sm text-gray-600 font-medium outline-2 -outline-offset-1 outline-gray-400 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 border border-gray-200/50 shadow-sm"
+                  className="col-start-1 row-start-1 block w-full h-9 rounded-xl bg-white/95 backdrop-blur-sm py-1.5 pr-3 pl-6 text-sm text-gray-600 font-medium outline-1 -outline-offset-1 outline-gray-500 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 border border-gray-200/50 shadow-sm"
                 />
                 <ChevronDown className="size-3 absolute right-4 top-1/2 -translate-y-1/2 text-gray-500" />
               </div>
@@ -432,7 +432,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                   placeholder="Project name"
                   value={projectName}
                   onChange={(e) => setProjectName(e.target.value)}
-                  className="col-start-1 row-start-1 block w-full h-9 rounded-xl bg-white/95 backdrop-blur-sm py-1.5 pr-3 pl-6 text-sm text-gray-600 font-medium outline-2 -outline-offset-1 outline-gray-400 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 border border-gray-200/50 shadow-sm"
+                  className="col-start-1 row-start-1 block w-full h-9 rounded-xl bg-white/95 backdrop-blur-sm py-1.5 pr-3 pl-6 text-sm text-gray-600 font-medium outline-1 -outline-offset-1 outline-gray-500 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 border border-gray-200/50 shadow-sm"
                 />
               </div>
             </div>
