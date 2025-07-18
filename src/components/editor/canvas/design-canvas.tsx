@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { GridOverlay } from './grid-overlay';
 import { SnapGuides } from './snap-guides';
 import type { GridConfig } from '../../../utils/grid-utils';
@@ -16,6 +16,9 @@ import RadiusHandle from './radius-handle';
 import { AnimatedTextGroup } from './animated-text-group';
 import { GroupSelection } from './group-selection';
 import { useCanvasState, useCanvasLock } from '@/stores/use-ui-store';
+import { useCanvasOperations } from '@/stores/use-canvas-store';
+import { useSelectionStore } from '@/stores/use-selection-store';
+import { eventManager } from '@/lib/event-manager';
 
 interface DesignCanvasProps {
   dimensions: { width: number; height: number };
@@ -81,7 +84,6 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
     drawingRef,
     canvasScaleFactor,
     handlePointerUp,
-    handlePointerDown,
     handleElementMouseMove,
     handleElementMouseLeave,
     onPathStartClick,
@@ -93,6 +95,10 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
   // Get canvas size from UI store
   const canvasState = useCanvasState();
   const isCanvasLocked = useCanvasLock();
+  
+  // Get canvas operations and selection store
+  const { moveElement, moveMultipleElements, updateElement } = useCanvasOperations();
+  const { select: selectElement } = useSelectionStore();
   
   // Get current canvas size
   const currentSize = canvasState.currentSizeId === 'custom' 
@@ -107,11 +113,285 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
   const centerX = 0;
   const centerY = -155;
 
-  // Drag state refs
+  // Canvas dragging state refs
   const isDragging = useRef(false);
   const dragData = useRef<FederatedPointerEvent['data'] | null>(null);
   const dragOffset = useRef<{ x: number; y: number } | null>(null);
   const containerRef = useRef<Container | null>(null);
+
+  // Element dragging state
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [elementDragOffset, setElementDragOffset] = useState<{ x: number; y: number } | null>(null);
+  const [draggingEndpoint, setDraggingEndpoint] = useState<'start' | 'end' | null>(null);
+  const [isDraggingGroup, setIsDraggingGroup] = useState<boolean>(false);
+  const [groupDragOffsets, setGroupDragOffsets] = useState<Array<{ id: string; offsetX: number; offsetY: number }>>([]);
+  const textClickTimeRef = useRef<Map<string, number>>(new Map());
+
+
+
+  // Element drag end handler
+  const onElementDragEnd = useCallback((id: string, x: number, y: number) => {
+    moveElement(id, { x, y });
+  }, [moveElement]);
+
+  // Group drag handler
+  const onGroupDrag = useCallback((elementPositions: Array<{ id: string; x: number; y: number }>) => {
+    moveMultipleElements(elementPositions.map(pos => ({ id: pos.id, x: pos.x, y: pos.y })));
+  }, [moveMultipleElements]);
+
+  // Line endpoint drag handler
+  const onLineEndpointDrag = useCallback((id: string, endpoint: 'start' | 'end', x: number, y: number) => {
+    const element = elements.find(el => el.id === id);
+    if (!element || !element.lineOptions?.points) return;
+
+    const updatedPoints = {
+      ...element.lineOptions.points,
+      [endpoint]: { x, y }
+    };
+
+    // Update the element with new line points
+    updateElement(id, { 
+      lineOptions: { ...element.lineOptions, points: updatedPoints } 
+    });
+  }, [elements, updateElement]);
+
+  // Global pointer move handler for element dragging
+  const handleGlobalPointerMove = useCallback((e: PointerEvent) => {
+    if (!draggingId) return;
+
+    // Get the canvas element to calculate proper coordinates
+    const canvasElement = document.querySelector('canvas');
+    if (!canvasElement) return;
+
+    const rect = canvasElement.getBoundingClientRect();
+    const canvasX = e.clientX - rect.left;
+    const canvasY = e.clientY - rect.top;
+
+    // Use direct coordinates since zoom functionality removed
+    const worldX = canvasX;
+    const worldY = canvasY;
+
+    // Handle virtual group dragging first
+    if (draggingId === 'virtual-group') {
+      if (isDraggingGroup && groupDragOffsets.length > 0 && onGroupDrag) {
+        // Handle group dragging: calculate new positions for all selected elements using world coordinates
+        const newPositions = groupDragOffsets.map(offset => ({
+          id: offset.id,
+          x: worldX - offset.offsetX,
+          y: worldY - offset.offsetY
+        }));
+        onGroupDrag(newPositions);
+      }
+      return;
+    }
+
+    // For individual element dragging, find the element
+    const element = elements.find(el => el.id === draggingId);
+    if (!element) return;
+
+    // Handle endpoint dragging
+    if (draggingEndpoint && onLineEndpointDrag) {
+      onLineEndpointDrag(draggingId, draggingEndpoint, worldX, worldY);
+    } else if (elementDragOffset) {
+      // Handle regular shape dragging using world coordinates
+      onElementDragEnd(draggingId, worldX - elementDragOffset.x, worldY - elementDragOffset.y);
+    }
+  }, [draggingId, isDraggingGroup, groupDragOffsets, onGroupDrag, elements, draggingEndpoint, onLineEndpointDrag, elementDragOffset, onElementDragEnd]);
+
+  // Global pointer up handler for element dragging
+  const handleGlobalPointerUp = useCallback(() => {
+    if (draggingId) {
+      setDraggingId(null);
+      setElementDragOffset(null);
+      setDraggingEndpoint(null);
+      // Reset group dragging state
+      setIsDraggingGroup(false);
+      setGroupDragOffsets([]);
+    }
+  }, [draggingId]);
+
+  // Set up global event listeners for element dragging
+  useEffect(() => {
+    // Create wrapper functions to properly handle event types with EventManager
+    const handleGlobalPointerMoveWrapper = (event: Event | PointerEvent | MouseEvent | KeyboardEvent) => {
+      if (event instanceof PointerEvent) {
+        handleGlobalPointerMove(event);
+      }
+    };
+
+    const handleGlobalPointerUpWrapper = () => {
+      handleGlobalPointerUp();
+    };
+
+    // Use EventManager instead of direct event listeners
+    eventManager.addListener('pointermove', handleGlobalPointerMoveWrapper);
+    eventManager.addListener('pointerup', handleGlobalPointerUpWrapper);
+
+    return () => {
+      eventManager.removeListener('pointermove', handleGlobalPointerMoveWrapper);
+      eventManager.removeListener('pointerup', handleGlobalPointerUpWrapper);
+    };
+  }, [handleGlobalPointerMove, handleGlobalPointerUp]);
+
+  // Enhanced handlePointerDown for element dragging
+  const handleElementPointerDown = useCallback((id: string, shapeX: number, shapeY: number) => (e: FederatedPointerEvent) => {
+    // Check for right-click (button 2) and show context menu
+    if (e.button === 2) {
+      // Handle right-click context menu if needed
+      return;
+    }
+
+    // When using creation tools (not select), call the canvas click handler directly
+    // to create new objects on top of existing shapes
+    if (tool !== 'select' && tool !== 'draw') {
+      e.stopPropagation();
+      props.handleCanvasClick(e);
+      return;
+    }
+
+    // For draw tool, allow drawing to start on existing elements
+    if (tool === 'draw') {
+      // Let the drawing behavior happen, don't stop propagation
+      props.handleCanvasPointerDown(e);
+      return;
+    }
+
+    e.stopPropagation();
+
+    const isMultiSelect = (e.nativeEvent && 'metaKey' in e.nativeEvent) ?
+      (e.nativeEvent.metaKey || e.nativeEvent.ctrlKey) : false;
+
+    // Also keep PIXI world coordinates for certain operations
+    const pos = e.global;
+    const element = elements.find(el => el.id === id);
+
+    if (!element) return;
+
+    // Check for shape closing during line chaining mode
+    if (isLineChaining && lineStartPoint && element.type === 'line' && element.lineOptions?.points) {
+      const { start } = element.lineOptions.points;
+      const clickX = pos.x;
+      const clickY = pos.y;
+
+      // Use larger click area for easier polygon closing - 15px instead of 7px
+      const ENDPOINT_CLICK_SIZE = 15;
+      const halfSize = ENDPOINT_CLICK_SIZE / 2;
+
+      if (clickX >= start.x - halfSize && clickX <= start.x + halfSize &&
+        clickY >= start.y - halfSize && clickY <= start.y + halfSize) {
+        // Close the shape by connecting to the start point
+        e.stopPropagation();
+        props.handleCanvasClick(e); // This will trigger the shape closing logic
+        return;
+      }
+    }
+
+    // Handle textgroup character clicks - redirect to parent textGroup with double-click support
+    if (isTextGroupCharacter(element)) {
+      const parentTextGroup = elements.find(el => el.id === element.parentTextGroupId);
+      if (parentTextGroup) {
+        // Check for double-click on character (which should be treated as double-click on textGroup)
+        const currentTime = Date.now();
+        const lastClickTime = textClickTimeRef.current.get(parentTextGroup.id) || 0;
+        const timeDiff = currentTime - lastClickTime;
+
+        if (timeDiff < 300) { // Double-click detected (within 300ms)
+          // Handle double-click for text editing
+          textClickTimeRef.current.delete(parentTextGroup.id); // Clear the click time
+          return;
+        } else {
+          // Single click - store the time and continue with selection logic
+          textClickTimeRef.current.set(parentTextGroup.id, currentTime);
+        }
+
+        // Select the parent textGroup instead of the character
+        selectElement([parentTextGroup], isMultiSelect);
+        setDraggingId(parentTextGroup.id);
+        
+        // Convert screen coordinates to world coordinates for offset calculation
+        setElementDragOffset({ x: pos.x - parentTextGroup.x, y: pos.y - parentTextGroup.y });
+        setIsDraggingGroup(false);
+        return;
+      }
+    }
+
+    // Handle element selection
+    selectElement([element], isMultiSelect);
+
+    // For text and textGroup elements, handle double-click to edit, single click to drag
+    if (element.type === 'text' || element.type === 'textGroup') {
+      // Check if this is a double-click
+      const currentTime = Date.now();
+      const lastClickTime = textClickTimeRef.current.get(id) || 0;
+      const timeDiff = currentTime - lastClickTime;
+
+      if (timeDiff < 300) { // Double-click detected (within 300ms)
+        // Handle double-click for text editing
+        textClickTimeRef.current.delete(id); // Clear the click time
+        return;
+      } else {
+        // Single click - store the time and continue with dragging logic
+        textClickTimeRef.current.set(id, currentTime);
+        // Don't return here, let it fall through to normal drag handling
+      }
+    }
+
+    // Then check for line endpoint handling
+    if (element?.type === 'line' && element.lineOptions?.points) {
+      const { start, end } = element.lineOptions.points;
+      const clickX = pos.x;
+      const clickY = pos.y;
+
+      // Use larger click area for easier endpoint interaction - 12px instead of 7px
+      const ENDPOINT_CLICK_SIZE = 12;
+      const halfSize = ENDPOINT_CLICK_SIZE / 2;
+
+      // Check if click is within start point square bounds
+      if (clickX >= start.x - halfSize && clickX <= start.x + halfSize &&
+        clickY >= start.y - halfSize && clickY <= start.y + halfSize) {
+        setDraggingEndpoint('start');
+        setDraggingId(id);
+        selectElement([element], isMultiSelect);
+        return;
+      }
+
+      // Check if clicking near end point (larger click area for easier interaction)
+      if (clickX >= end.x - halfSize && clickX <= end.x + halfSize &&
+        clickY >= end.y - halfSize && clickY <= end.y + halfSize) {
+        setDraggingEndpoint('end');
+        setDraggingId(id);
+        selectElement([element], isMultiSelect);
+        return;
+      }
+    }
+
+    // Regular shape drag - check if multiple elements are selected for group dragging
+    if (selectedIds.length > 1 && selectedIds.includes(id)) {
+      // Group dragging: calculate offsets for all selected elements
+      const offsets = selectedIds.map(selectedId => {
+        const selectedElement = elements.find(el => el.id === selectedId);
+        if (!selectedElement) return { id: selectedId, offsetX: 0, offsetY: 0 };
+        
+        return {
+          id: selectedId,
+          offsetX: pos.x - selectedElement.x,
+          offsetY: pos.y - selectedElement.y
+        };
+      });
+
+      setGroupDragOffsets(offsets);
+      setIsDraggingGroup(true);
+      setDraggingId(id); // Still track the primary dragged element
+      selectElement([element], isMultiSelect);
+    } else {
+      // Single element drag - use direct coordinates
+      setDraggingId(id);
+      selectElement([element], isMultiSelect);
+      
+      setElementDragOffset({ x: pos.x - shapeX, y: pos.y - shapeY });
+      setIsDraggingGroup(false);
+    }
+  }, [tool, isLineChaining, lineStartPoint, elements, selectedIds, selectElement, props.handleCanvasClick, props.handleCanvasPointerDown]);
 
   return (
     <pixiContainer 
@@ -306,7 +586,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                     return undefined;
                   })()}
                   rotation={el.rotation || 0}
-                  onPointerDown={handlePointerDown(el.id, el.x, el.y)}
+                  onPointerDown={handleElementPointerDown(el.id, el.x, el.y)}
                   onPointerUp={handlePointerUp}
                   onPointerUpOutside={handlePointerUp}
                   onPointerOver={handleElementMouseMove(el.id)}
@@ -428,7 +708,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
               return undefined;
             })()}
             rotation={el.rotation || 0}
-            onPointerDown={handlePointerDown(el.id, el.x, el.y)}
+                              onPointerDown={handleElementPointerDown(el.id, el.x, el.y)}
             onPointerUp={handlePointerUp}
             onPointerUpOutside={handlePointerUp}
             onPointerOver={handleElementMouseMove(el.id)}
