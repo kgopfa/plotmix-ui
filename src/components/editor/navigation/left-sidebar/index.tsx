@@ -27,24 +27,78 @@ import { AIToolsTab } from './tabs/ai-tools-tab';
 import { AnimationsTab } from './tabs/animations-tab';
 import { LayersTab } from './tabs/layers-tab';
 
-type NavItem = { name: string; key: 'video' | 'scenes' | 'uploads' | 'ai' | 'text' | 'layers' | 'tools' | 'audio' | 'timeline'; icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; };
+type NavItem = { 
+  name: string; 
+  key: 'video' | 'scenes' | 'uploads' | 'ai' | 'text' | 'layers' | 'tools' | 'audio' | 'timeline'; 
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; 
+  color: string;
+  hoverColor: string;
+  activeColor: string;
+};
 
 const navigation: NavItem[] = [
-  { name: 'Uploads', key: 'uploads', icon: CircleFadingPlus },
-  { name: 'AI', key: 'ai', icon: WandSparkles },
-  { name: 'Text', key: 'text', icon: (props: React.SVGProps<SVGSVGElement>) => <TypeIcon {...props} strokeWidth={2.5} /> },
-  { name: 'Layers', key: 'layers', icon: Layers },
-  { name: 'Tools', key: 'tools', icon: Palette },
+  { 
+    name: 'Uploads', 
+    key: 'uploads', 
+    icon: CircleFadingPlus,
+    color: 'text-green-600',
+    hoverColor: 'hover:bg-green-50 hover:text-green-700',
+    activeColor: 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30'
+  },
+  { 
+    name: 'AI', 
+    key: 'ai', 
+    icon: WandSparkles,
+    color: 'text-purple-600',
+    hoverColor: 'hover:bg-purple-50 hover:text-purple-700',
+    activeColor: 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30'
+  },
+  { 
+    name: 'Text', 
+    key: 'text', 
+    icon: (props: React.SVGProps<SVGSVGElement>) => <TypeIcon {...props} strokeWidth={2.5} />,
+    color: 'text-blue-600',
+    hoverColor: 'hover:bg-blue-50 hover:text-blue-700',
+    activeColor: 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30'
+  },
+  { 
+    name: 'Layers', 
+    key: 'layers', 
+    icon: Layers,
+    color: 'text-indigo-600',
+    hoverColor: 'hover:bg-indigo-50 hover:text-indigo-700',
+    activeColor: 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/30'
+  },
+  { 
+    name: 'Tools', 
+    key: 'tools', 
+    icon: Palette,
+    color: 'text-orange-600',
+    hoverColor: 'hover:bg-orange-50 hover:text-orange-700',
+    activeColor: 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30'
+  },
 ];
 
 const bottomNavigation: NavItem[] = [
-  { name: 'Audio', key: 'audio', icon: VolumeOff },
-  { name: 'Timeline', key: 'timeline', icon: Hourglass },
+  { 
+    name: 'Audio', 
+    key: 'audio', 
+    icon: VolumeOff,
+    color: 'text-gray-600',
+    hoverColor: 'hover:bg-gray-50 hover:text-gray-700',
+    activeColor: 'bg-gradient-to-r from-gray-500 to-gray-600 text-white shadow-lg shadow-gray-500/30'
+  },
+  { 
+    name: 'Timeline', 
+    key: 'timeline', 
+    icon: Hourglass,
+    color: 'text-cyan-600',
+    hoverColor: 'hover:bg-cyan-50 hover:text-cyan-700',
+    activeColor: 'bg-gradient-to-r from-cyan-500 to-cyan-600 text-white shadow-lg shadow-cyan-500/30'
+  },
 ];
 
-function classNames(...classes: string[]) {
-  return classes.filter(Boolean).join(' ')
-}
+
 
 // Tab Content Component - Used for both hover and sticky tabs
 const TabContent: React.FC<{ navKey: string }> = ({ navKey }) => {
@@ -141,64 +195,107 @@ export const LeftSidebar: React.FC = () => {
   return (
     <>
       <div
-        className="m-2 fixed bg-white inset-y-0 left-0 z-40 w-16 overflow-y-auto border border-gray-200 shadow-lg pb-4 rounded-lg flex flex-col"
-        style={{ top: '64px' }}
+        className="m-2 fixed left-0 top-16 z-40 w-16 overflow-visible transition-all duration-300 ease-out translate-x-0 opacity-100"
+        style={{ height: 'calc(100vh - 80px)' }}
         onClick={handleRootClick}
       >
-        {/* Top Navigation */}
-        <nav className="mt-8">
-          <ul role="list" className="flex flex-col items-center space-y-1">
-            {navigation.map((item: NavItem) => (
-              <li key={item.name}>
-                <button
-                  type="button"
-                  className={classNames(
-                    activeNav === item.key ? 'bg-fuchsia-500 text-white' : 'text-gray-400 hover:bg-fuchsia-500 hover:text-white',
-                    'group flex flex-col gap-x-3 rounded-md p-3 text-sm/6 font-semibold',
-                  )}
-                  onClick={()=>{
-                    setActiveNav(activeNav === item.key ? null : item.key);
-                  }}
-                  onMouseEnter={()=>handleHoverEnter(item.key)}
-                  onMouseLeave={()=>handleHoverLeave()}
-                >
-                  <item.icon aria-hidden="true" className="size-6 shrink-0" />
-                  <span className="sr-only">{item.name}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        <div className="relative bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-xl shadow-gray-200/50 rounded-2xl flex flex-col items-center h-full">
+          {/* Top Navigation */}
+          <nav className="mt-6 pb-6 flex-1">
+            <ul role="list" className="flex flex-col items-center space-y-3">
+              {navigation.map((item: NavItem) => {
+                const isActive = activeNav === item.key;
+                return (
+                  <li key={item.name}>
+                    <div className="relative">
+                      <button
+                        type="button"
+                        className={`
+                          relative group flex flex-col items-center justify-center
+                          w-12 h-12 rounded-xl font-medium
+                          transition-all duration-200 ease-out
+                          transform hover:scale-105 active:scale-95
+                          ${isActive 
+                            ? item.activeColor 
+                            : `${item.color} ${item.hoverColor} hover:shadow-md`
+                          }
+                        `}
+                        onClick={()=>{
+                          setActiveNav(activeNav === item.key ? null : item.key);
+                        }}
+                        onMouseEnter={()=>handleHoverEnter(item.key)}
+                        onMouseLeave={()=>handleHoverLeave()}
+                        title={item.name}
+                      >
+                        <item.icon 
+                          aria-hidden="true" 
+                          className={`w-5 h-5 transition-all duration-200 ${
+                            isActive ? 'drop-shadow-sm' : 'group-hover:scale-110'
+                          }`} 
+                        />
+                        <span className="sr-only">{item.name}</span>
+                        {/* Active indicator */}
+                        {isActive && (
+                          <div className="absolute -right-1 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-white rounded-full shadow-sm"></div>
+                        )}
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
 
-        {/* Bottom Navigation */}
-        <nav className="mt-auto mb-4">
-          <ul role="list" className="flex flex-col items-center space-y-1">
-            {bottomNavigation.map((item: NavItem) => (
-              <li key={item.name}>
-                <button
-                  type="button"
-                  className={classNames(
-                    item.key === 'timeline' && isTimelineCollapsed ? 'bg-fuchsia-500 text-white' : 
-                    activeNav === item.key ? 'bg-fuchsia-500 text-white' : 'text-gray-400 hover:bg-fuchsia-500 hover:text-white',
-                    'group flex flex-col gap-x-3 rounded-md p-3 text-sm/6 font-semibold',
-                  )}
-                  onClick={()=>{
-                    if (item.key === 'timeline') {
-                      toggleTimelineCollapse();
-                    } else {
-                      setActiveNav(activeNav === item.key ? null : item.key);
-                    }
-                  }}
-                  onMouseEnter={()=>handleHoverEnter(item.key)}
-                  onMouseLeave={()=>handleHoverLeave()}
-                >
-                  <item.icon aria-hidden="true" className="size-6 shrink-0" />
-                  <span className="sr-only">{item.name}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </nav>
+          {/* Bottom Navigation */}
+          <nav className="mb-6">
+            <ul role="list" className="flex flex-col items-center space-y-3">
+              {bottomNavigation.map((item: NavItem) => {
+                const isActive = item.key === 'timeline' ? isTimelineCollapsed : activeNav === item.key;
+                return (
+                  <li key={item.name}>
+                    <div className="relative">
+                      <button
+                        type="button"
+                        className={`
+                          relative group flex flex-col items-center justify-center
+                          w-12 h-12 rounded-xl font-medium
+                          transition-all duration-200 ease-out
+                          transform hover:scale-105 active:scale-95
+                          ${isActive 
+                            ? item.activeColor 
+                            : `${item.color} ${item.hoverColor} hover:shadow-md`
+                          }
+                        `}
+                        onClick={()=>{
+                          if (item.key === 'timeline') {
+                            toggleTimelineCollapse();
+                          } else {
+                            setActiveNav(activeNav === item.key ? null : item.key);
+                          }
+                        }}
+                        onMouseEnter={()=>handleHoverEnter(item.key)}
+                        onMouseLeave={()=>handleHoverLeave()}
+                        title={item.name}
+                      >
+                        <item.icon 
+                          aria-hidden="true" 
+                          className={`w-5 h-5 transition-all duration-200 ${
+                            isActive ? 'drop-shadow-sm' : 'group-hover:scale-110'
+                          }`} 
+                        />
+                        <span className="sr-only">{item.name}</span>
+                        {/* Active indicator */}
+                        {isActive && (
+                          <div className="absolute -right-1 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-white rounded-full shadow-sm"></div>
+                        )}
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+        </div>
       </div>
 
       {/* Tab Panel - Shows on hover (when no active tab) OR when active (sticky) OR when animations tab is shown */}
