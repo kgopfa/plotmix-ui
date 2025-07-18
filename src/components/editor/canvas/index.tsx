@@ -184,7 +184,11 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     if (canvasElement) {
       const rect = canvasElement.getBoundingClientRect();
       const centerX = (bounds.left + bounds.right) / 2;
-      const centerY = bounds.top;
+      
+      // Position above the selection outline, accounting for visual elements
+      // The selection outline has handles and stroke that extend beyond element bounds
+      const selectionOutlineOffset = 15; // Account for resize handles, stroke, etc.
+      const centerY = bounds.top - selectionOutlineOffset;
 
       setSelectionMenuPosition({
         x: rect.left + centerX,

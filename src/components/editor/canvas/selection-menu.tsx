@@ -26,7 +26,7 @@ export const SelectionMenu: React.FC<SelectionMenuProps> = ({
       className="fixed z-50 bg-white border border-gray-200 rounded-sm shadow-sm flex items-center p-1"
       style={{
         left: position.x,
-        top: position.y - 50, // Position above the element
+        top: position.y - 35, // Position above the selection outline
         transform: 'translateX(-50%)', // Center horizontally
       }}
       onClick={(e) => e.stopPropagation()}
