@@ -153,15 +153,15 @@ export function TimelineTrack({
 
   return (
     <div
-      className={`h-8 flex items-center border-b border-gray-200 text-gray-700 ${
-        isTextGroupCharacter ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+      className={`h-8 flex items-center border-b border-gray-200/50 text-gray-700 transition-all duration-200 ${
+        isTextGroupCharacter ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-white/40'
       } ${
-        isSelected ? 'bg-blue-50' : ''
-      } ${isChild ? 'bg-gray-50' : ''}`}
+        isSelected ? 'bg-gradient-to-r from-blue-50/80 to-blue-100/80 backdrop-blur-sm' : ''
+      } ${isChild ? 'bg-gray-50/60 backdrop-blur-sm' : ''}`}
     >
       {/* Track Label */}
       <div
-        className={`w-32 text-sm font-medium truncate flex items-center gap-2 ${
+        className={`w-32 text-sm font-medium truncate flex items-center gap-2 transition-all duration-200 ${
           isSelected ? 'text-blue-600' : ''
         } ${isChild ? 'text-gray-600' : ''}`}
         style={{ paddingLeft: `${8 + depth * 16}px` }}
@@ -170,7 +170,7 @@ export function TimelineTrack({
         {(isGroup || ('type' in element && element.type === 'textGroup')) && onToggleExpansion && (!isGroup || !('type' in element) || (element as CanvasGroup).type !== 'polygon') && (
           <button
             onClick={handleExpandToggle}
-            className="w-4 h-4 flex items-center justify-center hover:bg-gray-200 rounded text-xs"
+            className="w-4 h-4 flex items-center justify-center hover:bg-white/80 backdrop-blur-sm rounded text-xs transition-all duration-200 hover:shadow-sm"
           >
             {isExpanded ? '▼' : '▶'}
           </button>
@@ -192,7 +192,7 @@ export function TimelineTrack({
               i % 5 === 0 && (
                 <div
                   key={i}
-                  className="absolute h-full border-l border-gray-200"
+                  className="absolute h-full border-l border-gray-200/30"
                   style={{ left: `${i * scale}px`, width: 0 }}
                 />
               )
@@ -215,7 +215,7 @@ export function TimelineTrack({
 
         {/* Playhead */}
         <div
-          className="absolute top-0 bottom-0 w-0.5 bg-fuchsia-300"
+          className="absolute top-0 bottom-0 w-0.5 bg-gradient-to-b from-fuchsia-400 to-fuchsia-600 shadow-sm"
           style={{ left: `${currentTime * scale}px` }}
         />
       </div>

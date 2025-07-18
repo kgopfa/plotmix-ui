@@ -12,14 +12,14 @@ interface AnimationBlockProps {
 }
 
 const BLOCK_COLORS = [
-  'bg-blue-500 hover:bg-blue-600',
-  'bg-purple-500 hover:bg-purple-600',
-  'bg-green-500 hover:bg-green-600',
-  'bg-yellow-500 hover:bg-yellow-600',
-  'bg-red-500 hover:bg-red-600',
-  'bg-pink-500 hover:bg-pink-600',
-  'bg-indigo-500 hover:bg-indigo-600',
-  'bg-teal-500 hover:bg-teal-600',
+  'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700',
+  'bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700',
+  'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700',
+  'bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700',
+  'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700',
+  'bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700',
+  'bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700',
+  'bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700',
 ];
 
 export const AnimationBlock: React.FC<AnimationBlockProps> = ({
@@ -99,18 +99,18 @@ export const AnimationBlock: React.FC<AnimationBlockProps> = ({
 
   return (
     <div
-      className={`absolute top-1 bottom-1 rounded cursor-move transition-colors ${blockColor} ${isSelected ? 'ring-2 ring-white ring-opacity-50' : ''}`}
+      className={`absolute top-1 bottom-1 rounded-lg cursor-move transition-all duration-200 shadow-md hover:shadow-lg ${blockColor} ${isSelected ? 'ring-2 ring-white ring-opacity-50 shadow-xl' : ''}`}
       style={{ left: `${left}px`, width: `${width}px` }}
       onMouseDown={handleMouseDown}
       onClick={onClick}
     >
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-xs text-white truncate px-1">{animation.displayName}</span>
+        <span className="text-xs text-white truncate px-1 font-medium drop-shadow-sm">{animation.displayName}</span>
       </div>
       {/* Resize Handle */}
       <div
-        className={`absolute right-0 top-0 bottom-0 w-2 ${isSelected ? 'bg-opacity-100' : 'bg-opacity-75'} cursor-ew-resize`}
-        style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)' }}
+        className={`absolute right-0 top-0 bottom-0 w-2 ${isSelected ? 'bg-opacity-100' : 'bg-opacity-75'} cursor-ew-resize rounded-r-lg transition-all duration-200 hover:bg-opacity-100`}
+        style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }}
         onMouseDown={handleResizeMouseDown}
       />
     </div>

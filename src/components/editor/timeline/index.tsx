@@ -238,43 +238,51 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
 
   return (
     <div
-      className={`mr-2 mb-2 bg-white rounded-lg border border-gray-200 shadow-lg ${isTimelineCollapsed
+      className={`mr-2 mb-2 bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-xl shadow-gray-200/50 rounded-2xl overflow-hidden ${isTimelineCollapsed
         ? 'h-18'
         : 'h-full flex flex-col'
         }`}
     >
       {/* Controls */}
-      <div className="h-18 border-b border-gray-200 flex items-center px-4 justify-between">
+      <div className="h-18 border-b border-gray-200/50 flex items-center px-4 justify-between bg-white/50 backdrop-blur-sm rounded-t-2xl">
         <div className="flex items-center gap-4">
           <button
             onClick={handlePlayPause}
-            className="h-12 w-12 flex items-center justify-center bg-fuchsia-500 text-white rounded-full shadow-lg shadow-fuchsia-200 transition-all duration-200 cursor-pointer hover:scale-110"
+            className="h-12 w-12 flex items-center justify-center bg-gradient-to-r from-fuchsia-500 to-fuchsia-600 text-white rounded-xl shadow-lg shadow-fuchsia-500/30 transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95"
           >
             {playback.isPlaying ? <Pause size={24} fill="currentColor" strokeWidth={0} /> : <Play size={24} fill="currentColor" strokeWidth={0} />}
           </button>
           <button
             onClick={handleStop}
-            className="h-12 w-12 flex items-center justify-center bg-transparent cursor-pointer transition-all duration-200 hover:scale-110"
+            className="h-12 w-12 flex items-center justify-center bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-xl shadow-md shadow-gray-200/30 cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg"
           >
             <RotateCcw size={26} stroke="#dd7be0" strokeWidth={2} />
           </button>
-          <div className="text-sm font-mono text-gray-700 w-32">
+          <div className="text-sm font-mono text-gray-700 w-32 bg-white/60 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/30">
             {formatTime(playback.currentTime)}
           </div>
         </div>
 
         <div className="flex items-center gap-3">
           {/* Zoom Mode Buttons */}
-          <div className="flex gap-1 overflow-hidden">
+          <div className="flex gap-1 overflow-hidden bg-white/60 backdrop-blur-sm rounded-lg p-1 border border-gray-200/30">
             <button
-              className={`px-2 text-xs w-18 h-8 rounded-md flex flex-row items-center justify-center cursor-pointer text-gray-600 ${zoomMode === 'time' ? 'bg-zinc-200' : 'bg-transparent'}`}
+              className={`px-2 text-xs w-18 h-8 rounded-md flex flex-row items-center justify-center cursor-pointer transition-all duration-200 ${
+                zoomMode === 'time' 
+                  ? 'bg-gradient-to-r from-zinc-500 to-zinc-600 text-white shadow-md shadow-zinc-500/30' 
+                  : 'text-gray-600 hover:bg-gray-100/80'
+              }`}
               onClick={() => setZoomMode('time')}
             >
               <Clock size={18} />
               <span className="font-medium ml-1 text-xs">Time</span>
             </button>
             <button
-              className={`px-2 text-xs w-18 h-8 rounded-md flex flex-row items-center justify-center cursor-pointer text-blue-600 ${zoomMode === 'view' ? 'bg-blue-200' : 'bg-transparent'}`}
+              className={`px-2 text-xs w-18 h-8 rounded-md flex flex-row items-center justify-center cursor-pointer transition-all duration-200 ${
+                zoomMode === 'view' 
+                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md shadow-blue-500/30' 
+                  : 'text-blue-600 hover:bg-blue-100/80'
+              }`}
               onClick={() => setZoomMode('view')}
             >
               <Monitor size={18} />
@@ -283,29 +291,30 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
           </div>
 
           {/* Zoom Slider */}
-          <input
-            type="range"
-            min={zoomMode === 'time' ? 20 : 10}
-            max={zoomMode === 'time' ? 400 : 500}
-            step={zoomMode === 'time' ? 10 : 10}
-            value={sliderValue}
-            onChange={e => {
-              const val = Number(e.target.value);
-              if (zoomMode === 'time') {
-                setScale(val);
-              } else {
-                onCanvasZoom?.(val / 100);
-              }
-            }}
-            className="h-2 w-32 cursor-pointer appearance-none bg-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-400 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-blue-400 [&::-moz-range-thumb]:border-none [&::-moz-range-thumb]:cursor-pointer"
-            title="Zoom"
-          />
-
+          <div className="bg-white/60 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/30">
+            <input
+              type="range"
+              min={zoomMode === 'time' ? 20 : 10}
+              max={zoomMode === 'time' ? 400 : 500}
+              step={zoomMode === 'time' ? 10 : 10}
+              value={sliderValue}
+              onChange={e => {
+                const val = Number(e.target.value);
+                if (zoomMode === 'time') {
+                  setScale(val);
+                } else {
+                  onCanvasZoom?.(val / 100);
+                }
+              }}
+              className="h-2 w-32 cursor-pointer appearance-none bg-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-r [&::-webkit-slider-thumb]:from-blue-400 [&::-webkit-slider-thumb]:to-blue-500 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-gradient-to-r [&::-moz-range-thumb]:from-blue-400 [&::-moz-range-thumb]:to-blue-500 [&::-moz-range-thumb]:border-none [&::-moz-range-thumb]:cursor-pointer"
+              title="Zoom"
+            />
+          </div>
         </div>
       </div>
 
       {/* Scrollable timeline container (ruler + tracks) - only visible when not collapsed */}
-      <div className={`flex-1 overflow-y-auto transition-all duration-600 ease-in-out ${
+      <div className={`flex-1 overflow-y-auto transition-all duration-600 ease-in-out bg-white/30 backdrop-blur-sm rounded-b-2xl ${
         isTimelineCollapsed ? 'opacity-0 max-h-0' : 'opacity-100 max-h-full'
       }`}>
           <div
@@ -315,18 +324,18 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
             onScroll={handleScroll}
           >
             {/* Ruler (scrolls with timeline) */}
-            <div className={`h-6 relative border-b border-gray-200 transition-all duration-300 ease-in-out ${
+            <div className={`h-6 relative border-b border-gray-200/50 transition-all duration-300 ease-in-out bg-white/50 backdrop-blur-sm ${
               isTimelineCollapsed ? 'opacity-0 scale-y-0' : 'opacity-100 scale-y-100'
             }`}>
               <div className="absolute top-0 left-32 h-full w-full" style={{ transform: `translateX(-${scrollLeft}px)` }}>
                 {rulerTicks.map((tick) => (
                   <div
                     key={tick.index}
-                    className="absolute h-full border-l border-gray-200"
+                    className="absolute h-full border-l border-gray-200/50"
                     style={{ left: `${tick.left}px`, width: 0 }}
                   >
                     {tick.isMajor && (
-                      <div className="absolute top-0 text-[10px] text-gray-500 font-mono translate-x-[-50%]">
+                      <div className="absolute top-0 text-[10px] text-gray-600 font-mono translate-x-[-50%] bg-white/80 backdrop-blur-sm px-1 rounded">
                         {tick.time}
                       </div>
                     )}
@@ -361,7 +370,7 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
             ))}
 
             {hierarchicalTracks.length === 0 && (
-              <div className="p-8 text-center text-gray-500">
+              <div className="p-8 text-center text-gray-500 bg-white/40 backdrop-blur-sm rounded-lg m-4">
                 No elements or groups with animations to display
               </div>
             )}
