@@ -117,8 +117,8 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
     <pixiContainer 
       x={centerX} 
       y={centerY}
-      interactive={!isCanvasLocked}
-      eventMode={isCanvasLocked ? "none" : "static"}
+      interactive={true}
+      eventMode="static"
       hitArea={new Rectangle(-canvasFrameWidth / 2, -canvasFrameHeight / 2, canvasFrameWidth, canvasFrameHeight)}
       ref={(container) => {
         containerRef.current = container;
@@ -140,29 +140,31 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                  e.global.y <= bounds.y + bounds.height;
         });
         
-        // Only call canvas click handler if no element was hit
+        // Always call canvas click handler for shape creation, even when locked
         if (!hitElement) {
           props.handleCanvasClick(e);
         }
         
-        // Then handle dragging if needed
-        isDragging.current = true;
-        dragData.current = e.data;
-        
-        // Calculate the offset between mouse and container position
-        const container = e.currentTarget as Container;
-        const mousePos = e.data.getLocalPosition(container.parent);
-        dragOffset.current = {
-          x: mousePos.x - container.x,
-          y: mousePos.y - container.y
-        };
+        // Only handle dragging when not locked
+        if (!isCanvasLocked) {
+          isDragging.current = true;
+          dragData.current = e.data;
+          
+          // Calculate the offset between mouse and container position
+          const container = e.currentTarget as Container;
+          const mousePos = e.data.getLocalPosition(container.parent);
+          dragOffset.current = {
+            x: mousePos.x - container.x,
+            y: mousePos.y - container.y
+          };
+        }
       }}
       onPointerMove={(e: FederatedPointerEvent) => {
         // Call the canvas pointer move handler for drawing and other interactions
         props.handleCanvasPointerMove(e);
         
-        // Then handle dragging if needed
-        if (isDragging.current && dragData.current && dragOffset.current) {
+        // Only handle dragging when not locked
+        if (!isCanvasLocked && isDragging.current && dragData.current && dragOffset.current) {
           const container = e.currentTarget as Container;
           const mousePos = dragData.current.getLocalPosition(container.parent);
           

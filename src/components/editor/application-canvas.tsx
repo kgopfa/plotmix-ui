@@ -224,7 +224,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
             stopPropagation={false}
             ref={viewportRef}
           >
-            <DesignCanvas {...props} dimensions={dimensions} isLocked={props.isLocked} />
+            <DesignCanvas {...props} dimensions={dimensions} />
           </Viewport>
         </Application>
       </div>
