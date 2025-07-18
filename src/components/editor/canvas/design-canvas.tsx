@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
 import { GridOverlay } from './grid-overlay';
 import { SnapGuides } from './snap-guides';
 import type { GridConfig } from '../../../utils/grid-utils';
@@ -15,7 +15,7 @@ import ResizeHandle from './resize-handle';
 import RadiusHandle from './radius-handle';
 import { AnimatedTextGroup } from './animated-text-group';
 import { GroupSelection } from './group-selection';
-import { useCanvasState } from '@/stores/use-ui-store';
+import { useCanvasState, useCanvasLock } from '@/stores/use-ui-store';
 
 interface DesignCanvasProps {
   dimensions: { width: number; height: number };
@@ -54,11 +54,8 @@ interface DesignCanvasProps {
   handleElementMouseLeave: (id: string) => () => void;
   onPathStartClick?: (elementId: string, x: number, y: number) => void;
   handleGroupSelectionDragStart: (virtualElement: AnimatedCanvasObject, mouseX: number, mouseY: number, allElements?: AnimatedCanvasObject[], gridConfig?: GridConfig) => void;
-  // Helper functions
   isTextGroupCharacter: (element: AnimatedCanvasObject) => boolean;
   isElementInCustomOrPolygonGroup: (element: AnimatedCanvasObject) => boolean;
-  // Lock state
-  isLocked?: boolean;
 }
 
 export const DesignCanvas = (props: DesignCanvasProps) => {
@@ -91,11 +88,11 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
     handleGroupSelectionDragStart,
     isTextGroupCharacter,
     isElementInCustomOrPolygonGroup,
-    isLocked
   } = props;
 
   // Get canvas size from UI store
   const canvasState = useCanvasState();
+  const isCanvasLocked = useCanvasLock();
   
   // Get current canvas size
   const currentSize = canvasState.currentSizeId === 'custom' 
@@ -116,25 +113,12 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
   const dragOffset = useRef<{ x: number; y: number } | null>(null);
   const containerRef = useRef<Container | null>(null);
 
-  // Update PIXI container properties when lock state changes
-  useEffect(() => {
-    if (containerRef.current) {
-      containerRef.current.interactive = !isLocked;
-      containerRef.current.eventMode = isLocked ? "none" : "static";
-      console.log('[DesignCanvas] Updated container properties:', {
-        interactive: !isLocked,
-        eventMode: isLocked ? "none" : "static",
-        isLocked
-      });
-    }
-  }, [isLocked]);
-
   return (
     <pixiContainer 
       x={centerX} 
       y={centerY}
-      interactive={!isLocked}
-      eventMode={isLocked ? "none" : "static"}
+      interactive={!isCanvasLocked}
+      eventMode={isCanvasLocked ? "none" : "static"}
       hitArea={new Rectangle(-canvasFrameWidth / 2, -canvasFrameHeight / 2, canvasFrameWidth, canvasFrameHeight)}
       ref={(container) => {
         containerRef.current = container;
@@ -191,7 +175,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         // Call the canvas pointer up handler
         props.handlePointerUp();
         
-        if (isLocked) return;
+        if (isCanvasLocked) return;
         if (isDragging.current) {
           isDragging.current = false;
           dragData.current = null;
@@ -202,7 +186,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         // Call the canvas pointer up handler
         props.handlePointerUp();
         
-        if (isLocked) return;
+        if (isCanvasLocked) return;
         if (isDragging.current) {
           isDragging.current = false;
           dragData.current = null;
