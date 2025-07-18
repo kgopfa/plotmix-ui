@@ -6,7 +6,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { TimelineManager } from '@/lib/timeline-manager';
 import { useSelectionStore } from '@/stores/use-selection-store';
-import { useCanvasElements, useCanvasGroups } from '@/stores/use-canvas-store';
+import { useCanvasElements, useCanvasGroups, useCanvasStore } from '@/stores/use-canvas-store';
 import { useUIStore, useActiveNav, useActiveRightPanel, useCanvasLock } from '@/stores/use-ui-store';
 import { useTimelineSync } from '@/stores/use-timeline-store';
 import { useCanvasMigration } from '@/hooks/use-canvas-migration';
@@ -27,6 +27,7 @@ import { useElementSnapping } from '@/hooks/use-element-snapping';
 import { MainNavBar } from './navigation/main';
 import { LeftSidebar } from './navigation/left-sidebar';
 import { RightSidebar } from './navigation/right-sidebar';
+import { SelectionNavbar } from './navigation/selection-navbar';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import type { ApplicationCanvasRef } from './application-canvas';
 
@@ -870,6 +871,68 @@ export default function EditorCanvas() {
     onUngroup: handleUngroupElements,
   });
 
+  // Selection navbar handlers
+  const handleSelectionNavbarAnimate = useCallback(() => {
+    if (selectedObjects.length === 1) {
+      const { setShowAnimationsTab } = useUIStore.getState();
+      setShowAnimationsTab(true);
+    }
+  }, [selectedObjects]);
+
+  const handleSelectionNavbarDelete = useCallback(() => {
+    if (selectedObjects.length > 0) {
+      const { removeElement } = useCanvasStore.getState();
+      selectedObjects.forEach(element => {
+        removeElement(element.id);
+      });
+      // Add a small delay before clearing selections to keep navbar visible briefly
+      setTimeout(() => {
+        selectElement(null);
+      }, 100);
+    }
+  }, [selectedObjects, selectElement]);
+
+  const handleSelectionNavbarCopy = useCallback(() => {
+    // TODO: Implement copy functionality
+    console.log('Copy selected elements');
+  }, []);
+
+  const handleSelectionNavbarDuplicate = useCallback(() => {
+    if (selectedObjects.length > 0) {
+      const { addElement } = useCanvasStore.getState();
+      const duplicatedElements = selectedObjects.map(element => ({
+        ...element,
+        id: crypto.randomUUID(),
+        name: `${element.name} Copy`,
+        x: element.x + 20,
+        y: element.y + 20,
+      }));
+      
+      duplicatedElements.forEach(element => {
+        addElement(element);
+      });
+      
+      selectElement(duplicatedElements);
+    }
+  }, [selectedObjects, selectElement]);
+
+  const handleSelectionNavbarGroup = useCallback(() => {
+    if (selectedObjects.length > 1) {
+      handleGroupElements();
+    }
+  }, [selectedObjects, handleGroupElements]);
+
+  const handleSelectionNavbarUngroup = useCallback(() => {
+    if (selectedGroups.length > 0) {
+      handleUngroupElements();
+    }
+  }, [selectedGroups, handleUngroupElements]);
+
+  const handleSelectionNavbarOptions = useCallback(() => {
+    // TODO: Implement options menu
+    console.log('Show options for selected elements');
+  }, []);
+
   // Update group selection whenever groups or selected objects change
   useEffect(() => {
     // Auto-detect group selection when all elements in a group are selected
@@ -1240,6 +1303,19 @@ export default function EditorCanvas() {
       <MainNavBar
         onGroupElements={handleGroupElements}
         onUngroupElements={handleUngroupElements}
+      />
+
+      {/* Selection Navbar - appears when elements are selected */}
+      <SelectionNavbar
+        selectedElements={selectedObjects}
+        selectedGroups={selectedGroups}
+        onAnimate={handleSelectionNavbarAnimate}
+        onDelete={handleSelectionNavbarDelete}
+        onCopy={handleSelectionNavbarCopy}
+        onDuplicate={handleSelectionNavbarDuplicate}
+        onGroup={handleSelectionNavbarGroup}
+        onUngroup={handleSelectionNavbarUngroup}
+        onOptions={handleSelectionNavbarOptions}
       />
 
       {/* Navigation Sidebars */}

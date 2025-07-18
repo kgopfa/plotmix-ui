@@ -280,7 +280,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
       activeRightPanel: null,
       hoverRightPanel: null,
       showAnimationsTab: false,
-      isCanvasLocked: false,
+      isCanvasLocked: true,
 
   // Panel Actions
   toggleLeftPanel: () => {

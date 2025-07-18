@@ -20,7 +20,7 @@ import { AnimatedTextGroup } from './animated-text-group';
 // CanvasContent import removed - zoom functionality removed
 import { GroupSelection } from './group-selection';
 import { ContextMenu } from './context-menu';
-import { SelectionMenu } from './selection-menu';
+
 // Viewport import removed - zoom functionality removed
 import { GridOverlay } from './grid-overlay';
 import { GridConfig } from '../../../utils/grid-utils';
@@ -124,8 +124,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
   // Context menu state
   const [contextMenu, setContextMenu] = useState<ContextMenuPosition | null>(null);
   
-  // Selection menu state
-  const [selectionMenuPosition, setSelectionMenuPosition] = useState<{ x: number; y: number } | null>(null);
+
 
   // Helper function to check if an element is part of a custom or polygon group
   const isElementInCustomOrPolygonGroup = (element: AnimatedCanvasObject): boolean => {
@@ -154,48 +153,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     });
   }, [groups]);
 
-  // Calculate selection menu position when selection changes
-  useEffect(() => {
-    if (selectedElements.length === 0) {
-      setSelectionMenuPosition(null);
-      return;
-    }
 
-    // Calculate the center position of selected elements for menu positioning
-    const bounds = selectedElements.reduce(
-      (acc, element) => {
-        const left = element.x - element.width / 2;
-        const right = element.x + element.width / 2;
-        const top = element.y - element.height / 2;
-        const bottom = element.y + element.height / 2;
-
-        return {
-          left: Math.min(acc.left, left),
-          right: Math.max(acc.right, right),
-          top: Math.min(acc.top, top),
-          bottom: Math.max(acc.bottom, bottom),
-        };
-      },
-      { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity }
-    );
-
-    // Convert canvas coordinates to screen coordinates
-    const canvasElement = document.querySelector('canvas');
-    if (canvasElement) {
-      const rect = canvasElement.getBoundingClientRect();
-      const centerX = (bounds.left + bounds.right) / 2;
-      
-      // Position above the selection outline, accounting for visual elements
-      // The selection outline has handles and stroke that extend beyond element bounds
-      const selectionOutlineOffset = 15; // Account for resize handles, stroke, etc.
-      const centerY = bounds.top - selectionOutlineOffset;
-
-      setSelectionMenuPosition({
-        x: rect.left + centerX,
-        y: rect.top + centerY,
-      });
-    }
-  }, [selectedElements]);
 
   // Canvas click handler - handles tool-specific actions
   const handleCanvasClick = useCallback((e: FederatedPointerEvent) => {
@@ -497,43 +455,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
     console.log('Move to back:', elementId);
   }, []);
 
-  // Selection menu handlers
-  const handleSelectionMenuAnimate = useCallback(() => {
-    if (selectedElements.length === 1) {
-      // Show the animations tab (but don't switch right panel)
-      const { setShowAnimationsTab } = useUIStore.getState();
-      setShowAnimationsTab(true);
-    }
-  }, [selectedElements]);
 
-  const handleSelectionMenuDelete = useCallback(() => {
-    if (selectedElements.length > 0) {
-      const { removeElement } = useCanvasStore.getState();
-      selectedElements.forEach(element => {
-        removeElement(element.id);
-      });
-      // Add a small delay before clearing selections to keep menu visible briefly
-      setTimeout(() => {
-        clearSelections();
-      }, 100);
-    }
-  }, [selectedElements, clearSelections]);
-
-  const handleSelectionMenuOptions = useCallback(() => {
-    if (selectedElements.length > 0 && selectionMenuPosition) {
-      // Use context menu manager to ensure only one menu is shown
-      const menuId = 'selection-context-menu';
-      contextMenuManager.openContextMenu(menuId);
-
-      // Position the context menu near the selection menu
-      setContextMenu({
-        x: selectionMenuPosition.x,
-        y: selectionMenuPosition.y + 20, // Position below the selection menu
-        targetId: selectedElements[0].id, // Use first selected element as target
-        targetType: 'element'
-      });
-    }
-  }, [selectedElements, selectionMenuPosition]);
 
   useImperativeHandle(ref, () => ({
     getShapeRefs: () => shapeRefs.current,
@@ -1347,6 +1269,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       if (onElementRadiusChange) {
         onElementRadiusChange(id, cornerRadius);
       }
+      
+
     };
 
     window.addEventListener('element-radius-change', handleElementRadiusChange as EventListener);
@@ -1480,6 +1404,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
       if (onElementRotate) {
         onElementRotate(id, rotation);
       }
+      
+
     };
 
     // Add the event listener
@@ -2183,16 +2109,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(function Canvas(
         onClose={() => setContextMenu(null)}
       />
 
-      {/* Selection Menu */}
-      {!isPlaying && selectionMenuPosition && selectedElements.length > 0 && (
-        <SelectionMenu
-          selectedElements={selectedElements}
-          position={selectionMenuPosition}
-          onAnimate={handleSelectionMenuAnimate}
-          onDelete={handleSelectionMenuDelete}
-          onOptions={handleSelectionMenuOptions}
-        />
-      )}
+
       
       {/* Text Editor Overlay */}
       {editingTextId && (() => {
