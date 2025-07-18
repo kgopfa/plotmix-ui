@@ -196,45 +196,45 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
 
 
   return (
-    <Disclosure as="nav" className="bg-white border-b border-gray-200 shadow-lg">
+    <Disclosure as="nav" className="bg-white backdrop-blur-sm border-b border-gray-200/50 shadow-xl shadow-gray-200/50">
       <div className="mx-auto max-w-full px-2 sm:px-4 lg:px-0">
         <div className="flex h-16 justify-between">
           <div className="flex lg:pl-0 lg:pr-0">
             {/* Options menu button */}
             <div className="flex items-center mx-6">
-              <DisclosureButton className="group relative inline-flex items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-500 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden focus:ring-inset">
+              <DisclosureButton className="group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden focus:ring-inset">
                 <span className="absolute -inset-0.5" />
                 <span className="sr-only">Open options menu</span>
-                <MenuIcon aria-hidden="true" className="block size-6 group-data-open:hidden" />
-                <X aria-hidden="true" className="hidden size-6 group-data-open:block" />
+                <MenuIcon aria-hidden="true" className="block size-5 group-data-open:hidden transition-all duration-200 group-hover:scale-110" />
+                <X aria-hidden="true" className="hidden size-5 group-data-open:block transition-all duration-200 group-hover:scale-110" />
               </DisclosureButton>
             </div>
             <div className="flex shrink-0 items-center">
-              <div className="h-8 w-8 bg-indigo-600 rounded flex items-center justify-center">
+              <div className="h-8 w-8 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/30">
                 <span className="text-white font-bold text-sm">R</span>
               </div>
               <div className="flex items-center ml-8">
-                <button className="p-1.5 text-gray-500 hover:text-gray-700 rounded-sm hover:bg-gray-100">
-                  <CloudCheck className="size-6" />
+                <button className="group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-green-50 hover:text-green-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95">
+                  <CloudCheck className="size-5 transition-all duration-200 group-hover:scale-110" />
                 </button>
-                <button className="ml-4 p-1.5 text-gray-500 hover:text-gray-700 pl-3 border-l border-gray-200 hover:bg-gray-100">
-                  <Undo2 className="size-5" />
+                <button className="ml-4 group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-blue-50 hover:text-blue-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 pl-3 border-l border-gray-200/50">
+                  <Undo2 className="size-5 transition-all duration-200 group-hover:scale-110" />
                 </button>
-                <button className="ml-2 p-1.5 text-gray-500 hover:text-gray-700 pr-3 border-r border-gray-200 hover:bg-gray-100">
-                  <Redo2 className="size-5" />
+                <button className="ml-2 group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-blue-50 hover:text-blue-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 pr-3 border-r border-gray-200/50">
+                  <Redo2 className="size-5 transition-all duration-200 group-hover:scale-110" />
                 </button>
                 
                 {/* Settings dropdown */}
                 <Menu as="div" className="relative ml-4">
                   <div>
-                    <MenuButton className="p-1.5 text-gray-500 hover:text-gray-700 rounded-sm hover:bg-gray-100 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2">
+                    <MenuButton className="group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-purple-50 hover:text-purple-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2">
                       <span className="sr-only">Open settings menu</span>
-                      <Settings className="size-5" />
+                      <Settings className="size-5 transition-all duration-200 group-hover:scale-110" />
                     </MenuButton>
                   </div>
                   <MenuItems
                     transition
-                    className="absolute left-0 z-10 mt-2 -ml-2 w-56 origin-top-left rounded-md bg-white pt-3 pb-3 shadow-lg ring-1 ring-black/5 transition focus:outline-hidden data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
+                    className="absolute left-0 z-10 mt-2 -ml-2 w-56 origin-top-left rounded-xl bg-white/95 backdrop-blur-sm pt-3 pb-3 shadow-xl shadow-gray-200/50 ring-1 ring-gray-200/50 transition focus:outline-hidden data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
                   >
                     <nav 
                       aria-label="Settings menu" 
@@ -254,18 +254,18 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                                 onMouseEnter={() => handleSettingsHover(item.name)}
                                 className={classNames(
                                   currentSettingsItem === item.name || hoveredSettingsItem === item.name
-                                    ? 'bg-gray-50 text-indigo-600' 
-                                    : 'text-gray-500 hover:bg-gray-50 hover:text-indigo-600 data-focus:bg-gray-50 data-focus:text-indigo-600',
-                                  'group flex gap-x-3 rounded-md p-2 text-sm font-semibold data-focus:outline-hidden cursor-pointer',
+                                    ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30' 
+                                    : 'text-gray-500 hover:bg-purple-50 hover:text-purple-700 data-focus:bg-purple-50 data-focus:text-purple-700',
+                                  'group flex gap-x-3 rounded-xl p-2 text-sm font-semibold data-focus:outline-hidden cursor-pointer transition-all duration-200 ease-out transform hover:scale-105',
                                 )}
                               >
                                 <item.icon
                                   aria-hidden="true"
                                   className={classNames(
                                     currentSettingsItem === item.name || hoveredSettingsItem === item.name
-                                      ? 'text-indigo-600' 
-                                      : 'text-gray-500 group-hover:text-indigo-600',
-                                    'size-5 shrink-0',
+                                      ? 'text-white drop-shadow-sm' 
+                                      : 'text-gray-500 group-hover:text-purple-700 group-hover:scale-110',
+                                    'size-5 shrink-0 transition-all duration-200',
                                   )}
                                 />
                                 {item.name}
@@ -340,7 +340,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                           }
                         }}
                         autoFocus
-                        className="col-start-1 row-start-1 block w-full h-9 rounded-md bg-white py-1.5 pr-10 pl-3 text-sm text-gray-900 font-medium outline-2 -outline-offset-1 outline-gray-400 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
+                        className="col-start-1 row-start-1 block w-full h-9 rounded-xl bg-white/95 backdrop-blur-sm py-1.5 pr-10 pl-3 text-sm text-gray-900 font-medium outline-2 -outline-offset-1 outline-gray-400 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 border border-gray-200/50 shadow-sm"
                       />
                     ) : (
                       <button
@@ -350,7 +350,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                             startEditingSceneName(currentScene.id, currentScene.name);
                           }
                         }}
-                        className="col-start-1 row-start-1 flex items-center w-full h-9 rounded-md bg-white py-1.5 pr-10 pl-3 text-sm text-gray-900 font-medium outline-2 -outline-offset-1 outline-gray-400 hover:outline-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
+                        className="col-start-1 row-start-1 flex items-center w-full h-9 rounded-xl bg-white/95 backdrop-blur-sm py-1.5 pr-10 pl-3 text-sm text-gray-900 font-medium outline-2 -outline-offset-1 outline-gray-400 hover:outline-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 border border-gray-200/50 shadow-sm transition-all duration-200 ease-out hover:shadow-md"
                       >
                         <span className="truncate">{currentScene?.name || 'Scene 1'}</span>
                       </button>
@@ -360,32 +360,32 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                   
                   {/* Scene Dropdown */}
                   {showSceneDropdown && (
-                    <div className="absolute top-full left-0 mt-1 w-full z-50 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                    <div className="absolute top-full left-0 mt-1 w-full z-50 bg-white/95 backdrop-blur-sm border border-gray-200/50 rounded-xl shadow-xl shadow-gray-200/50 max-h-60 overflow-y-auto">
                       <div className="p-1">
                         {/* Current scenes */}
                         {scenes.map((scene) => (
                           <div key={scene.id} className="relative">
                             <button
                               onClick={() => handleSceneSelect(scene.id)}
-                              className={`w-full text-left px-3 py-2 text-sm rounded hover:bg-gray-50 flex items-center justify-between ${
-                                scene.id === activeSceneId ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'
+                              className={`w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-indigo-50 hover:text-indigo-700 flex items-center justify-between transition-all duration-200 ease-out transform hover:scale-105 ${
+                                scene.id === activeSceneId ? 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-gray-700'
                               }`}
                             >
                               <span className="truncate">{scene.name}</span>
                               {scene.id === activeSceneId && (
-                                <span className="text-xs text-indigo-600">Active</span>
+                                <span className="text-xs text-white">Active</span>
                               )}
                             </button>
                           </div>
                         ))}
                         
                         {/* Create new scene button */}
-                        <div className="border-t border-gray-100 mt-1 pt-1">
+                        <div className="border-t border-gray-100/50 mt-1 pt-1">
                           <button
                             onClick={handleCreateScene}
-                            className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded flex items-center gap-2"
+                            className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 rounded-lg flex items-center gap-2 transition-all duration-200 ease-out transform hover:scale-105"
                           >
-                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4 text-gray-400 transition-all duration-200 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                             </svg>
                             Create New Scene
@@ -417,7 +417,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                   type="text"
                   value="100%"
                   onChange={() => {}}
-                  className="col-start-1 row-start-1 block w-full h-9 rounded-md bg-white py-1.5 pr-3 pl-6 text-sm text-gray-600 font-medium outline-2 -outline-offset-1 outline-gray-400 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
+                  className="col-start-1 row-start-1 block w-full h-9 rounded-xl bg-white/95 backdrop-blur-sm py-1.5 pr-3 pl-6 text-sm text-gray-600 font-medium outline-2 -outline-offset-1 outline-gray-400 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 border border-gray-200/50 shadow-sm"
                 />
                 <ChevronDown className="size-3 absolute right-4 top-1/2 -translate-y-1/2 text-gray-500" />
               </div>
@@ -432,7 +432,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                   placeholder="Project name"
                   value={projectName}
                   onChange={(e) => setProjectName(e.target.value)}
-                  className="col-start-1 row-start-1 block w-full h-9 rounded-md bg-white py-1.5 pr-3 pl-6 text-sm text-gray-600 font-medium outline-2 -outline-offset-1 outline-gray-400 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
+                  className="col-start-1 row-start-1 block w-full h-9 rounded-xl bg-white/95 backdrop-blur-sm py-1.5 pr-3 pl-6 text-sm text-gray-600 font-medium outline-2 -outline-offset-1 outline-gray-400 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 border border-gray-200/50 shadow-sm"
                 />
               </div>
             </div>
@@ -442,22 +442,22 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
               {/* Profile dropdown */}
               <Menu as="div" className="relative shrink-0">
                 <div>
-                  <MenuButton className="relative flex rounded-full bg-white text-sm focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2">
+                  <MenuButton className="group relative flex rounded-full bg-white/95 backdrop-blur-sm text-sm focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 border border-gray-200/50 shadow-sm">
                     <span className="absolute -inset-1.5" />
                     <span className="sr-only">Open user menu</span>
-                    <div className="size-8 rounded-full bg-gray-300 flex items-center justify-center">
-                      <span className="text-gray-600 font-medium text-sm">U</span>
+                    <div className="size-8 rounded-full bg-gradient-to-r from-gray-400 to-gray-500 flex items-center justify-center shadow-sm">
+                      <span className="text-white font-medium text-sm">U</span>
                     </div>
                   </MenuButton>
                 </div>
                 <MenuItems
                   transition
-                  className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black/5 transition focus:outline-hidden data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
+                  className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-xl bg-white/95 backdrop-blur-sm py-1 shadow-xl shadow-gray-200/50 ring-1 ring-gray-200/50 transition focus:outline-hidden data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
                 >
                   <MenuItem>
                     <a
                       href="#"
-                      className="block px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-100 data-focus:outline-hidden"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 data-focus:bg-indigo-50 data-focus:outline-hidden transition-all duration-200 ease-out transform hover:scale-105 rounded-lg mx-1"
                     >
                       Your Profile
                     </a>
@@ -465,7 +465,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                   <MenuItem>
                     <a
                       href="#"
-                      className="block px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-100 data-focus:outline-hidden"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 data-focus:bg-indigo-50 data-focus:outline-hidden transition-all duration-200 ease-out transform hover:scale-105 rounded-lg mx-1"
                     >
                       Settings
                     </a>
@@ -473,7 +473,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                   <MenuItem>
                     <a
                       href="#"
-                      className="block px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-100 data-focus:outline-hidden"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 data-focus:bg-red-50 data-focus:outline-hidden transition-all duration-200 ease-out transform hover:scale-105 rounded-lg mx-1"
                     >
                       Sign out
                     </a>
@@ -483,9 +483,9 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
 
               <button
                 type="button"
-                className="inline-flex w-28 h-9 items-center gap-x-2.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 mr-4"
+                className="group relative inline-flex w-28 h-9 items-center gap-x-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm shadow-indigo-500/30 hover:from-indigo-600 hover:to-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 mr-4 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95"
               >
-                <Upload className="size-4 ml-1.5" />
+                <Upload className="size-4 ml-1.5 transition-all duration-200 group-hover:scale-110" />
                 <span className="text-sm">Share</span>
               </button>
             </div>

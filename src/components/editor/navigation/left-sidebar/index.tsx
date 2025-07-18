@@ -195,7 +195,7 @@ export const LeftSidebar: React.FC = () => {
   return (
     <>
       <div
-        className="m-2 fixed left-0 top-16 z-40 w-16 overflow-visible transition-all duration-300 ease-out translate-x-0 opacity-100"
+        className="m-2 fixed left-0 top-16 z-40 w-16 shadow-xl shadow-gray-200 border border-gray-200/50 overflow-visible transition-all duration-300 ease-out translate-x-0 opacity-100"
         style={{ height: 'calc(100vh - 80px)' }}
         onClick={handleRootClick}
       >
