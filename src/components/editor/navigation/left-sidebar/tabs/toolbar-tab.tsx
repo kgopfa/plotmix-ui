@@ -23,10 +23,71 @@ export function ToolbarTab() {
     return isPathMode && !pathModeAllowedTools.includes(tool);
   };
   
+  // Enhanced color scheme for each tool
+  const getToolColors = (tool: ToolType) => {
+    switch (tool) {
+      case 'rectangle':
+        return {
+          active: 'bg-gradient-to-r from-blue-500 to-blue-600 shadow-blue-500/30',
+          hover: 'hover:bg-blue-50 hover:text-blue-700',
+          text: 'text-blue-600'
+        };
+      case 'circle':
+        return {
+          active: 'bg-gradient-to-r from-green-500 to-green-600 shadow-green-500/30',
+          hover: 'hover:bg-green-50 hover:text-green-700',
+          text: 'text-green-600'
+        };
+      case 'triangle':
+        return {
+          active: 'bg-gradient-to-r from-purple-500 to-purple-600 shadow-purple-500/30',
+          hover: 'hover:bg-purple-50 hover:text-purple-700',
+          text: 'text-purple-600'
+        };
+      case 'arc':
+        return {
+          active: 'bg-gradient-to-r from-pink-500 to-pink-600 shadow-pink-500/30',
+          hover: 'hover:bg-pink-50 hover:text-pink-700',
+          text: 'text-pink-600'
+        };
+      case 'line':
+        return {
+          active: 'bg-gradient-to-r from-orange-500 to-orange-600 shadow-orange-500/30',
+          hover: 'hover:bg-orange-50 hover:text-orange-700',
+          text: 'text-orange-600'
+        };
+      case 'simpleLine':
+        return {
+          active: 'bg-gradient-to-r from-yellow-500 to-yellow-600 shadow-yellow-500/30',
+          hover: 'hover:bg-yellow-50 hover:text-yellow-700',
+          text: 'text-yellow-600'
+        };
+      case 'draw':
+        return {
+          active: 'bg-gradient-to-r from-red-500 to-red-600 shadow-red-500/30',
+          hover: 'hover:bg-red-50 hover:text-red-700',
+          text: 'text-red-600'
+        };
+      case 'select':
+        return {
+          active: 'bg-gradient-to-r from-indigo-500 to-indigo-600 shadow-indigo-500/30',
+          hover: 'hover:bg-indigo-50 hover:text-indigo-700',
+          text: 'text-indigo-600'
+        };
+      default:
+        return {
+          active: 'bg-gradient-to-r from-gray-500 to-gray-600 shadow-gray-500/30',
+          hover: 'hover:bg-gray-50 hover:text-gray-700',
+          text: 'text-gray-600'
+        };
+    }
+  };
+  
   // Function to get button styling based on tool state
   const getButtonStyling = (tool: ToolType) => {
     const disabled = isToolDisabled(tool);
     const isActive = activeTool === tool;
+    const colors = getToolColors(tool);
     
     if (disabled) {
       return {
@@ -37,13 +98,13 @@ export function ToolbarTab() {
     
     if (isActive) {
       return {
-        buttonClass: 'relative group flex flex-col items-center justify-center w-12 h-12 rounded-xl font-medium transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30',
+        buttonClass: `relative group flex flex-col items-center justify-center w-12 h-12 rounded-xl font-medium transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 ${colors.active} text-white shadow-lg`,
         iconClass: 'w-5 h-5 drop-shadow-sm'
       };
     }
     
     return {
-      buttonClass: 'relative group flex flex-col items-center justify-center w-12 h-12 rounded-xl font-medium transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 text-orange-600 hover:bg-orange-50 hover:text-orange-700 hover:shadow-md',
+      buttonClass: `relative group flex flex-col items-center justify-center w-12 h-12 rounded-xl font-medium transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 ${colors.text} ${colors.hover} hover:shadow-md`,
       iconClass: 'w-5 h-5 transition-all duration-200 group-hover:scale-110'
     };
   };

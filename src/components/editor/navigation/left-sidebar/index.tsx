@@ -42,7 +42,7 @@ const navigation: NavItem[] = [
     key: 'uploads', 
     icon: CircleFadingPlus,
     color: 'text-green-600',
-    hoverColor: 'hover:bg-green-50 hover:text-green-700',
+    hoverColor: 'hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 hover:text-green-700',
     activeColor: 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30'
   },
   { 
@@ -50,7 +50,7 @@ const navigation: NavItem[] = [
     key: 'ai', 
     icon: WandSparkles,
     color: 'text-purple-600',
-    hoverColor: 'hover:bg-purple-50 hover:text-purple-700',
+    hoverColor: 'hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700',
     activeColor: 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30'
   },
   { 
@@ -58,7 +58,7 @@ const navigation: NavItem[] = [
     key: 'text', 
     icon: (props: React.SVGProps<SVGSVGElement>) => <TypeIcon {...props} strokeWidth={2.5} />,
     color: 'text-blue-600',
-    hoverColor: 'hover:bg-blue-50 hover:text-blue-700',
+    hoverColor: 'hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 hover:text-blue-700',
     activeColor: 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30'
   },
   { 
@@ -66,7 +66,7 @@ const navigation: NavItem[] = [
     key: 'layers', 
     icon: Layers,
     color: 'text-indigo-600',
-    hoverColor: 'hover:bg-indigo-50 hover:text-indigo-700',
+    hoverColor: 'hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 hover:text-indigo-700',
     activeColor: 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/30'
   },
   { 
@@ -74,7 +74,7 @@ const navigation: NavItem[] = [
     key: 'tools', 
     icon: Palette,
     color: 'text-orange-600',
-    hoverColor: 'hover:bg-orange-50 hover:text-orange-700',
+    hoverColor: 'hover:bg-gradient-to-r hover:from-orange-50 hover:to-yellow-50 hover:text-orange-700',
     activeColor: 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30'
   },
 ];
@@ -85,7 +85,7 @@ const bottomNavigation: NavItem[] = [
     key: 'audio', 
     icon: VolumeOff,
     color: 'text-gray-600',
-    hoverColor: 'hover:bg-gray-50 hover:text-gray-700',
+    hoverColor: 'hover:bg-gradient-to-r hover:from-gray-50 hover:to-slate-50 hover:text-gray-700',
     activeColor: 'bg-gradient-to-r from-gray-500 to-gray-600 text-white shadow-lg shadow-gray-500/30'
   },
   { 
@@ -93,7 +93,7 @@ const bottomNavigation: NavItem[] = [
     key: 'timeline', 
     icon: Hourglass,
     color: 'text-cyan-600',
-    hoverColor: 'hover:bg-cyan-50 hover:text-cyan-700',
+    hoverColor: 'hover:bg-gradient-to-r hover:from-cyan-50 hover:to-teal-50 hover:text-cyan-700',
     activeColor: 'bg-gradient-to-r from-cyan-500 to-cyan-600 text-white shadow-lg shadow-cyan-500/30'
   },
 ];

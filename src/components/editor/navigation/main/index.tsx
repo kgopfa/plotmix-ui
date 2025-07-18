@@ -196,13 +196,13 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
 
 
   return (
-    <Disclosure as="nav" className="bg-white backdrop-blur-sm border-b border-gray-200/50 shadow-xl shadow-gray-200/50">
+    <Disclosure as="nav" className="bg-gradient-to-r from-slate-50 to-gray-50 backdrop-blur-sm border-b border-gray-200/50 shadow-xl shadow-gray-200/50">
       <div className="mx-auto max-w-full px-2 sm:px-4 lg:px-0">
         <div className="flex h-16 justify-between">
           <div className="flex lg:pl-0 lg:pr-0">
             {/* Options menu button */}
             <div className="flex items-center mx-6">
-              <DisclosureButton className="group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden focus:ring-inset">
+              <DisclosureButton className="group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-200 hover:text-gray-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden focus:ring-inset">
                 <span className="absolute -inset-0.5" />
                 <span className="sr-only">Open options menu</span>
                 <MenuIcon aria-hidden="true" className="block size-5 group-data-open:hidden transition-all duration-200 group-hover:scale-110" />
@@ -210,24 +210,24 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
               </DisclosureButton>
             </div>
             <div className="flex shrink-0 items-center">
-              <div className="h-8 w-8 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/30">
+              <div className="h-8 w-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/30">
                 <span className="text-white font-bold text-sm">R</span>
               </div>
               <div className="flex items-center ml-8">
-                <button className="group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-green-50 hover:text-green-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95">
+                <button className="group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 hover:text-green-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95">
                   <CloudCheck className="size-5 transition-all duration-200 group-hover:scale-110" />
                 </button>
-                <button className="ml-4 group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-blue-50 hover:text-blue-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 pl-3 border-l border-gray-200/50">
+                <button className="ml-4 group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 hover:text-blue-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 pl-3 border-l border-gray-200/50">
                   <Undo2 className="size-5 transition-all duration-200 group-hover:scale-110" />
                 </button>
-                <button className="ml-2 group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-blue-50 hover:text-blue-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 pr-3 border-r border-gray-200/50">
+                <button className="ml-2 group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 hover:text-blue-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 pr-3 border-r border-gray-200/50">
                   <Redo2 className="size-5 transition-all duration-200 group-hover:scale-110" />
                 </button>
                 
                 {/* Settings dropdown */}
                 <Menu as="div" className="relative ml-4">
                   <div>
-                    <MenuButton className="group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-purple-50 hover:text-purple-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2">
+                    <MenuButton className="group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2">
                       <span className="sr-only">Open settings menu</span>
                       <Settings className="size-5 transition-all duration-200 group-hover:scale-110" />
                     </MenuButton>
@@ -255,7 +255,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                                 className={classNames(
                                   currentSettingsItem === item.name || hoveredSettingsItem === item.name
                                     ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30' 
-                                    : 'text-gray-500 hover:bg-purple-50 hover:text-purple-700 data-focus:bg-purple-50 data-focus:text-purple-700',
+                                    : 'text-gray-500 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 data-focus:bg-purple-50 data-focus:text-purple-700',
                                   'group flex gap-x-3 rounded-xl p-2 text-sm font-semibold data-focus:outline-hidden cursor-pointer transition-all duration-200 ease-out transform hover:scale-105',
                                 )}
                               >
@@ -367,7 +367,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                           <div key={scene.id} className="relative">
                             <button
                               onClick={() => handleSceneSelect(scene.id)}
-                              className={`w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-indigo-50 hover:text-indigo-700 flex items-center justify-between transition-all duration-200 ease-out transform hover:scale-105 ${
+                              className={`w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 hover:text-indigo-700 flex items-center justify-between transition-all duration-200 ease-out transform hover:scale-105 ${
                                 scene.id === activeSceneId ? 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-gray-700'
                               }`}
                             >
@@ -383,7 +383,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                         <div className="border-t border-gray-100/50 mt-1 pt-1">
                           <button
                             onClick={handleCreateScene}
-                            className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 rounded-lg flex items-center gap-2 transition-all duration-200 ease-out transform hover:scale-105"
+                            className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 hover:text-green-700 rounded-lg flex items-center gap-2 transition-all duration-200 ease-out transform hover:scale-105"
                           >
                             <svg className="w-4 h-4 text-gray-400 transition-all duration-200 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -457,7 +457,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                   <MenuItem>
                     <a
                       href="#"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 data-focus:bg-indigo-50 data-focus:outline-hidden transition-all duration-200 ease-out transform hover:scale-105 rounded-lg mx-1"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 hover:text-indigo-700 data-focus:bg-indigo-50 data-focus:outline-hidden transition-all duration-200 ease-out transform hover:scale-105 rounded-lg mx-1"
                     >
                       Your Profile
                     </a>
@@ -465,7 +465,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                   <MenuItem>
                     <a
                       href="#"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 data-focus:bg-indigo-50 data-focus:outline-hidden transition-all duration-200 ease-out transform hover:scale-105 rounded-lg mx-1"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 hover:text-indigo-700 data-focus:bg-indigo-50 data-focus:outline-hidden transition-all duration-200 ease-out transform hover:scale-105 rounded-lg mx-1"
                     >
                       Settings
                     </a>
@@ -473,7 +473,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                   <MenuItem>
                     <a
                       href="#"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 data-focus:bg-red-50 data-focus:outline-hidden transition-all duration-200 ease-out transform hover:scale-105 rounded-lg mx-1"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 hover:text-red-700 data-focus:bg-red-50 data-focus:outline-hidden transition-all duration-200 ease-out transform hover:scale-105 rounded-lg mx-1"
                     >
                       Sign out
                     </a>
@@ -483,7 +483,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
 
               <button
                 type="button"
-                className="group relative inline-flex w-28 h-9 items-center gap-x-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm shadow-indigo-500/30 hover:from-indigo-600 hover:to-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 mr-4 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95"
+                className="group relative inline-flex w-28 h-9 items-center gap-x-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 px-3 py-2 text-sm font-semibold text-white shadow-sm shadow-indigo-500/30 hover:from-indigo-600 hover:to-purple-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 mr-4 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95"
               >
                 <Upload className="size-4 ml-1.5 transition-all duration-200 group-hover:scale-110" />
                 <span className="text-sm">Share</span>
