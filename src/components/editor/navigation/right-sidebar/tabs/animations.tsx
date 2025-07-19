@@ -199,11 +199,10 @@ export function AnimationsTab({
   };
 
   return (
-    <div className="flex flex-col gap-6 p-2">
+    <div className="flex flex-col gap-4 p-4">
       {/* Header */}
       <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
-        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-        <h3 className="font-semibold text-gray-900">Animations</h3>
+        <h4 className="font-semibold text-gray-700 text-sm">Animations</h4>
       </div>
 
       {/* No animations state */}
