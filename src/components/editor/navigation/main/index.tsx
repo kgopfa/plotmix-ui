@@ -1,23 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Disclosure, 
-  DisclosureButton, 
-  DisclosurePanel, 
-  Menu, 
-  MenuButton, 
-  MenuItem, 
-  MenuItems 
+import {
+  Disclosure,
+  DisclosureButton,
+  DisclosurePanel,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuItems
 } from '@headlessui/react'
-import { 
-  Menu as MenuIcon, 
-  Bell, 
-  X, 
-  Upload, 
-  Settings, 
-  ChevronDown, 
-  Redo2, 
-  Search, 
-  Undo2, 
+import {
+  Menu as MenuIcon,
+  Bell,
+  X,
+  Upload,
+  Settings,
+  Redo2,
+  Search,
+  Undo2,
   CloudCheck,
   Video,
   Move3D
@@ -64,28 +63,28 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
   const [currentSettingsItem, setCurrentSettingsItem] = useState('Video Settings');
   const [hoveredSettingsItem, setHoveredSettingsItem] = useState<string | null>(null);
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
-  
+
   // Scene selector state
   const [showSceneDropdown, setShowSceneDropdown] = useState(false);
   const [editingSceneId, setEditingSceneId] = useState<string | null>(null);
   const [tempSceneName, setTempSceneName] = useState('');
-  
+
   // Scene store hooks
   const scenes = useScenes();
   const activeSceneId = useActiveSceneId();
   const renameScene = useRenameScene();
   const projectManager = ProjectManager.getInstance();
-  
+
   // Get current scene info
   const currentScene = scenes.find(scene => scene.id === activeSceneId);
 
   // Grid snapping hook
-  const { 
-    gridConfig, 
-    setGridConfig, 
-    toggleGrid, 
+  const {
+    gridConfig,
+    setGridConfig,
+    toggleGrid,
     toggleSnapEnabled,
-    isSnapTemporarilyDisabled 
+    isSnapTemporarilyDisabled
   } = useGridSnapping({
     size: 10,
     enabled: true,
@@ -120,9 +119,9 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
       clearTimeout(hoverTimeout);
       setHoverTimeout(null);
     }
-    
+
     setHoveredSettingsItem(settingName);
-    
+
     if (settingName === 'Snapping Settings') {
       setShowSnappingSettings(true);
       setShowVideoSettings(false);
@@ -142,7 +141,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
       setShowSnappingSettings(false);
       setShowVideoSettings(false);
     }, 150); // 150ms delay
-    
+
     setHoverTimeout(timeout);
   };
 
@@ -160,7 +159,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
       setShowSceneDropdown(false);
       return;
     }
-    
+
     try {
       await projectManager.switchScene(sceneId);
       setShowSceneDropdown(false);
@@ -223,7 +222,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                 <button className="ml-4 group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 hover:text-blue-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95">
                   <Redo2 className="size-5 transition-all duration-200 group-hover:scale-110" />
                 </button>
-                
+
                 {/* Settings dropdown */}
                 <Menu as="div" className="relative ml-4">
                   <div>
@@ -236,8 +235,8 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                     transition
                     className="absolute left-0 z-10 mt-2 -ml-2 w-56 origin-top-left rounded-xl bg-white/95 backdrop-blur-sm pt-3 pb-3 shadow-xl shadow-gray-200/50 ring-1 ring-gray-200/50 transition focus:outline-hidden data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
                   >
-                    <nav 
-                      aria-label="Settings menu" 
+                    <nav
+                      aria-label="Settings menu"
                       className="flex flex-1 flex-col"
                       onMouseLeave={handleSettingsLeave}
                     >
@@ -254,7 +253,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                                 onMouseEnter={() => handleSettingsHover(item.name)}
                                 className={classNames(
                                   currentSettingsItem === item.name || hoveredSettingsItem === item.name
-                                    ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30' 
+                                    ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30'
                                     : 'text-gray-500 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 data-focus:bg-purple-50 data-focus:text-purple-700',
                                   'group flex gap-x-3 rounded-xl p-2 text-sm font-semibold data-focus:outline-hidden cursor-pointer transition-all duration-200 ease-out transform hover:scale-105',
                                 )}
@@ -263,7 +262,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                                   aria-hidden="true"
                                   className={classNames(
                                     currentSettingsItem === item.name || hoveredSettingsItem === item.name
-                                      ? 'text-white drop-shadow-sm' 
+                                      ? 'text-white drop-shadow-sm'
                                       : 'text-gray-500 group-hover:text-purple-700 group-hover:scale-110',
                                     'size-5 shrink-0 transition-all duration-200',
                                   )}
@@ -276,10 +275,10 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                       </ul>
                     </nav>
                   </MenuItems>
-                  
+
                   {/* Settings Panels - positioned next to settings menu */}
                   {showSnappingSettings && (
-                    <div 
+                    <div
                       className="absolute left-60 top-0 z-20"
                       onMouseEnter={() => handleSettingsHover('Snapping Settings')}
                       onMouseLeave={handleSettingsLeave}
@@ -305,7 +304,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
 
                   {/* Video Settings Panel - positioned next to settings menu */}
                   {showVideoSettings && (
-                    <div 
+                    <div
                       className="absolute left-60 top-0 z-20"
                       onMouseEnter={() => handleSettingsHover('Video Settings')}
                       onMouseLeave={handleSettingsLeave}
@@ -340,7 +339,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                           }
                         }}
                         autoFocus
-                        className="col-start-1 row-start-1 block w-full h-9 rounded-xl bg-white/95 backdrop-blur-sm py-1.5 pr-10 pl-3 text-sm text-gray-900 font-medium outline-2 -outline-offset-1 outline-gray-400 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 border border-gray-200/50 shadow-sm"
+                        className="col-start-1 row-start-1 block w-full h-9 rounded-xl py-1.5 pr-10 pl-3 text-sm text-gray-900 font-medium placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
                       />
                     ) : (
                       <button
@@ -350,14 +349,17 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                             startEditingSceneName(currentScene.id, currentScene.name);
                           }
                         }}
-                        className="col-start-1 row-start-1 flex items-center w-full h-9 rounded-xl bg-white/95 backdrop-blur-sm py-1.5 pr-10 pl-3 text-sm text-gray-900 font-medium outline-1 -outline-offset-1 outline-gray-500 hover:outline-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 border border-gray-200/50 shadow-sm transition-all duration-200 ease-out hover:shadow-md"
+                        className="col-start-1 row-start-1 flex flex-row items-center w-full h-9 rounded-xl py-1.5 pr-10 pl-3 text-sm text-gray-500 font-semibold focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 transition-all duration-200 ease-out hover:bg-gray-50/50"
                       >
                         <span className="truncate">{currentScene?.name || 'Scene 1'}</span>
+                        <svg className="size-5 ml-4 text-gray-500 pointer-events-none" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 16l-6-6h12z" />
+                        </svg>
                       </button>
                     )}
-                    <ChevronDown className="size-3 absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+
                   </div>
-                  
+
                   {/* Scene Dropdown */}
                   {showSceneDropdown && (
                     <div className="absolute top-full left-0 mt-1 w-full z-50 bg-white/95 backdrop-blur-sm border border-gray-200/50 rounded-xl shadow-xl shadow-gray-200/50 max-h-60 overflow-y-auto">
@@ -367,9 +369,8 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                           <div key={scene.id} className="relative">
                             <button
                               onClick={() => handleSceneSelect(scene.id)}
-                              className={`w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 hover:text-indigo-700 flex items-center justify-between transition-all duration-200 ease-out transform hover:scale-105 ${
-                                scene.id === activeSceneId ? 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-gray-700'
-                              }`}
+                              className={`w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 hover:text-indigo-700 flex items-center justify-between transition-all duration-200 ease-out transform hover:scale-105 ${scene.id === activeSceneId ? 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-gray-700'
+                                }`}
                             >
                               <span className="truncate">{scene.name}</span>
                               {scene.id === activeSceneId && (
@@ -378,7 +379,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                             </button>
                           </div>
                         ))}
-                        
+
                         {/* Create new scene button */}
                         <div className="border-t border-gray-100/50 mt-1 pt-1">
                           <button
@@ -394,11 +395,11 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                       </div>
                     </div>
                   )}
-                  
+
                   {/* Backdrop to close dropdown */}
                   {showSceneDropdown && (
-                    <div 
-                      className="fixed inset-0 z-40" 
+                    <div
+                      className="fixed inset-0 z-40"
                       onClick={() => setShowSceneDropdown(false)}
                     />
                   )}
@@ -416,10 +417,12 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                   name="zoomControl"
                   type="text"
                   value="100%"
-                  onChange={() => {}}
-                  className="col-start-1 row-start-1 block w-full h-9 rounded-xl bg-white/95 backdrop-blur-sm py-1.5 pr-3 pl-6 text-sm text-gray-600 font-medium outline-1 -outline-offset-1 outline-gray-500 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 border border-gray-200/50 shadow-sm"
+                  onChange={() => { }}
+                  className="col-start-1 row-start-1 block w-full h-9 rounded-xl py-1.5 pr-3 pl-6 text-sm text-gray-500 font-semibold placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
                 />
-                <ChevronDown className="size-3 absolute right-4 top-1/2 -translate-y-1/2 text-gray-500" />
+                <svg className="size-5 absolute right-1 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 16l-6-6h12z" />
+                </svg>
               </div>
             </div>
 
@@ -432,7 +435,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                   placeholder="Project name"
                   value={projectName}
                   onChange={(e) => setProjectName(e.target.value)}
-                  className="col-start-1 row-start-1 block w-full h-9 rounded-xl bg-white/95 backdrop-blur-sm py-1.5 pr-3 pl-6 text-sm text-gray-600 font-medium outline-1 -outline-offset-1 outline-gray-500 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 border border-gray-200/50 shadow-sm"
+                  className="col-start-1 row-start-1 block w-full h-9 rounded-xl py-1.5 pr-3 pl-6 text-sm text-gray-500 font-medium placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
                 />
               </div>
             </div>
