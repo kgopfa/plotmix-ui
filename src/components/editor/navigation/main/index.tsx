@@ -316,93 +316,18 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                   )}
                 </Menu>
 
-                {/* Scene selector */}
-                <div className="relative ml-8">
-                  <div className="grid w-48 max-w-sm grid-cols-1 relative">
-                    {editingSceneId === activeSceneId ? (
-                      <input
-                        type="text"
-                        value={tempSceneName}
-                        onChange={(e) => setTempSceneName(e.target.value)}
-                        onBlur={() => {
-                          if (editingSceneId) {
-                            handleSceneRename(editingSceneId);
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && editingSceneId) {
-                            handleSceneRename(editingSceneId);
-                          }
-                          if (e.key === 'Escape') {
-                            setEditingSceneId(null);
-                            setTempSceneName('');
-                          }
-                        }}
-                        autoFocus
-                        className="col-start-1 row-start-1 block w-full h-9 rounded-xl py-1.5 pr-10 pl-3 text-sm text-gray-900 font-medium placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
-                      />
-                    ) : (
-                      <button
-                        onClick={() => setShowSceneDropdown(!showSceneDropdown)}
-                        onDoubleClick={() => {
-                          if (currentScene) {
-                            startEditingSceneName(currentScene.id, currentScene.name);
-                          }
-                        }}
-                        className="col-start-1 row-start-1 flex flex-row items-center w-full h-9 rounded-xl py-1.5 pr-10 pl-3 text-sm text-gray-500 font-semibold focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 transition-all duration-200 ease-out hover:bg-gray-50/50"
-                      >
-                        <span className="truncate">{currentScene?.name || 'Scene 1'}</span>
-                        <svg className="size-5 ml-4 text-gray-500 pointer-events-none" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 16l-6-6h12z" />
-                        </svg>
-                      </button>
-                    )}
-
-                  </div>
-
-                  {/* Scene Dropdown */}
-                  {showSceneDropdown && (
-                    <div className="absolute top-full left-0 mt-1 w-full z-50 bg-white/95 backdrop-blur-sm border border-gray-200/50 rounded-xl shadow-xl shadow-gray-200/50 max-h-60 overflow-y-auto">
-                      <div className="p-1">
-                        {/* Current scenes */}
-                        {scenes.map((scene) => (
-                          <div key={scene.id} className="relative">
-                            <button
-                              onClick={() => handleSceneSelect(scene.id)}
-                              className={`w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 hover:text-indigo-700 flex items-center justify-between transition-all duration-200 ease-out transform hover:scale-105 ${scene.id === activeSceneId ? 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-gray-700'
-                                }`}
-                            >
-                              <span className="truncate">{scene.name}</span>
-                              {scene.id === activeSceneId && (
-                                <span className="text-xs text-white">Active</span>
-                              )}
-                            </button>
-                          </div>
-                        ))}
-
-                        {/* Create new scene button */}
-                        <div className="border-t border-gray-100/50 mt-1 pt-1">
-                          <button
-                            onClick={handleCreateScene}
-                            className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 hover:text-green-700 rounded-lg flex items-center gap-2 transition-all duration-200 ease-out transform hover:scale-105"
-                          >
-                            <svg className="w-4 h-4 text-gray-400 transition-all duration-200 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                            </svg>
-                            Create New Scene
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Backdrop to close dropdown */}
-                  {showSceneDropdown && (
-                    <div
-                      className="fixed inset-0 z-40"
-                      onClick={() => setShowSceneDropdown(false)}
+                {/* Project Name */}
+                <div className="relative ml-6">
+                  <div className="grid w-48 max-w-sm grid-cols-1">
+                    <input
+                      name="projectName"
+                      type="text"
+                      placeholder="Project name"
+                      value={projectName}
+                      onChange={(e) => setProjectName(e.target.value)}
+                      className="col-start-1 row-start-1 block w-full h-9 rounded-md p-1.5 text-sm text-gray-500 font-semibold placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-500"
                     />
-                  )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -426,18 +351,92 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
               </div>
             </div>
 
-            {/* Project Name */}
+            {/* Scene selector */}
             <div className="hidden lg:block">
-              <div className="grid w-full max-w-sm grid-cols-1">
-                <input
-                  name="projectName"
-                  type="text"
-                  placeholder="Project name"
-                  value={projectName}
-                  onChange={(e) => setProjectName(e.target.value)}
-                  className="col-start-1 row-start-1 block w-full h-9 rounded-xl py-1.5 pr-3 pl-6 text-sm text-gray-500 font-medium placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
-                />
+              <div className="grid w-48 max-w-sm grid-cols-1 relative">
+                {editingSceneId === activeSceneId ? (
+                  <input
+                    type="text"
+                    value={tempSceneName}
+                    onChange={(e) => setTempSceneName(e.target.value)}
+                    onBlur={() => {
+                      if (editingSceneId) {
+                        handleSceneRename(editingSceneId);
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && editingSceneId) {
+                        handleSceneRename(editingSceneId);
+                      }
+                      if (e.key === 'Escape') {
+                        setEditingSceneId(null);
+                        setTempSceneName('');
+                      }
+                    }}
+                    autoFocus
+                    className="col-start-1 row-start-1 block w-full h-9 rounded-xl py-1.5 pr-10 pl-3 text-sm text-gray-900 font-medium placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
+                  />
+                ) : (
+                  <button
+                    onClick={() => setShowSceneDropdown(!showSceneDropdown)}
+                    onDoubleClick={() => {
+                      if (currentScene) {
+                        startEditingSceneName(currentScene.id, currentScene.name);
+                      }
+                    }}
+                    className="col-start-1 row-start-1 flex flex-row items-center w-full h-9 rounded-xl py-1.5 pr-10 pl-3 text-sm text-gray-500 font-semibold focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 transition-all duration-200 ease-out hover:bg-gray-50/50"
+                  >
+                    <span className="truncate">{currentScene?.name || 'Scene 1'}</span>
+                    <svg className="size-5 ml-4 text-gray-500 pointer-events-none" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 16l-6-6h12z" />
+                    </svg>
+                  </button>
+                )}
               </div>
+              
+              {/* Scene Dropdown */}
+              {showSceneDropdown && (
+                <div className="absolute top-full left-0 mt-1 w-full z-50 bg-white/95 backdrop-blur-sm border border-gray-200/50 rounded-xl shadow-xl shadow-gray-200/50 max-h-60 overflow-y-auto">
+                  <div className="p-1">
+                    {/* Current scenes */}
+                    {scenes.map((scene) => (
+                      <div key={scene.id} className="relative">
+                        <button
+                          onClick={() => handleSceneSelect(scene.id)}
+                          className={`w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 hover:text-indigo-700 flex items-center justify-between transition-all duration-200 ease-out transform hover:scale-105 ${scene.id === activeSceneId ? 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-gray-700'
+                            }`}
+                        >
+                          <span className="truncate">{scene.name}</span>
+                          {scene.id === activeSceneId && (
+                            <span className="text-xs text-white">Active</span>
+                          )}
+                        </button>
+                      </div>
+                    ))}
+                    
+                    {/* Create new scene button */}
+                    <div className="border-t border-gray-100/50 mt-1 pt-1">
+                      <button
+                        onClick={handleCreateScene}
+                        className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 hover:text-green-700 rounded-lg flex items-center gap-2 transition-all duration-200 ease-out transform hover:scale-105"
+                      >
+                        <svg className="w-4 h-4 text-gray-400 transition-all duration-200 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Create New Scene
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Backdrop to close dropdown */}
+              {showSceneDropdown && (
+                <div 
+                  className="fixed inset-0 z-40" 
+                  onClick={() => setShowSceneDropdown(false)}
+                />
+              )}
             </div>
 
             {/* Desktop user menu */}
