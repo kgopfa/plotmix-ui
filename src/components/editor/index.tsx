@@ -8,7 +8,7 @@ import { TimelineManager } from '@/lib/timeline-manager';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useCanvasElements, useCanvasGroups, useCanvasStore } from '@/stores/use-canvas-store';
 import { useUIStore, useActiveNav, useActiveRightPanel, useCanvasLock } from '@/stores/use-ui-store';
-import { useTimelineSync } from '@/stores/use-timeline-store';
+import { useTimelineSync, useTimelineStore } from '@/stores/use-timeline-store';
 import { useCanvasMigration } from '@/hooks/use-canvas-migration';
 import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
 import { Graphics, FederatedPointerEvent, Container } from 'pixi.js';
@@ -107,6 +107,9 @@ export default function EditorCanvas() {
   
   // Canvas lock state
   const isCanvasLocked = useCanvasLock();
+
+  // Animation playback state - needed for UI hiding during playback
+  const isPlaying = useTimelineStore(state => state.playback.isPlaying);
 
   // Interactive state for canvas operations
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -1317,18 +1320,20 @@ export default function EditorCanvas() {
         onUngroupElements={handleUngroupElements}
       />
 
-      {/* Selection Navbar - appears when elements are selected */}
-      <SelectionNavbar
-        selectedElements={selectedObjects}
-        selectedGroups={selectedGroups}
-        onAnimate={handleSelectionNavbarAnimate}
-        onDelete={handleSelectionNavbarDelete}
-        onCopy={handleSelectionNavbarCopy}
-        onDuplicate={handleSelectionNavbarDuplicate}
-        onGroup={handleSelectionNavbarGroup}
-        onUngroup={handleSelectionNavbarUngroup}
-        onOptions={handleSelectionNavbarOptions}
-      />
+      {/* Selection Navbar - appears when elements are selected and not playing */}
+      {!isPlaying && (
+        <SelectionNavbar
+          selectedElements={selectedObjects}
+          selectedGroups={selectedGroups}
+          onAnimate={handleSelectionNavbarAnimate}
+          onDelete={handleSelectionNavbarDelete}
+          onCopy={handleSelectionNavbarCopy}
+          onDuplicate={handleSelectionNavbarDuplicate}
+          onGroup={handleSelectionNavbarGroup}
+          onUngroup={handleSelectionNavbarUngroup}
+          onOptions={handleSelectionNavbarOptions}
+        />
+      )}
 
       {/* Navigation Sidebars */}
       <LeftSidebar />
@@ -1345,7 +1350,7 @@ export default function EditorCanvas() {
           groups={groups}
           selectedIds={selectedObjects.map(el => el.id)}
           hoveredId={hoveredId}
-          isPlaying={false}
+
           editingTextId={editingTextId}
           tool={toolState.activeTool}
           isPathMode={toolState.isPathMode}
@@ -1428,8 +1433,8 @@ export default function EditorCanvas() {
 
         {/* Floating Right Panel - Content */}
         {(() => {
-          // Only show right panel when there's a selection
-          const shouldShow = panelState.rightPanelVisible && activeRightPanel && hasSelection && (
+          // Only show right panel when there's a selection and not playing
+          const shouldShow = panelState.rightPanelVisible && activeRightPanel && hasSelection && !isPlaying && (
             activeRightPanel === 'properties' || activeRightPanel === 'animations'
           );
           return shouldShow;

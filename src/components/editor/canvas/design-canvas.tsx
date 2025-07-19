@@ -18,6 +18,7 @@ import { GroupSelection } from './group-selection';
 import { useCanvasState, useCanvasLock } from '@/stores/use-ui-store';
 import { useCanvasOperations } from '@/stores/use-canvas-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
+import { useTimelineStore } from '@/stores/use-timeline-store';
 import { eventManager } from '@/lib/event-manager';
 
 interface DesignCanvasProps {
@@ -29,7 +30,7 @@ interface DesignCanvasProps {
   groups: CanvasGroup[];
   selectedIds: string[];
   hoveredId: string | null;
-  isPlaying: boolean;
+
   editingTextId: string | null;
   // Tool state
   tool: string;
@@ -62,6 +63,9 @@ interface DesignCanvasProps {
 }
 
 export const DesignCanvas = (props: DesignCanvasProps) => {
+  // Get isPlaying state directly from timeline store
+  const isPlaying = useTimelineStore(state => state.playback.isPlaying);
+  
   const { 
     gridConfig, 
     snapGuides = [],
@@ -69,7 +73,6 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
     groups,
     selectedIds,
     hoveredId,
-    isPlaying,
     editingTextId,
     tool,
     isPathMode,

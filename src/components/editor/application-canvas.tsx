@@ -27,7 +27,7 @@ interface ApplicationCanvasProps {
   groups: CanvasGroup[];
   selectedIds: string[];
   hoveredId: string | null;
-  isPlaying: boolean;
+
   editingTextId: string | null;
   tool: string;
   isPathMode: boolean;
@@ -73,6 +73,8 @@ export interface ApplicationCanvasRef {
 export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCanvasProps>(
   (props, ref) => {
     const { canvasZoom, onCanvasZoomChange } = props;
+    
+
     const appRef = useRef<ApplicationRef | null>(null);
     const viewportRef = useRef<ViewportWrapper | null>(null);
     const canvasContainerRef = useRef<HTMLDivElement | null>(null);
