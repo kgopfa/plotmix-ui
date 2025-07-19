@@ -67,6 +67,7 @@ interface TimelineStoreState {
   subscriptions: {
     timeManager: (() => void) | null;
     gsapManager: (() => void) | null;
+    canvasStore: (() => void) | null; // Added for Canvas Store
   };
   
   // Loading and error state
@@ -201,6 +202,7 @@ export const useTimelineStore = create<TimelineStore>()(
       subscriptions: {
         timeManager: null,
         gsapManager: null,
+        canvasStore: null, // Initialize canvasStore
       },
       isLoading: false,
       error: null,
@@ -604,6 +606,20 @@ export const useTimelineStore = create<TimelineStore>()(
             }));
           });
         }));
+        
+        // Subscribe to Canvas Store changes
+        const canvasStore = useCanvasStore.getState();
+        const unsubscribeCanvas = canvasStore.subscribe((canvasState) => {
+          // Sync Timeline Store with Canvas Store changes
+          const timelineStore = get();
+          timelineStore.setElements(canvasState.elements);
+          timelineStore.setGroups(canvasState.groups);
+        });
+        
+        // Store the canvas unsubscribe function for cleanup
+        set(produce((state) => {
+          state.subscriptions.canvasStore = unsubscribeCanvas;
+        }));
       },
 
       cleanupSubscriptions: () => {
@@ -615,10 +631,14 @@ export const useTimelineStore = create<TimelineStore>()(
         if (subscriptions.gsapManager) {
           subscriptions.gsapManager();
         }
+        if (subscriptions.canvasStore) {
+          subscriptions.canvasStore();
+        }
         
         set(produce((state) => {
           state.subscriptions.timeManager = null;
           state.subscriptions.gsapManager = null;
+          state.subscriptions.canvasStore = null;
         }));
       },
 

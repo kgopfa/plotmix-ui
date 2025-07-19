@@ -11,9 +11,10 @@ import { useUIStore, useActiveNav, useActiveRightPanel, useCanvasLock } from '@/
 import { useTimelineSync } from '@/stores/use-timeline-store';
 import { useCanvasMigration } from '@/hooks/use-canvas-migration';
 import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
-import { Graphics, FederatedPointerEvent } from 'pixi.js';
+import { Graphics, FederatedPointerEvent, Container } from 'pixi.js';
 import { PropertiesPanel } from './navigation/right-sidebar/properties-panel';
 import { AnimationsPanel } from './navigation/right-sidebar/animations-panel';
+import type { CanvasRef } from './canvas';
 
 import { Timeline } from './timeline';
 import { MaskOverlay } from './canvas/mask-overlay';
@@ -119,6 +120,17 @@ export default function EditorCanvas() {
   const groupContainers = useRef<Record<string, unknown>>({});
   const drawingRef = useRef<Graphics | null>(null);
   const canvasScaleFactor = useRef<number>(1);
+
+  // Create a canvas ref that provides the shape refs to the timeline manager
+  const canvasRefForTimeline = useRef<CanvasRef>({
+    getShapeRefs: () => shapeRefs.current as Record<string, Container>,
+    getGroupContainers: () => groupContainers.current as Record<string, Container>
+  });
+
+  // Set up the canvas ref for the timeline manager
+  useEffect(() => {
+    setTimelineCanvasRef({ current: canvasRefForTimeline.current });
+  }, [setTimelineCanvasRef]);
 
   // Element snapping functionality - only keep what's needed for canvas operations
   const {

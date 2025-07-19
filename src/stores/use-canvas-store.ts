@@ -74,15 +74,29 @@ interface CanvasActions {
   completeOptimisticOperation: (operationId: string) => void;
   rollbackOptimisticOperation: (operationId: string) => void;
   
-  // History operations (for future enhancement)
+  // History operations
   saveSnapshot: () => void;
   undo: () => void;
   redo: () => void;
-  canUndo: () => boolean;
-  canRedo: () => boolean;
+  
+  // Subscription management
+  subscribe: (callback: (state: { elements: AnimatedCanvasObject[]; groups: CanvasGroup[] }) => void) => () => void;
 }
 
 type CanvasStore = CanvasState & CanvasActions;
+
+// Subscription management
+const subscribers = new Set<(state: { elements: AnimatedCanvasObject[]; groups: CanvasGroup[] }) => void>();
+
+const notifySubscribers = (state: { elements: AnimatedCanvasObject[]; groups: CanvasGroup[] }) => {
+  subscribers.forEach(callback => {
+    try {
+      callback(state);
+    } catch (error) {
+      console.warn('Canvas store subscriber error:', error);
+    }
+  });
+};
 
 export const useCanvasStore = create<CanvasStore>()(
   (set, get) => ({
@@ -124,6 +138,9 @@ export const useCanvasStore = create<CanvasStore>()(
           }
         }
       }));
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
     },
 
     updateElement: (id, updates) => {
@@ -133,6 +150,9 @@ export const useCanvasStore = create<CanvasStore>()(
           Object.assign(element, updates);
         }
       }));
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
     },
 
     removeElement: (id) => {
@@ -146,6 +166,9 @@ export const useCanvasStore = create<CanvasStore>()(
           elementIds: group.elementIds.filter(elementId => elementId !== id)
         })).filter((group: CanvasGroup) => group.elementIds.length > 0 || !group.isDefaultGroup);
       }));
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
     },
 
     duplicateElement: (id) => {
@@ -182,6 +205,9 @@ export const useCanvasStore = create<CanvasStore>()(
           duplicatedElement.groupId = newGroup.id;
         }
       }));
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
     },
 
     moveElement: (id, position) => {
@@ -192,6 +218,9 @@ export const useCanvasStore = create<CanvasStore>()(
           element.y = position.y;
         }
       }));
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
     },
 
     resizeElement: (id, size) => {
@@ -202,6 +231,9 @@ export const useCanvasStore = create<CanvasStore>()(
           element.height = size.height;
         }
       }));
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
     },
 
     rotateElement: (id, rotation) => {
@@ -211,6 +243,9 @@ export const useCanvasStore = create<CanvasStore>()(
           element.rotation = rotation;
         }
       }));
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
     },
 
     setElementVisibility: (id, visible) => {
@@ -220,6 +255,9 @@ export const useCanvasStore = create<CanvasStore>()(
           element.visible = visible;
         }
       }));
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
     },
 
     // Group operations
@@ -227,6 +265,9 @@ export const useCanvasStore = create<CanvasStore>()(
       set(produce((state) => {
         state.groups.push(group);
       }));
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
     },
 
     updateGroup: (id, updates) => {
@@ -236,6 +277,9 @@ export const useCanvasStore = create<CanvasStore>()(
           Object.assign(group, updates);
         }
       }));
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
     },
 
     removeGroup: (id) => {
@@ -248,6 +292,9 @@ export const useCanvasStore = create<CanvasStore>()(
           el.groupId === id ? { ...el, groupId: undefined } : el
         );
       }));
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
     },
 
     moveGroup: (id, position) => {
@@ -270,6 +317,9 @@ export const useCanvasStore = create<CanvasStore>()(
           });
         }
       }));
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
     },
 
     setGroupVisibility: (id, visible) => {
@@ -277,16 +327,11 @@ export const useCanvasStore = create<CanvasStore>()(
         const group = state.groups.find((g: CanvasGroup) => g.id === id);
         if (group) {
           group.visible = visible;
-          
-          // Update visibility of all elements in the group
-          group.elementIds.forEach((elementId: string) => {
-            const element = state.elements.find((el: AnimatedCanvasObject) => el.id === elementId);
-            if (element) {
-              element.visible = visible;
-            }
-          });
         }
       }));
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
     },
 
     // Element-Group relationship operations
@@ -294,78 +339,54 @@ export const useCanvasStore = create<CanvasStore>()(
       set(produce((state) => {
         const group = state.groups.find((g: CanvasGroup) => g.id === groupId);
         if (group) {
+          // Add elements to group
           elementIds.forEach((elementId: string) => {
             if (!group.elementIds.includes(elementId)) {
               group.elementIds.push(elementId);
             }
-            
-            const element = state.elements.find((el: AnimatedCanvasObject) => el.id === elementId);
-            if (element) {
-              element.groupId = groupId;
-            }
           });
+          
+          // Update elements with group reference
+          state.elements = state.elements.map((el: AnimatedCanvasObject) => 
+            elementIds.includes(el.id) ? { ...el, groupId } : el
+          );
         }
       }));
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
     },
 
     removeElementsFromGroup: (elementIds, groupId) => {
       set(produce((state) => {
         const group = state.groups.find((g: CanvasGroup) => g.id === groupId);
         if (group) {
+          // Remove elements from group
           group.elementIds = group.elementIds.filter((id: string) => !elementIds.includes(id));
           
-          elementIds.forEach((elementId: string) => {
-            const element = state.elements.find((el: AnimatedCanvasObject) => el.id === elementId);
-            if (element) {
-              element.groupId = undefined;
-            }
-          });
-          
-          // Remove group if it becomes empty and is a default group
-          if (group.elementIds.length === 0 && group.isDefaultGroup) {
-            state.groups = state.groups.filter((g: CanvasGroup) => g.id !== groupId);
-          }
+          // Update elements to remove group reference
+          state.elements = state.elements.map((el: AnimatedCanvasObject) => 
+            elementIds.includes(el.id) ? { ...el, groupId: undefined } : el
+          );
         }
       }));
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
     },
 
     createGroupFromElements: (elementIds, groupOptions = {}) => {
-      const state = get();
-      const elements = elementIds.map((id: string) => state.elements.find((el: AnimatedCanvasObject) => el.id === id)).filter(Boolean) as AnimatedCanvasObject[];
-      
+      const elements = get().elements.filter((el: AnimatedCanvasObject) => elementIds.includes(el.id));
       if (elements.length === 0) {
-        throw new Error('No valid elements found for grouping');
+        throw new Error('No elements found to group');
       }
-      
-      // Calculate group bounds
-      const bounds = elements.reduce((acc, el) => {
-        const left = el.x - el.width / 2;
-        const right = el.x + el.width / 2;
-        const top = el.y - el.height / 2;
-        const bottom = el.y + el.height / 2;
-        
-        return {
-          minX: Math.min(acc.minX, left),
-          maxX: Math.max(acc.maxX, right),
-          minY: Math.min(acc.minY, top),
-          maxY: Math.max(acc.maxY, bottom)
-        };
-      }, {
-        minX: Infinity,
-        maxX: -Infinity,
-        minY: Infinity,
-        maxY: -Infinity
-      });
-      
-      const centerX = (bounds.minX + bounds.maxX) / 2;
-      const centerY = (bounds.minY + bounds.maxY) / 2;
-      
-      const newGroup: CanvasGroup = {
+
+      const group: CanvasGroup = {
         id: crypto.randomUUID(),
-        name: `Group ${state.groups.filter((g: CanvasGroup) => !g.isDefaultGroup).length + 1}`,
-        elementIds: elementIds,
-        x: centerX,
-        y: centerY,
+        name: groupOptions.name || `Group ${Date.now()}`,
+        elementIds,
+        x: elements.reduce((sum, el) => sum + el.x, 0) / elements.length,
+        y: elements.reduce((sum, el) => sum + el.y, 0) / elements.length,
         rotation: 0,
         visible: true,
         type: 'custom',
@@ -373,28 +394,20 @@ export const useCanvasStore = create<CanvasStore>()(
         animations: [],
         ...groupOptions
       };
-      
+
       set(produce((state) => {
-        // Add the new group
-        state.groups.push(newGroup);
+        state.groups.push(group);
         
-        // Update elements to reference the new group
-        elementIds.forEach((elementId: string) => {
-          const element = state.elements.find((el: AnimatedCanvasObject) => el.id === elementId);
-          if (element) {
-            element.groupId = newGroup.id;
-          }
-        });
-        
-        // Remove old default groups for these elements
-        state.groups = state.groups.filter((group: CanvasGroup) => {
-          if (!group.isDefaultGroup) return true;
-          const hasElementInNewGroup = group.elementIds.some((id: string) => elementIds.includes(id));
-          return !hasElementInNewGroup;
-        });
+        // Update elements with group reference
+        state.elements = state.elements.map((el: AnimatedCanvasObject) => 
+          elementIds.includes(el.id) ? { ...el, groupId: group.id } : el
+        );
       }));
       
-      return newGroup;
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
+      
+      return group;
     },
 
     ungroupElements: (groupId) => {
@@ -429,6 +442,9 @@ export const useCanvasStore = create<CanvasStore>()(
           state.groups = state.groups.filter((g: CanvasGroup) => g.id !== groupId);
         }
       }));
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
     },
 
     // Animation operations
@@ -439,6 +455,9 @@ export const useCanvasStore = create<CanvasStore>()(
           element.animations.push(animation);
         }
       }));
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
     },
 
     updateElementAnimation: (elementId, animationId, updates) => {
@@ -454,6 +473,9 @@ export const useCanvasStore = create<CanvasStore>()(
           }
         }
       }));
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
     },
 
     removeElementAnimation: (elementId, animationId) => {
@@ -463,6 +485,9 @@ export const useCanvasStore = create<CanvasStore>()(
           element.animations = element.animations.filter((anim: ElementAnimation) => anim.id !== animationId);
         }
       }));
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
     },
 
     addGroupAnimation: (groupId, animation) => {
@@ -472,6 +497,9 @@ export const useCanvasStore = create<CanvasStore>()(
           group.animations.push(animation);
         }
       }));
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
     },
 
     updateGroupAnimation: (groupId, animationId, updates) => {
@@ -487,6 +515,9 @@ export const useCanvasStore = create<CanvasStore>()(
           }
         }
       }));
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
     },
 
     removeGroupAnimation: (groupId, animationId) => {
@@ -496,6 +527,9 @@ export const useCanvasStore = create<CanvasStore>()(
           group.animations = group.animations.filter((anim: ElementAnimation) => anim.id !== animationId);
         }
       }));
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
     },
 
     // Bulk operations
@@ -508,6 +542,9 @@ export const useCanvasStore = create<CanvasStore>()(
           }
         });
       }));
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
     },
 
     moveMultipleElements: (movements) => {
@@ -520,6 +557,9 @@ export const useCanvasStore = create<CanvasStore>()(
           }
         });
       }));
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
     },
 
     // Utility operations
@@ -560,12 +600,18 @@ export const useCanvasStore = create<CanvasStore>()(
       set(produce((state) => {
         state.elements = elements;
       }));
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
     },
 
     setGroups: (groups) => {
       set(produce((state) => {
         state.groups = groups;
       }));
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
     },
 
     clearCanvas: () => {
@@ -574,6 +620,9 @@ export const useCanvasStore = create<CanvasStore>()(
         state.groups = [];
         state.pendingOperations.clear();
       }));
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
     },
 
     // Optimistic updates
@@ -627,6 +676,9 @@ export const useCanvasStore = create<CanvasStore>()(
           state.groups = previous.groups;
         }
       }));
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
     },
 
     redo: () => {
@@ -643,15 +695,20 @@ export const useCanvasStore = create<CanvasStore>()(
           state.groups = next.groups;
         }
       }));
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
     },
 
-    canUndo: () => {
-      return get().history.past.length > 0;
+    // Subscription management
+    subscribe: (callback) => {
+      subscribers.add(callback);
+      
+      // Return unsubscribe function
+      return () => {
+        subscribers.delete(callback);
+      };
     },
-
-    canRedo: () => {
-      return get().history.future.length > 0;
-    }
   })
 );
 
@@ -712,9 +769,7 @@ export const useCanvasHistory = () => {
     useShallow(state => ({
       saveSnapshot: state.saveSnapshot,
       undo: state.undo,
-      redo: state.redo,
-      canUndo: state.canUndo,
-      canRedo: state.canRedo
+      redo: state.redo
     }))
   );
 }; 
