@@ -51,7 +51,7 @@ export const TextTab: React.FC = () => {
   };
 
   return (
-    <div className="h-full overflow-y-auto p-4 space-y-6">
+    <div className="h-full bg-white border-r border-gray-200 shadow-md rounded-xl overflow-y-auto p-4 space-y-6">
       <div className="space-y-4">
         <div className="text-lg font-bold text-gray-800 mb-4">Text Tools</div>
         
@@ -134,16 +134,6 @@ export const TextTab: React.FC = () => {
               </div>
             </div>
           ))}
-
-          {/* Typography Tips */}
-          <div className="p-4 bg-gradient-to-r from-orange-50/80 to-yellow-50/80 border border-orange-200/50 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 ease-out transform hover:scale-[1.01]">
-            <div className="text-sm font-medium text-gray-700 mb-2">Typography Tips</div>
-            <div className="text-sm text-gray-600 space-y-1">
-              <div>• Use consistent font sizes for hierarchy</div>
-              <div>• Maintain good contrast ratios</div>
-              <div>• Consider line spacing for readability</div>
-            </div>
-          </div>
 
           {/* Current Selection */}
           <div className="p-4 bg-gradient-to-r from-blue-50/80 to-cyan-50/80 border border-blue-200/50 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 ease-out transform hover:scale-[1.01]">
