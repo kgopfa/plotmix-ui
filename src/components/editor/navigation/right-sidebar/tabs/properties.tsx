@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react';
-import { 
+import { useState, useEffect, useRef } from 'react';
+import {
   AnimatedCanvasObject,
   ElementAnimation
 } from '@/types/canvas';
-import { 
-  calculateLineLength, 
+import {
+  calculateLineLength,
   calculateNorthAngle
 } from '@/utils/drawing-utils';
+import { ColorPicker } from './color-picker';
+import { Weight, SquareRoundCorner } from 'lucide-react';
 
 interface PropertiesTabProps {
   selectedElement: AnimatedCanvasObject;
@@ -22,7 +24,11 @@ interface PropertiesTabProps {
 export function PropertiesTab({ selectedElement, onInspectorChange }: PropertiesTabProps) {
   const [localElement, setLocalElement] = useState<AnimatedCanvasObject>(selectedElement);
   const [isDirty, setIsDirty] = useState<Record<string, boolean>>({});
-  
+  const [showFillColorPicker, setShowFillColorPicker] = useState(false);
+  const [showStrokeColorPicker, setShowStrokeColorPicker] = useState(false);
+  const fillColorTriggerRef = useRef<HTMLDivElement>(null);
+  const strokeColorTriggerRef = useRef<HTMLDivElement>(null);
+
   // Sync with parent component when selected element changes
   useEffect(() => {
     // Exclude animations from local element state - they should only be managed by AnimationsTab
@@ -31,11 +37,11 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
     setLocalElement({ ...elementWithoutAnimations, animations: [] } as AnimatedCanvasObject);
     setIsDirty({});
   }, [selectedElement]);
-  
+
   // Batch updates to the parent component
   useEffect(() => {
     const dirtyKeys = Object.keys(isDirty).filter(key => isDirty[key]);
-    
+
     if (dirtyKeys.length > 0) {
       // Apply each dirty property to the global state
       dirtyKeys.forEach(key => {
@@ -43,14 +49,14 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
         if (key === 'animations') {
           return;
         }
-        
+
         // Special handling for lineOptions - compare stringified values
         if (key === 'lineOptions') {
           const lineOptions = localElement.lineOptions;
           if (lineOptions && JSON.stringify(lineOptions) !== JSON.stringify(selectedElement.lineOptions)) {
             onInspectorChange(key, lineOptions);
           }
-        } 
+        }
         // Regular property updates (excluding animations)
         else if (key in localElement) {
           const value = localElement[key as keyof AnimatedCanvasObject];
@@ -63,21 +69,21 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
           }
         }
       });
-      
+
       // Clear dirty flags
       setIsDirty({});
     }
   }, [isDirty, localElement, selectedElement, onInspectorChange]);
-  
+
   // Update local state and mark property as dirty
   const updateLocalProperty = <K extends keyof AnimatedCanvasObject>(
-    key: K, 
+    key: K,
     value: AnimatedCanvasObject[K]
   ) => {
     setLocalElement(prev => ({ ...prev, [key]: value }));
     setIsDirty(prev => ({ ...prev, [key]: true }));
   };
-  
+
   // Helper for line options updates
   const updateLineOptions = (updates: Partial<NonNullable<AnimatedCanvasObject['lineOptions']>>) => {
     setLocalElement(prev => ({
@@ -86,11 +92,11 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
     }));
     setIsDirty(prev => ({ ...prev, lineOptions: true }));
   };
-  
+
   // Helper for angle and length updates that affect multiple properties
   const updateLineGeometry = (
-    width: number, 
-    height: number, 
+    width: number,
+    height: number,
     lineOptions: NonNullable<AnimatedCanvasObject['lineOptions']>
   ) => {
     setLocalElement(prev => ({
@@ -99,58 +105,64 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
       height,
       lineOptions
     }));
-    
-    setIsDirty(prev => ({ 
-      ...prev, 
+
+    setIsDirty(prev => ({
+      ...prev,
       width: true,
       height: true,
       lineOptions: true
     }));
   };
-  
+
   return (
-    <div className="flex flex-col gap-6 p-4">
+    <div className="flex flex-col gap-4 p-4">
       {/* Header */}
       <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
-        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-        <h3 className="font-semibold text-gray-900">Properties</h3>
+        <h4 className="font-semibold text-gray-600 text-sm">Properties</h4>
       </div>
 
       {/* Basic Properties */}
       <div className="space-y-4">
         <div className="space-y-3">
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-gray-700">Name</span>
+            <span className="text-xs font-semibold text-gray-400">Name</span>
             <input
               type="text"
               value={localElement.name}
               onChange={e => updateLocalProperty('name', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              className="block w-full grow rounded-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
               placeholder="Element name"
             />
           </label>
-          
-          <div className="grid grid-cols-2 gap-3">
-            <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-gray-700">X Position</span>
-              <input
-                type="number"
-                value={Math.round(localElement.x)}
-                onChange={e => updateLocalProperty('x', Math.round(Number(e.target.value)))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                step="1"
-              />
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-gray-700">Y Position</span>
-              <input
-                type="number"
-                value={Math.round(localElement.y)}
-                onChange={e => updateLocalProperty('y', Math.round(Number(e.target.value)))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                step="1"
-              />
-            </label>
+
+          <div className="grid grid-cols-1 gap-1">
+            <span className="text-xs font-semibold text-gray-400">Position</span>
+            <div className="flex flex-row gap-2">
+              <div className="flex">
+                <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-gray-500 outline-1 -outline-offset-1 outline-gray-300">
+                  X
+                </div>
+                <input
+                  type="number"
+                  value={Math.round(localElement.x)}
+                  onChange={e => updateLocalProperty('x', Math.round(Number(e.target.value)))}
+                  className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
+                  step="1"
+                />
+              </div>
+              <div className="flex">
+                <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-gray-500 outline-1 -outline-offset-1 outline-gray-300">
+                  Y
+                </div>
+                <input
+                  type="number"
+                  value={Math.round(localElement.y)}
+                  onChange={e => updateLocalProperty('y', Math.round(Number(e.target.value)))}
+                  className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
+                  step="1"
+                />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -170,24 +182,24 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                   onChange={e => {
                     const newLength = Number(e.target.value);
                     if (newLength <= 0) return;
-                    
+
                     const angle = calculateNorthAngle(localElement.lineOptions!.points) * Math.PI / 180;
                     const start = localElement.lineOptions!.points.start;
                     const end = {
                       x: start.x + newLength * Math.sin(angle),
                       y: start.y + newLength * Math.cos(angle)
                     };
-                    
+
                     // Calculate new dimensions
                     const width = Math.abs(end.x - start.x);
                     const height = Math.abs(end.y - start.y);
-                    
+
                     // Update both the line's dimensions and points
                     const updatedLineOptions = {
                       ...localElement.lineOptions!,
                       points: { start, end }
                     };
-                    
+
                     updateLineGeometry(width, height, updatedLineOptions);
                   }}
                   min={1}
@@ -207,24 +219,24 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                       x: start.x + length * Math.sin(newAngle),
                       y: start.y + length * Math.cos(newAngle)
                     };
-                    
+
                     // Calculate new dimensions
                     const width = Math.abs(end.x - start.x);
                     const height = Math.abs(end.y - start.y);
-                    
+
                     // Update both the line's dimensions and points
                     const updatedLineOptions = {
                       ...localElement.lineOptions!,
                       points: { start, end }
                     };
-                    
+
                     updateLineGeometry(width, height, updatedLineOptions);
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 />
               </label>
             </div>
-            
+
             <div className="mt-3 space-y-3">
               <label className="flex items-center gap-2">
                 <input
@@ -248,54 +260,33 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
           </div>
         ) : (
           /* Non-line properties */
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <label className="flex flex-col gap-1">
-                <span className="text-sm font-medium text-gray-700">Width</span>
-                <input
-                  type="number"
-                  value={Math.round(localElement.width)}
-                  onChange={e => updateLocalProperty('width', Math.round(Number(e.target.value)))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  step="1"
-                />
-              </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-sm font-medium text-gray-700">Height</span>
+          <div className="grid grid-cols-1 gap-1">
+            <span className="text-xs font-semibold text-gray-400">Size</span>
+            <div className="flex flex-row gap-2">
+              <div className="flex">
+                <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-gray-500 outline-1 -outline-offset-1 outline-gray-300">
+                  H
+                </div>
                 <input
                   type="number"
                   value={Math.round(localElement.height)}
                   onChange={e => updateLocalProperty('height', Math.round(Number(e.target.value)))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
                   step="1"
                 />
-              </label>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-3">
-              <label className="flex flex-col gap-1">
-                <span className="text-sm font-medium text-gray-700">Rotation</span>
+              </div>
+              <div className="flex">
+                <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-gray-500 outline-1 -outline-offset-1 outline-gray-300">
+                  W
+                </div>
                 <input
                   type="number"
-                  value={Math.round(localElement.rotation || 0)}
-                  onChange={e => updateLocalProperty('rotation', Math.round(Number(e.target.value)))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  placeholder="0"
+                  value={Math.round(localElement.width)}
+                  onChange={e => updateLocalProperty('width', Math.round(Number(e.target.value)))}
+                  className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
                   step="1"
                 />
-              </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-sm font-medium text-gray-700">Opacity</span>
-                <input
-                  type="number"
-                  value={localElement.opacity || 1}
-                  onChange={e => updateLocalProperty('opacity', Number(e.target.value))}
-                  min={0}
-                  max={1}
-                  step={0.1}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                />
-              </label>
+              </div>
             </div>
           </div>
         )}
@@ -304,53 +295,103 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
       {/* Appearance Properties */}
       <div className="space-y-4">
         <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
-          <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-          <h4 className="font-medium text-gray-800">Appearance</h4>
+          <h4 className="font-semibold text-gray-600 text-sm">Appearance</h4>
         </div>
-        
+
         <div className="space-y-3">
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-gray-700">Fill Color</span>
-            <input
-              type="color"
-              value={localElement.fill || '#ffffff'}
-              onChange={e => updateLocalProperty('fill', e.target.value)}
-              className="w-full h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
-            />
-          </label>
-          
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-gray-700">Border Color</span>
-            <input
-              type="color"
-              value={localElement.stroke || '#000000'}
-              onChange={e => updateLocalProperty('stroke', e.target.value)}
-              className="w-full h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
-            />
-          </label>
-          
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-gray-700">Border Width</span>
-            <input
-              type="number"
-              value={localElement.strokeWidth || 0}
-              onChange={e => updateLocalProperty('strokeWidth', Number(e.target.value))}
-              min={0}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
-            />
-          </label>
-          
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-gray-700">Border Radius</span>
-            <input
-              type="number"
-              value={localElement.cornerRadius || 0}
-              onChange={e => updateLocalProperty('cornerRadius', Number(e.target.value))}
-              min={0}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
-            />
+            <span className="text-xs font-semibold text-gray-400">Fill</span>
+            <div className="flex relative">
+              <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-gray-500 outline-1 -outline-offset-1 outline-gray-300">
+                <div
+                  ref={fillColorTriggerRef}
+                  className="w-4 h-4 rounded border border-gray-300 cursor-pointer hover:scale-110 transition-transform"
+                  style={{ backgroundColor: localElement.fill || '#ffffff' }}
+                  onClick={() => setShowFillColorPicker(!showFillColorPicker)}
+                />
+              </div>
+              <input
+                type="text"
+                value={(localElement.fill || '#ffffff').replace('#', '').toUpperCase()}
+                onChange={e => updateLocalProperty('fill', '#' + e.target.value.toUpperCase())}
+                className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 uppercase"
+                placeholder="FFFFFF"
+              />
+              <ColorPicker
+                value={localElement.fill || '#ffffff'}
+                onChange={(color) => updateLocalProperty('fill', color)}
+                isOpen={showFillColorPicker}
+                onClose={() => setShowFillColorPicker(false)}
+                triggerRef={fillColorTriggerRef}
+              />
+            </div>
           </label>
         </div>
+      </div>
+
+      {/* Stroke Properties */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+          <h4 className="font-semibold text-gray-600 text-sm">Stroke</h4>
+        </div>
+
+        <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold text-gray-400">Fill</span>
+            <div className="flex relative">
+              <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-gray-500 outline-1 -outline-offset-1 outline-gray-300">
+                <div
+                  ref={strokeColorTriggerRef}
+                  className="w-4 h-4 rounded border border-gray-300 cursor-pointer hover:scale-110 transition-transform"
+                  style={{ backgroundColor: localElement.stroke || '#000000' }}
+                  onClick={() => setShowStrokeColorPicker(!showStrokeColorPicker)}
+                />
+              </div>
+              <input
+                type="text"
+                value={(localElement.stroke || '#000000').replace('#', '').toUpperCase()}
+                onChange={e => updateLocalProperty('stroke', '#' + e.target.value.toUpperCase())}
+                className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 uppercase"
+                placeholder="000000"
+              />
+              <ColorPicker
+                value={localElement.stroke || '#000000'}
+                onChange={(color) => updateLocalProperty('stroke', color)}
+                isOpen={showStrokeColorPicker}
+                onClose={() => setShowStrokeColorPicker(false)}
+                triggerRef={strokeColorTriggerRef}
+              />
+            </div>
+          </label>
+
+          <div className="grid grid-cols-1 gap-1">
+            <span className="text-xs font-semibold text-gray-400">Stroke</span>
+            <div className="flex flex-row gap-2">
+              <div className="flex">
+                <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-gray-500 outline-1 -outline-offset-1 outline-gray-300">
+                  <Weight className="w-4 h-4" />
+                </div>
+                <input
+                  type="number"
+                  value={localElement.strokeWidth || 0}
+                  onChange={e => updateLocalProperty('strokeWidth', Number(e.target.value))}
+                  min={0}
+                  className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
+                />
+              </div>
+              <div className="flex">
+                <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-gray-500 outline-1 -outline-offset-1 outline-gray-300">
+                  <SquareRoundCorner className="w-4 h-4" />
+                </div>
+                <input
+                  type="number"
+                  value={localElement.cornerRadius || 0}
+                  onChange={e => updateLocalProperty('cornerRadius', Number(e.target.value))}
+                  min={0}
+                  className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-900 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
+                />
+              </div>
+            </div>
+          </div>
       </div>
 
       {/* Text Properties */}
@@ -360,7 +401,7 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
             <h4 className="font-medium text-gray-800">Text Properties</h4>
           </div>
-          
+
           <div className="space-y-3">
             <label className="flex flex-col gap-1">
               <span className="text-sm font-medium text-gray-700">Font Size</span>
@@ -372,7 +413,7 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
               />
             </label>
-            
+
             <label className="flex flex-col gap-1">
               <span className="text-sm font-medium text-gray-700">Font Family</span>
               <select
@@ -388,7 +429,7 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                 <option value="Verdana">Verdana</option>
               </select>
             </label>
-            
+
             <label className="flex flex-col gap-1">
               <span className="text-sm font-medium text-gray-700">Font Weight</span>
               <select
