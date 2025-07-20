@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
-import { ChevronDown, Plus } from 'lucide-react';
+import { ChevronDown, Plus, Monitor, Smartphone, Tablet } from 'lucide-react';
 import { useCanvasState, useCanvasActions } from '@/stores/use-ui-store';
 
 export const CanvasSizeSelector: React.FC = () => {
@@ -51,62 +51,64 @@ export const CanvasSizeSelector: React.FC = () => {
     ? `${currentSize.width} × ${currentSize.height}`
     : 'Unknown Size';
 
+  // Get screen size icon based on canvas dimensions
+  const getScreenIcon = (width: number, height: number) => {
+    const aspectRatio = width / height;
+    if (aspectRatio > 1.5) {
+      return <Monitor className="w-4 h-4" />;
+    } else if (aspectRatio > 0.8) {
+      return <Tablet className="w-4 h-4" />;
+    } else {
+      return <Smartphone className="w-4 h-4" />;
+    }
+  };
+
   return (
-    <>
+    <div className="flex items-center space-x-2">
       <Menu as="div" className="relative">
-        <MenuButton className="flex items-center h-9 gap-2 px-3 py-1.5 text-gray-600 text-sm font-medium hover:bg-gray-100 border border-gray-200 rounded-md transition-colors">
-          <span className="text-gray-600 font-medium">{displayText}</span>
-                      <ChevronDown className="mb-0.5 size-3 text-gray-600" />
+        <MenuButton className="flex items-center space-x-2 px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+          <span className="flex items-center space-x-1">
+            {currentSize && getScreenIcon(currentSize.width, currentSize.height)}
+            <span>{displayText}</span>
+          </span>
+          <ChevronDown className="w-4 h-4 text-gray-400" />
         </MenuButton>
 
-        <MenuItems
-          transition
-          className="absolute right-0 z-50 mt-2 w-64 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black/5 transition focus:outline-hidden data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
-        >
-          {/* Standard Sizes */}
-          <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100">
-            Standard Sizes
-          </div>
-          
-          {canvasState.availableSizes.map((size) => (
-            <MenuItem key={size.id}>
-              <button
-                onClick={() => setCanvasSize(size.id)}
-                className={`block w-full text-left px-4 py-2 text-sm transition-colors ${
-                  canvasState.currentSizeId === size.id
-                    ? 'bg-indigo-50 text-indigo-600 font-medium'
-                    : 'text-gray-700 data-focus:bg-gray-100 data-focus:outline-hidden'
-                }`}
-              >
-                <div className="flex justify-between items-center">
-                  <span>{size.name}</span>
-                  <span className="text-xs text-gray-500">{size.width} × {size.height}</span>
-                </div>
-              </button>
-            </MenuItem>
-          ))}
-
-          {/* Custom Size Option */}
-          <div className="border-t border-gray-100 mt-1">
-            <MenuItem>
-              <button
-                onClick={() => setShowCustomDialog(true)}
-                className={`block w-full text-left px-4 py-2 text-sm transition-colors ${
-                  canvasState.currentSizeId === 'custom'
-                    ? 'bg-indigo-50 text-indigo-600 font-medium'
-                    : 'text-gray-700 data-focus:bg-gray-100 data-focus:outline-hidden'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <Plus className="size-3" />
-                  <span>Custom Size...</span>
-                </div>
-                {canvasState.currentSizeId === 'custom' && canvasState.customSize && (
-                  <div className="text-xs text-gray-400 mt-0.5">
-                    {canvasState.customSize.width} × {canvasState.customSize.height} (16:9)
-                  </div>
+        <MenuItems className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-50">
+          <div className="py-1">
+            {canvasState.availableSizes.map((size) => (
+              <MenuItem key={size.id}>
+                {({ active }) => (
+                  <button
+                    onClick={() => setCanvasSize(size.id)}
+                    className={`${
+                      active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                    } group flex items-center w-full px-4 py-2 text-sm`}
+                  >
+                    <span className="flex items-center space-x-2">
+                      {getScreenIcon(size.width, size.height)}
+                      <span>{size.name}</span>
+                      <span className="text-gray-500">({size.width}×{size.height})</span>
+                    </span>
+                  </button>
                 )}
-              </button>
+              </MenuItem>
+            ))}
+            
+            <div className="border-t border-gray-200 my-1"></div>
+            
+            <MenuItem>
+              {({ active }) => (
+                <button
+                  onClick={() => setShowCustomDialog(true)}
+                  className={`${
+                    active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                  } group flex items-center w-full px-4 py-2 text-sm`}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Custom Size
+                </button>
+              )}
             </MenuItem>
           </div>
         </MenuItems>
@@ -197,6 +199,6 @@ export const CanvasSizeSelector: React.FC = () => {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }; 

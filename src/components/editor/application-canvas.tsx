@@ -103,6 +103,14 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       }
     }, []);
 
+    // Re-center canvas when dimensions change
+    useEffect(() => {
+      if (viewportRef.current && dimensions.width > 0 && dimensions.height > 0) {
+        // Use responsive centering based on new screen dimensions
+        centerOnDesign(viewportRef.current, dimensions.width, dimensions.height, canvasWidth, canvasHeight);
+      }
+    }, [dimensions.width, dimensions.height, canvasWidth, canvasHeight]);
+
     // Configure PIXI canvas for custom touch handling
     useEffect(() => {
       // @ts-expect-error - @pixi/react doesn't expose the PIXI Application instance in types
@@ -131,13 +139,13 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       }
     }, [canvasZoom, canvasWidth, canvasHeight]);
 
-    // Initialize viewport to center on design canvas
+    // Initialize viewport to center on design canvas with responsive positioning
     useEffect(() => {
       if (viewportRef.current) {
-        // Center the viewport on the design canvas at the origin
-        viewportRef.current.moveCenter(0, 0);
+        // Use responsive centering based on screen dimensions
+        centerOnDesign(viewportRef.current, dimensions.width, dimensions.height, canvasWidth, canvasHeight);
       } 
-    }, [canvasWidth, canvasHeight]);
+    }, [canvasWidth, canvasHeight, dimensions.width, dimensions.height]);
 
     // Listen for viewport zoom changes and sync back to timeline
     useEffect(() => {
@@ -186,9 +194,9 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
     useImperativeHandle(ref, () => ({
       getApplication: () => appRef.current,
       getViewport: () => viewportRef.current,
-      centerOnDesign: () => centerOnDesign(viewportRef.current),
+      centerOnDesign: () => centerOnDesign(viewportRef.current, dimensions.width, dimensions.height, canvasWidth, canvasHeight),
       zoomToFit: () => zoomToFit(viewportRef.current, dimensions.width, dimensions.height, canvasWidth, canvasHeight),
-      resetZoom: () => resetZoom(viewportRef.current)
+      resetZoom: () => resetZoom(viewportRef.current, dimensions.width, dimensions.height, canvasWidth, canvasHeight)
     }));
 
     return (

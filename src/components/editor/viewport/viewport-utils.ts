@@ -1,10 +1,51 @@
 import type { ViewportWrapper } from './viewport-wrapper';
+import { calculateOptimalZoom } from '@/hooks/use-responsive-canvas-position';
+
+// Calculate optimal canvas position based on screen dimensions
+export const calculateCanvasPosition = (
+  containerWidth: number,
+  containerHeight: number
+): { x: number; y: number } => {
+  // Calculate the optimal vertical offset based on screen aspect ratio
+  const screenAspectRatio = containerWidth / containerHeight;
+  
+  let verticalOffset = 0;
+  
+  if (screenAspectRatio > 2) {
+    // Ultrawide screens: position much higher (closer to top navigation)
+    verticalOffset = Math.min(150, containerHeight * 0.15);
+  } else if (screenAspectRatio > 1.5) {
+    // Wide screens: position much higher
+    verticalOffset = Math.min(200, containerHeight * 0.18);
+  } else {
+    // Standard screens: position much higher
+    verticalOffset = Math.min(250, containerHeight * 0.22);
+  }
+  
+  // Center horizontally, position vertically with calculated offset
+  return {
+    x: 0,
+    y: -verticalOffset
+  };
+};
 
 // Viewport utility functions
-export const centerOnDesign = (viewport: ViewportWrapper | null) => {
+export const centerOnDesign = (
+  viewport: ViewportWrapper | null,
+  containerWidth?: number,
+  containerHeight?: number,
+  canvasWidth?: number,
+  canvasHeight?: number
+) => {
   if (viewport) {
-    // Center on the design canvas at the origin
-    viewport.moveCenter(0, -155);
+    if (containerWidth && containerHeight && canvasWidth && canvasHeight) {
+      // Use calculated position for responsive centering
+      const position = calculateCanvasPosition(containerWidth, containerHeight);
+      viewport.moveCenter(position.x, position.y);
+    } else {
+      // Fallback to default centering
+      viewport.moveCenter(0, -155);
+    }
   }
 };
 
@@ -16,21 +57,39 @@ export const zoomToFit = (
   canvasHeight: number
 ) => {
   if (viewport) {
-    const padding = 50;
-    const scaleX = (containerWidth - padding * 2) / canvasWidth;
-    const scaleY = (containerHeight - padding * 2) / canvasHeight;
-    const scale = Math.min(scaleX, scaleY, 5);
+    // Use the utility function for optimal zoom calculation
+    const { zoom } = calculateOptimalZoom(
+      { width: containerWidth, height: containerHeight },
+      { width: canvasWidth, height: canvasHeight }
+    );
 
-    // Use smooth zoom with animation and center on design canvas at (0,0)
-    viewport.setZoom(scale, true);
-    viewport.moveCenter(0, 0);
+    // Use smooth zoom with animation and center on design canvas
+    viewport.setZoom(zoom, true);
+    
+    // Use calculated position for responsive centering
+    const position = calculateCanvasPosition(containerWidth, containerHeight);
+    viewport.moveCenter(position.x, position.y);
   }
 };
 
-export const resetZoom = (viewport: ViewportWrapper | null) => {
+export const resetZoom = (
+  viewport: ViewportWrapper | null,
+  containerWidth?: number,
+  containerHeight?: number,
+  canvasWidth?: number,
+  canvasHeight?: number
+) => {
   if (viewport) {
-    // Use smooth zoom with animation and center on design canvas at the origin
+    // Use smooth zoom with animation and center on design canvas
     viewport.setZoom(1, true);
-    viewport.moveCenter(0, -155);
+    
+    if (containerWidth && containerHeight && canvasWidth && canvasHeight) {
+      // Use calculated position for responsive centering
+      const position = calculateCanvasPosition(containerWidth, containerHeight);
+      viewport.moveCenter(position.x, position.y);
+    } else {
+      // Fallback to default centering
+      viewport.moveCenter(0, -155);
+    }
   }
 }; 

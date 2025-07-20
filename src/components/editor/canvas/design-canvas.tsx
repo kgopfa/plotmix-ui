@@ -20,6 +20,7 @@ import { useCanvasOperations } from '@/stores/use-canvas-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useTimelineStore } from '@/stores/use-timeline-store';
 import { eventManager } from '@/lib/event-manager';
+import { useResponsiveCanvasPosition } from '@/hooks/use-responsive-canvas-position';
 
 interface DesignCanvasProps {
   dimensions: { width: number; height: number };
@@ -112,9 +113,8 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
   const canvasFrameWidth = currentSize?.width || 1280;
   const canvasFrameHeight = currentSize?.height || 720;
   
-  // Position the design canvas at the origin of the world
-  const centerX = 0;
-  const centerY = -155;
+  // Use responsive canvas positioning hook
+  const { x: centerX, y: centerY } = useResponsiveCanvasPosition(props.dimensions);
 
   // Canvas dragging state refs
   const isDragging = useRef(false);
