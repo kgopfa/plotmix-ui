@@ -6,20 +6,16 @@ import { Container, Graphics } from 'pixi.js';
 import { DesignCanvas } from './canvas/design-canvas';
 import { Viewport, ViewportWrapper, centerOnDesign, zoomToFit, resetZoom } from './viewport';
 import { useCanvasState } from '@/stores/use-ui-store';
-
-
 import { ContextMenu } from './canvas/context-menu';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import type { GridConfig } from '../../utils/grid-utils';
 import type { SnapGuide } from '../../utils/element-snapping';
 import type { FederatedPointerEvent } from 'pixi.js';
 
-
 extend({ Container, Graphics });
 
 interface ApplicationCanvasProps {
   children?: React.ReactNode;
-  // DesignCanvas props
   dimensions: { width: number; height: number };
   gridConfig?: GridConfig;
   snapGuides?: SnapGuide[];
@@ -27,7 +23,6 @@ interface ApplicationCanvasProps {
   groups: CanvasGroup[];
   selectedIds: string[];
   hoveredId: string | null;
-
   editingTextId: string | null;
   tool: string;
   isPathMode: boolean;
@@ -55,10 +50,8 @@ interface ApplicationCanvasProps {
   isTextGroupCharacter: (element: AnimatedCanvasObject) => boolean;
   isElementInCustomOrPolygonGroup: (element: AnimatedCanvasObject) => boolean;
   onZoomChange?: (zoom: number) => void;
-  // Viewport zoom props
   canvasZoom?: number;
   onCanvasZoomChange?: (zoom: number) => void;
-  // Lock state
   isLocked?: boolean;
 }
 
@@ -73,8 +66,6 @@ export interface ApplicationCanvasRef {
 export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCanvasProps>(
   (props, ref) => {
     const { canvasZoom, onCanvasZoomChange } = props;
-    
-
     const appRef = useRef<ApplicationRef | null>(null);
     const viewportRef = useRef<ViewportWrapper | null>(null);
     const canvasContainerRef = useRef<HTMLDivElement | null>(null);
@@ -82,12 +73,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       width: typeof window !== 'undefined' ? window.innerWidth : 0,
       height: typeof window !== 'undefined' ? window.innerHeight : 0
     });
-
-    
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number; targetId: string; targetType?: 'element' | 'group' } | null>(null);
-
-
-
 
     // Get current canvas size from UI store
     const canvasState = useCanvasState();
@@ -252,8 +238,6 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
           onAction={handleContextMenuAction}
           onClose={() => setContextMenu(null)}
         />
-
-
       </div>
     );
   }
