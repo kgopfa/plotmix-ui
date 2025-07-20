@@ -209,8 +209,6 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
           console.log('[ApplicationCanvas] Click on container', { x: e.clientX, y: e.clientY });
         }}
       >
-
-
         <Application
           ref={appRef}
           width={dimensions.width}
