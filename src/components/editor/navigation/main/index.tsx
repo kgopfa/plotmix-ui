@@ -177,7 +177,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                   </div>
                   <MenuItems
                     transition
-                    className="absolute left-0 z-10 mt-2 -ml-2 w-56 origin-top-left rounded-xl bg-white/95 backdrop-blur-sm pt-3 pb-3 shadow-xl shadow-gray-200/50 ring-1 ring-gray-200/50 transition focus:outline-hidden data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
+                    className="absolute left-0 z-50 mt-2 -ml-2 w-56 origin-top-left rounded-xl bg-white/95 backdrop-blur-sm pt-3 pb-3 shadow-xl shadow-gray-200/50 ring-1 ring-gray-200/50 transition focus:outline-hidden data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
                   >
                     <nav
                       aria-label="Settings menu"
@@ -223,11 +223,11 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                   {/* Settings Panels - positioned next to settings menu */}
                   {showSnappingSettings && (
                     <div
-                      className="absolute left-60 top-0 z-20"
+                      className="absolute left-60 top-0 z-50"
                       onMouseEnter={() => handleSettingsHover('Snapping Settings')}
                       onMouseLeave={handleSettingsLeave}
                     >
-                      <div className="relative z-20">
+                      <div className="relative z-50">
                         <SnappingOptions
                           gridConfig={gridConfig}
                           onToggleGrid={toggleGrid}
@@ -249,11 +249,11 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                   {/* Video Settings Panel - positioned next to settings menu */}
                   {showVideoSettings && (
                     <div
-                      className="absolute left-60 top-0 z-20"
+                      className="absolute left-60 top-0 z-50"
                       onMouseEnter={() => handleSettingsHover('Video Settings')}
                       onMouseLeave={handleSettingsLeave}
                     >
-                      <div className="relative z-20">
+                      <div className="relative z-50">
                         <VideoOptions />
                       </div>
                     </div>

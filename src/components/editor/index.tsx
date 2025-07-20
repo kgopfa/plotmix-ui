@@ -1314,11 +1314,13 @@ export default function EditorCanvas() {
 
   return (
     <div className="h-screen w-screen flex flex-col">
-      {/* Options Bar */}
-      <MainNavBar
-        onGroupElements={handleGroupElements}
-        onUngroupElements={handleUngroupElements}
-      />
+      {/* Options Bar - Fixed at top */}
+      <div className="fixed top-0 left-0 right-0 z-50">
+        <MainNavBar
+          onGroupElements={handleGroupElements}
+          onUngroupElements={handleUngroupElements}
+        />
+      </div>
 
       {/* Selection Navbar - appears when elements are selected and not playing */}
       {!isPlaying && (
@@ -1340,7 +1342,7 @@ export default function EditorCanvas() {
       <RightSidebar />
 
       {/* Main Body - Full-screen PIXI Application */}
-      <div className="flex-1 relative overflow-hidden">
+      <div className="flex-1 relative overflow-hidden" style={{ marginTop: '64px' }}>
         <ApplicationCanvas 
           ref={fullscreenCanvasRef}
           dimensions={dimensions}
