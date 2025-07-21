@@ -61,6 +61,11 @@ interface DesignCanvasProps {
   handleGroupSelectionDragStart: (virtualElement: AnimatedCanvasObject, mouseX: number, mouseY: number, allElements?: AnimatedCanvasObject[], gridConfig?: GridConfig) => void;
   isTextGroupCharacter: (element: AnimatedCanvasObject) => boolean;
   isElementInCustomOrPolygonGroup: (element: AnimatedCanvasObject) => boolean;
+  // Snapping handlers
+  onSnapElement?: (element: AnimatedCanvasObject, allElements: AnimatedCanvasObject[], gridConfig?: GridConfig) => { x: number; y: number; guides: SnapGuide[] };
+  onSnapPoint?: (point: { x: number; y: number }, event?: { shiftKey?: boolean }) => { x: number; y: number };
+  onSetSnapGuides?: (guides: SnapGuide[]) => void;
+  onClearSnapGuides?: () => void;
 }
 
 export const DesignCanvas = (props: DesignCanvasProps) => {
@@ -194,12 +199,35 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
 
     // Handle endpoint dragging
     if (draggingEndpoint && onLineEndpointDrag) {
-      onLineEndpointDrag(draggingId, draggingEndpoint, worldX, worldY);
+      // Apply snapping to line endpoints
+      const snappedPoint = props.onSnapPoint ? props.onSnapPoint({ x: worldX, y: worldY }) : { x: worldX, y: worldY };
+      onLineEndpointDrag(draggingId, draggingEndpoint, snappedPoint.x, snappedPoint.y);
     } else if (elementDragOffset) {
-      // Handle regular shape dragging using world coordinates
-      onElementDragEnd(draggingId, worldX - elementDragOffset.x, worldY - elementDragOffset.y);
+      // Handle regular shape dragging with snapping
+      const newX = worldX - elementDragOffset.x;
+      const newY = worldY - elementDragOffset.y;
+      
+      if (props.onSnapElement && props.onSetSnapGuides) {
+        // Create a temporary element with the new position for snapping calculation
+        const tempElement = { ...element, x: newX, y: newY };
+        const snapResult = props.onSnapElement(tempElement, elements, props.gridConfig);
+        
+        // Only show guides if there's actual snapping (position changed by more than 1 pixel)
+        const hasSnapping = Math.abs(snapResult.x - newX) > 1 || Math.abs(snapResult.y - newY) > 1;
+        if (hasSnapping && snapResult.guides.length > 0) {
+          props.onSetSnapGuides(snapResult.guides);
+        } else {
+          props.onSetSnapGuides([]);
+        }
+        
+        // Use snapped position
+        onElementDragEnd(draggingId, snapResult.x, snapResult.y);
+      } else {
+        // Fallback to non-snapped dragging
+        onElementDragEnd(draggingId, newX, newY);
+      }
     }
-  }, [draggingId, isDraggingGroup, groupDragOffsets, onGroupDrag, elements, draggingEndpoint, onLineEndpointDrag, elementDragOffset, onElementDragEnd]);
+  }, [draggingId, isDraggingGroup, groupDragOffsets, onGroupDrag, elements, draggingEndpoint, onLineEndpointDrag, elementDragOffset, onElementDragEnd, props.onSnapElement, props.onSnapPoint, props.onSetSnapGuides]);
 
   // Global pointer up handler for element dragging
   const handleGlobalPointerUp = useCallback(() => {
@@ -210,8 +238,18 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
       // Reset group dragging state
       setIsDraggingGroup(false);
       setGroupDragOffsets([]);
+      
+      // Clear snap guides when dragging ends
+      if (props.onClearSnapGuides) {
+        props.onClearSnapGuides();
+      }
+    } else {
+      // Also clear guides when no dragging is happening
+      if (props.onClearSnapGuides) {
+        props.onClearSnapGuides();
+      }
     }
-  }, [draggingId]);
+  }, [draggingId, props.onClearSnapGuides]);
 
   // Set up global event listeners for element dragging
   useEffect(() => {
@@ -513,11 +551,13 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         />
       )}
 
-      {/* Snap guides */}
+      {/* Snap guides - positioned relative to the design canvas frame */}
       <SnapGuides
         guides={snapGuides}
         canvasWidth={canvasFrameWidth}
         canvasHeight={canvasFrameHeight}
+        canvasFrameX={-canvasFrameWidth / 2}
+        canvasFrameY={-canvasFrameHeight / 2}
       />
 
       {/* Canvas frame background - positioned in center */}

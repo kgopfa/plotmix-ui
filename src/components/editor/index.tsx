@@ -7,7 +7,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { TimelineManager } from '@/lib/timeline-manager';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useCanvasElements, useCanvasGroups, useCanvasStore } from '@/stores/use-canvas-store';
-import { useUIStore, useActiveNav, useActiveRightPanel, useCanvasLock } from '@/stores/use-ui-store';
+import { useUIStore, useActiveNav, useActiveRightPanel, useCanvasLock, useSnappingState } from '@/stores/use-ui-store';
 import { useTimelineSync, useTimelineStore } from '@/stores/use-timeline-store';
 import { useCanvasMigration } from '@/hooks/use-canvas-migration';
 import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
@@ -25,6 +25,7 @@ import { createNewObject } from '@/lib/canvas-object-factory';
 import { useCanvasDimensions } from '@/hooks/use-canvas-dimensions';
 import { useTimelineIntegration } from '@/hooks/use-timeline-integration';
 import { useElementSnapping } from '@/hooks/use-element-snapping';
+import { useGridSnapping } from '@/hooks/use-grid-snapping';
 import { MainNavBar } from './navigation/main';
 import { LeftSidebar } from './navigation/left-sidebar';
 import { RightSidebar } from './navigation/right-sidebar';
@@ -135,15 +136,34 @@ export default function EditorCanvas() {
     setTimelineCanvasRef({ current: canvasRefForTimeline.current });
   }, [setTimelineCanvasRef]);
 
-  // Element snapping functionality - only keep what's needed for canvas operations
+  // Get snapping state from UI store
+  const snappingState = useSnappingState();
+  const { gridConfig: uiGridConfig, elementSnapConfig } = snappingState;
+
+  // Element snapping functionality
   const {
+    snapElement,
+    currentGuides,
+    setCurrentGuides,
     clearGuides: clearElementSnapGuides,
+    isSnapTemporarilyDisabled: isElementSnapDisabled
   } = useElementSnapping({
-    enabled: true,
-    snapThreshold: 10,
-    showGuides: true,
-    enableSpacing: true,
-    enableDistribution: true
+    enabled: elementSnapConfig.enabled,
+    snapThreshold: elementSnapConfig.snapThreshold,
+    showGuides: elementSnapConfig.showGuides,
+    enableSpacing: elementSnapConfig.enableSpacing,
+    enableDistribution: elementSnapConfig.enableDistribution
+  });
+
+  // Grid snapping functionality
+  const {
+    snapPoint,
+    isSnapTemporarilyDisabled: isGridSnapDisabled
+  } = useGridSnapping({
+    size: uiGridConfig.size,
+    enabled: uiGridConfig.enabled,
+    visible: uiGridConfig.visible,
+    snapThreshold: uiGridConfig.snapThreshold
   });
 
   // Panel resize handlers
@@ -200,20 +220,9 @@ export default function EditorCanvas() {
   // Use the canvas dimensions hook
   const { dimensions } = useCanvasDimensions();
   
-  // Grid and snap configuration (will be enhanced in next steps)
-  const gridConfig = undefined; // Will be implemented with grid system
-  const snapGuides: Array<{
-    type: 'vertical' | 'horizontal' | 'spacing';
-    position: number;
-    sourceElementId: string;
-    targetElementId: string;
-    alignmentType: 'left' | 'right' | 'top' | 'bottom' | 'centerX' | 'centerY' | 'spacingX' | 'spacingY' | 'distributionX' | 'distributionY';
-    spacingInfo?: {
-      spacing: number;
-      referenceElements: string[];
-      direction: 'horizontal' | 'vertical';
-    };
-  }> = []; // Will be implemented with snapping system
+  // Grid and snap configuration - now properly integrated
+  const gridConfig = uiGridConfig;
+  const snapGuides = currentGuides;
 
   // Initialize timeline subscriptions on mount
   useEffect(() => {
@@ -1069,6 +1078,10 @@ export default function EditorCanvas() {
     // Use PIXI's built-in coordinate transformation
     const localPos = designCanvasContainer.toLocal(e.global);
     
+    // Apply snapping to the click position for element creation
+    const shiftKey = 'shiftKey' in e.nativeEvent ? e.nativeEvent.shiftKey : false;
+    const snappedPos = snapPoint({ x: localPos.x, y: localPos.y }, { shiftKey });
+    
     console.log('handleCanvasClick fired', {
       tool: toolState.activeTool,
       isShapeTool: ['rectangle', 'circle', 'triangle', 'arc', 'text', 'textGroup'].includes(toolState.activeTool),
@@ -1092,7 +1105,7 @@ export default function EditorCanvas() {
         
         if (firstLine?.lineOptions?.points) {
           const startPoint = firstLine.lineOptions.points.start;
-          const clickDistance = Math.hypot(localPos.x - startPoint.x, localPos.y - startPoint.y);
+          const clickDistance = Math.hypot(snappedPos.x - startPoint.x, snappedPos.y - startPoint.y);
           
           if (clickDistance <= 30) { // Within 30px of start point - close the polygon
             // Create the final closing line from current position to the origin
@@ -1131,14 +1144,14 @@ export default function EditorCanvas() {
 
       if (!toolState.lineStartPoint) {
         // First click: Set the start point
-        setLineStartPoint({ x: localPos.x, y: localPos.y });
+        setLineStartPoint({ x: snappedPos.x, y: snappedPos.y });
         if (toolState.activeTool === 'line') {
           setLineChaining(true);
         }
       } else {
         // Second click: Create the line from start to end point
         const startPoint = toolState.lineStartPoint;
-        const endPoint = { x: localPos.x, y: localPos.y };
+        const endPoint = { x: snappedPos.x, y: snappedPos.y };
         
         const newElement = createNewObject(
           'line', 
@@ -1184,8 +1197,8 @@ export default function EditorCanvas() {
 
     // Handle other creation tools (non-line tools)
     if (['rectangle', 'circle', 'triangle', 'arc', 'text', 'textGroup'].includes(toolState.activeTool)) {
-      console.log('About to create element:', toolState.activeTool, { x: localPos.x, y: localPos.y });
-      const newElement = createNewObject(toolState.activeTool as 'rectangle' | 'circle' | 'triangle' | 'arc' | 'text' | 'textGroup', localPos.x, localPos.y, canvasObjects);
+      console.log('About to create element:', toolState.activeTool, { x: snappedPos.x, y: snappedPos.y });
+      const newElement = createNewObject(toolState.activeTool as 'rectangle' | 'circle' | 'triangle' | 'arc' | 'text' | 'textGroup', snappedPos.x, snappedPos.y, canvasObjects);
       
       // If in path mode, mark it as a path
       if (toolState.isPathMode) {
@@ -1203,7 +1216,7 @@ export default function EditorCanvas() {
       setActiveTool('select');
       setMaskPos(null);
     }
-  }, [toolState, canvasObjects, setCanvasObjects, selectElement]);
+  }, [toolState, canvasObjects, setCanvasObjects, selectElement, snapPoint]);
 
   const handleSelectElement = useCallback((id: string | null, isMultiSelect?: boolean) => {
     if (id) {
@@ -1382,6 +1395,11 @@ export default function EditorCanvas() {
           canvasZoom={canvasZoom}
           onCanvasZoomChange={setCanvasZoom}
           isLocked={isCanvasLocked}
+          // Snapping handlers
+          onSnapElement={snapElement}
+          onSnapPoint={snapPoint}
+          onSetSnapGuides={setCurrentGuides}
+          onClearSnapGuides={clearElementSnapGuides}
         />
 
         {/* Path Mode Banner */}

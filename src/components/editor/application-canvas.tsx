@@ -53,6 +53,11 @@ interface ApplicationCanvasProps {
   canvasZoom?: number;
   onCanvasZoomChange?: (zoom: number) => void;
   isLocked?: boolean;
+  // Snapping handlers
+  onSnapElement?: (element: AnimatedCanvasObject, allElements: AnimatedCanvasObject[], gridConfig?: GridConfig) => { x: number; y: number; guides: SnapGuide[] };
+  onSnapPoint?: (point: { x: number; y: number }, event?: { shiftKey?: boolean }) => { x: number; y: number };
+  onSetSnapGuides?: (guides: SnapGuide[]) => void;
+  onClearSnapGuides?: () => void;
 }
 
 export interface ApplicationCanvasRef {
