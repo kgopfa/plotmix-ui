@@ -241,7 +241,7 @@ export const getBestSnapPoints = (snapPoints: SnapPoint[]): { x?: SnapPoint; y?:
 export const applyElementSnapping = (
   element: AnimatedCanvasObject,
   allElements: AnimatedCanvasObject[],
-  snapThreshold: number = 10,
+  snapThreshold: number = 20, // Increased threshold for easier testing
   enableSpacing: boolean = true,
   enableDistribution: boolean = true
 ): { x: number; y: number; guides: SnapGuide[] } => {

@@ -45,15 +45,16 @@ export const SnapGuides: React.FC<SnapGuidesProps> = ({
       } else {
         // Different colors and styles for different alignment types
         if (guide.alignmentType === 'centerX' || guide.alignmentType === 'centerY') {
-          lineColor = 0x2563EB; // Blue for center alignment
+          lineColor = 0x74b9ff; // Same blue as selection outline for center alignment
           lineWidth = 1;
           isDotted = true; // Use dotted lines for center alignment
         } else if (guide.alignmentType === 'left' || guide.alignmentType === 'right' || 
                    guide.alignmentType === 'top' || guide.alignmentType === 'bottom') {
-          lineColor = 0xDC2626; // Red for edge alignment
+          lineColor = 0xd63031; // Red for edge alignment (converted from #d63031)
           lineWidth = 1;
+          isDotted = true; // Use dotted lines for edge alignment too
         } else {
-          lineColor = 0x2563EB; // Default blue
+          lineColor = 0x74b9ff; // Default blue (same as selection outline)
           lineWidth = 1;
         }
       }

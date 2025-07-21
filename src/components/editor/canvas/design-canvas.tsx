@@ -210,16 +210,14 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         const tempElement = { ...element, x: newX, y: newY };
         const snapResult = props.onSnapElement(tempElement, elements);
         
-        // Only show guides if there's actual snapping (position changed by more than 2 pixels)
-        // and only for alignment, not for basic dragging
-        const hasSnapping = Math.abs(snapResult.x - newX) > 2 || Math.abs(snapResult.y - newY) > 2;
+        // Show guides if there are any alignment guides
         const hasAlignmentGuides = snapResult.guides.some(guide => 
           guide.alignmentType === 'left' || guide.alignmentType === 'right' || 
           guide.alignmentType === 'top' || guide.alignmentType === 'bottom' ||
           guide.alignmentType === 'centerX' || guide.alignmentType === 'centerY'
         );
         
-        if (hasSnapping && hasAlignmentGuides) {
+        if (hasAlignmentGuides) {
           props.onSetSnapGuides(snapResult.guides);
         } else {
           props.onSetSnapGuides([]);
@@ -544,15 +542,6 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
       }}
     >
 
-
-      {/* Snap guides - positioned relative to the design canvas frame */}
-      <SnapGuides
-        guides={snapGuides}
-        canvasWidth={canvasFrameWidth}
-        canvasHeight={canvasFrameHeight}
-        canvasFrameX={-canvasFrameWidth / 2}
-        canvasFrameY={-canvasFrameHeight / 2}
-      />
 
       {/* Canvas frame background - positioned in center */}
       <pixiGraphics
@@ -1182,6 +1171,15 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           />
         );
       })()}
+
+      {/* Snap guides - positioned relative to the design canvas frame */}
+      <SnapGuides
+        guides={snapGuides}
+        canvasWidth={canvasFrameWidth}
+        canvasHeight={canvasFrameHeight}
+        canvasFrameX={-canvasFrameWidth / 2}
+        canvasFrameY={-canvasFrameHeight / 2}
+      />
     </pixiContainer>
   );
 }; 
