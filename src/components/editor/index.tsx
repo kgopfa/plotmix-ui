@@ -29,7 +29,7 @@ import { useGridSnapping } from '@/hooks/use-grid-snapping';
 import { MainNavBar } from './navigation/main';
 import { LeftSidebar } from './navigation/left-sidebar';
 import { RightSidebar } from './navigation/right-sidebar';
-import { SelectionNavbar } from './navigation/selection-navbar';
+import { SelectionNavbar } from './navigation/selection';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import type { ApplicationCanvasRef } from './application-canvas';
 
