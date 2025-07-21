@@ -22,13 +22,12 @@ export const SnapGuides: React.FC<SnapGuidesProps> = ({
     
     if (guides.length === 0) return;
     
-
-    
     for (const guide of guides) {
       // Different colors for different snap types
       let lineColor: number;
       let lineWidth: number;
-      const lineAlpha = 0.6;
+      const lineAlpha = 0.7;
+      let isDotted = false;
       
       // Different colors and styles for different alignment types
       if (guide.sourceElementId === 'grid-center') {
@@ -44,14 +43,13 @@ export const SnapGuides: React.FC<SnapGuidesProps> = ({
           lineWidth = 1;
         }
       } else {
-        // Different colors for different alignment types
+        // Different colors and styles for different alignment types
         if (guide.alignmentType === 'centerX' || guide.alignmentType === 'centerY') {
           lineColor = 0x2563EB; // Blue for center alignment
           lineWidth = 1;
-        } else if (guide.alignmentType === 'left' || guide.alignmentType === 'right') {
-          lineColor = 0xDC2626; // Red for edge alignment
-          lineWidth = 1;
-        } else if (guide.alignmentType === 'top' || guide.alignmentType === 'bottom') {
+          isDotted = true; // Use dotted lines for center alignment
+        } else if (guide.alignmentType === 'left' || guide.alignmentType === 'right' || 
+                   guide.alignmentType === 'top' || guide.alignmentType === 'bottom') {
           lineColor = 0xDC2626; // Red for edge alignment
           lineWidth = 1;
         } else {
@@ -77,16 +75,37 @@ export const SnapGuides: React.FC<SnapGuidesProps> = ({
               cap: 'round'
             });
           
-          // Draw the main guide line
-          graphics
-            .moveTo(x, canvasFrameY)
-            .lineTo(x, canvasFrameY + canvasHeight)
-            .stroke({ 
-              width: lineWidth, 
-              color: lineColor, 
-              alpha: lineAlpha,
-              cap: 'round'
-            });
+          if (isDotted) {
+            // Draw dotted line for center alignment
+            const dashLength = 6;
+            const gapLength = 4;
+            let currentY = canvasFrameY;
+            
+            while (currentY < canvasFrameY + canvasHeight) {
+              const endY = Math.min(currentY + dashLength, canvasFrameY + canvasHeight);
+              graphics
+                .moveTo(x, currentY)
+                .lineTo(x, endY)
+                .stroke({ 
+                  width: lineWidth, 
+                  color: lineColor, 
+                  alpha: lineAlpha,
+                  cap: 'round'
+                });
+              currentY = endY + gapLength;
+            }
+          } else {
+            // Draw solid line for edge alignment
+            graphics
+              .moveTo(x, canvasFrameY)
+              .lineTo(x, canvasFrameY + canvasHeight)
+              .stroke({ 
+                width: lineWidth, 
+                color: lineColor, 
+                alpha: lineAlpha,
+                cap: 'round'
+              });
+          }
           
           // Draw small markers at the top and bottom to indicate alignment type
           const markerSize = 4;
@@ -114,16 +133,37 @@ export const SnapGuides: React.FC<SnapGuidesProps> = ({
               cap: 'round'
             });
           
-          // Draw the main guide line
-          graphics
-            .moveTo(canvasFrameX, y)
-            .lineTo(canvasFrameX + canvasWidth, y)
-            .stroke({ 
-              width: lineWidth, 
-              color: lineColor, 
-              alpha: lineAlpha,
-              cap: 'round'
-            });
+          if (isDotted) {
+            // Draw dotted line for center alignment
+            const dashLength = 6;
+            const gapLength = 4;
+            let currentX = canvasFrameX;
+            
+            while (currentX < canvasFrameX + canvasWidth) {
+              const endX = Math.min(currentX + dashLength, canvasFrameX + canvasWidth);
+              graphics
+                .moveTo(currentX, y)
+                .lineTo(endX, y)
+                .stroke({ 
+                  width: lineWidth, 
+                  color: lineColor, 
+                  alpha: lineAlpha,
+                  cap: 'round'
+                });
+              currentX = endX + gapLength;
+            }
+          } else {
+            // Draw solid line for edge alignment
+            graphics
+              .moveTo(canvasFrameX, y)
+              .lineTo(canvasFrameX + canvasWidth, y)
+              .stroke({ 
+                width: lineWidth, 
+                color: lineColor, 
+                alpha: lineAlpha,
+                cap: 'round'
+              });
+          }
           
           // Draw small markers at the left and right to indicate alignment type
           const markerSize = 4;

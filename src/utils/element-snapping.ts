@@ -242,11 +242,11 @@ export const applyElementSnapping = (
   element: AnimatedCanvasObject,
   allElements: AnimatedCanvasObject[],
   snapThreshold: number = 10,
-  gridConfig?: GridConfig,
   enableSpacing: boolean = true,
   enableDistribution: boolean = true
 ): { x: number; y: number; guides: SnapGuide[] } => {
-  const snapPoints = findNearbySnapPoints(element, allElements, snapThreshold, gridConfig, enableSpacing, enableDistribution);
+  // Disable grid snapping to prevent jittering and constant green lines
+  const snapPoints = findNearbySnapPoints(element, allElements, snapThreshold, undefined, enableSpacing, enableDistribution);
   const { x: bestX, y: bestY } = getBestSnapPoints(snapPoints);
   
   let newX = element.x;
@@ -259,9 +259,21 @@ export const applyElementSnapping = (
     
     // Create appropriate guide based on snap type
     const guideType = bestX.type.includes('spacing') || bestX.type.includes('distribution') ? 'spacing' : 'vertical';
+    
+    // For center alignment, position guide at the center of the element
+    // For edge alignment, position guide at the edge
+    let guidePosition = bestX.x;
+    if (bestX.type === 'centerX') {
+      // For center alignment, use the center position
+      guidePosition = bestX.x;
+    } else if (bestX.type === 'left' || bestX.type === 'right') {
+      // For edge alignment, use the edge position
+      guidePosition = bestX.x;
+    }
+    
     guides.push({
       type: guideType,
-      position: bestX.x,
+      position: guidePosition,
       sourceElementId: bestX.sourceElementId,
       targetElementId: element.id,
       alignmentType: bestX.type,
@@ -278,9 +290,21 @@ export const applyElementSnapping = (
     
     // Create appropriate guide based on snap type
     const guideType = bestY.type.includes('spacing') || bestY.type.includes('distribution') ? 'spacing' : 'horizontal';
+    
+    // For center alignment, position guide at the center of the element
+    // For edge alignment, position guide at the edge
+    let guidePosition = bestY.y;
+    if (bestY.type === 'centerY') {
+      // For center alignment, use the center position
+      guidePosition = bestY.y;
+    } else if (bestY.type === 'top' || bestY.type === 'bottom') {
+      // For edge alignment, use the edge position
+      guidePosition = bestY.y;
+    }
+    
     guides.push({
       type: guideType,
-      position: bestY.y,
+      position: guidePosition,
       sourceElementId: bestY.sourceElementId,
       targetElementId: element.id,
       alignmentType: bestY.type,

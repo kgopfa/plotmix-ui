@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { GridOverlay } from './grid-overlay';
+
 import { SnapGuides } from './snap-guides';
-import type { GridConfig } from '../../../utils/grid-utils';
+
 import type { SnapGuide } from '../../../utils/element-snapping';
 import type { FederatedPointerEvent } from 'pixi.js';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
@@ -24,7 +24,6 @@ import { useResponsiveCanvasPosition } from '@/hooks/use-responsive-canvas-posit
 
 interface DesignCanvasProps {
   dimensions: { width: number; height: number };
-  gridConfig?: GridConfig;
   snapGuides?: SnapGuide[];
   // Canvas state and operations
   elements: AnimatedCanvasObject[];
@@ -58,11 +57,11 @@ interface DesignCanvasProps {
   handleElementMouseMove: (id: string) => (e: FederatedPointerEvent) => void;
   handleElementMouseLeave: (id: string) => () => void;
   onPathStartClick?: (elementId: string, x: number, y: number) => void;
-  handleGroupSelectionDragStart: (virtualElement: AnimatedCanvasObject, mouseX: number, mouseY: number, allElements?: AnimatedCanvasObject[], gridConfig?: GridConfig) => void;
+  handleGroupSelectionDragStart: (virtualElement: AnimatedCanvasObject, mouseX: number, mouseY: number, allElements?: AnimatedCanvasObject[]) => void;
   isTextGroupCharacter: (element: AnimatedCanvasObject) => boolean;
   isElementInCustomOrPolygonGroup: (element: AnimatedCanvasObject) => boolean;
   // Snapping handlers
-  onSnapElement?: (element: AnimatedCanvasObject, allElements: AnimatedCanvasObject[], gridConfig?: GridConfig) => { x: number; y: number; guides: SnapGuide[] };
+  onSnapElement?: (element: AnimatedCanvasObject, allElements: AnimatedCanvasObject[]) => { x: number; y: number; guides: SnapGuide[] };
   onSnapPoint?: (point: { x: number; y: number }, event?: { shiftKey?: boolean }) => { x: number; y: number };
   onSetSnapGuides?: (guides: SnapGuide[]) => void;
   onClearSnapGuides?: () => void;
@@ -73,7 +72,6 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
   const isPlaying = useTimelineStore(state => state.playback.isPlaying);
   
   const { 
-    gridConfig, 
     snapGuides = [],
     elements,
     groups,
@@ -210,11 +208,18 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
       if (props.onSnapElement && props.onSetSnapGuides) {
         // Create a temporary element with the new position for snapping calculation
         const tempElement = { ...element, x: newX, y: newY };
-        const snapResult = props.onSnapElement(tempElement, elements, props.gridConfig);
+        const snapResult = props.onSnapElement(tempElement, elements);
         
-        // Only show guides if there's actual snapping (position changed by more than 1 pixel)
-        const hasSnapping = Math.abs(snapResult.x - newX) > 1 || Math.abs(snapResult.y - newY) > 1;
-        if (hasSnapping && snapResult.guides.length > 0) {
+        // Only show guides if there's actual snapping (position changed by more than 2 pixels)
+        // and only for alignment, not for basic dragging
+        const hasSnapping = Math.abs(snapResult.x - newX) > 2 || Math.abs(snapResult.y - newY) > 2;
+        const hasAlignmentGuides = snapResult.guides.some(guide => 
+          guide.alignmentType === 'left' || guide.alignmentType === 'right' || 
+          guide.alignmentType === 'top' || guide.alignmentType === 'bottom' ||
+          guide.alignmentType === 'centerX' || guide.alignmentType === 'centerY'
+        );
+        
+        if (hasSnapping && hasAlignmentGuides) {
           props.onSetSnapGuides(snapResult.guides);
         } else {
           props.onSetSnapGuides([]);
@@ -538,18 +543,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         }
       }}
     >
-      {/* Grid overlay */}
-      {gridConfig && (
-        <GridOverlay
-          gridConfig={gridConfig}
-          viewportBounds={{
-            x: -canvasFrameWidth / 2,
-            y: -canvasFrameHeight / 2,
-            width: canvasFrameWidth,
-            height: canvasFrameHeight
-          }}
-        />
-      )}
+
 
       {/* Snap guides - positioned relative to the design canvas frame */}
       <SnapGuides
@@ -1160,7 +1154,6 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           scaleFactor={canvasScaleFactor.current}
           onGroupDragStart={handleGroupSelectionDragStart}
           allElements={elements}
-          gridConfig={gridConfig}
           groups={groups}
         />
       )}

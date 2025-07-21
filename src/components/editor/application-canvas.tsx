@@ -8,7 +8,7 @@ import { Viewport, ViewportWrapper, centerOnDesign, zoomToFit, resetZoom } from 
 import { useCanvasState } from '@/stores/use-ui-store';
 import { ContextMenu } from './canvas/context-menu';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
-import type { GridConfig } from '../../utils/grid-utils';
+
 import type { SnapGuide } from '../../utils/element-snapping';
 import type { FederatedPointerEvent } from 'pixi.js';
 
@@ -17,7 +17,6 @@ extend({ Container, Graphics });
 interface ApplicationCanvasProps {
   children?: React.ReactNode;
   dimensions: { width: number; height: number };
-  gridConfig?: GridConfig;
   snapGuides?: SnapGuide[];
   elements: AnimatedCanvasObject[];
   groups: CanvasGroup[];
@@ -46,7 +45,7 @@ interface ApplicationCanvasProps {
   handleElementMouseMove: (id: string) => (e: FederatedPointerEvent) => void;
   handleElementMouseLeave: (id: string) => () => void;
   onPathStartClick?: (elementId: string, x: number, y: number) => void;
-  handleGroupSelectionDragStart: (virtualElement: AnimatedCanvasObject, mouseX: number, mouseY: number, allElements?: AnimatedCanvasObject[], gridConfig?: GridConfig) => void;
+  handleGroupSelectionDragStart: (virtualElement: AnimatedCanvasObject, mouseX: number, mouseY: number, allElements?: AnimatedCanvasObject[]) => void;
   isTextGroupCharacter: (element: AnimatedCanvasObject) => boolean;
   isElementInCustomOrPolygonGroup: (element: AnimatedCanvasObject) => boolean;
   onZoomChange?: (zoom: number) => void;
@@ -54,7 +53,7 @@ interface ApplicationCanvasProps {
   onCanvasZoomChange?: (zoom: number) => void;
   isLocked?: boolean;
   // Snapping handlers
-  onSnapElement?: (element: AnimatedCanvasObject, allElements: AnimatedCanvasObject[], gridConfig?: GridConfig) => { x: number; y: number; guides: SnapGuide[] };
+  onSnapElement?: (element: AnimatedCanvasObject, allElements: AnimatedCanvasObject[]) => { x: number; y: number; guides: SnapGuide[] };
   onSnapPoint?: (point: { x: number; y: number }, event?: { shiftKey?: boolean }) => { x: number; y: number };
   onSetSnapGuides?: (guides: SnapGuide[]) => void;
   onClearSnapGuides?: () => void;

@@ -155,13 +155,13 @@ export default function EditorCanvas() {
     enableDistribution: elementSnapConfig.enableDistribution
   });
 
-  // Grid snapping functionality
+  // Grid snapping functionality - DISABLED to prevent jittering
   const {
     snapPoint,
     isSnapTemporarilyDisabled: isGridSnapDisabled
   } = useGridSnapping({
     size: uiGridConfig.size,
-    enabled: uiGridConfig.enabled,
+    enabled: false, // Disabled to prevent jittering
     visible: uiGridConfig.visible,
     snapThreshold: uiGridConfig.snapThreshold
   });
@@ -1302,7 +1302,7 @@ export default function EditorCanvas() {
     setHoveredId(null);
   }, []);
 
-  const handleGroupSelectionDragStart = useCallback((_virtualElement: AnimatedCanvasObject, _mouseX: number, _mouseY: number, _allElements?: AnimatedCanvasObject[], _gridConfig?: unknown) => {
+  const handleGroupSelectionDragStart = useCallback((_virtualElement: AnimatedCanvasObject, _mouseX: number, _mouseY: number, _allElements?: AnimatedCanvasObject[]) => {
     // Handle group selection drag start
   }, []);
 
@@ -1359,7 +1359,6 @@ export default function EditorCanvas() {
         <ApplicationCanvas 
           ref={fullscreenCanvasRef}
           dimensions={dimensions}
-          gridConfig={gridConfig}
           snapGuides={snapGuides}
           elements={canvasObjects}
           groups={groups}

@@ -234,11 +234,11 @@ export const SnappingOptions: React.FC<SnappingOptionsProps> = ({
         <div className="grid grid-cols-1 gap-1.5 text-xs text-gray-700">
           <div className="flex items-center">
             <span className="inline-block w-3 h-0.5 bg-red-500 rounded mr-2"></span>
-            <span className="font-medium">Edge alignment (left, right, top, bottom)</span>
+            <span className="font-medium">Edge alignment (solid lines)</span>
           </div>
           <div className="flex items-center">
-            <span className="inline-block w-3 h-0.5 bg-blue-500 rounded mr-2"></span>
-            <span className="font-medium">Center alignment (centerX, centerY)</span>
+            <span className="inline-block w-3 h-0.5 bg-blue-500 rounded mr-2" style={{ borderStyle: 'dashed', borderWidth: '1px' }}></span>
+            <span className="font-medium">Center alignment (dotted lines)</span>
           </div>
           <div className="flex items-center">
             <span className="inline-block w-3 h-0.5 bg-green-500 rounded mr-2"></span>

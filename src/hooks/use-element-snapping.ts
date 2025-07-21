@@ -4,7 +4,7 @@ import {
   SnapGuide, 
   applyElementSnapping
 } from '../utils/element-snapping';
-import { GridConfig } from '../utils/grid-utils';
+
 
 export interface ElementSnappingConfig {
   enabled: boolean;
@@ -23,8 +23,7 @@ export interface UseElementSnappingReturn {
   toggleDistribution: () => void;
   snapElement: (
     element: AnimatedCanvasObject, 
-    allElements: AnimatedCanvasObject[],
-    gridConfig?: GridConfig
+    allElements: AnimatedCanvasObject[]
   ) => { x: number; y: number; guides: SnapGuide[] };
   currentGuides: SnapGuide[];
   setCurrentGuides: (guides: SnapGuide[]) => void;
@@ -100,15 +99,14 @@ export const useElementSnapping = (
 
   const snapElement = useCallback((
     element: AnimatedCanvasObject,
-    allElements: AnimatedCanvasObject[],
-    gridConfig?: GridConfig
+    allElements: AnimatedCanvasObject[]
   ): { x: number; y: number; guides: SnapGuide[] } => {
     // Return original position if snapping is disabled
     if (!config.enabled || isSnapTemporarilyDisabled) {
       return { x: element.x, y: element.y, guides: [] };
     }
 
-    const result = applyElementSnapping(element, allElements, config.snapThreshold, gridConfig, config.enableSpacing, config.enableDistribution);
+    const result = applyElementSnapping(element, allElements, config.snapThreshold, config.enableSpacing, config.enableDistribution);
     
     // Update guides if showing guides is enabled
     if (config.showGuides) {
