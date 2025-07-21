@@ -233,19 +233,23 @@ export const SnappingOptions: React.FC<SnappingOptionsProps> = ({
         <div className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Guide Colors</div>
         <div className="grid grid-cols-1 gap-1.5 text-xs text-gray-700">
           <div className="flex items-center">
-            <span className="inline-block w-3 h-0.5 bg-pink-400 rounded mr-2"></span>
-            <span className="font-medium">Element alignment</span>
+            <span className="inline-block w-3 h-0.5 bg-red-500 rounded mr-2"></span>
+            <span className="font-medium">Edge alignment (left, right, top, bottom)</span>
           </div>
           <div className="flex items-center">
-            <span className="inline-block w-3 h-0.5 bg-green-400 rounded mr-2"></span>
+            <span className="inline-block w-3 h-0.5 bg-blue-500 rounded mr-2"></span>
+            <span className="font-medium">Center alignment (centerX, centerY)</span>
+          </div>
+          <div className="flex items-center">
+            <span className="inline-block w-3 h-0.5 bg-green-500 rounded mr-2"></span>
             <span className="font-medium">Grid center alignment</span>
           </div>
           <div className="flex items-center">
-            <span className="inline-block w-3 h-0.5 bg-purple-400 rounded mr-2"></span>
+            <span className="inline-block w-3 h-0.5 bg-purple-500 rounded mr-2"></span>
             <span className="font-medium">Equal spacing</span>
           </div>
           <div className="flex items-center">
-            <span className="inline-block w-3 h-0.5 bg-orange-400 rounded mr-2"></span>
+            <span className="inline-block w-3 h-0.5 bg-orange-500 rounded mr-2"></span>
             <span className="font-medium">Distribution</span>
           </div>
         </div>

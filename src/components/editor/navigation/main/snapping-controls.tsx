@@ -1,6 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { useGridSnapping } from '@/hooks/use-grid-snapping';
-import { useElementSnapping } from '@/hooks/use-element-snapping';
+import { useSnappingState, useSnappingActions } from '@/stores/use-ui-store';
 import { SnappingOptions } from './snap-options';
 
 export const SnappingControls = () => {
@@ -8,36 +7,40 @@ export const SnappingControls = () => {
   const snappingButtonRef = useRef<HTMLButtonElement>(null);
   const snappingMenuRef = useRef<HTMLDivElement>(null);
 
-  // Grid snapping hook
-  const { 
-    gridConfig, 
-    setGridConfig, 
-    toggleGrid, 
-    toggleSnapEnabled,
-    isSnapTemporarilyDisabled 
-  } = useGridSnapping({
-    size: 10,
-    enabled: true,
-    visible: false,
-    snapThreshold: 8
-  });
+  // Get snapping state from UI store
+  const snappingState = useSnappingState();
+  const { gridConfig, elementSnapConfig, isGridSnapTemporarilyDisabled, isElementSnapTemporarilyDisabled } = snappingState;
 
-  // Element snapping hook
+  // Get snapping actions from UI store
   const {
-    config: elementSnapConfig,
-    setConfig: setElementSnapConfig,
-    toggleEnabled: toggleElementSnap,
-    toggleGuides: toggleElementSnapGuides,
-    toggleSpacing: toggleElementSpacing,
-    toggleDistribution: toggleElementDistribution,
-    isSnapTemporarilyDisabled: isElementSnapDisabled
-  } = useElementSnapping({
-    enabled: true,
-    snapThreshold: 10,
-    showGuides: true,
-    enableSpacing: true,
-    enableDistribution: true
-  });
+    updateGridConfig,
+    updateElementSnapConfig
+  } = useSnappingActions();
+
+  // Create toggle functions for the UI
+  const toggleGrid = useCallback(() => {
+    updateGridConfig({ visible: !gridConfig.visible });
+  }, [gridConfig.visible, updateGridConfig]);
+
+  const toggleGridSnap = useCallback(() => {
+    updateGridConfig({ enabled: !gridConfig.enabled });
+  }, [gridConfig.enabled, updateGridConfig]);
+
+  const toggleElementSnap = useCallback(() => {
+    updateElementSnapConfig({ enabled: !elementSnapConfig.enabled });
+  }, [elementSnapConfig.enabled, updateElementSnapConfig]);
+
+  const toggleGuides = useCallback(() => {
+    updateElementSnapConfig({ showGuides: !elementSnapConfig.showGuides });
+  }, [elementSnapConfig.showGuides, updateElementSnapConfig]);
+
+  const toggleSpacing = useCallback(() => {
+    updateElementSnapConfig({ enableSpacing: !elementSnapConfig.enableSpacing });
+  }, [elementSnapConfig.enableSpacing, updateElementSnapConfig]);
+
+  const toggleDistribution = useCallback(() => {
+    updateElementSnapConfig({ enableDistribution: !elementSnapConfig.enableDistribution });
+  }, [elementSnapConfig.enableDistribution, updateElementSnapConfig]);
 
   // Handle click outside to close snapping menu
   useEffect(() => {
@@ -108,16 +111,16 @@ export const SnappingControls = () => {
           <SnappingOptions
             gridConfig={gridConfig}
             onToggleGrid={toggleGrid}
-            onToggleGridSnap={toggleSnapEnabled}
-            onGridSizeChange={(size: number) => setGridConfig({ size })}
+            onToggleGridSnap={toggleGridSnap}
+            onGridSizeChange={(size: number) => updateGridConfig({ size })}
             elementSnapConfig={elementSnapConfig}
             onToggleElementSnap={toggleElementSnap}
-            onToggleGuides={toggleElementSnapGuides}
-            onToggleSpacing={toggleElementSpacing}
-            onToggleDistribution={toggleElementDistribution}
-            onSnapThresholdChange={(threshold: number) => setElementSnapConfig({ snapThreshold: threshold })}
-            isGridSnapTemporarilyDisabled={isSnapTemporarilyDisabled}
-            isElementSnapTemporarilyDisabled={isElementSnapDisabled}
+            onToggleGuides={toggleGuides}
+            onToggleSpacing={toggleSpacing}
+            onToggleDistribution={toggleDistribution}
+            onSnapThresholdChange={(threshold: number) => updateElementSnapConfig({ snapThreshold: threshold })}
+            isGridSnapTemporarilyDisabled={isGridSnapTemporarilyDisabled}
+            isElementSnapTemporarilyDisabled={isElementSnapTemporarilyDisabled}
           />
         </div>
       )}
