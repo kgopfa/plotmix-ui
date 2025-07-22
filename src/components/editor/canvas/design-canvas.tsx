@@ -1,8 +1,6 @@
 import React, { useRef, useEffect } from 'react';
-
 import { SnapGuides } from './snap-guides';
 import { LinePreview } from './line-preview';
-
 import type { SnapGuide } from '../../../utils/element-snapping';
 import type { FederatedPointerEvent } from 'pixi.js';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
@@ -139,8 +137,6 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
     onClearSnapGuides: props.onClearSnapGuides,
   });
 
-
-
   // Use element pointer handlers hook
   const {
     handleElementPointerDown,
@@ -162,8 +158,6 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
   useEffect(() => {
     return setupGlobalEventListeners();
   }, [setupGlobalEventListeners]);
-
-
 
   return (
     <pixiContainer
