@@ -115,50 +115,50 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
   };
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <div className="flex flex-col gap-6 p-4">
       {/* Header */}
       <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
-        <h4 className="font-semibold text-gray-600 text-sm">Properties</h4>
+        <h4 className="font-semibold text-blue-600 text-sm">Properties</h4>
       </div>
 
       {/* Basic Properties */}
       <div className="space-y-4">
-        <div className="space-y-3">
+        <div className="space-y-4">
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold text-gray-400">Name</span>
+            <span className="text-xs font-semibold text-blue-400">Name</span>
             <input
               type="text"
               value={localElement.name}
               onChange={e => updateLocalProperty('name', e.target.value)}
-              className="block w-full grow rounded-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
+              className="block w-full grow rounded-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600"
               placeholder="Element name"
             />
           </label>
 
           <div className="grid grid-cols-1 gap-1">
-            <span className="text-xs font-semibold text-gray-400">Position</span>
+            <span className="text-xs font-semibold text-blue-400">Position</span>
             <div className="flex flex-row gap-2">
               <div className="flex">
-                <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-gray-500 outline-1 -outline-offset-1 outline-gray-300">
+                <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-blue-500 outline-1 -outline-offset-1 outline-gray-300">
                   X
                 </div>
                 <input
                   type="number"
                   value={Math.round(localElement.x)}
                   onChange={e => updateLocalProperty('x', Math.round(Number(e.target.value)))}
-                  className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
+                  className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600"
                   step="1"
                 />
               </div>
               <div className="flex">
-                <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-gray-500 outline-1 -outline-offset-1 outline-gray-300">
+                <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-blue-500 outline-1 -outline-offset-1 outline-gray-300">
                   Y
                 </div>
                 <input
                   type="number"
                   value={Math.round(localElement.y)}
                   onChange={e => updateLocalProperty('y', Math.round(Number(e.target.value)))}
-                  className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
+                  className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600"
                   step="1"
                 />
               </div>
@@ -170,12 +170,12 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
         {localElement.type === 'line' ? (
           <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
             <h4 className="font-medium text-gray-800 mb-3 flex items-center gap-2">
-              <div className="w-1 h-1 bg-gray-500 rounded-full"></div>
+              <div className="w-1 h-1 bg-orange-500 rounded-full"></div>
               Line Properties
             </h4>
             <div className="grid grid-cols-2 gap-3">
               <label className="flex flex-col gap-1">
-                <span className="text-sm font-medium text-gray-700">Length</span>
+                <span className="text-sm font-medium text-orange-400">Length</span>
                 <input
                   type="number"
                   value={Math.round(calculateLineLength(localElement.lineOptions!.points))}
@@ -203,11 +203,11 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                     updateLineGeometry(width, height, updatedLineOptions);
                   }}
                   min={1}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
                 />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-sm font-medium text-gray-700">Angle (°)</span>
+                <span className="text-sm font-medium text-orange-400">Angle (°)</span>
                 <input
                   type="number"
                   value={Math.round(calculateNorthAngle(localElement.lineOptions!.points))}
@@ -232,7 +232,7 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
 
                     updateLineGeometry(width, height, updatedLineOptions);
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
                 />
               </label>
             </div>
@@ -243,7 +243,7 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                   type="checkbox"
                   checked={localElement.lineOptions?.dotted ?? false}
                   onChange={e => updateLineOptions({ dotted: e.target.checked })}
-                  className="rounded border-gray-300 focus:ring-2 focus:ring-blue-500"
+                  className="rounded border-gray-300 focus:ring-2 focus:ring-orange-500"
                 />
                 <span className="text-sm font-medium text-gray-700">Dotted line</span>
               </label>
@@ -252,7 +252,7 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                   type="checkbox"
                   checked={localElement.lineOptions?.arrow ?? false}
                   onChange={e => updateLineOptions({ arrow: e.target.checked })}
-                  className="rounded border-gray-300 focus:ring-2 focus:ring-blue-500"
+                  className="rounded border-gray-300 focus:ring-2 focus:ring-orange-500"
                 />
                 <span className="text-sm font-medium text-gray-700">Show arrow</span>
               </label>
@@ -261,29 +261,29 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
         ) : (
           /* Non-line properties */
           <div className="grid grid-cols-1 gap-1">
-            <span className="text-xs font-semibold text-gray-400">Size</span>
+            <span className="text-xs font-semibold text-green-400">Size</span>
             <div className="flex flex-row gap-2">
               <div className="flex">
-                <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-gray-500 outline-1 -outline-offset-1 outline-gray-300">
+                <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-green-500 outline-1 -outline-offset-1 outline-gray-300">
                   H
                 </div>
                 <input
                   type="number"
                   value={Math.round(localElement.height)}
                   onChange={e => updateLocalProperty('height', Math.round(Number(e.target.value)))}
-                  className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
+                  className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-green-600"
                   step="1"
                 />
               </div>
               <div className="flex">
-                <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-gray-500 outline-1 -outline-offset-1 outline-gray-300">
+                <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-green-500 outline-1 -outline-offset-1 outline-gray-300">
                   W
                 </div>
                 <input
                   type="number"
                   value={Math.round(localElement.width)}
                   onChange={e => updateLocalProperty('width', Math.round(Number(e.target.value)))}
-                  className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
+                  className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-green-600"
                   step="1"
                 />
               </div>
@@ -295,14 +295,14 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
       {/* Appearance Properties */}
       <div className="space-y-4">
         <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
-          <h4 className="font-semibold text-gray-600 text-sm">Appearance</h4>
+          <h4 className="font-semibold text-purple-600 text-sm">Appearance</h4>
         </div>
 
         <div className="space-y-3">
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold text-gray-400">Fill</span>
+            <span className="text-xs font-semibold text-purple-400">Fill</span>
             <div className="flex relative">
-              <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-gray-500 outline-1 -outline-offset-1 outline-gray-300">
+              <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-purple-500 outline-1 -outline-offset-1 outline-gray-300">
                 <div
                   ref={fillColorTriggerRef}
                   className="w-4 h-4 rounded border border-gray-300 cursor-pointer hover:scale-110 transition-transform"
@@ -314,7 +314,7 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                 type="text"
                 value={(localElement.fill || '#ffffff').replace('#', '').toUpperCase()}
                 onChange={e => updateLocalProperty('fill', '#' + e.target.value.toUpperCase())}
-                className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 uppercase"
+                className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-purple-600 uppercase"
                 placeholder="FFFFFF"
               />
               <ColorPicker
@@ -332,13 +332,13 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
       {/* Stroke Properties */}
       <div className="space-y-4">
         <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
-          <h4 className="font-semibold text-gray-600 text-sm">Stroke</h4>
+          <h4 className="font-semibold text-indigo-600 text-sm">Stroke</h4>
         </div>
 
         <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold text-gray-400">Fill</span>
+            <span className="text-xs font-semibold text-indigo-400">Fill</span>
             <div className="flex relative">
-              <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-gray-500 outline-1 -outline-offset-1 outline-gray-300">
+              <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-indigo-500 outline-1 -outline-offset-1 outline-gray-300">
                 <div
                   ref={strokeColorTriggerRef}
                   className="w-4 h-4 rounded border border-gray-300 cursor-pointer hover:scale-110 transition-transform"
@@ -364,10 +364,10 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
           </label>
 
           <div className="grid grid-cols-1 gap-1">
-            <span className="text-xs font-semibold text-gray-400">Stroke</span>
+            <span className="text-xs font-semibold text-indigo-400">Stroke</span>
             <div className="flex flex-row gap-2">
               <div className="flex">
-                <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-gray-500 outline-1 -outline-offset-1 outline-gray-300">
+                <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-indigo-500 outline-1 -outline-offset-1 outline-gray-300">
                   <Weight className="w-4 h-4" />
                 </div>
                 <input
@@ -379,7 +379,7 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                 />
               </div>
               <div className="flex">
-                <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-gray-500 outline-1 -outline-offset-1 outline-gray-300">
+                <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-indigo-500 outline-1 -outline-offset-1 outline-gray-300">
                   <SquareRoundCorner className="w-4 h-4" />
                 </div>
                 <input
@@ -404,7 +404,7 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
 
           <div className="space-y-3">
             <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-gray-700">Font Size</span>
+              <span className="text-sm font-medium text-green-400">Font Size</span>
               <input
                 type="number"
                 value={localElement.fontSize || 16}
@@ -415,7 +415,7 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
             </label>
 
             <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-gray-700">Font Family</span>
+              <span className="text-sm font-medium text-green-400">Font Family</span>
               <select
                 value={localElement.fontFamily || 'Arial'}
                 onChange={e => updateLocalProperty('fontFamily', e.target.value)}
@@ -431,7 +431,7 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
             </label>
 
             <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-gray-700">Font Weight</span>
+              <span className="text-sm font-medium text-green-400">Font Weight</span>
               <select
                 value={localElement.fontWeight || 'normal'}
                 onChange={e => updateLocalProperty('fontWeight', e.target.value)}
