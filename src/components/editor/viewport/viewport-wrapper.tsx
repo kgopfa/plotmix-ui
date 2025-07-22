@@ -11,15 +11,18 @@ export class ViewportWrapper extends BaseViewport {
       ...rest,
       events: app.renderer.events,
     });
-    this.drag().pinch().wheel().decelerate({
-      friction: 0.95,
-      bounce: 0.8
-    })
-      .clampZoom({
-        minScale: 0.1,
-        maxScale: 5
+    this
+      .drag()
+      .pinch()
+      .wheel({
+        percent: 0.08,
+        trackpadPinch: true,
+        wheelZoom: false,
       })
-      // Removed clamp to allow free movement
+      .decelerate({
+        friction: 0.95,
+        bounce: 0.8
+      })
       .setZoom(1, true)
       .moveCenter(0, 0);
   }
