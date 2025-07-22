@@ -104,6 +104,7 @@ export function useTimelineIntegration() {
     // Force rebuild timeline tracks and GSAP timeline
     updateTracks();
     buildGSAPTimeline();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elements, groups, updateTracks, buildGSAPTimeline]);
 
   // Playback controls
