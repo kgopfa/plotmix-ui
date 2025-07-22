@@ -8,6 +8,7 @@ import { Viewport, ViewportWrapper, centerOnDesign, zoomToFit, resetZoom } from 
 import { useCanvasState } from '@/stores/use-ui-store';
 import { ContextMenu } from './canvas/context-menu';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
+import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager';
 
 import type { SnapGuide } from '../../utils/element-snapping';
 import type { FederatedPointerEvent } from 'pixi.js';
@@ -59,7 +60,7 @@ interface ApplicationCanvasProps {
   onClearSnapGuides?: () => void;
 }
 
-export interface ApplicationCanvasRef {
+export interface ApplicationCanvasRef extends TimelineCanvasRef {
   getApplication: () => ApplicationRef | null;
   getViewport: () => ViewportWrapper | null;
   centerOnDesign: () => void;
@@ -217,7 +218,9 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       getViewport: () => viewportRef.current,
       centerOnDesign: () => centerOnDesign(viewportRef.current, dimensions.width, dimensions.height, canvasWidth, canvasHeight),
       zoomToFit: () => zoomToFit(viewportRef.current, dimensions.width, dimensions.height, canvasWidth, canvasHeight),
-      resetZoom: () => resetZoom(viewportRef.current, dimensions.width, dimensions.height, canvasWidth, canvasHeight)
+      resetZoom: () => resetZoom(viewportRef.current, dimensions.width, dimensions.height, canvasWidth, canvasHeight),
+      getShapeRefs: () => props.shapeRefs.current as Record<string, Container>,
+      getGroupContainers: () => props.groupContainers.current as Record<string, Container>
     }));
 
     return (

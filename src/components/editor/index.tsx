@@ -14,7 +14,7 @@ import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
 import { Graphics, FederatedPointerEvent, Container } from 'pixi.js';
 import { PropertiesPanel } from './navigation/right-sidebar/properties-panel';
 import { AnimationsPanel } from './navigation/right-sidebar/animations-panel';
-import type { CanvasRef } from './canvas';
+import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager';
 
 import { Timeline } from './timeline';
 import { MaskOverlay } from './canvas/mask-overlay';
@@ -123,7 +123,7 @@ export default function EditorCanvas() {
   const canvasScaleFactor = useRef<number>(1);
 
   // Create a canvas ref that provides the shape refs to the timeline manager
-  const canvasRefForTimeline = useRef<CanvasRef>({
+  const canvasRefForTimeline = useRef<TimelineCanvasRef>({
     getShapeRefs: () => shapeRefs.current as Record<string, Container>,
     getGroupContainers: () => groupContainers.current as Record<string, Container>
   });

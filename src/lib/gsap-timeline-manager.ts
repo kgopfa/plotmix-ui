@@ -1,6 +1,5 @@
 import { gsap } from 'gsap';
 import type { AnimatedCanvasObject, CanvasGroup, ElementAnimation } from '@/types/canvas';
-import type { CanvasRef } from '@/components/editor/canvas';
 import { PixiPlugin } from "gsap/PixiPlugin";
 import { Physics2DPlugin } from "gsap/Physics2DPlugin";
 import { MotionPathPlugin } from "gsap/MotionPathPlugin";
@@ -26,6 +25,15 @@ gsap.registerPlugin(PixiPlugin, Physics2DPlugin, MotionPathPlugin);
 PixiPlugin.registerPIXI(PIXI);
 
 /**
+ * Interface for canvas ref that provides access to shape and group containers
+ * Used by the timeline manager to access PIXI containers for animations
+ */
+export interface TimelineCanvasRef {
+  getShapeRefs: () => Record<string, PIXI.Container>;
+  getGroupContainers: () => Record<string, PIXI.Container>;
+}
+
+/**
  * Performance metrics for timeline operations
  */
 export interface TimelinePerformanceMetrics {
@@ -48,7 +56,7 @@ export interface TimelinePerformanceMetrics {
  */
 export class GSAPTimelineManager {
   protected timeline: gsap.core.Timeline;
-  protected canvasRef: React.RefObject<CanvasRef | null> | null = null;
+  protected canvasRef: React.RefObject<TimelineCanvasRef | null> | null = null;
 
   // Performance tracking
   private performanceMetrics: TimelinePerformanceMetrics = {
@@ -65,7 +73,7 @@ export class GSAPTimelineManager {
     console.log('GSAPTimelineManager initialized');
   }
 
-  setCanvasRef(ref: React.RefObject<CanvasRef | null>) {
+  setCanvasRef(ref: React.RefObject<TimelineCanvasRef | null>) {
     this.canvasRef = ref;
   }
 

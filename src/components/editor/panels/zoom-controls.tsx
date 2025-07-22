@@ -1,8 +1,6 @@
 import React from 'react';
-import { CanvasRef } from '@/components/editor/canvas/index';
 
 interface ZoomControlsProps {
-  canvasRef: React.RefObject<CanvasRef | null>;
   currentZoom: number;
 }
 

@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { useTimelineStore } from '@/stores/use-timeline-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import type { ElementAnimation } from '@/types/canvas';
-import type { CanvasRef } from '@/components/editor/canvas';
+import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager';
 
 /**
  * Enhanced Timeline Integration Hook
@@ -32,7 +32,7 @@ export function useTimelineIntegration() {
   } = useCanvasStore();
 
   // Enhanced canvas ref setup with automatic timeline building
-  const setCanvasRef = useCallback((ref: React.RefObject<CanvasRef | null>) => {
+  const setCanvasRef = useCallback((ref: React.RefObject<TimelineCanvasRef | null>) => {
     const state = useTimelineStore.getState();
     
     // Set canvas ref for Enhanced Timeline Manager
