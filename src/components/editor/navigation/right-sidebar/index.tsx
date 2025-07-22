@@ -4,13 +4,11 @@ import React from 'react';
 import {
   SwatchBook,
   VectorSquare,
-  Lock,
-  Unlock,
 } from 'lucide-react';
-import { useActiveRightPanel, useSetActiveRightPanel, useCanvasLock, useToggleCanvasLock } from '@/stores/use-ui-store';
+import { useActiveRightPanel } from '@/stores/use-ui-store';
 
 // Navigation item type for right sidebar
-type RightNavKey = 'properties' | 'animations' | 'lock';
+type RightNavKey = 'properties' | 'animations';
 interface RightNavItem {
   name: string;
   key: RightNavKey;
@@ -39,33 +37,10 @@ const navigation: RightNavItem[] = [
     hoverColor: 'hover:bg-purple-50 hover:text-purple-700',
     activeColor: 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30'
   },
-  { 
-    name: 'Lock Canvas', 
-    key: 'lock', 
-    icon: Unlock,
-    color: 'text-gray-600',
-    hoverColor: 'hover:bg-gray-50 hover:text-gray-700',
-    activeColor: 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30',
-    isToggle: true,
-    getIcon: (isActive: boolean) => isActive ? Lock : Unlock
-  },
 ];
 
 export const RightSidebar: React.FC = () => {
   const activePanel = useActiveRightPanel();
-  const setActivePanel = useSetActiveRightPanel();
-  const isCanvasLocked = useCanvasLock();
-  const toggleCanvasLock = useToggleCanvasLock();
-
-  const handleClick = (key: RightNavKey) => {
-    if (key === 'lock') {
-      // Handle lock toggle
-      toggleCanvasLock();
-    } else {
-      // Handle regular panel navigation
-      setActivePanel(key);
-    }
-  };
 
   return (
     <div className="m-2 fixed right-0 top-16 z-40 w-16 overflow-visible transition-all duration-300 ease-out translate-x-0 opacity-100">
@@ -73,7 +48,7 @@ export const RightSidebar: React.FC = () => {
         <nav className="mt-6 pb-6 flex-1">
           <ul role="list" className="flex flex-col items-center space-y-3">
             {navigation.map((item) => {
-              const isActive = item.key === 'lock' ? isCanvasLocked : activePanel === item.key;
+              const isActive = activePanel === item.key;
               const IconComponent = item.getIcon ? item.getIcon(isActive) : item.icon;
               return (
                 <li key={item.key}>
@@ -89,7 +64,7 @@ export const RightSidebar: React.FC = () => {
                           : `${item.color} ${item.hoverColor} hover:shadow-md`
                         }
                       `}
-                      onClick={() => handleClick(item.key)}
+                      onClick={() => {}}
                       title={item.name}
                     >
                       <IconComponent 

@@ -15,7 +15,7 @@ import ResizeHandle from './resize-handle';
 import RadiusHandle from './radius-handle';
 import { AnimatedTextGroup } from './animated-text-group';
 import { GroupSelection } from './group-selection';
-import { useCanvasState, useCanvasLock } from '@/stores/use-ui-store';
+import { useCanvasState } from '@/stores/use-ui-store';
 import { useCanvasOperations } from '@/stores/use-canvas-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useTimelineStore } from '@/stores/use-timeline-store';
@@ -101,7 +101,6 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
 
   // Get canvas size from UI store
   const canvasState = useCanvasState();
-  const isCanvasLocked = useCanvasLock();
   
   // Get canvas operations and selection store
   const { moveElement, moveMultipleElements, updateElement } = useCanvasOperations();
@@ -120,9 +119,6 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
   const { x: centerX, y: centerY } = useResponsiveCanvasPosition(props.dimensions);
 
   // Canvas dragging state refs
-  const isDragging = useRef(false);
-  const dragData = useRef<FederatedPointerEvent['data'] | null>(null);
-  const dragOffset = useRef<{ x: number; y: number } | null>(null);
   const containerRef = useRef<Container | null>(null);
 
   // Element dragging state
@@ -468,56 +464,19 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         if (!hitElement) {
           props.handleCanvasClick(e);
         }
-        
-        // Only handle dragging when not locked
-        if (!isCanvasLocked) {
-          isDragging.current = true;
-          dragData.current = e.data;
-          
-          // Calculate the offset between mouse and container position
-          const container = e.currentTarget as Container;
-          const mousePos = e.data.getLocalPosition(container.parent);
-          dragOffset.current = {
-            x: mousePos.x - container.x,
-            y: mousePos.y - container.y
-          };
-        }
       }}
       onPointerMove={(e: FederatedPointerEvent) => {
         // Call the canvas pointer move handler for drawing and other interactions
         props.handleCanvasPointerMove(e);
-        
-        // Only handle dragging when not locked
-        if (!isCanvasLocked && isDragging.current && dragData.current && dragOffset.current) {
-          const container = e.currentTarget as Container;
-          const mousePos = dragData.current.getLocalPosition(container.parent);
-          
-          // Position the container so the mouse stays at the same relative position
-          container.x = mousePos.x - dragOffset.current.x;
-          container.y = mousePos.y - dragOffset.current.y;
-        }
+
       }}
       onPointerUp={() => {
         // Call the canvas pointer up handler
         props.handlePointerUp();
-        
-        if (isCanvasLocked) return;
-        if (isDragging.current) {
-          isDragging.current = false;
-          dragData.current = null;
-          dragOffset.current = null;
-        }
       }}
       onPointerUpOutside={() => {
         // Call the canvas pointer up handler
         props.handlePointerUp();
-        
-        if (isCanvasLocked) return;
-        if (isDragging.current) {
-          isDragging.current = false;
-          dragData.current = null;
-          dragOffset.current = null;
-        }
       }}
       onClick={(e: FederatedPointerEvent) => {
         console.log('[DesignCanvas] onClick called', { x: e.global.x, y: e.global.y });

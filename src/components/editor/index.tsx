@@ -7,7 +7,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { TimelineManager } from '@/lib/timeline-manager';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useCanvasElements, useCanvasGroups, useCanvasStore } from '@/stores/use-canvas-store';
-import { useUIStore, useActiveNav, useActiveRightPanel, useCanvasLock, useSnappingState } from '@/stores/use-ui-store';
+import { useUIStore, useActiveNav, useActiveRightPanel, useSnappingState } from '@/stores/use-ui-store';
 import { useTimelineSync, useTimelineStore } from '@/stores/use-timeline-store';
 import { useCanvasMigration } from '@/hooks/use-canvas-migration';
 import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
@@ -105,9 +105,6 @@ export default function EditorCanvas() {
 
   // Canvas zoom state - will be implemented with pixi-viewport
   const [canvasZoom, setCanvasZoom] = useState(1);
-  
-  // Canvas lock state
-  const isCanvasLocked = useCanvasLock();
 
   // Animation playback state - needed for UI hiding during playback
   const isPlaying = useTimelineStore(state => state.playback.isPlaying);
@@ -1364,7 +1361,6 @@ export default function EditorCanvas() {
           groups={groups}
           selectedIds={selectedObjects.map(el => el.id)}
           hoveredId={hoveredId}
-
           editingTextId={editingTextId}
           tool={toolState.activeTool}
           isPathMode={toolState.isPathMode}
@@ -1393,7 +1389,7 @@ export default function EditorCanvas() {
           isElementInCustomOrPolygonGroup={isElementInCustomOrPolygonGroup}
           canvasZoom={canvasZoom}
           onCanvasZoomChange={setCanvasZoom}
-          isLocked={isCanvasLocked}
+          isLocked={true}
           // Snapping handlers
           onSnapElement={snapElement}
           onSnapPoint={snapPoint}

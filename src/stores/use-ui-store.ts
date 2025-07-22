@@ -96,7 +96,6 @@ interface UIState {
   activeRightPanel: RightPanelKey | null;
   hoverRightPanel: RightPanelKey | null;
   showAnimationsTab: boolean;
-  isCanvasLocked: boolean;
 }
 
 // Actions
@@ -156,10 +155,6 @@ interface UIActions {
   setCustomCanvasSize: (width: number, height: number) => void;
   addCanvasSize: (size: CanvasSize) => void;
   removeCanvasSize: (sizeId: string) => void;
-  
-  // Lock Actions
-  toggleCanvasLock: () => void;
-  setCanvasLock: (locked: boolean) => void;
 }
 
 type UIStore = UIState & UIActions;
@@ -655,11 +650,6 @@ export const useActiveRightPanel = () => useUIStore((state) => state.activeRight
 export const useSetActiveRightPanel = () => useUIStore((state) => state.setActiveRightPanel);
 export const useHoverRightPanel = () => useUIStore((state) => state.hoverRightPanel);
 export const useSetHoverRightPanel = () => useUIStore((state) => state.setHoverRightPanel);
-
-// Lock state hooks
-export const useCanvasLock = () => useUIStore((state) => state.isCanvasLocked);
-export const useToggleCanvasLock = () => useUIStore((state) => state.toggleCanvasLock);
-export const useSetCanvasLock = () => useUIStore((state) => state.setCanvasLock);
 
 // Action hooks
 export const usePanelActions = () => useUIStore(
