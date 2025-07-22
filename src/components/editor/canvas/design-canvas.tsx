@@ -70,8 +70,8 @@ interface DesignCanvasProps {
 export const DesignCanvas = (props: DesignCanvasProps) => {
   // Get isPlaying state directly from timeline store
   const isPlaying = useTimelineStore(state => state.playback.isPlaying);
-  
-  const { 
+
+  const {
     snapGuides = [],
     elements,
     groups,
@@ -101,20 +101,20 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
 
   // Get canvas size from UI store
   const canvasState = useCanvasState();
-  
+
   // Get canvas operations and selection store
   const { moveElement, moveMultipleElements, updateElement } = useCanvasOperations();
   const { select: selectElement } = useSelectionStore();
-  
+
   // Get current canvas size
-  const currentSize = canvasState.currentSizeId === 'custom' 
-    ? canvasState.customSize 
+  const currentSize = canvasState.currentSizeId === 'custom'
+    ? canvasState.customSize
     : canvasState.availableSizes.find(size => size.id === canvasState.currentSizeId);
 
   // Use current canvas size or fallback to default
   const canvasFrameWidth = currentSize?.width || 1280;
   const canvasFrameHeight = currentSize?.height || 720;
-  
+
   // Use responsive canvas positioning hook
   const { x: centerX, y: centerY } = useResponsiveCanvasPosition(props.dimensions);
 
@@ -152,8 +152,8 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
     };
 
     // Update the element with new line points
-    updateElement(id, { 
-      lineOptions: { ...element.lineOptions, points: updatedPoints } 
+    updateElement(id, {
+      lineOptions: { ...element.lineOptions, points: updatedPoints }
     });
   }, [elements, updateElement]);
 
@@ -200,25 +200,25 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
       // Handle regular shape dragging with snapping
       const newX = worldX - elementDragOffset.x;
       const newY = worldY - elementDragOffset.y;
-      
+
       if (props.onSnapElement && props.onSetSnapGuides) {
         // Create a temporary element with the new position for snapping calculation
         const tempElement = { ...element, x: newX, y: newY };
         const snapResult = props.onSnapElement(tempElement, elements);
-        
+
         // Show guides if there are any alignment guides
-        const hasAlignmentGuides = snapResult.guides.some(guide => 
-          guide.alignmentType === 'left' || guide.alignmentType === 'right' || 
+        const hasAlignmentGuides = snapResult.guides.some(guide =>
+          guide.alignmentType === 'left' || guide.alignmentType === 'right' ||
           guide.alignmentType === 'top' || guide.alignmentType === 'bottom' ||
           guide.alignmentType === 'centerX' || guide.alignmentType === 'centerY'
         );
-        
+
         if (hasAlignmentGuides) {
           props.onSetSnapGuides(snapResult.guides);
         } else {
           props.onSetSnapGuides([]);
         }
-        
+
         // Use snapped position
         onElementDragEnd(draggingId, snapResult.x, snapResult.y);
       } else {
@@ -237,7 +237,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
       // Reset group dragging state
       setIsDraggingGroup(false);
       setGroupDragOffsets([]);
-      
+
       // Clear snap guides when dragging ends
       if (props.onClearSnapGuides) {
         props.onClearSnapGuides();
@@ -347,7 +347,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         // Select the parent textGroup instead of the character
         selectElement([parentTextGroup], isMultiSelect);
         setDraggingId(parentTextGroup.id);
-        
+
         // Convert screen coordinates to world coordinates for offset calculation
         setElementDragOffset({ x: pos.x - parentTextGroup.x, y: pos.y - parentTextGroup.y });
         setIsDraggingGroup(false);
@@ -411,7 +411,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
       const offsets = selectedIds.map(selectedId => {
         const selectedElement = elements.find(el => el.id === selectedId);
         if (!selectedElement) return { id: selectedId, offsetX: 0, offsetY: 0 };
-        
+
         return {
           id: selectedId,
           offsetX: pos.x - selectedElement.x,
@@ -427,15 +427,15 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
       // Single element drag - use direct coordinates
       setDraggingId(id);
       selectElement([element], isMultiSelect);
-      
+
       setElementDragOffset({ x: pos.x - shapeX, y: pos.y - shapeY });
       setIsDraggingGroup(false);
     }
   }, [tool, isLineChaining, lineStartPoint, elements, selectedIds, selectElement, props.handleCanvasClick, props.handleCanvasPointerDown]);
 
   return (
-    <pixiContainer 
-      x={centerX} 
+    <pixiContainer
+      x={centerX}
       y={centerY}
       interactive={true}
       eventMode="static"
@@ -445,21 +445,21 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
       }}
       onPointerDown={(e: FederatedPointerEvent) => {
         console.log('[DesignCanvas] onPointerDown called', { x: e.global.x, y: e.global.y });
-        
+
         // Only call canvas click handler if no element was clicked
         // This prevents deselection when clicking on elements
         const hitElement = props.elements.find(element => {
           const shapeRef = props.shapeRefs.current[element.id];
           if (!shapeRef) return false;
-          
+
           // Check if the click point is within the element's bounds
           const bounds = (shapeRef as Container).getBounds();
-          return e.global.x >= bounds.x && 
-                 e.global.x <= bounds.x + bounds.width && 
-                 e.global.y >= bounds.y && 
-                 e.global.y <= bounds.y + bounds.height;
+          return e.global.x >= bounds.x &&
+            e.global.x <= bounds.x + bounds.width &&
+            e.global.y >= bounds.y &&
+            e.global.y <= bounds.y + bounds.height;
         });
-        
+
         // Always call canvas click handler for shape creation, even when locked
         if (!hitElement) {
           props.handleCanvasClick(e);
@@ -485,15 +485,15 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         const hitElement = props.elements.find(element => {
           const shapeRef = props.shapeRefs.current[element.id];
           if (!shapeRef) return false;
-          
+
           // Check if the click point is within the element's bounds
           const bounds = (shapeRef as Container).getBounds();
-          return e.global.x >= bounds.x && 
-                 e.global.x <= bounds.x + bounds.width && 
-                 e.global.y >= bounds.y && 
-                 e.global.y <= bounds.y + bounds.height;
+          return e.global.x >= bounds.x &&
+            e.global.x <= bounds.x + bounds.width &&
+            e.global.y >= bounds.y &&
+            e.global.y <= bounds.y + bounds.height;
         });
-        
+
         // Only call canvas click handler if no element was hit
         if (!hitElement) {
           props.handleCanvasClick(e);
@@ -658,11 +658,11 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
       }).map((el) => {
         // Handle all element types consistently, including SVGs
         return (
-                          <pixiContainer
-                  key={el.id}
-                  x={el.x}
-                  y={el.y}
-                  pivot={{ x: 0, y: 0 }}
+          <pixiContainer
+            key={el.id}
+            x={el.x}
+            y={el.y}
+            pivot={{ x: 0, y: 0 }}
             interactive={true}
             eventMode="dynamic"
             hitArea={(() => {
@@ -693,7 +693,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
               return undefined;
             })()}
             rotation={el.rotation || 0}
-                              onPointerDown={handleElementPointerDown(el.id, el.x, el.y)}
+            onPointerDown={handleElementPointerDown(el.id, el.x, el.y)}
             onPointerUp={handlePointerUp}
             onPointerUpOutside={handlePointerUp}
             onPointerOver={handleElementMouseMove(el.id)}
@@ -793,9 +793,9 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
               currentPath.slice(1).forEach(point => {
                 g.lineTo(point.x + centerX, point.y + centerY);
               });
-              g.stroke({ 
-                width: 2, 
-                color: 0x000000, 
+              g.stroke({
+                width: 2,
+                color: 0x000000,
                 alpha: 1,
                 cap: 'round',
                 join: 'round'
@@ -820,7 +820,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
               // Find the first line in the chain by its ID
               const firstLineId = chainedLineIds[0];
               const firstLine = elements.find(el => el.id === firstLineId);
-              
+
               if (firstLine?.lineOptions?.points?.start) {
                 const originalStartPoint = firstLine.lineOptions.points.start;
                 const distanceToOriginalStart = Math.hypot(mousePos.x - originalStartPoint.x, mousePos.y - originalStartPoint.y);
@@ -907,19 +907,31 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
 
           if (selectedElement.type === 'triangle') {
             // For triangles, place handle at the top corner only
-            const height = selectedElement.height;
+            const tl = { x: -selectedElement.width / 2 + totalDistance, y: -selectedElement.height / 2 + totalDistance }
+            const tr = { x: selectedElement.width / 2 - totalDistance, y: -selectedElement.height / 2 + totalDistance }
 
-            // Calculate triangle top corner position relative to shape center
-            const localPosition = { x: 0, y: -height / 2 + totalDistance };
+            const localPositions = {
+              tmid: { x: (tl.x + tr.x) / 2, y: -selectedElement.height / 2 + totalDistance + 8 },
+              bl: { x: -selectedElement.width / 2 + totalDistance + 8, y: selectedElement.height / 2 - totalDistance },
+              br: { x: selectedElement.width / 2 - totalDistance - 8, y: selectedElement.height / 2 - totalDistance }
+            };
 
             // Apply rotation transformation
             const cos = Math.cos(rotation);
             const sin = Math.sin(rotation);
 
             return {
-              top: {
-                x: selectedElement.x + localPosition.x * cos - localPosition.y * sin + centerX,
-                y: selectedElement.y + localPosition.x * sin + localPosition.y * cos + centerY
+              tmid: {
+                x: selectedElement.x + localPositions.tmid.x * cos - localPositions.tmid.y * sin,
+                y: selectedElement.y + localPositions.tmid.x * sin + localPositions.tmid.y * cos
+              },
+              bl: {
+                x: selectedElement.x + localPositions.bl.x * cos - localPositions.bl.y * sin,
+                y: selectedElement.y + localPositions.bl.x * sin + localPositions.bl.y * cos
+              },
+              br: {
+                x: selectedElement.x + localPositions.br.x * cos - localPositions.br.y * sin,
+                y: selectedElement.y + localPositions.br.x * sin + localPositions.br.y * cos
               }
             };
           } else {
@@ -1072,24 +1084,60 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
               </>
             )}
 
-            {/* Triangle: Single radius handle at top corner */}
-            {selectedElement.type === 'triangle' && radiusPositions.top && (
-              <RadiusHandle
-                x={radiusPositions.top.x}
-                y={radiusPositions.top.y}
-                scaleFactor={canvasScaleFactor.current}
-                corner="top"
-                currentRadius={selectedElement.cornerRadius || 0}
-                onRadiusChange={(newRadius) => {
-                  const radiusChangeEvent = new CustomEvent('element-border-radius-change', {
-                    detail: {
-                      id: selectedElement.id,
-                      cornerRadius: newRadius
-                    }
-                  });
-                  window.dispatchEvent(radiusChangeEvent);
-                }}
-              />
+            {/* Triangle: Triangle radius handles */}
+            {selectedElement.type === 'triangle' && radiusPositions.tmid && (
+              <>
+                <RadiusHandle
+                  x={radiusPositions.tmid.x}
+                  y={radiusPositions.tmid.y}
+                  scaleFactor={canvasScaleFactor.current}
+                  corner="top"
+                  currentRadius={selectedElement.cornerRadius || 0}
+                  onRadiusChange={(newRadius) => {
+                    const radiusChangeEvent = new CustomEvent('element-border-radius-change', {
+                      detail: {
+                        id: selectedElement.id,
+                        cornerRadius: newRadius
+                      }
+                    });
+                    window.dispatchEvent(radiusChangeEvent);
+                  }}
+                />
+
+                <RadiusHandle
+                  x={radiusPositions.bl.x}
+                  y={radiusPositions.bl.y}
+                  scaleFactor={canvasScaleFactor.current}
+                  corner="bl"
+                  currentRadius={selectedElement.cornerRadius || 0}
+                  onRadiusChange={(newRadius) => {
+                    const radiusChangeEvent = new CustomEvent('element-border-radius-change', {
+                      detail: {
+                        id: selectedElement.id,
+                        cornerRadius: newRadius
+                      }
+                    });
+                    window.dispatchEvent(radiusChangeEvent);
+                  }}
+                />
+
+                <RadiusHandle
+                  x={radiusPositions.br.x}
+                  y={radiusPositions.br.y}
+                  scaleFactor={canvasScaleFactor.current}
+                  corner="br"
+                  currentRadius={selectedElement.cornerRadius || 0}
+                  onRadiusChange={(newRadius) => {
+                    const radiusChangeEvent = new CustomEvent('element-border-radius-change', {
+                      detail: {
+                        id: selectedElement.id,
+                        cornerRadius: newRadius
+                      }
+                    });
+                    window.dispatchEvent(radiusChangeEvent);
+                  }}
+                />
+              </>
             )}
           </React.Fragment>
         );
