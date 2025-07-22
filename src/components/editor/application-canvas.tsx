@@ -52,7 +52,6 @@ interface ApplicationCanvasProps {
   onZoomChange?: (zoom: number) => void;
   canvasZoom?: number;
   onCanvasZoomChange?: (zoom: number) => void;
-  isLocked?: boolean;
   // Snapping handlers
   onSnapElement?: (element: AnimatedCanvasObject, allElements: AnimatedCanvasObject[]) => { x: number; y: number; guides: SnapGuide[] };
   onSnapPoint?: (point: { x: number; y: number }, event?: { shiftKey?: boolean }) => { x: number; y: number };
@@ -189,29 +188,10 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       };
     }, [onCanvasZoomChange]);
 
-
-
-    const handleContextMenuAction = useCallback((action: string) => {
+    const handleContextMenuAction = useCallback(() => {
       // Handle context menu actions
-      console.log('Context menu action:', action);
       setContextMenu(null);
     }, []);
-
-    // Control viewport drag based on lock state
-    useEffect(() => {
-      if (viewportRef.current) {
-        const viewport = viewportRef.current;
-        if (props.isLocked) {
-          // Disable viewport drag when locked
-          viewport.plugins.remove('drag');
-          console.log('[ApplicationCanvas] Disabled viewport drag due to lock');
-        } else {
-          // Enable viewport drag when unlocked
-          viewport.drag();
-          console.log('[ApplicationCanvas] Enabled viewport drag');
-        }
-      }
-    }, [props.isLocked]);
 
     useImperativeHandle(ref, () => ({
       getApplication: () => appRef.current,

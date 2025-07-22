@@ -1412,7 +1412,6 @@ export default function EditorCanvas() {
           isElementInCustomOrPolygonGroup={isElementInCustomOrPolygonGroup}
           canvasZoom={canvasZoom}
           onCanvasZoomChange={setCanvasZoom}
-          isLocked={true}
           // Snapping handlers
           onSnapElement={snapElement}
           onSnapPoint={snapPoint}
