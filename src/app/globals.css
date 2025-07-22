@@ -36,6 +36,7 @@ body {
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none; /* Prevent iOS context menu */
+  overscroll-behavior-x: contain; /* Prevent browser history navigation on horizontal scroll/swipe */
 }
 
 /* Ensure other UI elements allow normal browser zoom */

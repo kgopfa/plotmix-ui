@@ -109,6 +109,9 @@ export default function EditorCanvas() {
   // Animation playback state - needed for UI hiding during playback
   const isPlaying = useTimelineStore(state => state.playback.isPlaying);
 
+  // Canvas container ref for wheel event handling
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
+
   // Interactive state for canvas operations
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -892,6 +895,22 @@ export default function EditorCanvas() {
     onUngroup: handleUngroupElements,
   });
 
+  // Block horizontal wheel events to prevent browser navigation
+  useEffect(() => {
+    const node = canvasContainerRef.current;
+    if (!node) return;
+
+    const wheelListener = (e: WheelEvent) => {
+      // Prevent default when horizontal scroll
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+        e.preventDefault();
+      }
+    };
+    node.addEventListener('wheel', wheelListener, { passive: false });
+
+    return () => node.removeEventListener('wheel', wheelListener);
+  }, []);
+
   // Selection navbar handlers
   const handleSelectionNavbarAnimate = useCallback(() => {
     if (selectedObjects.length === 1) {
@@ -1352,7 +1371,11 @@ export default function EditorCanvas() {
       <RightSidebar />
 
       {/* Main Body - Full-screen PIXI Application */}
-      <div className="flex-1 relative overflow-hidden" style={{ marginTop: '64px' }}>
+      <div 
+        ref={canvasContainerRef}
+        className="flex-1 relative overflow-hidden" 
+        style={{ marginTop: '64px' }}
+      >
         <ApplicationCanvas 
           ref={fullscreenCanvasRef}
           dimensions={dimensions}
