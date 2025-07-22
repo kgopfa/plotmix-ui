@@ -11,8 +11,8 @@ import ElementSelect from './element-select';
 import HoverOutline from './hover-outline';
 import CenterHighlight from './center-highlight';
 import RotationHandles from './rotation-handles';
-import ResizeHandle from './resize-handle';
-import RadiusHandle from './radius-handle';
+import ResizeHandles from './resize-handles';
+import RadiusHandles from './radius-handles';
 import { AnimatedTextGroup } from './animated-text-group';
 import { GroupSelection } from './group-selection';
 import { useCanvasState } from '@/stores/use-ui-store';
@@ -890,255 +890,22 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         />
       )}
 
-      {/* Draggable corner squares - only for single selection and when not playing animations */}
+      {/* Element handles - only for single selection and when not playing animations */}
       {!isPlaying && selectedIds.length === 1 && selectedIds.map(selectedId => {
         const selectedElement = elements.find(el => el.id === selectedId);
-
-        if (!selectedElement || selectedElement.type === 'line' || selectedElement.type === 'path') {
-          return null;
-        }
-
-        // Calculate radius handle positions (different for rectangles vs triangles)
-        const getRadiusHandlePositions = () => {
-          const baseDistance = 12;
-          const radiusOffset = selectedElement.cornerRadius || 0;
-          const totalDistance = baseDistance + radiusOffset;
-          const rotation = selectedElement.rotation || 0;
-
-          if (selectedElement.type === 'triangle') {
-            // For triangles, place handle at the top corner only
-            const tl = { x: -selectedElement.width / 2 + totalDistance, y: -selectedElement.height / 2 + totalDistance }
-            const tr = { x: selectedElement.width / 2 - totalDistance, y: -selectedElement.height / 2 + totalDistance }
-
-            const localPositions = {
-              tmid: { x: (tl.x + tr.x) / 2, y: -selectedElement.height / 2 + totalDistance + 8 },
-              bl: { x: -selectedElement.width / 2 + totalDistance + 8, y: selectedElement.height / 2 - totalDistance },
-              br: { x: selectedElement.width / 2 - totalDistance - 8, y: selectedElement.height / 2 - totalDistance }
-            };
-
-            // Apply rotation transformation
-            const cos = Math.cos(rotation);
-            const sin = Math.sin(rotation);
-
-            return {
-              tmid: {
-                x: selectedElement.x + localPositions.tmid.x * cos - localPositions.tmid.y * sin,
-                y: selectedElement.y + localPositions.tmid.x * sin + localPositions.tmid.y * cos
-              },
-              bl: {
-                x: selectedElement.x + localPositions.bl.x * cos - localPositions.bl.y * sin,
-                y: selectedElement.y + localPositions.bl.x * sin + localPositions.bl.y * cos
-              },
-              br: {
-                x: selectedElement.x + localPositions.br.x * cos - localPositions.br.y * sin,
-                y: selectedElement.y + localPositions.br.x * sin + localPositions.br.y * cos
-              }
-            };
-          } else {
-            // For rectangles, use the existing 4-corner logic
-            const localPositions = {
-              tl: { x: -selectedElement.width / 2 + totalDistance, y: -selectedElement.height / 2 + totalDistance },
-              tr: { x: selectedElement.width / 2 - totalDistance, y: -selectedElement.height / 2 + totalDistance },
-              bl: { x: -selectedElement.width / 2 + totalDistance, y: selectedElement.height / 2 - totalDistance },
-              br: { x: selectedElement.width / 2 - totalDistance, y: selectedElement.height / 2 - totalDistance }
-            };
-
-            // Apply rotation transformation
-            const cos = Math.cos(rotation);
-            const sin = Math.sin(rotation);
-
-            return {
-              tl: {
-                x: selectedElement.x + localPositions.tl.x * cos - localPositions.tl.y * sin,
-                y: selectedElement.y + localPositions.tl.x * sin + localPositions.tl.y * cos
-              },
-              tr: {
-                x: selectedElement.x + localPositions.tr.x * cos - localPositions.tr.y * sin,
-                y: selectedElement.y + localPositions.tr.x * sin + localPositions.tr.y * cos
-              },
-              bl: {
-                x: selectedElement.x + localPositions.bl.x * cos - localPositions.bl.y * sin,
-                y: selectedElement.y + localPositions.bl.x * sin + localPositions.bl.y * cos
-              },
-              br: {
-                x: selectedElement.x + localPositions.br.x * cos - localPositions.br.y * sin,
-                y: selectedElement.y + localPositions.br.x * sin + localPositions.br.y * cos
-              }
-            };
-          }
-        };
-
-        const radiusPositions = getRadiusHandlePositions();
+        
+        if (!selectedElement) return null;
 
         return (
           <React.Fragment key={`handles-${selectedId}`}>
             {/* Resize Handles */}
-            <ResizeHandle
-              elementX={selectedElement.x}
-              elementY={selectedElement.y}
-              elementWidth={selectedElement.width}
-              elementHeight={selectedElement.height}
-              elementRotation={selectedElement.rotation || 0}
-              corner="tl"
-              elementId={selectedElement.id}
+            <ResizeHandles element={selectedElement} />
+            
+            {/* Radius Handles */}
+            <RadiusHandles 
+              element={selectedElement} 
+              scaleFactor={canvasScaleFactor.current} 
             />
-            <ResizeHandle
-              elementX={selectedElement.x}
-              elementY={selectedElement.y}
-              elementWidth={selectedElement.width}
-              elementHeight={selectedElement.height}
-              elementRotation={selectedElement.rotation || 0}
-              corner="tr"
-              elementId={selectedElement.id}
-            />
-            <ResizeHandle
-              elementX={selectedElement.x}
-              elementY={selectedElement.y}
-              elementWidth={selectedElement.width}
-              elementHeight={selectedElement.height}
-              elementRotation={selectedElement.rotation || 0}
-              corner="bl"
-              elementId={selectedElement.id}
-            />
-            <ResizeHandle
-              elementX={selectedElement.x}
-              elementY={selectedElement.y}
-              elementWidth={selectedElement.width}
-              elementHeight={selectedElement.height}
-              elementRotation={selectedElement.rotation || 0}
-              corner="br"
-              elementId={selectedElement.id}
-            />
-
-            {/* Radius Handles (only for rectangle/triangle) */}
-            {selectedElement.type === 'rectangle' && radiusPositions.tl && (
-              <>
-                {/* Rectangle: 4 corner radius handles */}
-                <RadiusHandle
-                  x={radiusPositions.tl.x}
-                  y={radiusPositions.tl.y}
-                  scaleFactor={canvasScaleFactor.current}
-                  corner="tl"
-                  currentRadius={selectedElement.cornerRadius || 0}
-                  onRadiusChange={(newRadius) => {
-                    const radiusChangeEvent = new CustomEvent('element-border-radius-change', {
-                      detail: {
-                        id: selectedElement.id,
-                        cornerRadius: newRadius
-                      }
-                    });
-                    window.dispatchEvent(radiusChangeEvent);
-                  }}
-                />
-
-                <RadiusHandle
-                  x={radiusPositions.tr.x}
-                  y={radiusPositions.tr.y}
-                  scaleFactor={canvasScaleFactor.current}
-                  corner="tr"
-                  currentRadius={selectedElement.cornerRadius || 0}
-                  onRadiusChange={(newRadius) => {
-                    const radiusChangeEvent = new CustomEvent('element-border-radius-change', {
-                      detail: {
-                        id: selectedElement.id,
-                        cornerRadius: newRadius
-                      }
-                    });
-                    window.dispatchEvent(radiusChangeEvent);
-                  }}
-                />
-
-                <RadiusHandle
-                  x={radiusPositions.bl.x}
-                  y={radiusPositions.bl.y}
-                  scaleFactor={canvasScaleFactor.current}
-                  corner="bl"
-                  currentRadius={selectedElement.cornerRadius || 0}
-                  onRadiusChange={(newRadius) => {
-                    const radiusChangeEvent = new CustomEvent('element-border-radius-change', {
-                      detail: {
-                        id: selectedElement.id,
-                        cornerRadius: newRadius
-                      }
-                    });
-                    window.dispatchEvent(radiusChangeEvent);
-                  }}
-                />
-
-                <RadiusHandle
-                  x={radiusPositions.br.x}
-                  y={radiusPositions.br.y}
-                  scaleFactor={canvasScaleFactor.current}
-                  corner="br"
-                  currentRadius={selectedElement.cornerRadius || 0}
-                  onRadiusChange={(newRadius) => {
-                    const radiusChangeEvent = new CustomEvent('element-border-radius-change', {
-                      detail: {
-                        id: selectedElement.id,
-                        cornerRadius: newRadius
-                      }
-                    });
-                    window.dispatchEvent(radiusChangeEvent);
-                  }}
-                />
-              </>
-            )}
-
-            {/* Triangle: Triangle radius handles */}
-            {selectedElement.type === 'triangle' && radiusPositions.tmid && (
-              <>
-                <RadiusHandle
-                  x={radiusPositions.tmid.x}
-                  y={radiusPositions.tmid.y}
-                  scaleFactor={canvasScaleFactor.current}
-                  corner="top"
-                  currentRadius={selectedElement.cornerRadius || 0}
-                  onRadiusChange={(newRadius) => {
-                    const radiusChangeEvent = new CustomEvent('element-border-radius-change', {
-                      detail: {
-                        id: selectedElement.id,
-                        cornerRadius: newRadius
-                      }
-                    });
-                    window.dispatchEvent(radiusChangeEvent);
-                  }}
-                />
-
-                <RadiusHandle
-                  x={radiusPositions.bl.x}
-                  y={radiusPositions.bl.y}
-                  scaleFactor={canvasScaleFactor.current}
-                  corner="bl"
-                  currentRadius={selectedElement.cornerRadius || 0}
-                  onRadiusChange={(newRadius) => {
-                    const radiusChangeEvent = new CustomEvent('element-border-radius-change', {
-                      detail: {
-                        id: selectedElement.id,
-                        cornerRadius: newRadius
-                      }
-                    });
-                    window.dispatchEvent(radiusChangeEvent);
-                  }}
-                />
-
-                <RadiusHandle
-                  x={radiusPositions.br.x}
-                  y={radiusPositions.br.y}
-                  scaleFactor={canvasScaleFactor.current}
-                  corner="br"
-                  currentRadius={selectedElement.cornerRadius || 0}
-                  onRadiusChange={(newRadius) => {
-                    const radiusChangeEvent = new CustomEvent('element-border-radius-change', {
-                      detail: {
-                        id: selectedElement.id,
-                        cornerRadius: newRadius
-                      }
-                    });
-                    window.dispatchEvent(radiusChangeEvent);
-                  }}
-                />
-              </>
-            )}
           </React.Fragment>
         );
       })}
