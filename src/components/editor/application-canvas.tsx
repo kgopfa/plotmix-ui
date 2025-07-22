@@ -130,6 +130,23 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       };
     }, [appRef]);
 
+    // Prevent default pinch zoom on desktop browsers while allowing PIXI viewport zoom
+    useEffect(() => {
+      const node = canvasContainerRef.current;
+      if (!node) return;
+
+      const onWheel = (e: WheelEvent) => {
+        if (e.ctrlKey) {
+          // Only prevent default when pinch-zoom gesture detected
+          e.preventDefault();
+        }
+      };
+
+      node.addEventListener('wheel', onWheel, { passive: false });
+
+      return () => node.removeEventListener('wheel', onWheel);
+    }, []);
+
     // Handle canvas zoom changes from timeline
     useEffect(() => {
       if (viewportRef.current && canvasZoom !== undefined) {
@@ -207,13 +224,6 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       <div
         ref={canvasContainerRef}
         className="absolute inset-0 bg-slate-100 canvas-area"
-        style={{
-          // Prevent browser zoom within this area
-          touchAction: 'none',
-          userSelect: 'none',
-          WebkitUserSelect: 'none',
-          WebkitTouchCallout: 'none'
-        }}
         onMouseDown={(e) => {
           console.log('[ApplicationCanvas] Mouse down on container', { x: e.clientX, y: e.clientY });
         }}
