@@ -12,7 +12,10 @@ export class ViewportWrapper extends BaseViewport {
       events: app.renderer.events,
     });
     this
-      .drag()
+      .drag({
+        pressDrag: false,
+        wheel: true,
+      })
       .pinch()
       .wheel({
         percent: 0.08,
