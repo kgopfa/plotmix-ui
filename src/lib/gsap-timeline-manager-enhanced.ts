@@ -59,21 +59,11 @@ export class GSAPTimelineManagerEnhanced extends GSAPTimelineManager {
     const startTime = performance.now();
 
     try {
-      console.log('🎬 Enhanced Timeline Manager: Building timeline...');
-      console.log('🎬 Elements with animations:', elements.filter(el => !el.isAnimationPath && el.animations?.length > 0).map(el => ({
-        id: el.id,
-        name: el.name,
-        animationCount: el.animations.length,
-        animations: el.animations.map(a => ({ id: a.id, type: a.type, duration: a.duration }))
-      })));
-
       // Performance check - skip if no animations and already optimized
       if (!this.hasAnimations(elements, groups)) {
         if (this.timeline.duration() === 0) {
-          console.log('🎬 Skipping timeline build - no animations found and timeline is empty');
           return;
         } else {
-          console.log('🎬 Clearing timeline - no animations found but timeline has content');
           this.clearTimeline();
           return;
         }
@@ -86,20 +76,15 @@ export class GSAPTimelineManagerEnhanced extends GSAPTimelineManager {
       const changedElements = this.detectChangedElements(elements);
       const changedGroups = this.detectChangedGroups(groups || []);
 
-      console.log('🎬 Changed elements:', changedElements.length, changedElements.map(el => el.id));
-      console.log('🎬 Changed groups:', changedGroups.length, changedGroups.map(g => g.id));
-
       // Force rebuild if we have animations but no timeline content
       const hasTimelineContent = this.timeline.duration() > 0;
       const forceRebuild = !hasTimelineContent && this.hasAnimations(elements, groups);
 
       if (changedElements.length === 0 && changedGroups.length === 0 && !forceRebuild) {
         this.metrics.cacheHits++;
-        console.log('🎬 Cache hit - no changes detected, skipping rebuild');
         return; // No changes, skip rebuild
       }
 
-      console.log(`🎬 Cache miss - rebuilding timeline for ${changedElements.length} elements and ${changedGroups.length} groups ${forceRebuild ? '(forced rebuild)' : ''}`);
       this.metrics.cacheMisses++;
       this.metrics.elementsProcessed += elements.length; // Process all elements for safety
       this.metrics.groupsProcessed += (groups || []).length;
@@ -114,10 +99,7 @@ export class GSAPTimelineManagerEnhanced extends GSAPTimelineManager {
       const rebuildTime = performance.now() - startTime;
       this.updateMetrics(rebuildTime);
 
-      console.log(`🎬 Timeline rebuilt in ${rebuildTime.toFixed(2)}ms`);
-
     } catch (error) {
-      console.error('🎬 Error building animation timeline:', error);
       this.handleTimelineError(error);
     }
   }
@@ -178,27 +160,14 @@ export class GSAPTimelineManagerEnhanced extends GSAPTimelineManager {
    * Check if any animations exist in elements or groups
    */
   private hasAnimations(elements: AnimatedCanvasObject[], groups?: CanvasGroup[]): boolean {
-    console.log('GSAP Enhanced: Checking for animations...');
-    console.log('GSAP Enhanced: Elements:', elements.map(el => ({
-      id: el.id,
-      name: el.name,
-      isAnimationPath: el.isAnimationPath,
-      hasAnimationsArray: !!el.animations,
-      animationCount: el.animations?.length || 0,
-      animations: el.animations
-    })));
-
     const hasElementAnimations = elements.some(el =>
       !el.isAnimationPath && el.animations && el.animations.length > 0
     );
     const hasGroupAnimations = groups?.some(group =>
       !group.isDefaultGroup && group.animations && group.animations.length > 0
     ) ?? false;
-
-    console.log('GSAP Enhanced: hasElementAnimations:', hasElementAnimations);
-    console.log('GSAP Enhanced: hasGroupAnimations:', hasGroupAnimations);
+    
     const result = hasElementAnimations || hasGroupAnimations;
-    console.log('GSAP Enhanced: Final hasAnimations result:', result);
 
     return result;
   }
@@ -318,7 +287,6 @@ export class GSAPTimelineManagerEnhanced extends GSAPTimelineManager {
    * Force clear caches - useful when animations are modified externally
    */
   forceClearCache() {
-    console.log('🎬 Force clearing animation cache');
     this.clearCaches();
   }
 
