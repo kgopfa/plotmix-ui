@@ -539,8 +539,6 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         isLineChaining={isLineChaining}
         chainedLineIds={chainedLineIds}
         elements={elements}
-        centerX={centerX}
-        centerY={centerY}
         canvasContainerRef={containerRef}
       />
 

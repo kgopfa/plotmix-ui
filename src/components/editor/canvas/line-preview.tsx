@@ -9,8 +9,6 @@ interface LinePreviewProps {
   isLineChaining: boolean;
   chainedLineIds: string[];
   elements: AnimatedCanvasObject[];
-  centerX: number;
-  centerY: number;
   canvasContainerRef?: React.RefObject<Container | null>;
 }
 
@@ -21,8 +19,6 @@ export const LinePreview: React.FC<LinePreviewProps> = ({
   isLineChaining,
   chainedLineIds,
   elements,
-  centerX,
-  centerY,
   canvasContainerRef,
 }) => {
   // Only render when we have the necessary data for line preview
@@ -57,14 +53,7 @@ export const LinePreview: React.FC<LinePreviewProps> = ({
     return null;
   }
 
-  // Debug logging to understand coordinate systems
-  console.log('[LinePreview] Coordinates:', {
-    globalMousePos: mousePos,
-    localMousePos,
-    lineStartPoint,
-    centerX,
-    centerY
-  });
+
 
   return (
     <pixiGraphics
@@ -115,10 +104,10 @@ export const LinePreview: React.FC<LinePreviewProps> = ({
           const startRatio = (i * totalDashLength) / distance;
           const endRatio = Math.min((i * totalDashLength + dashLength) / distance, 1);
 
-          const startX = lineStartPoint.x + dx * startRatio + centerX;
-          const startY = lineStartPoint.y + dy * startRatio + centerY;
-          const endX = lineStartPoint.x + dx * endRatio + centerX;
-          const endY = lineStartPoint.y + dy * endRatio + centerY;
+          const startX = lineStartPoint.x + dx * startRatio;
+          const startY = lineStartPoint.y + dy * startRatio;
+          const endX = lineStartPoint.x + dx * endRatio;
+          const endY = lineStartPoint.y + dy * endRatio;
 
           g.moveTo(startX, startY);
           g.lineTo(endX, endY);
@@ -136,8 +125,8 @@ export const LinePreview: React.FC<LinePreviewProps> = ({
           const HANDLE_SIZE = 7;
           const halfSize = HANDLE_SIZE / 2;
           g.rect(
-            lineStartPoint.x - halfSize + centerX, 
-            lineStartPoint.y - halfSize + centerY, 
+            lineStartPoint.x - halfSize, 
+            lineStartPoint.y - halfSize, 
             HANDLE_SIZE, 
             HANDLE_SIZE
           );
@@ -148,16 +137,16 @@ export const LinePreview: React.FC<LinePreviewProps> = ({
         // Draw end point indicator - special styling if can close shape
         if (canCloseShape) {
           // Draw a larger, green circle to indicate shape closing
-          g.circle(snapToPoint.x + centerX, snapToPoint.y + centerY, 8);
+          g.circle(snapToPoint.x, snapToPoint.y, 8);
           g.fill({ color: 0x4CAF50, alpha: 0.8 });
           g.stroke({ color: 0x2E7D32, width: 2 });
 
           // Draw inner circle
-          g.circle(snapToPoint.x + centerX, snapToPoint.y + centerY, 4);
+          g.circle(snapToPoint.x, snapToPoint.y, 4);
           g.fill({ color: 0xFFFFFF, alpha: 0.9 });
         } else {
           // Regular end point indicator
-          g.circle(snapToPoint.x + centerX, snapToPoint.y + centerY, 4);
+          g.circle(snapToPoint.x, snapToPoint.y, 4);
           g.fill({ color: 0x888888, alpha: 0.7 });
         }
       }}

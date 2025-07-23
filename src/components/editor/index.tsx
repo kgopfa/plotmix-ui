@@ -1093,12 +1093,7 @@ export default function EditorCanvas() {
     const shiftKey = 'shiftKey' in e.nativeEvent ? e.nativeEvent.shiftKey : false;
     const snappedPos = snapPoint({ x: localPos.x, y: localPos.y }, { shiftKey });
     
-    console.log('handleCanvasClick fired', {
-      tool: toolState.activeTool,
-      isShapeTool: ['rectangle', 'circle', 'triangle', 'arc', 'text', 'textGroup'].includes(toolState.activeTool),
-      coords: { x: e.global.x, y: e.global.y },
-      localCoords: { x: localPos.x, y: localPos.y }
-    });
+
     
     if (toolState.activeTool === 'select') {
       // Clear selections when clicking on empty canvas
@@ -1139,11 +1134,7 @@ export default function EditorCanvas() {
               finalLine.isAnimationPath = true;
             }
 
-            setCanvasObjects(prev => {
-              const updated = [...prev, finalLine];
-              console.log('setCanvasObjects called (polygon close), new length:', updated.length);
-              return updated;
-            });
+            setCanvasObjects(prev => [...prev, finalLine]);
             addChainedLineId(finalLine.id);
             
             // Now trigger polygon closure
@@ -1164,6 +1155,13 @@ export default function EditorCanvas() {
         const startPoint = toolState.lineStartPoint;
         const endPoint = { x: snappedPos.x, y: snappedPos.y };
         
+        // Check if the line has sufficient length (minimum 5 pixels)
+        const distance = Math.hypot(endPoint.x - startPoint.x, endPoint.y - startPoint.y);
+        
+        if (distance < 5) {
+          return;
+        }
+        
         const newElement = createNewObject(
           'line', 
           0, 0, // Position will be calculated in createLine
@@ -1183,12 +1181,7 @@ export default function EditorCanvas() {
           newElement.isAnimationPath = true;
         }
 
-        console.log('About to create line element:', newElement);
-        setCanvasObjects(prev => {
-          const updated = [...prev, newElement];
-          console.log('setCanvasObjects called (line), new length:', updated.length);
-          return updated;
-        });
+        setCanvasObjects(prev => [...prev, newElement]);
         selectElement([newElement]);
 
         // Handle line chaining for polygon creation
@@ -1208,7 +1201,6 @@ export default function EditorCanvas() {
 
     // Handle other creation tools (non-line tools)
     if (['rectangle', 'circle', 'triangle', 'arc', 'text', 'textGroup'].includes(toolState.activeTool)) {
-      console.log('About to create element:', toolState.activeTool, { x: snappedPos.x, y: snappedPos.y });
       const newElement = createNewObject(toolState.activeTool as 'rectangle' | 'circle' | 'triangle' | 'arc' | 'text' | 'textGroup', snappedPos.x, snappedPos.y, canvasObjects);
       
       // If in path mode, mark it as a path
@@ -1216,11 +1208,7 @@ export default function EditorCanvas() {
         newElement.isAnimationPath = true;
       }
 
-      setCanvasObjects(prev => {
-        const updated = [...prev, newElement];
-        console.log('setCanvasObjects called (shape), new length:', updated.length);
-        return updated;
-      });
+      setCanvasObjects(prev => [...prev, newElement]);
       selectElement([newElement]);
       
       // Switch to select tool after creating elements
