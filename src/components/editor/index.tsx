@@ -1348,15 +1348,12 @@ export default function EditorCanvas() {
     const isMultiSelect = (e.nativeEvent && 'metaKey' in e.nativeEvent) ?
       (e.nativeEvent.metaKey || e.nativeEvent.ctrlKey) : false;
 
-    if (toolState.activeTool !== 'select' && toolState.activeTool !== 'draw') {
-      e.stopPropagation();
-      handleCanvasClick(e);
-      return;
+    // Only handle selection for select/draw tools; do nothing for other tools
+    if (toolState.activeTool === 'select' || toolState.activeTool === 'draw') {
+      handleSelectElement(id, isMultiSelect);
     }
-
-    // Handle element selection
-    handleSelectElement(id, isMultiSelect);
-  }, [toolState.activeTool, handleCanvasClick, handleSelectElement]);
+    // For other tools, do nothing (do not call handleCanvasClick)
+  }, [toolState.activeTool, handleSelectElement]);
 
   const handleElementMouseMove = useCallback((id: string) => (_e: FederatedPointerEvent) => {
     setHoveredId(id);

@@ -39,18 +39,42 @@ export const useElementPointerHandlers = ({
       return;
     }
 
-    // When using creation tools (not select), call the canvas click handler directly
-    // to create new objects on top of existing shapes
-    if (tool !== 'select' && tool !== 'draw') {
-      e.stopPropagation();
-      handleCanvasClick(e);
-      return;
-    }
-
     // For draw tool, allow drawing to start on existing elements
     if (tool === 'draw') {
       // Let the drawing behavior happen, don't stop propagation
       handleCanvasPointerDown(e);
+      return;
+    }
+
+    // Special case: shape closing during line chaining mode
+    if (tool !== 'select' && tool !== 'draw') {
+      // Only allow shape closing logic for lines
+      const pos = e.global;
+      const element = elements.find(el => el.id === id);
+      if (
+        isLineChaining &&
+        lineStartPoint &&
+        element &&
+        element.type === 'line' &&
+        element.lineOptions?.points
+      ) {
+        const { start } = element.lineOptions.points;
+        const clickX = pos.x;
+        const clickY = pos.y;
+        const ENDPOINT_CLICK_SIZE = 15;
+        const halfSize = ENDPOINT_CLICK_SIZE / 2;
+        if (
+          clickX >= start.x - halfSize &&
+          clickX <= start.x + halfSize &&
+          clickY >= start.y - halfSize &&
+          clickY <= start.y + halfSize
+        ) {
+          e.stopPropagation();
+          handleCanvasClick(e); // This will trigger the shape closing logic
+          return;
+        }
+      }
+      // For other tools, do nothing (do not call handleCanvasClick or select)
       return;
     }
 
@@ -62,27 +86,7 @@ export const useElementPointerHandlers = ({
     // Also keep PIXI world coordinates for certain operations
     const pos = e.global;
     const element = elements.find(el => el.id === id);
-
     if (!element) return;
-
-    // Check for shape closing during line chaining mode
-    if (isLineChaining && lineStartPoint && element.type === 'line' && element.lineOptions?.points) {
-      const { start } = element.lineOptions.points;
-      const clickX = pos.x;
-      const clickY = pos.y;
-
-      // Use larger click area for easier polygon closing - 15px instead of 7px
-      const ENDPOINT_CLICK_SIZE = 15;
-      const halfSize = ENDPOINT_CLICK_SIZE / 2;
-
-      if (clickX >= start.x - halfSize && clickX <= start.x + halfSize &&
-        clickY >= start.y - halfSize && clickY <= start.y + halfSize) {
-        // Close the shape by connecting to the start point
-        e.stopPropagation();
-        handleCanvasClick(e); // This will trigger the shape closing logic
-        return;
-      }
-    }
 
     // Handle textgroup character clicks - redirect to parent textGroup with double-click support
     if (isTextGroupCharacter(element)) {
@@ -92,7 +96,6 @@ export const useElementPointerHandlers = ({
         const currentTime = Date.now();
         const lastClickTime = textClickTimeRef.current.get(parentTextGroup.id) || 0;
         const timeDiff = currentTime - lastClickTime;
-
         if (timeDiff < 300) { // Double-click detected (within 300ms)
           // Handle double-click for text editing
           textClickTimeRef.current.delete(parentTextGroup.id); // Clear the click time
@@ -101,7 +104,6 @@ export const useElementPointerHandlers = ({
           // Single click - store the time and continue with selection logic
           textClickTimeRef.current.set(parentTextGroup.id, currentTime);
         }
-
         // Select the parent textGroup instead of the character
         selectElement([parentTextGroup], isMultiSelect);
         startDragging(parentTextGroup.id, pos.x - parentTextGroup.x, pos.y - parentTextGroup.y);
@@ -118,7 +120,6 @@ export const useElementPointerHandlers = ({
       const currentTime = Date.now();
       const lastClickTime = textClickTimeRef.current.get(id) || 0;
       const timeDiff = currentTime - lastClickTime;
-
       if (timeDiff < 300) { // Double-click detected (within 300ms)
         // Handle double-click for text editing
         textClickTimeRef.current.delete(id); // Clear the click time
@@ -135,22 +136,24 @@ export const useElementPointerHandlers = ({
       const { start, end } = element.lineOptions.points;
       const clickX = pos.x;
       const clickY = pos.y;
-
-      // Use larger click area for easier endpoint interaction - 12px instead of 7px
       const ENDPOINT_CLICK_SIZE = 12;
       const halfSize = ENDPOINT_CLICK_SIZE / 2;
-
-      // Check if click is within start point square bounds
-      if (clickX >= start.x - halfSize && clickX <= start.x + halfSize &&
-        clickY >= start.y - halfSize && clickY <= start.y + halfSize) {
+      if (
+        clickX >= start.x - halfSize &&
+        clickX <= start.x + halfSize &&
+        clickY >= start.y - halfSize &&
+        clickY <= start.y + halfSize
+      ) {
         startEndpointDragging(id, 'start');
         selectElement([element], isMultiSelect);
         return;
       }
-
-      // Check if clicking near end point (larger click area for easier interaction)
-      if (clickX >= end.x - halfSize && clickX <= end.x + halfSize &&
-        clickY >= end.y - halfSize && clickY <= end.y + halfSize) {
+      if (
+        clickX >= end.x - halfSize &&
+        clickX <= end.x + halfSize &&
+        clickY >= end.y - halfSize &&
+        clickY <= end.y + halfSize
+      ) {
         startEndpointDragging(id, 'end');
         selectElement([element], isMultiSelect);
         return;
@@ -163,14 +166,12 @@ export const useElementPointerHandlers = ({
       const offsets = selectedIds.map(selectedId => {
         const selectedElement = elements.find(el => el.id === selectedId);
         if (!selectedElement) return { id: selectedId, offsetX: 0, offsetY: 0 };
-
         return {
           id: selectedId,
           offsetX: pos.x - selectedElement.x,
           offsetY: pos.y - selectedElement.y
         };
       });
-
       startDragging(id, pos.x - shapeX, pos.y - shapeY, true, offsets);
       selectElement([element], isMultiSelect);
     } else {
