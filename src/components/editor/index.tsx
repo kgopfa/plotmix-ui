@@ -32,6 +32,7 @@ import { RightSidebar } from './navigation/right-sidebar';
 import { SelectionNavbar } from './navigation/selection';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import type { ApplicationCanvasRef } from './application-canvas';
+import { convertPointerEventToDesignCanvasCoords, debugCoordinateConversion } from '@/utils/coordinate-utils';
 
 
 const ApplicationCanvas = dynamic(() => import('./application-canvas').then(m => m.ApplicationCanvas), { ssr: false });
@@ -1086,12 +1087,23 @@ export default function EditorCanvas() {
       return;
     }
     
-    // Use PIXI's built-in coordinate transformation
-    const localPos = designCanvasContainer.toLocal(e.global);
+    // Use the utility function for consistent coordinate conversion
+    const localPos = convertPointerEventToDesignCanvasCoords(e, designCanvasContainer);
+    
+    // Debug coordinate conversion to help identify the issue
+    debugCoordinateConversion(e.global, localPos, designCanvasContainer);
+    
+    // Ensure we're getting valid coordinates
+    if (isNaN(localPos.x) || isNaN(localPos.y)) {
+      console.warn('[Canvas Click] Invalid coordinates:', localPos);
+      return;
+    }
     
     // Apply snapping to the click position for element creation
     const shiftKey = 'shiftKey' in e.nativeEvent ? e.nativeEvent.shiftKey : false;
     const snappedPos = snapPoint({ x: localPos.x, y: localPos.y }, { shiftKey });
+    
+
     
 
     
@@ -1199,8 +1211,10 @@ export default function EditorCanvas() {
       return;
     }
 
-    // Handle other creation tools (non-line tools)
+        // Handle other creation tools (non-line tools)
     if (['rectangle', 'circle', 'triangle', 'arc', 'text', 'textGroup'].includes(toolState.activeTool)) {
+
+ 
       const newElement = createNewObject(toolState.activeTool as 'rectangle' | 'circle' | 'triangle' | 'arc' | 'text' | 'textGroup', snappedPos.x, snappedPos.y, canvasObjects);
       
       // If in path mode, mark it as a path
@@ -1210,6 +1224,8 @@ export default function EditorCanvas() {
 
       setCanvasObjects(prev => [...prev, newElement]);
       selectElement([newElement]);
+      
+
       
       // Switch to select tool after creating elements
       setActiveTool('select');
@@ -1256,10 +1272,10 @@ export default function EditorCanvas() {
     
     if (toolState.activeTool === 'draw') {
       setIsDrawing(true);
-      // Convert global coordinates to local coordinates within the design canvas
+      // Use the utility function for consistent coordinate conversion
       const designCanvasContainer = e.currentTarget as any;
       if (designCanvasContainer) {
-        const localPos = designCanvasContainer.toLocal(e.global);
+        const localPos = convertPointerEventToDesignCanvasCoords(e, designCanvasContainer);
         const newPoint = { x: localPos.x, y: localPos.y };
         setCurrentPath([newPoint]);
       } else {
@@ -1274,10 +1290,10 @@ export default function EditorCanvas() {
     setMousePos({ x: e.global.x, y: e.global.y });
     
     if (isDrawing && toolState.activeTool === 'draw') {
-      // Convert global coordinates to local coordinates within the design canvas
+      // Use the utility function for consistent coordinate conversion
       const designCanvasContainer = e.currentTarget as any;
       if (designCanvasContainer) {
-        const localPos = designCanvasContainer.toLocal(e.global);
+        const localPos = convertPointerEventToDesignCanvasCoords(e, designCanvasContainer);
         const newPoint = { x: localPos.x, y: localPos.y };
         setCurrentPath(prev => [...prev, newPoint]);
       } else {

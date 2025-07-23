@@ -1,6 +1,7 @@
 import React from 'react';
 import type { AnimatedCanvasObject } from '@/types/canvas';
 import type { Container } from 'pixi.js';
+import { convertGlobalToDesignCanvasCoords } from '@/utils/coordinate-utils';
 
 interface LinePreviewProps {
   tool: string;
@@ -34,9 +35,8 @@ export const LinePreview: React.FC<LinePreviewProps> = ({
     }
 
     try {
-      // Convert global coordinates to local coordinates within the design canvas
-      const localPos = canvasContainerRef.current.toLocal(mousePos);
-      return localPos;
+      // Use the utility function for consistent coordinate conversion
+      return convertGlobalToDesignCanvasCoords(mousePos, canvasContainerRef.current);
     } catch (error) {
       console.warn('Failed to convert mouse coordinates:', error);
       return mousePos;
