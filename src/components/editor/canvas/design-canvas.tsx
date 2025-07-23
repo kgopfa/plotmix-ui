@@ -224,8 +224,6 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         }
       }}
     >
-
-
       {/* Canvas frame background - positioned in center */}
       <pixiGraphics
         draw={(g) => {
