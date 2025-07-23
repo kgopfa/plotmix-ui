@@ -170,6 +170,12 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         containerRef.current = container;
       }}
       onPointerDown={(e: FederatedPointerEvent) => {
+        // For draw tool, always call handleCanvasPointerDown to start drawing
+        if (props.tool === 'draw') {
+          props.handleCanvasPointerDown(e);
+          return;
+        }
+        
         // Only call canvas click handler if no element was clicked
         // This prevents deselection when clicking on elements
         const hitElement = props.elements.find(element => {
@@ -192,7 +198,6 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
       onPointerMove={(e: FederatedPointerEvent) => {
         // Call the canvas pointer move handler for drawing and other interactions
         props.handleCanvasPointerMove(e);
-
       }}
       onPointerUp={() => {
         // Call the canvas pointer up handler
@@ -203,7 +208,6 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         props.handlePointerUp();
       }}
       onClick={(e: FederatedPointerEvent) => {
-        console.log('[DesignCanvas] onClick called', { x: e.global.x, y: e.global.y });
         // Only call canvas click handler if no element was clicked
         // This prevents deselection when clicking on elements
         const hitElement = props.elements.find(element => {
@@ -511,9 +515,9 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           draw={(g) => {
             g.clear();
             if (currentPath.length > 1) {
-              g.moveTo(currentPath[0].x + centerX, currentPath[0].y + centerY);
+              g.moveTo(currentPath[0].x, currentPath[0].y);
               currentPath.slice(1).forEach(point => {
-                g.lineTo(point.x + centerX, point.y + centerY);
+                g.lineTo(point.x, point.y);
               });
               g.stroke({
                 width: 2,

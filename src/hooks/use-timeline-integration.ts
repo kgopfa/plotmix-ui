@@ -40,7 +40,6 @@ export function useTimelineIntegration() {
     
     // Build initial timeline with all elements using Enhanced Timeline Manager
     buildGSAPTimeline();
-    console.log(`🎬 Enhanced Timeline Manager initialized with ${elements.length} elements and ${groups.length} groups`);
   }, [elements, groups, buildGSAPTimeline]);
 
   // Enhanced animation handlers that sync with both stores
@@ -90,8 +89,6 @@ export function useTimelineIntegration() {
 
   // Enhanced timeline rebuild that syncs both stores first
   const rebuildTimeline = useCallback(() => {
-    console.log('🔄 Rebuilding timeline with Enhanced Timeline Manager...');
-    
     // Sync Timeline Store with Canvas Store first
     const canvasElements = useCanvasStore.getState().getAllElements();
     const canvasGroups = useCanvasStore.getState().getAllGroups();
@@ -110,27 +107,22 @@ export function useTimelineIntegration() {
   // Playback controls
   const playbackControls = {
     play: useCallback(() => {
-      console.log('▶️ Playing timeline');
       timelinePlay();
     }, [timelinePlay]),
     
     pause: useCallback(() => {
-      console.log('⏸️ Pausing timeline');
       timelinePause();
     }, [timelinePause]),
     
     stop: useCallback(() => {
-      console.log('⏹️ Stopping timeline');
       timelineStop();
     }, [timelineStop]),
     
     seek: useCallback((time: number) => {
-      console.log(`⏭️ Seeking to time: ${time}s`);
       timelineSeek(time);
     }, [timelineSeek]),
     
     setSpeed: useCallback((speed: number) => {
-      console.log(`⚡ Setting playback speed: ${speed}x`);
       setPlaybackSpeed(speed);
     }, [setPlaybackSpeed])
   };

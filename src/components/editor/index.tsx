@@ -267,10 +267,6 @@ export default function EditorCanvas() {
   // Enhanced keyboard shortcuts hook will be called after handlers are defined
 
   useEffect(() => {
-    // For now, we'll handle canvas ref integration in the next step
-    // when we integrate pixi-viewport
-    console.log('FullscreenCanvas ref available:', fullscreenCanvasRef.current);
-
     // Cleanup on unmount
     return () => {
       gsapManager.clearTimeline();
@@ -330,7 +326,6 @@ export default function EditorCanvas() {
   // Create group using the unified system
   const createGroup = useCallback(({ elements, type, name, additionalProperties = {}, autoSelect = true, customId }: GroupCreationOptions): CanvasGroup | null => {
     if (!elements || elements.length === 0) {
-      console.warn('Cannot create group: no elements provided');
       return null;
     }
 
@@ -1273,8 +1268,17 @@ export default function EditorCanvas() {
     
     if (toolState.activeTool === 'draw') {
       setIsDrawing(true);
-      const newPoint = { x: e.global.x, y: e.global.y };
-      setCurrentPath([newPoint]);
+      // Convert global coordinates to local coordinates within the design canvas
+      const designCanvasContainer = e.currentTarget as any;
+      if (designCanvasContainer) {
+        const localPos = designCanvasContainer.toLocal(e.global);
+        const newPoint = { x: localPos.x, y: localPos.y };
+        setCurrentPath([newPoint]);
+      } else {
+        // Fallback to global coordinates if container not found
+        const newPoint = { x: e.global.x, y: e.global.y };
+        setCurrentPath([newPoint]);
+      }
     }
   }, [toolState.activeTool, canvasObjects, selectElement]);
 
@@ -1282,18 +1286,58 @@ export default function EditorCanvas() {
     setMousePos({ x: e.global.x, y: e.global.y });
     
     if (isDrawing && toolState.activeTool === 'draw') {
-      const newPoint = { x: e.global.x, y: e.global.y };
-      setCurrentPath(prev => [...prev, newPoint]);
+      // Convert global coordinates to local coordinates within the design canvas
+      const designCanvasContainer = e.currentTarget as any;
+      if (designCanvasContainer) {
+        const localPos = designCanvasContainer.toLocal(e.global);
+        const newPoint = { x: localPos.x, y: localPos.y };
+        setCurrentPath(prev => [...prev, newPoint]);
+      } else {
+        // Fallback to global coordinates if container not found
+        const newPoint = { x: e.global.x, y: e.global.y };
+        setCurrentPath(prev => [...prev, newPoint]);
+      }
     }
   }, [isDrawing, toolState.activeTool]);
 
   const handlePointerUp = useCallback(() => {
     if (isDrawing && toolState.activeTool === 'draw') {
       setIsDrawing(false);
-      // Handle draw completion logic here
+      
+      // Create a path element from the drawn path if we have enough points
+      if (currentPath.length >= 2) {
+        // Create a path element using the current path points
+        const newPathElement = createNewObject(
+          'path',
+          0, 0, // Position will be calculated in createPath
+          canvasObjects,
+          currentPath, // Pass the path points
+          toolState.isPathMode, // Mark as path if in path mode
+          undefined, // imageData
+          undefined, // width
+          undefined, // height
+          undefined  // text
+        );
+        
+        // If in path mode, mark it as an animation path
+        if (toolState.isPathMode) {
+          newPathElement.isAnimationPath = true;
+        }
+        
+        // Add the path element to the canvas
+        setCanvasObjects(prev => [...prev, newPathElement]);
+        
+        // Select the new path element
+        selectElement([newPathElement]);
+        
+        // Switch to select tool after creating the path
+        setActiveTool('select');
+      }
+      
+      // Clear the current path
       setCurrentPath([]);
     }
-  }, [isDrawing, toolState.activeTool]);
+  }, [isDrawing, toolState.activeTool, currentPath, canvasObjects, setCanvasObjects, selectElement, toolState.isPathMode]);
 
   const handlePointerDown = useCallback((id: string, _shapeX: number, _shapeY: number) => (e: FederatedPointerEvent) => {
     // Handle element pointer down
