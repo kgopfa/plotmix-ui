@@ -73,6 +73,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
     const appRef = useRef<ApplicationRef | null>(null);
     const viewportRef = useRef<ViewportWrapper | null>(null);
     const canvasContainerRef = useRef<HTMLDivElement | null>(null);
+
     const [dimensions, setDimensions] = useState({
       width: typeof window !== 'undefined' ? window.innerWidth : 0,
       height: typeof window !== 'undefined' ? window.innerHeight : 0
@@ -155,7 +156,8 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
         // Only update if the zoom values are significantly different to prevent infinite loops
         if (Math.abs(currentZoom - canvasZoom) > 0.001) {
           viewportRef.current.setZoom(canvasZoom, false);
-          viewportRef.current.moveCenter(0, 0);
+          // Don't reset the center position during zoom changes to maintain user's view
+          // viewportRef.current.moveCenter(0, 0);
         }
       }
     }, [canvasZoom, canvasWidth, canvasHeight]);

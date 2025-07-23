@@ -1,5 +1,6 @@
 import type { FederatedPointerEvent } from 'pixi.js';
 import type { Container } from 'pixi.js';
+import type { ViewportWrapper } from '@/components/editor/viewport/viewport-wrapper';
 
 /**
  * Convert global coordinates to design canvas local coordinates
@@ -16,12 +17,22 @@ export function convertGlobalToDesignCanvasCoords(
   // Get the viewport (parent of design canvas container)
   const viewport = designCanvasContainer.parent;
   
-  if (viewport && viewport.toLocal) {
-    // Step 1: Convert global coordinates to viewport coordinates
-    const viewportLocal = viewport.toLocal(globalCoords);
+  if (viewport && (viewport as ViewportWrapper).toWorld) {
+    // Use pixi-viewport's toWorld method for proper coordinate conversion
+    // This automatically handles all viewport transformations (pan, zoom, etc.)
+    const worldPos = (viewport as ViewportWrapper).toWorld(globalCoords.x, globalCoords.y);
     
-    // Step 2: Convert viewport coordinates to design canvas local coordinates
+    // Convert world coordinates to design canvas local coordinates
     // The design canvas is positioned at centerX, centerY relative to the viewport
+    const localPos = {
+      x: worldPos.x - designCanvasContainer.x,
+      y: worldPos.y - designCanvasContainer.y
+    };
+    
+    return localPos;
+  } else if (viewport && viewport.toLocal) {
+    // Fallback to the old method if toWorld is not available
+    const viewportLocal = viewport.toLocal(globalCoords);
     const localPos = {
       x: viewportLocal.x - designCanvasContainer.x,
       y: viewportLocal.y - designCanvasContainer.y
@@ -29,7 +40,7 @@ export function convertGlobalToDesignCanvasCoords(
     
     return localPos;
   } else {
-    // Fallback to direct conversion if viewport is not available
+    // Final fallback to direct conversion if viewport is not available
     return designCanvasContainer.toLocal(globalCoords);
   }
 }
@@ -63,11 +74,11 @@ export function debugCoordinateConversion(
   const viewport = designCanvasContainer.parent;
   
   console.log('[Coordinate Debug]', {
-    global: globalCoords,
-    local: localCoords,
+    global: { x: globalCoords.x, y: globalCoords.y },
+    local: { x: localCoords.x, y: localCoords.y },
     containerPosition: { x: designCanvasContainer.x, y: designCanvasContainer.y },
     containerScale: { x: designCanvasContainer.scale?.x, y: designCanvasContainer.scale?.y },
-    viewportScale: viewport?.scale,
-    viewportPosition: viewport?.position
+    viewportScale: { x: viewport?.scale?.x, y: viewport?.scale?.y },
+    viewportPosition: { x: viewport?.position?.x, y: viewport?.position?.y }
   });
 } 
