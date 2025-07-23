@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { useUIStore } from '@/stores/use-ui-store';
+import { useCanvasStore } from '@/stores/use-canvas-store';
 
 interface SelectionState {
   selectedElements: AnimatedCanvasObject[];
@@ -84,10 +85,9 @@ export const useSelectionStore = create<SelectionStore>((set, get) => ({
 
   selectGroup: (group, addToSelection = false) => {
     const state = get();
-    const elementsInGroup = state.currentGroups
-      .find(g => g.id === group.id)?.elementIds
-      .map(id => state.selectedElements.find(el => el.id === id))
-      .filter(Boolean) as AnimatedCanvasObject[] || [];
+    // Get all elements from the canvas store to find the group elements
+    const canvasElements = useCanvasStore.getState().elements;
+    const elementsInGroup = canvasElements.filter((el: AnimatedCanvasObject) => el.groupId === group.id);
 
     if (addToSelection) {
       const newSelectedElements = [...state.selectedElements, ...elementsInGroup];

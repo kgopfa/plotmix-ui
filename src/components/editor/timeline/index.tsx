@@ -4,6 +4,7 @@ import { TimelineTrack } from '@/components/editor/timeline/timeline-track';
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { useCanvasElements, useCanvasGroups } from '@/stores/use-canvas-store';
 import { useTimelineStore } from '@/stores/use-timeline-store';
+import { useSelectionStore } from '@/stores/use-selection-store';
 import { usePanelState } from '@/stores/use-ui-store';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -16,6 +17,14 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
   // Get data directly from stores
   const elements = useCanvasElements().filter(el => !el.isAnimationPath);
   const groups = useCanvasGroups();
+
+  // Get selection state
+  const { isSelected, isGroupSelected } = useSelectionStore(
+    useShallow((state) => ({
+      isSelected: state.isSelected,
+      isGroupSelected: state.isGroupSelected
+    }))
+  );
 
   // Get timeline state and actions
   const { playback, ui: timelineUI, getEffectiveDuration, setScale } = useTimelineStore(
@@ -139,7 +148,7 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
     groups
       .filter(group => !group.isDefaultGroup && !group.isAnimationPath)
       .forEach(group => {
-        const isSelected = false; // Selection temporarily disabled
+        const groupIsSelected = isGroupSelected(group);
 
         tracks.push({
           id: group.id,
@@ -147,7 +156,7 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
           name: group.name,
           item: group,
           animations: group.animations,
-          isSelected,
+          isSelected: groupIsSelected,
           isGroup: true,
           isExpanded: expandedElements.has(group.id),
           depth: 0
@@ -166,7 +175,7 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
               name: `'${character.character || 'char'}'`,
               item: character,
               animations: character.animations,
-              isSelected: false, // Selection temporarily disabled
+              isSelected: isSelected(character),
               isChild: true,
               parentGroupId: group.id,
               depth: 1
@@ -185,7 +194,7 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
               name: element.name,
               item: element,
               animations: element.animations,
-              isSelected: false, // Selection temporarily disabled
+              isSelected: isSelected(element),
               isChild: true,
               parentGroupId: group.id,
               depth: 1
@@ -217,13 +226,13 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
           name: element.name,
           item: element,
           animations: element.animations,
-          isSelected: false, // Selection temporarily disabled
+          isSelected: isSelected(element),
           depth: 0
         });
       });
 
     return tracks;
-  }, [elements, groups, expandedElements]);
+  }, [elements, groups, expandedElements, isSelected, isGroupSelected]);
 
   // Memoize ruler ticks for performance
   const rulerTicks = useMemo(() =>
@@ -363,8 +372,9 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
                 depth={track.depth}
                 customName={track.name}
                 onToggleExpansion={track.type === 'group' ? () => toggleElementExpansion(track.id) : undefined}
-                onGroupSelect={() => {
-                  // Group selection temporarily disabled
+                onGroupSelect={(group) => {
+                  const { selectGroup } = useSelectionStore.getState();
+                  selectGroup(group);
                 }}
               />
             ))}
