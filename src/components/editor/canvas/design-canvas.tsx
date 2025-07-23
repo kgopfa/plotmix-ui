@@ -176,22 +176,27 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           return;
         }
         
-        // Only call canvas click handler if no element was clicked
-        // This prevents deselection when clicking on elements
-        const hitElement = props.elements.find(element => {
-          const shapeRef = props.shapeRefs.current[element.id];
-          if (!shapeRef) return false;
+        // Only check for hit elements when using select tool
+        // For creation tools, elements are non-interactive so we can always create shapes
+        if (props.tool === 'select') {
+          const hitElement = props.elements.find(element => {
+            const shapeRef = props.shapeRefs.current[element.id];
+            if (!shapeRef) return false;
 
-          // Check if the click point is within the element's bounds
-          const bounds = (shapeRef as Container).getBounds();
-          return e.global.x >= bounds.x &&
-            e.global.x <= bounds.x + bounds.width &&
-            e.global.y >= bounds.y &&
-            e.global.y <= bounds.y + bounds.height;
-        });
+            // Check if the click point is within the element's bounds
+            const bounds = (shapeRef as Container).getBounds();
+            return e.global.x >= bounds.x &&
+              e.global.x <= bounds.x + bounds.width &&
+              e.global.y >= bounds.y &&
+              e.global.y <= bounds.y + bounds.height;
+          });
 
-        // Always call canvas click handler for shape creation, even when locked
-        if (!hitElement) {
+          // Only call canvas click handler if no element was hit
+          if (!hitElement) {
+            props.handleCanvasClick(e);
+          }
+        } else {
+          // For creation tools, always call canvas click handler since elements are non-interactive
           props.handleCanvasClick(e);
         }
       }}
@@ -208,22 +213,27 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         props.handlePointerUp();
       }}
       onClick={(e: FederatedPointerEvent) => {
-        // Only call canvas click handler if no element was clicked
-        // This prevents deselection when clicking on elements
-        const hitElement = props.elements.find(element => {
-          const shapeRef = props.shapeRefs.current[element.id];
-          if (!shapeRef) return false;
+        // Only check for hit elements when using select tool
+        // For creation tools, elements are non-interactive so we can always create shapes
+        if (props.tool === 'select') {
+          const hitElement = props.elements.find(element => {
+            const shapeRef = props.shapeRefs.current[element.id];
+            if (!shapeRef) return false;
 
-          // Check if the click point is within the element's bounds
-          const bounds = (shapeRef as Container).getBounds();
-          return e.global.x >= bounds.x &&
-            e.global.x <= bounds.x + bounds.width &&
-            e.global.y >= bounds.y &&
-            e.global.y <= bounds.y + bounds.height;
-        });
+            // Check if the click point is within the element's bounds
+            const bounds = (shapeRef as Container).getBounds();
+            return e.global.x >= bounds.x &&
+              e.global.x <= bounds.x + bounds.width &&
+              e.global.y >= bounds.y &&
+              e.global.y <= bounds.y + bounds.height;
+          });
 
-        // Only call canvas click handler if no element was hit
-        if (!hitElement) {
+          // Only call canvas click handler if no element was hit
+          if (!hitElement) {
+            props.handleCanvasClick(e);
+          }
+        } else {
+          // For creation tools, always call canvas click handler since elements are non-interactive
           props.handleCanvasClick(e);
         }
       }}
@@ -267,8 +277,8 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                   x={relativeX}
                   y={relativeY}
                   pivot={{ x: 0, y: 0 }}
-                  interactive={true}
-                  eventMode="dynamic"
+                  interactive={tool === 'select' || tool === 'draw'}
+                  eventMode={tool === 'select' || tool === 'draw' ? 'dynamic' : 'none'}
                   hitArea={(() => {
                     if (el.type === 'line' && el.lineOptions?.points) {
                       // Calculate hit area based on actual line geometry
@@ -297,11 +307,11 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                     return undefined;
                   })()}
                   rotation={el.rotation || 0}
-                  onPointerDown={handleElementPointerDown(el.id, el.x, el.y)}
-                  onPointerUp={handlePointerUp}
-                  onPointerUpOutside={handlePointerUp}
-                  onPointerOver={handleElementMouseMove(el.id)}
-                  onPointerOut={handleElementMouseLeave(el.id)}
+                  onPointerDown={tool === 'select' || tool === 'draw' ? handleElementPointerDown(el.id, el.x, el.y) : undefined}
+                  onPointerUp={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
+                  onPointerUpOutside={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
+                  onPointerOver={tool === 'select' || tool === 'draw' ? handleElementMouseMove(el.id) : undefined}
+                  onPointerOut={tool === 'select' || tool === 'draw' ? handleElementMouseLeave(el.id) : undefined}
                   ref={(node) => {
                     if (node) {
                       shapeRefs.current[el.id] = node;
@@ -389,8 +399,8 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
             x={el.x}
             y={el.y}
             pivot={{ x: 0, y: 0 }}
-            interactive={true}
-            eventMode="dynamic"
+            interactive={tool === 'select' || tool === 'draw'}
+            eventMode={tool === 'select' || tool === 'draw' ? 'dynamic' : 'none'}
             hitArea={(() => {
               if (el.type === 'line' && el.lineOptions?.points) {
                 // Calculate hit area based on actual line geometry
@@ -419,11 +429,11 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
               return undefined;
             })()}
             rotation={el.rotation || 0}
-            onPointerDown={handleElementPointerDown(el.id, el.x, el.y)}
-            onPointerUp={handlePointerUp}
-            onPointerUpOutside={handlePointerUp}
-            onPointerOver={handleElementMouseMove(el.id)}
-            onPointerOut={handleElementMouseLeave(el.id)}
+            onPointerDown={tool === 'select' || tool === 'draw' ? handleElementPointerDown(el.id, el.x, el.y) : undefined}
+            onPointerUp={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
+            onPointerUpOutside={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
+            onPointerOver={tool === 'select' || tool === 'draw' ? handleElementMouseMove(el.id) : undefined}
+            onPointerOut={tool === 'select' || tool === 'draw' ? handleElementMouseLeave(el.id) : undefined}
             ref={(node) => {
               if (node) {
                 shapeRefs.current[el.id] = node;
