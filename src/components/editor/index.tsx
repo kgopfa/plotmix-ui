@@ -1,7 +1,6 @@
 // app/layout.tsx or pages/index.tsx depending on routing
 'use client';
 /* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { TimelineManager } from '@/lib/timeline-manager';
@@ -26,6 +25,10 @@ import { useCanvasDimensions } from '@/hooks/use-canvas-dimensions';
 import { useTimelineIntegration } from '@/hooks/use-timeline-integration';
 import { useElementSnapping } from '@/hooks/use-element-snapping';
 import { useGridSnapping } from '@/hooks/use-grid-snapping';
+import { usePanelResize } from '@/hooks/use-panel-resize';
+import { useImageUpload } from '@/hooks/use-image-upload';
+import { useCanvasInteractions } from '@/hooks/use-canvas-interactions';
+import { useCanvasEventListeners } from '@/hooks/use-canvas-event-listeners';
 import { MainNavBar } from './navigation/main';
 import { LeftSidebar } from './navigation/left-sidebar';
 import { RightSidebar } from './navigation/right-sidebar';
@@ -95,7 +98,7 @@ export default function EditorCanvas() {
   const MASK_OFFSET_Y = 0;
 
   const fullscreenCanvasRef = useRef<ApplicationCanvasRef | null>(null);
-  const imageFileInputRef = useRef<HTMLInputElement>(null);
+  const { imageFileInputRef, handleImageUpload } = useImageUpload();
 
   // Timeline store integration
   const {
@@ -111,12 +114,7 @@ export default function EditorCanvas() {
   // Canvas container ref for wheel event handling
   const canvasContainerRef = useRef<HTMLDivElement>(null);
 
-  // Interactive state for canvas operations
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [currentPath, setCurrentPath] = useState<Array<{ x: number; y: number }>>([]);
-  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
-  const [editingTextId] = useState<string | null>(null);
+
 
   // Refs for canvas operations
   const shapeRefs = useRef<Record<string, unknown>>({});
@@ -165,52 +163,29 @@ export default function EditorCanvas() {
     snapThreshold: uiGridConfig.snapThreshold
   });
 
+  // Canvas interactions hook
+  const {
+    hoveredId,
+    isDrawing,
+    currentPath,
+    mousePos,
+    editingTextId,
+    handleCanvasClick,
+    handleSelectElement,
+    handleCanvasPointerDown,
+    handleCanvasPointerMove,
+    handlePointerUp,
+    handlePointerDown,
+    handleElementMouseMove,
+    handleElementMouseLeave,
+    setHoveredId,
+    setIsDrawing,
+    setCurrentPath,
+    setMousePos,
+  } = useCanvasInteractions({ snapPoint });
+
   // Panel resize handlers
-  const handleMouseDown = useCallback((panel: 'left' | 'right' | 'timeline') => (e: React.MouseEvent) => {
-    e.preventDefault();
-    setResizing(panel);
-  }, [setResizing]);
-
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!panelState.isResizing) return;
-
-    // Use requestAnimationFrame for smooth resizing
-    requestAnimationFrame(() => {
-      if (panelState.isResizing === 'left') {
-        const newWidth = Math.max(384, Math.min(600, e.clientX)); // Min 384px (w-96), max 600px
-        setLeftPanelWidth(newWidth);
-      } else if (panelState.isResizing === 'right') {
-        const newWidth = Math.max(200, Math.min(600, window.innerWidth - e.clientX)); // Min 200px, max 600px
-        setRightPanelWidth(newWidth);
-      } else if (panelState.isResizing === 'timeline') {
-        const maxHeight = window.innerHeight * 0.8; // 80% of viewport height
-        const minHeight = 32; // Can collapse to just the controls bar
-        const newHeight = Math.max(minHeight, Math.min(maxHeight, window.innerHeight - e.clientY)); // Dynamic max height
-        setTimelineHeight(newHeight);
-      }
-    });
-  }, [panelState.isResizing, setLeftPanelWidth, setRightPanelWidth, setTimelineHeight]);
-
-  const handleMouseUp = useCallback(() => {
-    setResizing(null);
-  }, [setResizing]);
-
-
-  useEffect(() => {
-    if (panelState.isResizing) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = panelState.isResizing === 'timeline' ? 'row-resize' : 'col-resize';
-      document.body.style.userSelect = 'none';
-
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-        document.body.style.cursor = '';
-        document.body.style.userSelect = '';
-      };
-    }
-  }, [panelState.isResizing, handleMouseMove, handleMouseUp]);
+  const { handleMouseDown } = usePanelResize();
   const gsapManager = useMemo(() => new GSAPTimelineManager(), []);
 
   // Memoize the timeline manager instance
@@ -509,6 +484,16 @@ export default function EditorCanvas() {
     return updatedElements;
   }, []);
 
+  // Canvas event listeners hook
+  useCanvasEventListeners({
+    gsapManager,
+    updateAnimationsForPathElement,
+    addPathToAnimation,
+    togglePathMode,
+    setAnimationTarget,
+    clearElementSnapGuides
+  });
+
   // Use a ref to track if we're currently dragging to avoid expensive operations
   const isGroupDraggingRef = useRef(false);
   const groupDragTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -645,207 +630,10 @@ export default function EditorCanvas() {
     });
   };
 
-  // Use a ref to access current elements to avoid dependency issues
-  const elementsRef = useRef(canvasObjects);
-  elementsRef.current = canvasObjects;
 
-  // Listen for resize events from the Canvas component
-  useEffect(() => {
-    const handleElementResize = (e: CustomEvent) => {
-      const { id, width, height, handle } = e.detail;
-      console.log('Resize event:', { id, width, height, handle });
 
-      setCanvasObjects(() => {
-        // Use the ref to get current elements to avoid stale closure
-        const currentElements = elementsRef.current;
-        const updatedElements = currentElements.map((el) => {
-          if (el.id !== id) return el;
 
-          // Calculate position adjustments for certain resize handles
-          // This keeps the shape anchored to the opposite corner during resize
-          let x = el.x;
-          let y = el.y;
 
-          // Calculate position adjustments based on which handle is being dragged
-          const deltaWidth = width - el.width;
-          const deltaHeight = height - el.height;
-
-          switch (handle) {
-            case 'top-left':
-              x = el.x + deltaWidth / 2;
-              y = el.y + deltaHeight / 2;
-              break;
-            case 'top-right':
-              x = el.x - deltaWidth / 2;
-              y = el.y + deltaHeight / 2;
-              break;
-            case 'bottom-left':
-              x = el.x + deltaWidth / 2;
-              y = el.y - deltaHeight / 2;
-              break;
-            case 'bottom-right':
-              x = el.x - deltaWidth / 2;
-              y = el.y - deltaHeight / 2;
-              break;
-          }
-
-          const updatedElement = {
-            ...el,
-            width,
-            height,
-            x: e.detail.x !== undefined ? e.detail.x : x,
-            y: e.detail.y !== undefined ? e.detail.y : y
-          };
-
-          // For circles, update radius to match the height (as used in drawing)
-          if (el.type === 'circle') {
-            updatedElement.radius = height / 2;
-          }
-
-          // For triangles, maintain equilateral proportions and update radius
-          if (el.type === 'triangle') {
-            // Calculate correct width for an equilateral triangle based on height
-            const correctWidth = (2 * height) / Math.sqrt(3);
-            updatedElement.width = correctWidth;
-            updatedElement.radius = height / 2;
-          }
-
-          return updatedElement;
-        });
-
-        // If this is an animation path element, update related animations
-        const resizedElement = updatedElements.find(el => el.id === id);
-        console.log('Resized element:', resizedElement?.name, 'isAnimationPath:', resizedElement?.isAnimationPath);
-
-        if (resizedElement?.isAnimationPath) {
-          console.log('Updating animations for resized path element');
-          const elementsWithUpdatedAnimations = updateAnimationsForPathElement(updatedElements, resizedElement);
-
-          // Force a state update first, then rebuild timeline
-          setTimeout(() => {
-            console.log('Rebuilding timeline with updated path element:', resizedElement.name, 'new width:', resizedElement.width);
-            gsapManager.buildAnimationTimeline(elementsWithUpdatedAnimations);
-          }, 10); // Small delay to ensure state is updated
-
-          return elementsWithUpdatedAnimations;
-        }
-
-        return updatedElements;
-      });
-    };
-
-    const handleBorderRadiusChange = (e: CustomEvent) => {
-      const { id, cornerRadius } = e.detail;
-
-      setCanvasObjects(prevElements =>
-        prevElements.map(el =>
-          el.id === id
-            ? { ...el, cornerRadius }
-            : el
-        )
-      );
-    };
-
-    // Add event listeners for both resize and border radius changes
-    window.addEventListener('element-resize', handleElementResize as EventListener);
-    window.addEventListener('element-border-radius-change', handleBorderRadiusChange as EventListener);
-
-    // Clean up the event listeners when component unmounts
-    return () => {
-      window.removeEventListener('element-resize', handleElementResize as EventListener);
-      window.removeEventListener('element-border-radius-change', handleBorderRadiusChange as EventListener);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Listen for draw completion events
-  useEffect(() => {
-    const handleDrawComplete = (e: CustomEvent) => {
-      // Exit draw mode when a path is completed
-      setActiveTool('select');
-      
-      const { element, isPathMode: wasInPathMode } = e.detail || {};
-      
-      // If we were in path mode and completed a drawing, add to animation and exit path mode
-      if (toolState.isPathMode && toolState.animationTarget && element && wasInPathMode) {
-        // Add the drawn path to the animation
-        addPathToAnimation(element);
-        
-        // Exit path mode
-        togglePathMode();
-        setAnimationTarget(null);
-      }
-    };
-
-    window.addEventListener('draw-complete', handleDrawComplete as EventListener);
-
-    return () => {
-      window.removeEventListener('draw-complete', handleDrawComplete as EventListener);
-    };
-      }, [setActiveTool, toolState.isPathMode, toolState.animationTarget, togglePathMode, setAnimationTarget, addPathToAnimation]);
-
-  // Listen for animation path updates (from ShapeSelect component)
-  useEffect(() => {
-    const handleAnimationPathUpdate = (e: CustomEvent) => {
-      const { pathElement } = e.detail;
-      console.log('Animation path updated from ShapeSelect:', pathElement.name, 'new dimensions:', pathElement.width, 'x', pathElement.height);
-
-      setCanvasObjects(prevElements => {
-        const elementsWithUpdatedAnimations = updateAnimationsForPathElement(prevElements, pathElement);
-
-        // Rebuild timeline after animation path update
-        setTimeout(() => {
-          console.log('Rebuilding timeline after path element resize via ShapeSelect');
-          gsapManager.buildAnimationTimeline(elementsWithUpdatedAnimations);
-        }, 10);
-
-        return elementsWithUpdatedAnimations;
-      });
-    };
-
-    // Listen for single line/shape path additions
-    const handleAddPathToAnimation = (e: CustomEvent) => {
-      const { pathElement } = e.detail;
-      addPathToAnimation(pathElement);
-    };
-
-    // Listen for path mode exit events
-    const handleExitPathMode = (e: CustomEvent) => {
-      const { source } = e.detail;
-      console.log('Exiting path mode from:', source);
-      
-      if (toolState.isPathMode) {
-        togglePathMode();
-        setAnimationTarget(null);
-      }
-    };
-
-    window.addEventListener('animation-path-updated', handleAnimationPathUpdate as EventListener);
-    window.addEventListener('add-path-to-animation', handleAddPathToAnimation as EventListener);
-    window.addEventListener('exit-path-mode', handleExitPathMode as EventListener);
-
-    const handleGroupDragEndEvent = () => {
-      if (isGroupDraggingRef.current) {
-        isGroupDraggingRef.current = false;
-        if (groupDragTimeoutRef.current) {
-          clearTimeout(groupDragTimeoutRef.current);
-          groupDragTimeoutRef.current = null;
-        }
-        // Clear snap guides when group dragging ends
-        clearElementSnapGuides();
-      }
-    };
-
-    window.addEventListener('group-drag-end', handleGroupDragEndEvent);
-
-    return () => {
-      window.removeEventListener('animation-path-updated', handleAnimationPathUpdate as EventListener);
-      window.removeEventListener('add-path-to-animation', handleAddPathToAnimation as EventListener);
-      window.removeEventListener('exit-path-mode', handleExitPathMode as EventListener);
-      window.removeEventListener('group-drag-end', handleGroupDragEndEvent);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [updateAnimationsForPathElement, gsapManager, addPathToAnimation]);
 
   // Simplified group management handlers - now using unified createGroup
   const handleGroupElements = useCallback(() => {
@@ -889,21 +677,7 @@ export default function EditorCanvas() {
     onUngroup: handleUngroupElements,
   });
 
-  // Block horizontal wheel events to prevent browser navigation
-  useEffect(() => {
-    const node = canvasContainerRef.current;
-    if (!node) return;
 
-    const wheelListener = (e: WheelEvent) => {
-      // Prevent default when horizontal scroll
-      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-        e.preventDefault();
-      }
-    };
-    node.addEventListener('wheel', wheelListener, { passive: false });
-
-    return () => node.removeEventListener('wheel', wheelListener);
-  }, []);
 
   // Selection navbar handlers
   const handleSelectionNavbarAnimate = useCallback(() => {
@@ -987,372 +761,11 @@ export default function EditorCanvas() {
     updateSelectedGroups(detectedGroups);
   }, [selectedObjects, groups, updateSelectedGroups]);
 
-  // Helper function to handle image file directly
-  const handleImageFile = useCallback((file: File) => {
-    if (!file) return;
 
-    // Check if file is an image
-    if (!file.type.startsWith('image/')) {
-      alert('Please select a valid image file.');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const imageData = event.target?.result as string;
-      if (imageData) {
-        // Position new image at center of fixed canvas (0,0 in canvas coordinates)
-        const newImage = createNewObject(
-          'image',
-          0, // Center of canvas
-          0, // Center of canvas
-          canvasObjects,
-          undefined, // pathPoints
-          false, // isPath
-          imageData,
-          200, // default width
-          150  // default height
-        );
-
-        // Add to canvas and select
-        setCanvasObjects(prev => [...prev, newImage]);
-        selectElement([newImage]);
-      }
-    };
-
-    reader.onerror = () => {
-      alert('Error reading image file.');
-    };
-
-    reader.readAsDataURL(file);
-  }, [canvasObjects, setCanvasObjects, selectElement]);
-
-  // Handle image file upload
-  const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    handleImageFile(file);
-    
-    // Clear the input so same file can be uploaded again
-    e.target.value = '';
-  }, [handleImageFile]);
-
-  // Add event listener for image import from uploads tab
-  useEffect(() => {
-    const handleImageImport = (event: CustomEvent) => {
-      const { file, imageData } = event.detail;
-      if (file && imageData) {
-        // Create new image element directly from the provided data
-        const newImage = createNewObject(
-          'image',
-          0, // Center of canvas
-          0, // Center of canvas
-          canvasObjects,
-          undefined, // pathPoints
-          false, // isPath
-          imageData,
-          200, // default width
-          150  // default height
-        );
-
-        // Add to canvas and select
-        setCanvasObjects(prev => [...prev, newImage]);
-        selectElement([newImage]);
-      } else if (file) {
-        // Fallback to old method for backward compatibility
-        handleImageFile(file);
-      }
-    };
-
-    window.addEventListener('image-import', handleImageImport as EventListener);
-    return () => {
-      window.removeEventListener('image-import', handleImageImport as EventListener);
-    };
-  }, [canvasObjects, setCanvasObjects, selectElement, handleImageFile]);
 
   const activeNav = useActiveNav();
 
-  // Canvas interaction handlers
-  const handleCanvasClick = useCallback((e: FederatedPointerEvent) => {
-    const { setActiveTool, setMaskPos, setLineStartPoint, setLineChaining, addChainedLineId, setClosingShape, setShowAnimationsTab } = useUIStore.getState();
-    
-    // Convert global coordinates to local coordinates within the design canvas
-    // The event target is the design canvas container itself
-    const designCanvasContainer = e.currentTarget as any;
-    if (!designCanvasContainer) {
-      console.error('Design canvas container not found');
-      return;
-    }
-    
-    // Use the utility function for consistent coordinate conversion
-    const localPos = convertPointerEventToDesignCanvasCoords(e, designCanvasContainer);
-    
-    // Ensure we're getting valid coordinates
-    if (isNaN(localPos.x) || isNaN(localPos.y)) {
-      console.warn('[Canvas Click] Invalid coordinates:', localPos);
-      return;
-    }
-    
-    // Apply snapping to the click position for element creation
-    const shiftKey = 'shiftKey' in e.nativeEvent ? e.nativeEvent.shiftKey : false;
-    const snappedPos = snapPoint({ x: localPos.x, y: localPos.y }, { shiftKey });
-    
 
-    
-
-    
-    if (toolState.activeTool === 'select') {
-      // Clear selections when clicking on empty canvas
-      selectElement(null);
-      setShowAnimationsTab(false);
-      return;
-    }
-
-    // Handle line and polygon drawing with two-click system
-    if (toolState.activeTool === 'line' || toolState.activeTool === 'simpleLine') {
-      // Check if we're in polygon chaining mode and trying to close the shape
-      if (toolState.isLineChaining && toolState.chainedLineIds.length > 0) {
-        const firstLineId = toolState.chainedLineIds[0];
-        const firstLine = canvasObjects.find(el => el.id === firstLineId);
-        
-        if (firstLine?.lineOptions?.points) {
-          const startPoint = firstLine.lineOptions.points.start;
-          const clickDistance = Math.hypot(snappedPos.x - startPoint.x, snappedPos.y - startPoint.y);
-          
-          if (clickDistance <= 30) { // Within 30px of start point - close the polygon
-            // Create the final closing line from current position to the origin
-            const finalLine = createNewObject(
-              'line', 
-              0, 0, // Position will be calculated in createLine
-              canvasObjects,
-              undefined, // pathPoints
-              toolState.isPathMode, // isPath
-              undefined, // imageData
-              undefined, // width
-              undefined, // height
-              undefined, // text
-              toolState.lineStartPoint!, // Start from current line start point
-              startPoint // End at the polygon's origin point
-            );
-            
-            // If in path mode, mark it as a path
-            if (toolState.isPathMode) {
-              finalLine.isAnimationPath = true;
-            }
-
-            setCanvasObjects(prev => [...prev, finalLine]);
-            addChainedLineId(finalLine.id);
-            
-            // Now trigger polygon closure
-            setClosingShape(true);
-            return;
-          }
-        }
-      }
-
-      if (!toolState.lineStartPoint) {
-        // First click: Set the start point
-        setLineStartPoint({ x: snappedPos.x, y: snappedPos.y });
-        if (toolState.activeTool === 'line') {
-          setLineChaining(true);
-        }
-      } else {
-        // Second click: Create the line from start to end point
-        const startPoint = toolState.lineStartPoint;
-        const endPoint = { x: snappedPos.x, y: snappedPos.y };
-        
-        // Check if the line has sufficient length (minimum 5 pixels)
-        const distance = Math.hypot(endPoint.x - startPoint.x, endPoint.y - startPoint.y);
-        
-        if (distance < 5) {
-          return;
-        }
-        
-        const newElement = createNewObject(
-          'line', 
-          0, 0, // Position will be calculated in createLine
-          canvasObjects,
-          undefined, // pathPoints
-          toolState.isPathMode, // isPath
-          undefined, // imageData
-          undefined, // width
-          undefined, // height
-          undefined, // text
-          startPoint,
-          endPoint
-        );
-        
-        // If in path mode, mark it as a path
-        if (toolState.isPathMode) {
-          newElement.isAnimationPath = true;
-        }
-
-        setCanvasObjects(prev => [...prev, newElement]);
-        selectElement([newElement]);
-
-        // Handle line chaining for polygon creation
-        if (toolState.activeTool === 'line') {
-          addChainedLineId(newElement.id);
-          // Set the end point as the new start point for the next line
-          setLineStartPoint(endPoint);
-        } else {
-          // For simpleLine, complete the line and exit
-          setLineStartPoint(null);
-          setActiveTool('select');
-          setMaskPos(null);
-        }
-      }
-      return;
-    }
-
-        // Handle other creation tools (non-line tools)
-    if (['rectangle', 'circle', 'triangle', 'arc', 'text'].includes(toolState.activeTool)) {
-      const newElement = createNewObject(toolState.activeTool as 'rectangle' | 'circle' | 'triangle' | 'arc' | 'text', snappedPos.x, snappedPos.y, canvasObjects);
-      
-      // If in path mode, mark it as a path
-      if (toolState.isPathMode) {
-        newElement.isAnimationPath = true;
-      }
-
-      setCanvasObjects(prev => [...prev, newElement]);
-      selectElement([newElement]);
-      
-      // Switch to select tool after creating elements
-      setActiveTool('select');
-      setMaskPos(null);
-    }
-  }, [toolState, canvasObjects, setCanvasObjects, selectElement, snapPoint]);
-
-  const handleSelectElement = useCallback((id: string | null, isMultiSelect?: boolean) => {
-    if (id) {
-      const element = canvasObjects.find(e => e.id === id);
-      if (element) {
-        selectElement(isMultiSelect ? [element] : [element], isMultiSelect);
-      }
-    } else {
-      selectElement(null);
-      const { setShowAnimationsTab } = useUIStore.getState();
-      setShowAnimationsTab(false);
-    }
-  }, [canvasObjects, selectElement]);
-
-  const handleCanvasPointerDown = useCallback((e: FederatedPointerEvent) => {
-    if (toolState.activeTool === 'select') {
-      // Check if we clicked on an empty area (no element was hit)
-      const hitElement = canvasObjects.find(element => {
-        const shapeRef = shapeRefs.current[element.id];
-        if (!shapeRef) return false;
-        
-        // Check if the click point is within the element's bounds
-        const bounds = (shapeRef as any).getBounds();
-        return e.global.x >= bounds.x && 
-               e.global.x <= bounds.x + bounds.width && 
-               e.global.y >= bounds.y && 
-               e.global.y <= bounds.y + bounds.height;
-      });
-      
-      // If no element was hit, deselect all elements
-      if (!hitElement) {
-        selectElement(null);
-        const { setShowAnimationsTab } = useUIStore.getState();
-        setShowAnimationsTab(false);
-        return;
-      }
-    }
-    
-    if (toolState.activeTool === 'draw') {
-      setIsDrawing(true);
-      // Use the utility function for consistent coordinate conversion
-      const designCanvasContainer = e.currentTarget as any;
-      if (designCanvasContainer) {
-        const localPos = convertPointerEventToDesignCanvasCoords(e, designCanvasContainer);
-        const newPoint = { x: localPos.x, y: localPos.y };
-        setCurrentPath([newPoint]);
-      } else {
-        // Fallback to global coordinates if container not found
-        const newPoint = { x: e.global.x, y: e.global.y };
-        setCurrentPath([newPoint]);
-      }
-    }
-  }, [toolState.activeTool, canvasObjects, selectElement]);
-
-  const handleCanvasPointerMove = useCallback((e: FederatedPointerEvent) => {
-    setMousePos({ x: e.global.x, y: e.global.y });
-    
-    if (isDrawing && toolState.activeTool === 'draw') {
-      // Use the utility function for consistent coordinate conversion
-      const designCanvasContainer = e.currentTarget as any;
-      if (designCanvasContainer) {
-        const localPos = convertPointerEventToDesignCanvasCoords(e, designCanvasContainer);
-        const newPoint = { x: localPos.x, y: localPos.y };
-        setCurrentPath(prev => [...prev, newPoint]);
-      } else {
-        // Fallback to global coordinates if container not found
-        const newPoint = { x: e.global.x, y: e.global.y };
-        setCurrentPath(prev => [...prev, newPoint]);
-      }
-    }
-  }, [isDrawing, toolState.activeTool]);
-
-  const handlePointerUp = useCallback(() => {
-    if (isDrawing && toolState.activeTool === 'draw') {
-      setIsDrawing(false);
-      
-      // Create a path element from the drawn path if we have enough points
-      if (currentPath.length >= 2) {
-        // Create a path element using the current path points
-        const newPathElement = createNewObject(
-          'path',
-          0, 0, // Position will be calculated in createPath
-          canvasObjects,
-          currentPath, // Pass the path points
-          toolState.isPathMode, // Mark as path if in path mode
-          undefined, // imageData
-          undefined, // width
-          undefined, // height
-          undefined  // text
-        );
-        
-        // If in path mode, mark it as an animation path
-        if (toolState.isPathMode) {
-          newPathElement.isAnimationPath = true;
-        }
-        
-        // Add the path element to the canvas
-        setCanvasObjects(prev => [...prev, newPathElement]);
-        
-        // Select the new path element
-        selectElement([newPathElement]);
-        
-        // Switch to select tool after creating the path
-        setActiveTool('select');
-      }
-      
-      // Clear the current path
-      setCurrentPath([]);
-    }
-  }, [isDrawing, toolState.activeTool, currentPath, canvasObjects, setCanvasObjects, selectElement, toolState.isPathMode]);
-
-  const handlePointerDown = useCallback((id: string, _shapeX: number, _shapeY: number) => (e: FederatedPointerEvent) => {
-    // Handle element pointer down
-    const isMultiSelect = (e.nativeEvent && 'metaKey' in e.nativeEvent) ?
-      (e.nativeEvent.metaKey || e.nativeEvent.ctrlKey) : false;
-
-    // Only handle selection for select/draw tools; do nothing for other tools
-    if (toolState.activeTool === 'select' || toolState.activeTool === 'draw') {
-      handleSelectElement(id, isMultiSelect);
-    }
-    // For other tools, do nothing (do not call handleCanvasClick)
-  }, [toolState.activeTool, handleSelectElement]);
-
-  const handleElementMouseMove = useCallback((id: string) => (_e: FederatedPointerEvent) => {
-    setHoveredId(id);
-  }, []);
-
-  const handleElementMouseLeave = useCallback((_id: string) => () => {
-    setHoveredId(null);
-  }, []);
 
   const handleGroupSelectionDragStart = useCallback((_virtualElement: AnimatedCanvasObject, _mouseX: number, _mouseY: number, _allElements?: AnimatedCanvasObject[]) => {
     // Handle group selection drag start
