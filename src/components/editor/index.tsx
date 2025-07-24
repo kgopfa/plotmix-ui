@@ -34,9 +34,7 @@ import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import type { ApplicationCanvasRef } from './application-canvas';
 import { convertPointerEventToDesignCanvasCoords } from '@/utils/coordinate-utils';
 
-
 const ApplicationCanvas = dynamic(() => import('./application-canvas').then(m => m.ApplicationCanvas), { ssr: false });
-
 
 export default function EditorCanvas() {
   // Use canvas store instead of local state
@@ -1209,10 +1207,8 @@ export default function EditorCanvas() {
     }
 
         // Handle other creation tools (non-line tools)
-    if (['rectangle', 'circle', 'triangle', 'arc', 'text', 'textGroup'].includes(toolState.activeTool)) {
-
- 
-      const newElement = createNewObject(toolState.activeTool as 'rectangle' | 'circle' | 'triangle' | 'arc' | 'text' | 'textGroup', snappedPos.x, snappedPos.y, canvasObjects);
+    if (['rectangle', 'circle', 'triangle', 'arc', 'text'].includes(toolState.activeTool)) {
+      const newElement = createNewObject(toolState.activeTool as 'rectangle' | 'circle' | 'triangle' | 'arc' | 'text', snappedPos.x, snappedPos.y, canvasObjects);
       
       // If in path mode, mark it as a path
       if (toolState.isPathMode) {
@@ -1221,8 +1217,6 @@ export default function EditorCanvas() {
 
       setCanvasObjects(prev => [...prev, newElement]);
       selectElement([newElement]);
-      
-
       
       // Switch to select tool after creating elements
       setActiveTool('select');

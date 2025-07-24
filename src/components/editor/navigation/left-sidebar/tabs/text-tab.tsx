@@ -14,13 +14,6 @@ export const TextTab: React.FC = () => {
       tool: 'text' as const,
       shortcut: 'T'
     },
-    {
-      name: 'Text Group',
-      description: 'Create grouped text elements',
-      icon: '📋',
-      tool: 'textGroup' as const,
-      shortcut: 'Shift+T'
-    }
   ];
 
   const textFeatures = [

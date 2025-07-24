@@ -1,5 +1,4 @@
 import type { AnimatedCanvasObject, ElementAnimation } from '@/types/canvas';
-import * as PIXI from 'pixi.js';
 
 // Simple ID generator
 const generateId = () => {
@@ -9,24 +8,7 @@ const generateId = () => {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
 };
 
-// Helper function to get accurate character width using PIXI Text object
-function getCharWidthPixi(char: string, fontSize: number = 16, fontFamily: string = 'Arial, sans-serif'): number {
-  // Create a temporary Text object to measure the character
-  const tempText = new PIXI.Text(char, {
-    fontSize,
-    fontFamily,
-  });
-
-  // Get the width from the text bounds
-  const bounds = tempText.getBounds();
-
-  // Clean up the temporary text object
-  tempText.destroy();
-
-  return bounds.width;
-}
-
-type ShapeType = 'rectangle' | 'circle' | 'triangle' | 'arc' | 'line' | 'path' | 'image' | 'text' | 'textGroup' | 'character';
+type ShapeType = 'rectangle' | 'circle' | 'triangle' | 'arc' | 'line' | 'path' | 'image' | 'text';
 
 interface BaseObjectProps {
   x: number;
@@ -312,86 +294,6 @@ function createText(props: BaseObjectProps): AnimatedCanvasObject {
   };
 }
 
-function createCharacter(props: BaseObjectProps & { character: string; characterIndex: number; parentTextGroupId: string }): AnimatedCanvasObject {
-  const fontSize = 16;
-
-  // Get accurate character width using PIXI measurement
-  const charWidth = getCharWidthPixi(props.character, fontSize, 'Arial, sans-serif');
-
-  const height = fontSize * 1.5;
-
-  return {
-    ...generateCommonAttributes('character', props),
-    type: 'character',
-    width: charWidth,
-    height,
-    x: props.x,
-    y: props.y,
-    fill: '#000000', // Override default white fill for text
-    stroke: undefined, // Text typically doesn't have stroke
-    strokeWidth: 0,
-    text: props.character, // Store the character in text property for rendering
-    character: props.character,
-    characterIndex: props.characterIndex,
-    parentTextGroupId: props.parentTextGroupId,
-    fontSize,
-    fontFamily: 'Arial, sans-serif',
-    fontWeight: 'normal',
-    fontStyle: 'normal',
-    textAlign: 'center',
-    lineHeight: 1.2,
-    lineOptions: undefined,
-    pivotX: charWidth / 2,
-    pivotY: height / 2,
-    isAnimationPath: props.isPath || false,
-    cornerRadius: 0,
-  };
-}
-
-function createTextGroup(props: BaseObjectProps): AnimatedCanvasObject {
-  const textContent = props.text || 'Hello World';
-  const characters = textContent.split('');
-  const fontSize = 16;
-  const letterSpacing = 0;
-
-  // Calculate accurate width using PIXI measurement
-  let totalWidth = 0;
-  characters.forEach((char) => {
-    const charWidth = getCharWidthPixi(char, fontSize, 'Arial, sans-serif');
-    totalWidth += charWidth + letterSpacing;
-  });
-
-  // Remove the last letter spacing since there's no spacing after the last character
-  const width = Math.max(totalWidth - letterSpacing, fontSize);
-  const height = fontSize * 1.5; // Leave some room for ascenders/descenders
-
-  return {
-    ...generateCommonAttributes('textGroup', props),
-    type: 'textGroup',
-    width,
-    height,
-    x: props.x,
-    y: props.y,
-    fill: '#000000', // Override default white fill for text
-    stroke: undefined, // Text typically doesn't have stroke
-    strokeWidth: 0,
-    text: textContent,
-    characters,
-    fontSize,
-    fontFamily: 'Arial, sans-serif',
-    fontWeight: 'normal',
-    fontStyle: 'normal',
-    textAlign: 'left',
-    lineHeight: 1.2,
-    letterSpacing,
-    lineOptions: undefined,
-    pivotX: width / 2,
-    pivotY: height / 2,
-    isAnimationPath: props.isPath || false,
-    cornerRadius: 0,
-  };
-}
-
 export function createNewObject(
   type: ShapeType,
   x: number,
@@ -425,58 +327,7 @@ export function createNewObject(
       return createImage(props);
     case 'text':
       return createText(props);
-    case 'textGroup':
-      return createTextGroup(props);
-    case 'character':
-      throw new Error('Character elements should be created through createTextGroupWithCharacters function');
     default:
       throw new Error(`Unknown shape type: ${type}`);
   }
-}
-
-// New function to create a textGroup along with its individual character elements
-export function createTextGroupWithCharacters(
-  x: number,
-  y: number,
-  canvasObjects: AnimatedCanvasObject[],
-  text?: string
-): { textGroup: AnimatedCanvasObject; characters: AnimatedCanvasObject[] } {
-  const textContent = text || 'Hello World';
-  const characters = textContent.split('');
-  const fontSize = 16;
-  const letterSpacing = 0;
-
-  // Create the main textGroup element first
-  const textGroup = createTextGroup({ x, y, elements: canvasObjects, text: textContent });
-
-  // Calculate positions for each character
-  const characterElements: AnimatedCanvasObject[] = [];
-  let currentX = x - textGroup.width / 2;
-
-  characters.forEach((char, index) => {
-    // Get accurate character width using PIXI measurement
-    const charWidth = getCharWidthPixi(char, fontSize, 'Arial, sans-serif');
-
-    // Position character at its center
-    const charX = currentX + charWidth / 2;
-
-    const characterElement = createCharacter({
-      x: charX,
-      y: y,
-      elements: canvasObjects,
-      character: char,
-      characterIndex: index,
-      parentTextGroupId: textGroup.id
-    });
-
-    // Set the same groupId as the textGroup so they're grouped together
-    characterElement.groupId = textGroup.groupId;
-
-    characterElements.push(characterElement);
-
-    // Move to next character position
-    currentX += charWidth + letterSpacing;
-  });
-
-  return { textGroup, characters: characterElements };
 }
