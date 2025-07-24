@@ -56,9 +56,7 @@ function generateCommonAttributes(
     line: 'Line',
     path: 'Path',
     image: 'Image',
-    text: 'Text',
-    textGroup: 'TextGroup',
-    character: 'Character'
+    text: 'Text'
   };
 
   // Count existing elements of the same type to generate name

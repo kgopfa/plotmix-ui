@@ -9,7 +9,6 @@ import { useCanvasState } from '@/stores/use-ui-store';
 import { ContextMenu } from './selection/context-menu';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager';
-
 import type { SnapGuide } from '../../utils/element-snapping';
 import type { FederatedPointerEvent } from 'pixi.js';
 
@@ -47,7 +46,6 @@ interface ApplicationCanvasProps {
   handleElementMouseLeave: (id: string) => () => void;
   onPathStartClick?: (elementId: string, x: number, y: number) => void;
   handleGroupSelectionDragStart: (virtualElement: AnimatedCanvasObject, mouseX: number, mouseY: number, allElements?: AnimatedCanvasObject[]) => void;
-  isTextGroupCharacter: (element: AnimatedCanvasObject) => boolean;
   isElementInCustomOrPolygonGroup: (element: AnimatedCanvasObject) => boolean;
   onZoomChange?: (zoom: number) => void;
   canvasZoom?: number;

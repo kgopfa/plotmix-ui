@@ -8,13 +8,12 @@ import {
   RotateCcw, 
   Minus, 
   PenTool, 
-  Image, 
+  Image as ImageIcon, 
   Type, 
   FileText, 
   Folder, 
   Package2, 
   Pentagon,
-  LetterText
 } from 'lucide-react';
 
 const MAX_DURATION_SECONDS = 120;
@@ -86,13 +85,9 @@ const ElementIcon = ({ element, isChild = false }: { element: AnimatedCanvasObje
     case 'path':
       return <PenTool size={iconSize} className={iconClass} />;
     case 'image':
-      return <Image size={iconSize} className={iconClass} />;
+      return <ImageIcon size={iconSize} className={iconClass} />;
     case 'text':
       return <Type size={iconSize} className={iconClass} />;
-    case 'textGroup':
-      return <FileText size={iconSize} className={iconClass} />;
-    case 'character':
-      return <LetterText size={iconSize} className={iconClass} />;
     default:
       return <Circle size={iconSize} className={iconClass} />;
   }
@@ -132,11 +127,6 @@ export function TimelineTrack({
       onGroupSelect(group);
     } else {
       const animatedElement = element as AnimatedCanvasObject;
-      // Completely prevent character selection - characters should not be selectable
-      if (animatedElement.type === 'character' && animatedElement.parentTextGroupId) {
-        // Characters are not selectable, do nothing
-        return;
-      }
       select(animatedElement);
     }
   };
@@ -147,14 +137,11 @@ export function TimelineTrack({
       onToggleExpansion();
     }
   };
-
-  // Check if this is a textgroup character
-  const isTextGroupCharacter = !isGroup && 'type' in element && element.type === 'character' && (element as AnimatedCanvasObject).parentTextGroupId;
-
+  
   return (
     <div
       className={`h-8 flex items-center border-b border-gray-200/50 text-gray-700 transition-all duration-200 ${
-        isTextGroupCharacter ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-white/40'
+        'cursor-pointer hover:bg-white/40'
       } ${
         isSelected ? 'bg-gradient-to-r from-blue-50/80 to-blue-100/80 backdrop-blur-sm' : ''
       } ${isChild ? 'bg-gray-50/60 backdrop-blur-sm' : ''}`}
@@ -167,7 +154,7 @@ export function TimelineTrack({
         style={{ paddingLeft: `${8 + depth * 16}px` }}
         onClick={handleTrackClick}
       >
-        {(isGroup || ('type' in element && element.type === 'textGroup')) && onToggleExpansion && (!isGroup || !('type' in element) || (element as CanvasGroup).type !== 'polygon') && (
+        {(isGroup || ('type' in element)) && onToggleExpansion && (!isGroup || !('type' in element) || (element as CanvasGroup).type !== 'polygon') && (
           <button
             onClick={handleExpandToggle}
             className="w-4 h-4 flex items-center justify-center hover:bg-white/80 backdrop-blur-sm rounded text-xs transition-all duration-200 hover:shadow-sm"

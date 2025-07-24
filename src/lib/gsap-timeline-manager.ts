@@ -111,8 +111,6 @@ export class GSAPTimelineManager {
       let elementsProcessed = 0;
       let groupsProcessed = 0;
 
-      console.log('🎬 Processing elements for animations...');
-
       // Process element animations
       elements.forEach((element) => {
         if (element.isAnimationPath || !element.animations || element.animations.length === 0) {
@@ -121,12 +119,7 @@ export class GSAPTimelineManager {
 
         elementsProcessed++;
 
-        // Special handling for textGroup animations
-        if (element.type === 'textGroup') {
-          animationsCreated += this.processTextGroupAnimations(element, elements, shapeRefs);
-        } else {
-          animationsCreated += this.processElementAnimations(element, elements, shapeRefs);
-        }
+        animationsCreated += this.processElementAnimations(element, elements, shapeRefs);
       });
 
       // Process group animations
@@ -152,45 +145,6 @@ export class GSAPTimelineManager {
       console.error('🎬 Error in timeline build:', error);
       this.clearTimeline();
     }
-  }
-
-  /**
-   * Process text group animations (apply to character children)
-   */
-  private processTextGroupAnimations(
-    element: AnimatedCanvasObject,
-    elements: AnimatedCanvasObject[],
-    shapeRefs: Record<string, PIXI.Container>
-  ): number {
-    let animationsCreated = 0;
-
-    // Find all character children for this textGroup
-    const characterChildren = elements.filter(el =>
-      el.type === 'character' && el.parentTextGroupId === element.id
-    );
-
-    if (characterChildren.length === 0) {
-      return 0;
-    }
-
-    element.animations.forEach((animation) => {
-      characterChildren.forEach((character) => {
-        const characterTarget = shapeRefs[character.id];
-        if (!characterTarget || characterTarget.destroyed || !characterTarget.parent) {
-          return;
-        }
-
-        try {
-          const config = generateAnimationConfig(character, animation, characterTarget, elements);
-          this.addAnimationToTimeline(config, characterTarget);
-          animationsCreated++;
-        } catch (error) {
-          console.warn(`⚠️ Error processing character animation for ${character.id}:`, error);
-        }
-      });
-    });
-
-    return animationsCreated;
   }
 
   /**

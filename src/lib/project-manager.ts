@@ -1,9 +1,9 @@
-import { 
-  ProjectData, 
+import {
+  ProjectData,
   LegacyProjectData,
   Scene,
-  ProjectValidationError, 
-  ProjectLoadOptions, 
+  ProjectValidationError,
+  ProjectLoadOptions,
   ProjectSaveOptions,
   ProjectMetadata,
   isLegacyProject
@@ -35,7 +35,7 @@ export class ProjectManager {
       includeUI = true,
       prettyPrint = true
     } = options;
-    
+
     try {
       const canvasState = useCanvasStore.getState();
       const sceneState = useSceneStore.getState();
@@ -83,12 +83,12 @@ export class ProjectManager {
       };
 
       // Serialize to JSON
-      const jsonData = prettyPrint 
+      const jsonData = prettyPrint
         ? JSON.stringify(projectData, null, 2)
         : JSON.stringify(projectData);
 
       console.log(`Project saved: ${metadata.name} (${canvasState.elements.length} elements, ${canvasState.groups.length} groups)`);
-      
+
       return jsonData;
 
     } catch (error) {
@@ -110,7 +110,7 @@ export class ProjectManager {
 
     try {
       const rawData = JSON.parse(jsonData);
-      
+
       // Check if this is a legacy project and migrate if needed
       let projectData: ProjectData;
       if (isLegacyProject(rawData)) {
@@ -119,7 +119,7 @@ export class ProjectManager {
       } else {
         projectData = rawData as ProjectData;
       }
-      
+
       // Validate the data
       const validationErrors = this.validateProjectData(projectData);
       if (validationErrors.length > 0) {
@@ -133,10 +133,10 @@ export class ProjectManager {
         console.log('Project validation successful');
         return;
       }
-      
+
       // Load data into stores in the correct order
       await this.loadIntoStores(migratedData, { skipUI, skipSelection });
-      
+
       const activeScene = migratedData.scenes.find(s => s.id === migratedData.activeSceneId) || migratedData.scenes[0];
       console.log(`Project loaded: ${migratedData.metadata.name} (${activeScene.canvas.elements.length} elements)`);
     } catch (error) {
@@ -149,7 +149,7 @@ export class ProjectManager {
    * Load project data into all stores (scene-based)
    */
   private async loadIntoStores(
-    projectData: ProjectData, 
+    projectData: ProjectData,
     options: { skipUI: boolean; skipSelection: boolean }
   ): Promise<void> {
     const { skipUI, skipSelection } = options;
@@ -157,12 +157,12 @@ export class ProjectManager {
     // 1. Sync scene store with project data
     console.log('Syncing scene store...');
     const sceneStore = useSceneStore.getState();
-    
+
     // Update the scene cache with loaded data
     for (const scene of projectData.scenes) {
       this.sceneDataCache.set(scene.id, scene);
     }
-    
+
     // Load all scenes into the scene store (this also sets the active scene)
     sceneStore.loadScenes(
       projectData.scenes.map(scene => ({
@@ -172,7 +172,7 @@ export class ProjectManager {
       })),
       projectData.activeSceneId
     );
-    
+
     // Get the active scene data
     const activeScene = projectData.scenes.find(s => s.id === projectData.activeSceneId) || projectData.scenes[0];
     if (!activeScene) {
@@ -183,7 +183,7 @@ export class ProjectManager {
     console.log('Clearing existing state...');
     useCanvasStore.getState().clearCanvas();
     useSelectionStore.getState().clearSelections();
-    
+
     // 3. Load canvas data from active scene - create fresh copies
     console.log('Loading canvas data...');
     const canvasStore = useCanvasStore.getState();
@@ -197,11 +197,11 @@ export class ProjectManager {
     }));
     canvasStore.setElements(freshElements);
     canvasStore.setGroups(freshGroups);
-    
+
     // 4. Load timeline state from active scene
     console.log('Loading timeline state...');
     const timelineStore = useTimelineStore.getState();
-    
+
     // Use the store's loadProjectData method to properly handle Immer state updates
     timelineStore.loadProjectData({
       elements: freshElements,
@@ -211,27 +211,27 @@ export class ProjectManager {
       duration: activeScene.timeline.duration,
       currentTime: activeScene.timeline.currentTime,
     });
-    
+
     // 5. Load UI state from active scene (optional)
     if (!skipUI && activeScene.ui) {
       console.log('Loading UI state...');
       const uiStore = useUIStore.getState();
-      
+
       // Panel state
       uiStore.setLeftPanelWidth(activeScene.ui.panelState.leftPanelWidth);
       uiStore.setRightPanelWidth(activeScene.ui.panelState.rightPanelWidth);
       uiStore.setTimelineHeight(activeScene.ui.panelState.timelineHeight);
-      
+
       if (activeScene.ui.panelState.isTimelineCollapsed !== uiStore.panels.isTimelineCollapsed) {
         uiStore.toggleTimelineCollapse();
       }
-      
+
       // Tool state
       uiStore.setActiveTool(activeScene.ui.toolState.activeTool as ToolType);
       if (activeScene.ui.toolState.isPathMode !== uiStore.tools.isPathMode) {
         uiStore.togglePathMode();
       }
-      
+
       // Canvas size state (restore from canvas.canvasSize if available)
       if (activeScene.canvas.canvasSize) {
         if (activeScene.canvas.canvasSize.currentSizeId === 'custom' && activeScene.canvas.canvasSize.customSize) {
@@ -244,24 +244,24 @@ export class ProjectManager {
         }
       }
     }
-    
+
     // 6. Restore selections from active scene (after elements are loaded)
     if (!skipSelection && activeScene.ui) {
       console.log('Restoring selections...');
       const selectionStore = useSelectionStore.getState();
-      
-      const elementsToSelect = freshElements.filter(el => 
+
+      const elementsToSelect = freshElements.filter(el =>
         activeScene.ui.selectedElements.includes(el.id)
       );
-      
+
       if (elementsToSelect.length > 0) {
         selectionStore.select(elementsToSelect);
       }
-      
+
       // Note: Group selection will be handled automatically by the selection store
       // when elements in a group are selected
     }
-    
+
     // 7. Rebuild timeline (with a small delay to ensure everything is ready)
     console.log('Rebuilding timeline...');
     setTimeout(() => {
@@ -373,7 +373,7 @@ export class ProjectManager {
    */
   private migrateLegacyProject(legacyData: LegacyProjectData): ProjectData {
     console.log('Migrating legacy project to scene-based format...');
-    
+
     // Create a single scene from the legacy project data
     const defaultSceneId = 'scene-1';
     const scene: Scene = {
@@ -403,7 +403,7 @@ export class ProjectManager {
     if (data.version !== this.currentVersion) {
       console.warn(`Project version ${data.version} differs from current ${this.currentVersion}. Some features may not work correctly.`);
     }
-    
+
     return {
       ...data,
       // Update version to current
@@ -422,21 +422,17 @@ export class ProjectManager {
     elements: number;
     groups: number;
     animations: number;
-    characters: number;
     scenes: number;
   } {
     const canvasState = useCanvasStore.getState();
-    
+
     const animations = canvasState.elements.reduce((sum, el) => sum + el.animations.length, 0) +
-                     canvasState.groups.reduce((sum, g) => sum + g.animations.length, 0);
-    
-    const characters = canvasState.elements.filter(el => el.type === 'character').length;
+      canvasState.groups.reduce((sum, g) => sum + g.animations.length, 0);
 
     return {
       elements: canvasState.elements.length,
       groups: canvasState.groups.length,
       animations,
-      characters,
       scenes: useSceneStore.getState().getScenes().length,
     };
   }
@@ -508,7 +504,7 @@ export class ProjectManager {
         }
       }
     };
-    
+
     this.sceneDataCache.set(newSceneId, emptyScene);
 
     console.log(`Created new scene: ${newSceneId}`);
@@ -528,12 +524,12 @@ export class ProjectManager {
    */
   duplicateScene(sceneId: string, newName?: string): string | null {
     const sceneStore = useSceneStore.getState();
-    
+
     try {
       // Save current project data to get the scene's content
       const projectData = this.saveProject();
       const parsedData = JSON.parse(projectData);
-      
+
       // Find the scene to duplicate
       const sceneToClone = parsedData.scenes.find((s: Scene) => s.id === sceneId);
       if (!sceneToClone) {
@@ -575,7 +571,7 @@ export class ProjectManager {
   async switchScene(sceneId: string): Promise<void> {
     const sceneStore = useSceneStore.getState();
     const currentSceneId = sceneStore.getActiveSceneId();
-    
+
     if (currentSceneId === sceneId) {
       console.log(`Already on scene ${sceneId}`);
       return;
@@ -584,7 +580,7 @@ export class ProjectManager {
     try {
       // Save current scene state to cache
       this.saveCurrentSceneToCache();
-      
+
       // Find the target scene in cache
       const targetScene = this.sceneDataCache.get(sceneId);
       if (!targetScene) {
@@ -663,11 +659,11 @@ export class ProjectManager {
         elements: canvasState.elements,
         groups: canvasState.groups,
         dimensions: {
-          width: uiState.canvas.currentSizeId === 'custom' 
-            ? uiState.canvas.customSize?.width || 1920 
+          width: uiState.canvas.currentSizeId === 'custom'
+            ? uiState.canvas.customSize?.width || 1920
             : uiState.canvas.availableSizes.find(s => s.id === uiState.canvas.currentSizeId)?.width || 1920,
-          height: uiState.canvas.currentSizeId === 'custom' 
-            ? uiState.canvas.customSize?.height || 1080 
+          height: uiState.canvas.currentSizeId === 'custom'
+            ? uiState.canvas.customSize?.height || 1080
             : uiState.canvas.availableSizes.find(s => s.id === uiState.canvas.currentSizeId)?.height || 1080
         },
         canvasSize: {
@@ -712,12 +708,12 @@ export class ProjectManager {
   private getAllScenes(): Scene[] {
     // Save current scene to cache first
     this.saveCurrentSceneToCache();
-    
+
     const sceneState = useSceneStore.getState();
     const allSceneInfos = sceneState.getScenes();
-    
+
     const scenes: Scene[] = [];
-    
+
     for (const sceneInfo of allSceneInfos) {
       const cachedScene = this.sceneDataCache.get(sceneInfo.id);
       if (cachedScene) {
@@ -769,7 +765,7 @@ export class ProjectManager {
         this.sceneDataCache.set(sceneInfo.id, emptyScene);
       }
     }
-    
+
     return scenes;
   }
 } 

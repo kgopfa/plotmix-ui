@@ -10,7 +10,6 @@ import { drawShape, applyShadowToContainer } from '@/utils/drawing-utils';
 
 // Extend PIXI components for React
 extend({ Container, Graphics });
-import { PixiText } from '../helpers/pixi-text';
 import ElementSelect from '../selection/element-select';
 import HoverOutline from './hover-outline';
 import CenterHighlight from './center-highlight';
@@ -62,7 +61,6 @@ interface DesignCanvasProps {
   handleElementMouseLeave: (id: string) => () => void;
   onPathStartClick?: (elementId: string, x: number, y: number) => void;
   handleGroupSelectionDragStart: (virtualElement: AnimatedCanvasObject, mouseX: number, mouseY: number, allElements?: AnimatedCanvasObject[]) => void;
-  isTextGroupCharacter: (element: AnimatedCanvasObject) => boolean;
   isElementInCustomOrPolygonGroup: (element: AnimatedCanvasObject) => boolean;
   // Snapping handlers
   onSnapElement?: (element: AnimatedCanvasObject, allElements: AnimatedCanvasObject[]) => { x: number; y: number; guides: SnapGuide[] };
@@ -99,7 +97,6 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
     handleElementMouseLeave,
     onPathStartClick,
     handleGroupSelectionDragStart,
-    isTextGroupCharacter,
     isElementInCustomOrPolygonGroup,
   } = props;
 
@@ -155,7 +152,6 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
     handleCanvasPointerDown: props.handleCanvasPointerDown,
     startDragging,
     startEndpointDragging,
-    isTextGroupCharacter,
   });
 
   // Set up global event listeners for element dragging
@@ -179,7 +175,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           props.handleCanvasPointerDown(e);
           return;
         }
-        
+
         // Only check for hit elements when using select tool
         // For creation tools, elements are non-interactive so we can always create shapes
         if (props.tool === 'select') {
@@ -316,47 +312,28 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                   onPointerUpOutside={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
                   onPointerOver={tool === 'select' || tool === 'draw' ? handleElementMouseMove(el.id) : undefined}
                   onPointerOut={tool === 'select' || tool === 'draw' ? handleElementMouseLeave(el.id) : undefined}
-                              ref={(node) => {
-              if (node) {
-                shapeRefs.current[el.id] = node;
-                // Apply shadow when container is created (skip for text elements as they have their own drop shadow)
-                if (el.type !== 'text') {
-                  applyShadowToContainer(node, el);
-                }
-              }
-            }}
+                  ref={(node) => {
+                    if (node) {
+                      shapeRefs.current[el.id] = node;
+                      // Apply shadow when container is created (skip for text elements as they have their own drop shadow)
+                      if (el.type !== 'text') {
+                        applyShadowToContainer(node, el);
+                      }
+                    }
+                  }}
                 >
                   <pixiGraphics draw={(g) => drawShape(g, el)} />
 
                   {/* Render text separately for text elements */}
-                  {el.type === 'text' && editingTextId !== el.id && (
-                    <PixiText
-                      element={el}
-                      x={-el.width / 2 + 8}
-                      y={-el.height / 2 + 8}
-                      anchor={{ x: 0, y: 0 }}
-                      alpha={el.opacity ?? 1}
-                    />
-                  )}
+                  {el.type === 'text' && editingTextId !== el.id}
 
-                  {/* Render individual characters for character elements */}
-                  {el.type === 'character' && (
-                    <PixiText
-                      element={el}
-                      x={0}
-                      y={0}
-                      anchor={{ x: 0.5, y: 0.5 }}
-                      alpha={el.opacity ?? 1}
-                    />
-                  )}
-
-                  {/* Show hover outline when hovered but not selected (but not for textgroup characters or elements in custom/polygon groups) */}
-                  {!isPlaying && hoveredId === el.id && !selectedIds.includes(el.id) && !isTextGroupCharacter(el) && !isElementInCustomOrPolygonGroup(el) && (
+                  {/* Show hover outline when hovered but not selected */}
+                  {!isPlaying && hoveredId === el.id && !selectedIds.includes(el.id) && !isElementInCustomOrPolygonGroup(el) && (
                     <HoverOutline element={el} />
                   )}
 
-                  {/* Show selection outline for all selected elements (but not for textgroup characters or elements in custom/polygon groups) */}
-                  {!isPlaying && selectedIds.includes(el.id) && !isTextGroupCharacter(el) && !isElementInCustomOrPolygonGroup(el) && (
+                  {/* Show selection outline for all selected elements */}
+                  {!isPlaying && selectedIds.includes(el.id) && !isElementInCustomOrPolygonGroup(el) && (
                     <ElementSelect
                       element={el}
                       scaleFactor={canvasScaleFactor.current}
@@ -416,47 +393,28 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
             onPointerUpOutside={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
             onPointerOver={tool === 'select' || tool === 'draw' ? handleElementMouseMove(el.id) : undefined}
             onPointerOut={tool === 'select' || tool === 'draw' ? handleElementMouseLeave(el.id) : undefined}
-                              ref={(node) => {
-                    if (node) {
-                      shapeRefs.current[el.id] = node;
-                      // Apply shadow when container is created (skip for text elements as they have their own drop shadow)
-                      if (el.type !== 'text') {
-                        applyShadowToContainer(node, el);
-                      }
-                    }
-                  }}
+            ref={(node) => {
+              if (node) {
+                shapeRefs.current[el.id] = node;
+                // Apply shadow when container is created (skip for text elements as they have their own drop shadow)
+                if (el.type !== 'text') {
+                  applyShadowToContainer(node, el);
+                }
+              }
+            }}
           >
             <pixiGraphics draw={(g) => drawShape(g, el)} />
 
             {/* Render text separately for text elements */}
-            {el.type === 'text' && editingTextId !== el.id && (
-              <PixiText
-                element={el}
-                x={-el.width / 2 + 8}
-                y={-el.height / 2 + 8}
-                anchor={{ x: 0, y: 0 }}
-                alpha={el.opacity ?? 1}
-              />
-            )}
+            {el.type === 'text' && editingTextId !== el.id}
 
-            {/* Render individual characters for character elements */}
-            {el.type === 'character' && (
-              <PixiText
-                element={el}
-                x={0}
-                y={0}
-                anchor={{ x: 0.5, y: 0.5 }}
-                alpha={el.opacity ?? 1}
-              />
-            )}
-
-            {/* Show hover outline when hovered but not selected (but not for textgroup characters or elements in custom/polygon groups) */}
-            {!isPlaying && hoveredId === el.id && !selectedIds.includes(el.id) && !isTextGroupCharacter(el) && !isElementInCustomOrPolygonGroup(el) && (
+            {/* Show hover outline when hovered but not selected */}
+            {!isPlaying && hoveredId === el.id && !selectedIds.includes(el.id) && !isElementInCustomOrPolygonGroup(el) && (
               <HoverOutline element={el} />
             )}
 
-            {/* Show selection outline for all selected elements (but not for textgroup characters or elements in custom/polygon groups) */}
-            {!isPlaying && selectedIds.includes(el.id) && !isTextGroupCharacter(el) && !isElementInCustomOrPolygonGroup(el) && (
+            {/* Show selection outline for all selected elements */}
+            {!isPlaying && selectedIds.includes(el.id) && !isElementInCustomOrPolygonGroup(el) && (
               <ElementSelect
                 element={el}
                 scaleFactor={canvasScaleFactor.current}
@@ -515,18 +473,18 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
       {/* Element handles - only for single selection and when not playing animations */}
       {!isPlaying && selectedIds.length === 1 && selectedIds.map(selectedId => {
         const selectedElement = elements.find(el => el.id === selectedId);
-        
+
         if (!selectedElement) return null;
 
         return (
           <React.Fragment key={`handles-${selectedId}`}>
             {/* Resize Handles */}
             <ResizeHandles element={selectedElement} />
-            
+
             {/* Radius Handles */}
-            <RadiusHandles 
-              element={selectedElement} 
-              scaleFactor={canvasScaleFactor.current} 
+            <RadiusHandles
+              element={selectedElement}
+              scaleFactor={canvasScaleFactor.current}
             />
           </React.Fragment>
         );

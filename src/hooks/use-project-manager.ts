@@ -14,7 +14,7 @@ interface ProjectManagerHook {
   // Utilities
   validateProject: (jsonData: string) => Promise<boolean>;
   createBackup: () => string;
-  getProjectStats: () => { elements: number; groups: number; animations: number; characters: number };
+  getProjectStats: () => { elements: number; groups: number; animations: number };
   
   // State
   isLoading: boolean;
@@ -131,7 +131,7 @@ export function useProjectManager(): ProjectManagerHook {
       return projectManager.getProjectStats();
     } catch (error) {
       console.error('Failed to get project stats:', error);
-      return { elements: 0, groups: 0, animations: 0, characters: 0 };
+      return { elements: 0, groups: 0, animations: 0 };
     }
   }, [projectManager]);
 

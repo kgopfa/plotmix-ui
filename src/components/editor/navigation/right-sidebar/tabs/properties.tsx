@@ -403,7 +403,7 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
 
       {/* Text Properties */}
       {
-        (localElement.type === 'text' || localElement.type === 'textGroup') && (
+        (localElement.type === 'text') && (
           <div className="space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
               <h4 className="font-semibold text-red-400 text-sm">Text Properties</h4>

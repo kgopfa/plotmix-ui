@@ -13,7 +13,6 @@ interface UseElementPointerHandlersProps {
   handleCanvasPointerDown: (e: FederatedPointerEvent) => void;
   startDragging: (id: string, offsetX: number, offsetY: number, isGroup?: boolean, groupOffsets?: Array<{ id: string; offsetX: number; offsetY: number }>) => void;
   startEndpointDragging: (id: string, endpoint: 'start' | 'end') => void;
-  isTextGroupCharacter: (element: AnimatedCanvasObject) => boolean;
 }
 
 export const useElementPointerHandlers = ({
@@ -27,7 +26,6 @@ export const useElementPointerHandlers = ({
   handleCanvasPointerDown,
   startDragging,
   startEndpointDragging,
-  isTextGroupCharacter,
 }: UseElementPointerHandlersProps) => {
   const textClickTimeRef = useRef<Map<string, number>>(new Map());
 
@@ -88,48 +86,8 @@ export const useElementPointerHandlers = ({
     const element = elements.find(el => el.id === id);
     if (!element) return;
 
-    // Handle textgroup character clicks - redirect to parent textGroup with double-click support
-    if (isTextGroupCharacter(element)) {
-      const parentTextGroup = elements.find(el => el.id === element.parentTextGroupId);
-      if (parentTextGroup) {
-        // Check for double-click on character (which should be treated as double-click on textGroup)
-        const currentTime = Date.now();
-        const lastClickTime = textClickTimeRef.current.get(parentTextGroup.id) || 0;
-        const timeDiff = currentTime - lastClickTime;
-        if (timeDiff < 300) { // Double-click detected (within 300ms)
-          // Handle double-click for text editing
-          textClickTimeRef.current.delete(parentTextGroup.id); // Clear the click time
-          return;
-        } else {
-          // Single click - store the time and continue with selection logic
-          textClickTimeRef.current.set(parentTextGroup.id, currentTime);
-        }
-        // Select the parent textGroup instead of the character
-        selectElement([parentTextGroup], isMultiSelect);
-        startDragging(parentTextGroup.id, pos.x - parentTextGroup.x, pos.y - parentTextGroup.y);
-        return;
-      }
-    }
-
     // Handle element selection
     selectElement([element], isMultiSelect);
-
-    // For text and textGroup elements, handle double-click to edit, single click to drag
-    if (element.type === 'text' || element.type === 'textGroup') {
-      // Check if this is a double-click
-      const currentTime = Date.now();
-      const lastClickTime = textClickTimeRef.current.get(id) || 0;
-      const timeDiff = currentTime - lastClickTime;
-      if (timeDiff < 300) { // Double-click detected (within 300ms)
-        // Handle double-click for text editing
-        textClickTimeRef.current.delete(id); // Clear the click time
-        return;
-      } else {
-        // Single click - store the time and continue with dragging logic
-        textClickTimeRef.current.set(id, currentTime);
-        // Don't return here, let it fall through to normal drag handling
-      }
-    }
 
     // Then check for line endpoint handling
     if (element?.type === 'line' && element.lineOptions?.points) {
@@ -179,7 +137,7 @@ export const useElementPointerHandlers = ({
       startDragging(id, pos.x - shapeX, pos.y - shapeY);
       selectElement([element], isMultiSelect);
     }
-  }, [tool, isLineChaining, lineStartPoint, elements, selectedIds, selectElement, handleCanvasClick, handleCanvasPointerDown, startDragging, startEndpointDragging, isTextGroupCharacter]);
+  }, [tool, isLineChaining, lineStartPoint, elements, selectedIds, selectElement, handleCanvasClick, handleCanvasPointerDown, startDragging, startEndpointDragging]);
 
   return {
     handleElementPointerDown,

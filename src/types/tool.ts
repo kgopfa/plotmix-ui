@@ -8,5 +8,4 @@ export type ToolType =
   | 'simpleLine'
   | 'draw' 
   | 'image'
-  | 'text'
-  | 'textGroup'; 
+  | 'text'; 

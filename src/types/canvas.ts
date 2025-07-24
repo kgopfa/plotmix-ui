@@ -56,13 +56,6 @@ export type AnimatableProperties = {
   text?: string;
   fontSize?: number;
   letterSpacing?: number;
-  // TextGroup animation properties
-  characters?: string[];
-  characterOpacity?: number[];
-  characterX?: number[];
-  characterY?: number[];
-  characterRotation?: number[];
-  characterScale?: number[];
   // Physics animation properties
   velocity?: number;
   angle?: number;
@@ -105,7 +98,7 @@ export interface BaseAnimationConfig {
 export interface AnimatedCanvasObject {
   id: string;
   name: string;
-  type: 'rectangle' | 'circle' | 'triangle' | 'arc' | 'line' | 'path' | 'image' | 'text' | 'textGroup' | 'character';
+  type: 'rectangle' | 'circle' | 'triangle' | 'arc' | 'line' | 'path' | 'image' | 'text' ;
   x: number;
   y: number;
   width: number;
@@ -146,14 +139,7 @@ export interface AnimatedCanvasObject {
   fontStyle?: string;
   textAlign?: string;
   lineHeight?: number;
-  // TextGroup-specific properties
-  characters?: string[]; // Array of individual characters for textGroup
-  letterSpacing?: number; // Spacing between characters
-  // Character-specific properties
-  character?: string; // Single character for character type
-  characterIndex?: number; // Index within parent textGroup
-  parentTextGroupId?: string; // Reference to parent textGroup
-  groupId?: string; // Every object belongs to a group
+  groupId?: string;
   // Parent-child relationship
   parent?: string | null; // ID of parent element or group
 }

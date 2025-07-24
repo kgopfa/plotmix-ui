@@ -35,7 +35,6 @@ export const LayersTab: FC = () => {
       case 'rectangle': return Square;
       case 'circle': return Circle;
       case 'text': return Type;
-      case 'textGroup': return Group;
       case 'image': return Image;
       case 'line': 
       case 'simpleLine': return Minus;
@@ -47,8 +46,7 @@ export const LayersTab: FC = () => {
     switch (type) {
       case 'rectangle': return 'text-blue-600';
       case 'circle': return 'text-green-600';
-      case 'text': 
-      case 'textGroup': return 'text-orange-600';
+      case 'text': return 'text-orange-600';
       case 'image': return 'text-purple-600';
       case 'line': 
       case 'simpleLine': return 'text-gray-600';

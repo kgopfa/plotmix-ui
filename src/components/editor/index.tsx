@@ -732,10 +732,6 @@ export default function EditorCanvas() {
     // Handle group selection drag start
   }, []);
 
-  const isTextGroupCharacter = useCallback((element: AnimatedCanvasObject) => {
-    return !!(element.type === 'character' && element.parentTextGroupId);
-  }, []);
-
   const isElementInCustomOrPolygonGroup = useCallback((element: AnimatedCanvasObject) => {
     const group = groups.find(g => g.id === element.groupId);
     return !!(group && !group.isDefaultGroup && (group.type === 'custom' || group.type === 'polygon'));
@@ -818,7 +814,6 @@ export default function EditorCanvas() {
           handleElementMouseLeave={handleElementMouseLeave}
           onPathStartClick={onPathStartClick}
           handleGroupSelectionDragStart={handleGroupSelectionDragStart}
-          isTextGroupCharacter={isTextGroupCharacter}
           isElementInCustomOrPolygonGroup={isElementInCustomOrPolygonGroup}
           canvasZoom={canvasZoom}
           onCanvasZoomChange={setCanvasZoom}
