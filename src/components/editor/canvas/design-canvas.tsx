@@ -316,13 +316,15 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                   onPointerUpOutside={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
                   onPointerOver={tool === 'select' || tool === 'draw' ? handleElementMouseMove(el.id) : undefined}
                   onPointerOut={tool === 'select' || tool === 'draw' ? handleElementMouseLeave(el.id) : undefined}
-                  ref={(node) => {
-                    if (node) {
-                      shapeRefs.current[el.id] = node;
-                      // Apply shadow when container is created
-                      applyShadowToContainer(node, el);
-                    }
-                  }}
+                              ref={(node) => {
+              if (node) {
+                shapeRefs.current[el.id] = node;
+                // Apply shadow when container is created (skip for text elements as they have their own drop shadow)
+                if (el.type !== 'text') {
+                  applyShadowToContainer(node, el);
+                }
+              }
+            }}
                 >
                   <pixiGraphics draw={(g) => drawShape(g, el)} />
 
@@ -414,13 +416,15 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
             onPointerUpOutside={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
             onPointerOver={tool === 'select' || tool === 'draw' ? handleElementMouseMove(el.id) : undefined}
             onPointerOut={tool === 'select' || tool === 'draw' ? handleElementMouseLeave(el.id) : undefined}
-            ref={(node) => {
-              if (node) {
-                shapeRefs.current[el.id] = node;
-                // Apply shadow when container is created
-                applyShadowToContainer(node, el);
-              }
-            }}
+                              ref={(node) => {
+                    if (node) {
+                      shapeRefs.current[el.id] = node;
+                      // Apply shadow when container is created (skip for text elements as they have their own drop shadow)
+                      if (el.type !== 'text') {
+                        applyShadowToContainer(node, el);
+                      }
+                    }
+                  }}
           >
             <pixiGraphics draw={(g) => drawShape(g, el)} />
 

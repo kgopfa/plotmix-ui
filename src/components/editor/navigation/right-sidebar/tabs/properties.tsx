@@ -547,6 +547,95 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                   className="grid w-full cursor-default grid-cols-1 rounded-lg bg-white py-1.5 pr-2 pl-3 text-left text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-green-600 text-sm"
                 />
               </label>
+
+              {/* Drop Shadow Controls */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={localElement.shadowEnabled || false}
+                    onChange={e => updateLocalProperty('shadowEnabled', e.target.checked)}
+                    className="rounded border-gray-300 focus:ring-2 focus:ring-green-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Drop Shadow</span>
+                </div>
+
+                {localElement.shadowEnabled && (
+                  <div className="space-y-3 pl-6 border-l-2 border-green-200">
+                    <div className="grid grid-cols-2 gap-3">
+                      <label className="flex flex-col gap-1">
+                        <span className="text-xs font-semibold text-green-400">Blur</span>
+                        <input
+                          type="number"
+                          value={localElement.shadowBlur || 4}
+                          onChange={e => updateLocalProperty('shadowBlur', Number(e.target.value))}
+                          min={0}
+                          max={50}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors text-sm"
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1">
+                        <span className="text-xs font-semibold text-green-400">Distance</span>
+                        <input
+                          type="number"
+                          value={localElement.shadowOffsetX || 6}
+                          onChange={e => updateLocalProperty('shadowOffsetX', Number(e.target.value))}
+                          min={0}
+                          max={50}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors text-sm"
+                        />
+                      </label>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <label className="flex flex-col gap-1">
+                        <span className="text-xs font-semibold text-green-400">Angle (°)</span>
+                        <input
+                          type="number"
+                          value={Math.round(((localElement.shadowAngle || Math.PI / 6) * 180) / Math.PI)}
+                          onChange={e => updateLocalProperty('shadowAngle', (Number(e.target.value) * Math.PI) / 180)}
+                          min={0}
+                          max={360}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors text-sm"
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1">
+                        <span className="text-xs font-semibold text-green-400">Opacity</span>
+                        <input
+                          type="number"
+                          value={localElement.shadowOpacity || 1}
+                          onChange={e => updateLocalProperty('shadowOpacity', Number(e.target.value))}
+                          min={0}
+                          max={1}
+                          step={0.1}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors text-sm"
+                        />
+                      </label>
+                    </div>
+
+                    <label className="flex flex-col gap-1">
+                      <span className="text-xs font-semibold text-green-400">Shadow Color</span>
+                      <div className="flex relative">
+                        <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-green-500 outline-1 -outline-offset-1 outline-gray-300">
+                          <div
+                            className="w-4 h-4 rounded border border-gray-300 cursor-pointer hover:scale-110 transition-transform"
+                            style={{ backgroundColor: localElement.shadowColor || '#000000' }}
+                          />
+                        </div>
+                        <input
+                          type="text"
+                          value={(localElement.shadowColor || '#000000').replace('#', '').toUpperCase()}
+                          onChange={e => updateLocalProperty('shadowColor', '#' + e.target.value.toUpperCase())}
+                          className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-green-600 uppercase"
+                          placeholder="000000"
+                        />
+                      </div>
+                    </label>
+
+
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )

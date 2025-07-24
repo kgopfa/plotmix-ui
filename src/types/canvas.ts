@@ -124,6 +124,7 @@ export interface AnimatedCanvasObject {
   shadowOffsetX?: number;
   shadowOffsetY?: number;
   shadowOpacity?: number;
+  shadowAngle?: number;
   pivotX?: number;
   pivotY?: number;
   lineOptions?: {

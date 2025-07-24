@@ -33,6 +33,15 @@ export const PixiText: React.FC<PixiTextProps> = ({ element, x, y, anchor = { x:
       lineHeight: element.lineHeight || 1.2,
       wordWrap: true,
       wordWrapWidth: element.width - 16,
+              ...(element.shadowEnabled && {
+          dropShadow: {
+            color: element.shadowColor || '#000000',
+            blur: element.shadowBlur || 4,
+            angle: element.shadowAngle || Math.PI / 6, // Default 30 degrees
+            distance: element.shadowOffsetX || 6,
+            alpha: element.shadowOpacity || 1,
+          }
+        })
     });
 
     // Update text properties
