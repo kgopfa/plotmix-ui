@@ -277,7 +277,7 @@ function createText(props: BaseObjectProps): AnimatedCanvasObject {
     fill: '#000000', // Override default white fill for text
     stroke: undefined, // Text typically doesn't have stroke
     strokeWidth: 0,
-    text: props.text || 'Rich text with a lot of options and across multiple lines', // Match working example text
+    text: props.text || 'Double click text to edit',
     fontSize: 36, // Match working example font size
     fontFamily: 'Arial', // Match working example font family
     fontWeight: 'bold', // Match working example font weight
