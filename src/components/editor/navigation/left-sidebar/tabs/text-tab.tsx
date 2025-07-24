@@ -18,8 +18,8 @@ export const TextTab: React.FC = () => {
 
   const textFeatures = [
     {
-      name: 'Font Styles',
-      items: ['Arial', 'Helvetica', 'Times New Roman', 'Georgia'],
+      name: 'Font Categories',
+      items: ['Sans-serif', 'Serif', 'Script', 'Monospace', 'Decorative'],
       icon: '🔤'
     },
     {
