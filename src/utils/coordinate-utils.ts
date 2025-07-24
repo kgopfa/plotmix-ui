@@ -58,27 +58,3 @@ export function convertPointerEventToDesignCanvasCoords(
 ): { x: number; y: number } {
   return convertGlobalToDesignCanvasCoords(e.global, designCanvasContainer);
 }
-
-/**
- * Debug coordinate conversion for troubleshooting
- * 
- * @param globalCoords - Global coordinates
- * @param localCoords - Local coordinates
- * @param designCanvasContainer - The design canvas container
- */
-export function debugCoordinateConversion(
-  globalCoords: { x: number; y: number },
-  localCoords: { x: number; y: number },
-  designCanvasContainer: Container
-): void {
-  const viewport = designCanvasContainer.parent;
-  
-  console.log('[Coordinate Debug]', {
-    global: { x: globalCoords.x, y: globalCoords.y },
-    local: { x: localCoords.x, y: localCoords.y },
-    containerPosition: { x: designCanvasContainer.x, y: designCanvasContainer.y },
-    containerScale: { x: designCanvasContainer.scale?.x, y: designCanvasContainer.scale?.y },
-    viewportScale: { x: viewport?.scale?.x, y: viewport?.scale?.y },
-    viewportPosition: { x: viewport?.position?.x, y: viewport?.position?.y }
-  });
-} 

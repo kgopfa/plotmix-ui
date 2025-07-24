@@ -209,12 +209,6 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       <div
         ref={canvasContainerRef}
         className="absolute inset-0 bg-slate-100 canvas-area"
-        onMouseDown={(e) => {
-          console.log('[ApplicationCanvas] Mouse down on container', { x: e.clientX, y: e.clientY });
-        }}
-        onClick={(e) => {
-          console.log('[ApplicationCanvas] Click on container', { x: e.clientX, y: e.clientY });
-        }}
       >
         <Application
           ref={appRef}

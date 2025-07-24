@@ -32,7 +32,7 @@ import { RightSidebar } from './navigation/right-sidebar';
 import { SelectionNavbar } from './navigation/selection';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import type { ApplicationCanvasRef } from './application-canvas';
-import { convertPointerEventToDesignCanvasCoords, debugCoordinateConversion } from '@/utils/coordinate-utils';
+import { convertPointerEventToDesignCanvasCoords } from '@/utils/coordinate-utils';
 
 
 const ApplicationCanvas = dynamic(() => import('./application-canvas').then(m => m.ApplicationCanvas), { ssr: false });
@@ -1089,9 +1089,6 @@ export default function EditorCanvas() {
     
     // Use the utility function for consistent coordinate conversion
     const localPos = convertPointerEventToDesignCanvasCoords(e, designCanvasContainer);
-    
-    // Debug coordinate conversion to help identify the issue
-    debugCoordinateConversion(e.global, localPos, designCanvasContainer);
     
     // Ensure we're getting valid coordinates
     if (isNaN(localPos.x) || isNaN(localPos.y)) {
