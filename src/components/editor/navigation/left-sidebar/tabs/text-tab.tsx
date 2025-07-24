@@ -39,7 +39,7 @@ export const TextTab: React.FC = () => {
     }
   ];
 
-  const handleToolSelect = (tool: 'text' | 'textGroup') => {
+  const handleToolSelect = (tool: 'text') => {
     setActiveTool(tool);
   };
 
@@ -133,11 +133,10 @@ export const TextTab: React.FC = () => {
             <div className="text-sm font-medium text-gray-700 mb-2">Active Tool</div>
             <div className="flex items-center gap-3">
               <span className="text-xl">
-                {activeTool === 'text' ? '📝' : activeTool === 'textGroup' ? '📋' : '👆'}
+                {activeTool === 'text' ? '📝' : '👆'}
               </span>
               <span className="text-blue-700 font-medium text-sm">
                 {activeTool === 'text' ? 'Single Text' : 
-                 activeTool === 'textGroup' ? 'Text Group' : 
                  'Selection Tool'}
               </span>
             </div>
