@@ -47,8 +47,6 @@ export default function EditorCanvas() {
     setCanvasObjects,
     setGroups,
   } = useCanvasMigration();
-  
-
 
   // Use Zustand store for selection state
   const {
@@ -78,12 +76,6 @@ export default function EditorCanvas() {
 
   // Use UI store for panel state
   const panelState = useUIStore((state) => state.panels);
-  const {
-    setLeftPanelWidth,
-    setRightPanelWidth,
-    setTimelineHeight,
-    setResizing
-  } = useUIStore();
 
   // Use UI store for other tool state
   const {
@@ -113,9 +105,6 @@ export default function EditorCanvas() {
 
   // Canvas container ref for wheel event handling
   const canvasContainerRef = useRef<HTMLDivElement>(null);
-
-
-
   // Refs for canvas operations
   const shapeRefs = useRef<Record<string, unknown>>({});
   const groupContainers = useRef<Record<string, unknown>>({});
@@ -178,10 +167,6 @@ export default function EditorCanvas() {
     handlePointerDown,
     handleElementMouseMove,
     handleElementMouseLeave,
-    setHoveredId,
-    setIsDrawing,
-    setCurrentPath,
-    setMousePos,
   } = useCanvasInteractions({ snapPoint });
 
   // Panel resize handlers
@@ -206,21 +191,10 @@ export default function EditorCanvas() {
     };
   }, [initializeSubscriptions, cleanupSubscriptions]);
 
-  // Timeline sync is handled by the useTimelineIntegration hook
-
-  // No longer need auto-centering since canvas is fixed position
-
-  // Note: Zoom handling is now done by the PIXI viewport in the Canvas component
-  // This provides better performance and Figma-like zoom behavior
-
   // Update groups when groups array changes
   useEffect(() => {
     updateSelectedGroups(groups);
   }, [groups, updateSelectedGroups]);
-
-  // Helper functions removed - using direct state management
-
-  // Enhanced keyboard shortcuts now handle deletion internally
 
   // Handle side effects when tool changes - clear selection when switching to creation tools
   useEffect(() => {
@@ -366,8 +340,6 @@ export default function EditorCanvas() {
   useEffect(() => {
     timelineManager.setTrackData(canvasObjects, groups);
   }, [canvasObjects, groups, timelineManager]);
-
-
 
   // Clear snap guides when element selection changes or drag ends
   useEffect(() => {
@@ -630,11 +602,6 @@ export default function EditorCanvas() {
     });
   };
 
-
-
-
-
-
   // Simplified group management handlers - now using unified createGroup
   const handleGroupElements = useCallback(() => {
     if (!canvasObjects || canvasObjects.length === 0 || selectedObjects.length < 2) {
@@ -676,8 +643,6 @@ export default function EditorCanvas() {
     onGroup: handleGroupElements,
     onUngroup: handleUngroupElements,
   });
-
-
 
   // Selection navbar handlers
   const handleSelectionNavbarAnimate = useCallback(() => {
@@ -761,11 +726,7 @@ export default function EditorCanvas() {
     updateSelectedGroups(detectedGroups);
   }, [selectedObjects, groups, updateSelectedGroups]);
 
-
-
   const activeNav = useActiveNav();
-
-
 
   const handleGroupSelectionDragStart = useCallback((_virtualElement: AnimatedCanvasObject, _mouseX: number, _mouseY: number, _allElements?: AnimatedCanvasObject[]) => {
     // Handle group selection drag start
