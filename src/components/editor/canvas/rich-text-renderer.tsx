@@ -56,7 +56,7 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({ element, isE
       distance: element.textDropShadow.distance,
       alpha: element.textDropShadow.alpha
     } : undefined,
-    wordWrap: element.wordWrap || true,
+    wordWrap: true, // Always enabled
     wordWrapWidth: element.width, // Always use element width for consistency
   });
 

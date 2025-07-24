@@ -580,32 +580,7 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                 />
               </label>
 
-              {/* Word Wrap Controls */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={localElement.wordWrap || false}
-                    onChange={e => updateLocalProperty('wordWrap', e.target.checked)}
-                    className="rounded border-gray-300 focus:ring-2 focus:ring-green-500"
-                  />
-                  <span className="text-sm font-medium text-gray-700">Word Wrap</span>
-                </div>
 
-                {localElement.wordWrap && (
-                  <label className="flex flex-col gap-1">
-                    <span className="text-xs font-semibold text-green-400">Wrap Width</span>
-                    <input
-                      type="number"
-                      value={localElement.wordWrapWidth || localElement.width}
-                      onChange={e => updateLocalProperty('wordWrapWidth', Number(e.target.value))}
-                      min={50}
-                      max={1000}
-                      className="grid w-full cursor-default grid-cols-1 rounded-lg bg-white py-1.5 pr-2 pl-3 text-left text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-green-600 text-sm"
-                    />
-                  </label>
-                )}
-              </div>
 
               {/* Text Stroke/Outline Controls */}
               <div className="space-y-3">

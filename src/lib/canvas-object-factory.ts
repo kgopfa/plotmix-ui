@@ -284,24 +284,12 @@ function createText(props: BaseObjectProps): AnimatedCanvasObject {
     fontStyle: 'italic', // Match working example font style
     textAlign: 'left',
     lineHeight: 1.2,
-    // Rich text properties - set to match working example
-    textStroke: '#4a1850', // Purple stroke color from working example
-    textStrokeWidth: 5, // Stroke width from working example
+    // Rich text properties - start with simple styling
+    textStroke: undefined,
+    textStrokeWidth: 0,
     textStrokeJoin: 'round',
-    textDropShadow: {
-      color: '#000000',
-      blur: 4,
-      angle: Math.PI / 6,
-      distance: 6,
-      alpha: 1
-    },
-    textGradient: {
-      type: 'linear',
-      colors: [
-        { color: '#ffffff', offset: 0 },
-        { color: '#00ff99', offset: 1 }
-      ]
-    },
+    textDropShadow: undefined,
+    textGradient: undefined,
     letterSpacing: 0,
     wordWrap: true,
     wordWrapWidth: width, // Ensure wordWrapWidth matches the element width
