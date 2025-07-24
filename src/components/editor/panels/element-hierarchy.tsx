@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
-import { ContextMenu } from '../canvas/context-menu';
+import { ContextMenu } from '../selection/context-menu';
 import { contextMenuManager } from '@/lib/context-menu-manager';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useUIStore } from '@/stores/use-ui-store';

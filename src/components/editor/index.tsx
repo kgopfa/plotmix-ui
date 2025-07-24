@@ -17,7 +17,7 @@ import { AnimationsPanel } from './navigation/right-sidebar/animations-panel';
 import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager';
 
 import { Timeline } from './timeline';
-import { MaskOverlay } from './canvas/mask-overlay';
+import { MaskOverlay } from './helpers/mask-overlay';
 import { AnimatedCanvasObject, ElementAnimation, CanvasGroup } from '@/types/canvas';
 
 import dynamic from 'next/dynamic';

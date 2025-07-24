@@ -1,19 +1,23 @@
 import React, { useRef, useEffect } from 'react';
+import { extend } from '@pixi/react';
 import { SnapGuides } from './snap-guides';
-import { LinePreview } from './line-preview';
+import { LinePreview } from '../helpers/line-preview';
 import type { SnapGuide } from '../../../utils/element-snapping';
 import type { FederatedPointerEvent } from 'pixi.js';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { Rectangle, Graphics, Container } from 'pixi.js';
 import { drawShape, applyShadowToContainer } from '@/utils/drawing-utils';
-import ElementSelect from './element-select';
+
+// Extend PIXI components for React
+extend({ Container, Graphics });
+import { PixiText } from '../helpers/pixi-text';
+import ElementSelect from '../selection/element-select';
 import HoverOutline from './hover-outline';
 import CenterHighlight from './center-highlight';
-import RotationHandles from './rotation-handles';
-import ResizeHandles from './resize-handles';
-import RadiusHandles from './radius-handles';
-import { AnimatedTextGroup } from './animated-text-group';
-import { GroupSelection } from './group-selection';
+import RotationHandles from '../selection/rotation-handles';
+import ResizeHandles from '../selection/resize-handles';
+import RadiusHandles from '../selection/radius-handles';
+import { GroupSelection } from '../selection/group-selection';
 import { useCanvasState } from '@/stores/use-ui-store';
 import { useCanvasOperations } from '@/stores/use-canvas-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
@@ -324,48 +328,24 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
 
                   {/* Render text separately for text elements */}
                   {el.type === 'text' && editingTextId !== el.id && (
-                    <pixiText
-                      text={el.text || 'Text'}
-                      anchor={{ x: 0, y: 0 }}
+                    <PixiText
+                      element={el}
                       x={-el.width / 2 + 8}
                       y={-el.height / 2 + 8}
+                      anchor={{ x: 0, y: 0 }}
                       alpha={el.opacity ?? 1}
-                      style={{
-                        fontFamily: el.fontFamily || 'Arial, sans-serif',
-                        fontSize: el.fontSize || 16,
-                        fontWeight: (el.fontWeight as 'normal' | 'bold' | 'bolder' | 'lighter' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900') || 'normal',
-                        fontStyle: (el.fontStyle as 'normal' | 'italic' | 'oblique') || 'normal',
-                        fill: el.fill || '#000000',
-                        align: (el.textAlign as 'left' | 'center' | 'right') || 'left',
-                        lineHeight: el.lineHeight || 1.2,
-                        wordWrap: true,
-                        wordWrapWidth: el.width - 16,
-                      }}
                     />
                   )}
 
                   {/* Render individual characters for character elements */}
                   {el.type === 'character' && (
-                    <pixiText
-                      text={el.character || el.text || ' '}
-                      anchor={{ x: 0.5, y: 0.5 }}
+                    <PixiText
+                      element={el}
                       x={0}
                       y={0}
+                      anchor={{ x: 0.5, y: 0.5 }}
                       alpha={el.opacity ?? 1}
-                      style={{
-                        fontFamily: el.fontFamily || 'Arial, sans-serif',
-                        fontSize: el.fontSize || 16,
-                        fontWeight: (el.fontWeight as 'normal' | 'bold' | 'bolder' | 'lighter' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900') || 'normal',
-                        fontStyle: (el.fontStyle as 'normal' | 'italic' | 'oblique') || 'normal',
-                        fill: el.fill || '#000000',
-                        align: 'center',
-                      }}
                     />
-                  )}
-
-                  {/* Render textGroup elements using AnimatedTextGroup component */}
-                  {el.type === 'textGroup' && editingTextId !== el.id && (
-                    <AnimatedTextGroup element={el} />
                   )}
 
                   {/* Show hover outline when hovered but not selected (but not for textgroup characters or elements in custom/polygon groups) */}
@@ -446,48 +426,24 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
 
             {/* Render text separately for text elements */}
             {el.type === 'text' && editingTextId !== el.id && (
-              <pixiText
-                text={el.text || 'Text'}
-                anchor={{ x: 0, y: 0 }}
+              <PixiText
+                element={el}
                 x={-el.width / 2 + 8}
                 y={-el.height / 2 + 8}
+                anchor={{ x: 0, y: 0 }}
                 alpha={el.opacity ?? 1}
-                style={{
-                  fontFamily: el.fontFamily || 'Arial, sans-serif',
-                  fontSize: el.fontSize || 16,
-                  fontWeight: (el.fontWeight as 'normal' | 'bold' | 'bolder' | 'lighter' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900') || 'normal',
-                  fontStyle: (el.fontStyle as 'normal' | 'italic' | 'oblique') || 'normal',
-                  fill: el.fill || '#000000',
-                  align: (el.textAlign as 'left' | 'center' | 'right') || 'left',
-                  lineHeight: el.lineHeight || 1.2,
-                  wordWrap: true,
-                  wordWrapWidth: el.width - 16,
-                }}
               />
             )}
 
             {/* Render individual characters for character elements */}
             {el.type === 'character' && (
-              <pixiText
-                text={el.character || el.text || ' '}
-                anchor={{ x: 0.5, y: 0.5 }}
+              <PixiText
+                element={el}
                 x={0}
                 y={0}
+                anchor={{ x: 0.5, y: 0.5 }}
                 alpha={el.opacity ?? 1}
-                style={{
-                  fontFamily: el.fontFamily || 'Arial, sans-serif',
-                  fontSize: el.fontSize || 16,
-                  fontWeight: (el.fontWeight as 'normal' | 'bold' | 'bolder' | 'lighter' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900') || 'normal',
-                  fontStyle: (el.fontStyle as 'normal' | 'italic' | 'oblique') || 'normal',
-                  fill: el.fill || '#000000',
-                  align: 'center',
-                }}
               />
-            )}
-
-            {/* Render textGroup elements using AnimatedTextGroup component */}
-            {el.type === 'textGroup' && editingTextId !== el.id && (
-              <AnimatedTextGroup element={el} />
             )}
 
             {/* Show hover outline when hovered but not selected (but not for textgroup characters or elements in custom/polygon groups) */}

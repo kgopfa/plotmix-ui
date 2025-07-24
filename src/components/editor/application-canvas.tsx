@@ -6,7 +6,7 @@ import { Container, Graphics } from 'pixi.js';
 import { DesignCanvas } from './canvas/design-canvas';
 import { Viewport, ViewportWrapper, centerOnDesign, zoomToFit, resetZoom } from './viewport';
 import { useCanvasState } from '@/stores/use-ui-store';
-import { ContextMenu } from './canvas/context-menu';
+import { ContextMenu } from './selection/context-menu';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager';
 

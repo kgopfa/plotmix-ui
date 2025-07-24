@@ -8,6 +8,7 @@ import {
   calculateNorthAngle
 } from '@/utils/drawing-utils';
 import { ColorPicker } from './color-picker';
+import { FontSelector } from './font-selector';
 import { Weight, SquareRoundCorner, ChevronsUpDown, Check } from 'lucide-react';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react';
 
@@ -411,36 +412,10 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
             <div className="space-y-3">
               <label className="flex flex-col gap-1">
                 <span className="text-xs font-semibold text-green-400">Font Family</span>
-                <Listbox value={localElement.fontFamily || 'Arial'} onChange={(value) => updateLocalProperty('fontFamily', value)}>
-                  <div className="relative">
-                    <ListboxButton className="grid w-full cursor-default grid-cols-1 rounded-lg bg-white py-1.5 pr-2 pl-3 text-left text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-green-600 text-sm">
-                      <span className="col-start-1 row-start-1 truncate pr-6">{localElement.fontFamily || 'Arial'}</span>
-                      <ChevronsUpDown
-                        aria-hidden="true"
-                        className="col-start-1 row-start-1 size-4 self-center justify-self-end text-gray-500"
-                      />
-                    </ListboxButton>
-
-                    <ListboxOptions
-                      transition
-                      className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white py-1 text-sm shadow-lg ring-1 ring-black/5 focus:outline-hidden data-leave:transition data-leave:duration-100 data-leave:ease-in data-closed:data-leave:opacity-0"
-                    >
-                      {['Arial', 'Helvetica', 'Times New Roman', 'Courier New', 'Georgia', 'Verdana'].map((font) => (
-                        <ListboxOption
-                          key={font}
-                          value={font}
-                          className="group relative cursor-default py-2 pr-4 pl-8 text-gray-600 select-none data-focus:bg-green-600 data-focus:text-white data-focus:outline-hidden"
-                        >
-                          <span className="block truncate font-normal group-data-selected:font-semibold">{font}</span>
-
-                          <span className="absolute inset-y-0 left-0 flex items-center pl-1.5 text-green-600 group-not-data-selected:hidden group-data-focus:text-white">
-                            <Check aria-hidden="true" className="size-4" />
-                          </span>
-                        </ListboxOption>
-                      ))}
-                    </ListboxOptions>
-                  </div>
-                </Listbox>
+                <FontSelector
+                  value={localElement.fontFamily || 'Arial, sans-serif'}
+                  onChange={(value) => updateLocalProperty('fontFamily', value)}
+                />
               </label>
 
               <div className="grid grid-cols-2 gap-3">
@@ -471,7 +446,7 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                         transition
                         className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white py-1 text-sm shadow-lg ring-1 ring-black/5 focus:outline-hidden data-leave:transition data-leave:duration-100 data-leave:ease-in data-closed:data-leave:opacity-0"
                       >
-                        {['normal', 'bold', 'lighter', 'bolder'].map((weight) => (
+                        {['normal', 'bold', 'lighter', 'bolder', '100', '200', '300', '400', '500', '600', '700', '800', '900'].map((weight) => (
                           <ListboxOption
                             key={weight}
                             value={weight}
@@ -489,6 +464,89 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                   </Listbox>
                 </label>
               </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <label className="flex flex-col gap-1">
+                  <span className="text-xs font-semibold text-green-400">Font Style</span>
+                  <Listbox value={localElement.fontStyle || 'normal'} onChange={(value) => updateLocalProperty('fontStyle', value)}>
+                    <div className="relative">
+                      <ListboxButton className="grid w-full cursor-default grid-cols-1 rounded-lg bg-white py-1.5 pr-2 pl-3 text-left text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-green-600 text-sm">
+                        <span className="col-start-1 row-start-1 truncate pr-6">{localElement.fontStyle || 'normal'}</span>
+                        <ChevronsUpDown
+                          aria-hidden="true"
+                          className="col-start-1 row-start-1 size-4 self-center justify-self-end text-gray-500"
+                        />
+                      </ListboxButton>
+
+                      <ListboxOptions
+                        transition
+                        className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white py-1 text-sm shadow-lg ring-1 ring-black/5 focus:outline-hidden data-leave:transition data-leave:duration-100 data-leave:ease-in data-closed:data-leave:opacity-0"
+                      >
+                        {['normal', 'italic', 'oblique'].map((style) => (
+                          <ListboxOption
+                            key={style}
+                            value={style}
+                            className="group relative cursor-default py-2 pr-4 pl-8 text-gray-600 select-none data-focus:bg-green-600 data-focus:text-white data-focus:outline-hidden"
+                          >
+                            <span className="block truncate font-normal group-data-selected:font-semibold">{style}</span>
+
+                            <span className="absolute inset-y-0 left-0 flex items-center pl-1.5 text-green-600 group-not-data-selected:hidden group-data-focus:text-white">
+                              <Check aria-hidden="true" className="size-4" />
+                            </span>
+                          </ListboxOption>
+                        ))}
+                      </ListboxOptions>
+                    </div>
+                  </Listbox>
+                </label>
+
+                <label className="flex flex-col gap-1">
+                  <span className="text-xs font-semibold text-green-400">Text Align</span>
+                  <Listbox value={localElement.textAlign || 'left'} onChange={(value) => updateLocalProperty('textAlign', value)}>
+                    <div className="relative">
+                      <ListboxButton className="grid w-full cursor-default grid-cols-1 rounded-lg bg-white py-1.5 pr-2 pl-3 text-left text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-green-600 text-sm">
+                        <span className="col-start-1 row-start-1 truncate pr-6">{localElement.textAlign || 'left'}</span>
+                        <ChevronsUpDown
+                          aria-hidden="true"
+                          className="col-start-1 row-start-1 size-4 self-center justify-self-end text-gray-500"
+                        />
+                      </ListboxButton>
+
+                      <ListboxOptions
+                        transition
+                        className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white py-1 text-sm shadow-lg ring-1 ring-black/5 focus:outline-hidden data-leave:transition data-leave:duration-100 data-leave:ease-in data-closed:data-leave:opacity-0"
+                      >
+                        {['left', 'center', 'right', 'justify'].map((align) => (
+                          <ListboxOption
+                            key={align}
+                            value={align}
+                            className="group relative cursor-default py-2 pr-4 pl-8 text-gray-600 select-none data-focus:bg-green-600 data-focus:text-white data-focus:outline-hidden"
+                          >
+                            <span className="block truncate font-normal group-data-selected:font-semibold">{align}</span>
+
+                            <span className="absolute inset-y-0 left-0 flex items-center pl-1.5 text-green-600 group-not-data-selected:hidden group-data-focus:text-white">
+                              <Check aria-hidden="true" className="size-4" />
+                            </span>
+                          </ListboxOption>
+                        ))}
+                      </ListboxOptions>
+                    </div>
+                  </Listbox>
+                </label>
+              </div>
+
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-semibold text-green-400">Line Height</span>
+                <input
+                  type="number"
+                  value={localElement.lineHeight || 1.2}
+                  onChange={e => updateLocalProperty('lineHeight', Number(e.target.value))}
+                  min={0.5}
+                  max={3}
+                  step={0.1}
+                  className="grid w-full cursor-default grid-cols-1 rounded-lg bg-white py-1.5 pr-2 pl-3 text-left text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-green-600 text-sm"
+                />
+              </label>
             </div>
           </div>
         )
