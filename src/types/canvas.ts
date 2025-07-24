@@ -139,6 +139,27 @@ export interface AnimatedCanvasObject {
   fontStyle?: string;
   textAlign?: string;
   lineHeight?: number;
+  // Rich text properties for Pixi v8
+  textStroke?: string;
+  textStrokeWidth?: number;
+  textStrokeJoin?: 'round' | 'miter' | 'bevel';
+  textDropShadow?: {
+    color: string;
+    blur: number;
+    angle: number;
+    distance: number;
+    alpha: number;
+  };
+  textGradient?: {
+    type: 'linear' | 'radial';
+    colors: Array<{ color: string; offset: number }>;
+    angle?: number; // For linear gradients
+    center?: { x: number; y: number }; // For radial gradients
+    radius?: number; // For radial gradients
+  };
+  letterSpacing?: number;
+  wordWrap?: boolean;
+  wordWrapWidth?: number;
   groupId?: string;
   // Parent-child relationship
   parent?: string | null; // ID of parent element or group

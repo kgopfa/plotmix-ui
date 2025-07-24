@@ -33,9 +33,14 @@ export const TextTab: React.FC = () => {
       icon: '📐'
     },
     {
-      name: 'Effects',
-      items: ['Shadow', 'Outline', 'Gradient', 'Glow'],
+      name: 'Rich Text Effects',
+      items: ['Gradients', 'Shadows', 'Outlines', 'Letter Spacing'],
       icon: '✨'
+    },
+    {
+      name: 'Advanced Layout',
+      items: ['Word Wrap', 'Line Height', 'Text Stroke'],
+      icon: '📝'
     }
   ];
 

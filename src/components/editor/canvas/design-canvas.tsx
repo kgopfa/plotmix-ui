@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { extend } from '@pixi/react';
 import { SnapGuides } from './snap-guides';
 import { LinePreview } from '../helpers/line-preview';
+import { RichTextRenderer } from './rich-text-renderer';
 import type { SnapGuide } from '../../../utils/element-snapping';
 import type { FederatedPointerEvent } from 'pixi.js';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
@@ -251,9 +252,15 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         eventMode="none"
       />
 
-      {/* Render group containers first */}
-      {groups.filter(group => !group.isDefaultGroup && (group.visible !== false)).map((group) => {
+      {/* Render group containers first (excluding default groups) */}
+      {groups.filter(group => (group.visible !== false) && !group.isDefaultGroup).map((group) => {
         const groupElements = elements.filter(el => el.groupId === group.id && (el.visible !== false));
+        
+        // Debug: Log group elements
+        if (groupElements.some(el => el.type === 'text')) {
+          console.log(`Group ${group.id} (${group.isDefaultGroup ? 'default' : 'custom'}) contains text elements:`, 
+            groupElements.filter(el => el.type === 'text').map(el => el.id));
+        }
 
         return (
           <pixiContainer
@@ -303,6 +310,12 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                       );
                     } else if (el.type === 'path' || el.type === 'image') {
                       return new Rectangle(-el.width / 2, -el.height / 2, el.width, el.height);
+                    } else if (el.type === 'text') {
+                      // For text elements, use the element width consistently
+                      const textWidth = el.width;
+                      // Use a more generous height for text to accommodate wrapping
+                      const textHeight = Math.max(el.height, 60); // Minimum 60px height for text
+                      return new Rectangle(-textWidth / 2, -textHeight / 2, textWidth, textHeight);
                     }
                     return undefined;
                   })()}
@@ -325,7 +338,9 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                   <pixiGraphics draw={(g) => drawShape(g, el)} />
 
                   {/* Render text separately for text elements */}
-                  {el.type === 'text' && editingTextId !== el.id}
+                  {el.type === 'text' && editingTextId !== el.id && (
+                    <RichTextRenderer key={`group-text-${el.id}`} element={el} isEditing={false} />
+                  )}
 
                   {/* Show hover outline when hovered but not selected */}
                   {!isPlaying && hoveredId === el.id && !selectedIds.includes(el.id) && !isElementInCustomOrPolygonGroup(el) && (
@@ -346,11 +361,17 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         );
       })}
 
-      {/* Render elements that are not in custom groups */}
+      {/* Render elements that are not in any groups OR are in default groups */}
       {elements.filter(el => {
         const group = groups.find(g => g.id === el.groupId);
+        // Render elements that are not in any group OR are in default groups
+        // This ensures elements in default groups are rendered in the ungrouped section
         return (!group || group.isDefaultGroup) && (el.visible !== false);
       }).map((el) => {
+        // Debug: Log ungrouped text elements
+        if (el.type === 'text') {
+          console.log(`Ungrouped text element: ${el.id}`);
+        }
         // Handle all element types consistently, including SVGs
         return (
           <pixiContainer
@@ -384,6 +405,12 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                 );
               } else if (el.type === 'path' || el.type === 'image') {
                 return new Rectangle(-el.width / 2, -el.height / 2, el.width, el.height);
+              } else if (el.type === 'text') {
+                // For text elements, use the element width consistently
+                const textWidth = el.width;
+                // Use a more generous height for text to accommodate wrapping
+                const textHeight = Math.max(el.height, 60); // Minimum 60px height for text
+                return new Rectangle(-textWidth / 2, -textHeight / 2, textWidth, textHeight);
               }
               return undefined;
             })()}
@@ -406,7 +433,9 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
             <pixiGraphics draw={(g) => drawShape(g, el)} />
 
             {/* Render text separately for text elements */}
-            {el.type === 'text' && editingTextId !== el.id}
+            {el.type === 'text' && editingTextId !== el.id && (
+              <RichTextRenderer key={`ungrouped-text-${el.id}`} element={el} isEditing={false} />
+            )}
 
             {/* Show hover outline when hovered but not selected */}
             {!isPlaying && hoveredId === el.id && !selectedIds.includes(el.id) && !isElementInCustomOrPolygonGroup(el) && (

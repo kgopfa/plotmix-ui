@@ -9,6 +9,7 @@ import {
 } from '@/utils/drawing-utils';
 import { ColorPicker } from './color-picker';
 import { FontSelector } from './font-selector';
+import { GradientPicker } from './gradient-picker';
 import { Weight, SquareRoundCorner, ChevronsUpDown, Check } from 'lucide-react';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react';
 
@@ -548,6 +549,156 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                 />
               </label>
 
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-semibold text-green-400">Letter Spacing</span>
+                <input
+                  type="number"
+                  value={localElement.letterSpacing || 0}
+                  onChange={e => updateLocalProperty('letterSpacing', Number(e.target.value))}
+                  min={-5}
+                  max={20}
+                  step={0.5}
+                  className="grid w-full cursor-default grid-cols-1 rounded-lg bg-white py-1.5 pr-2 pl-3 text-left text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-green-600 text-sm"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-semibold text-green-400">Text Width</span>
+                <input
+                  type="number"
+                  value={Math.round(localElement.width)}
+                  onChange={e => {
+                    const newWidth = Math.round(Number(e.target.value));
+                    // Update both width and wordWrapWidth simultaneously
+                    updateLocalProperty('width', newWidth);
+                    updateLocalProperty('wordWrapWidth', newWidth);
+                  }}
+                  min={50}
+                  max={1000}
+                  step={1}
+                  className="grid w-full cursor-default grid-cols-1 rounded-lg bg-white py-1.5 pr-2 pl-3 text-left text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-green-600 text-sm"
+                />
+              </label>
+
+              {/* Word Wrap Controls */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={localElement.wordWrap || false}
+                    onChange={e => updateLocalProperty('wordWrap', e.target.checked)}
+                    className="rounded border-gray-300 focus:ring-2 focus:ring-green-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Word Wrap</span>
+                </div>
+
+                {localElement.wordWrap && (
+                  <label className="flex flex-col gap-1">
+                    <span className="text-xs font-semibold text-green-400">Wrap Width</span>
+                    <input
+                      type="number"
+                      value={localElement.wordWrapWidth || localElement.width}
+                      onChange={e => updateLocalProperty('wordWrapWidth', Number(e.target.value))}
+                      min={50}
+                      max={1000}
+                      className="grid w-full cursor-default grid-cols-1 rounded-lg bg-white py-1.5 pr-2 pl-3 text-left text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-green-600 text-sm"
+                    />
+                  </label>
+                )}
+              </div>
+
+              {/* Text Stroke/Outline Controls */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={!!(localElement.textStroke && localElement.textStrokeWidth)}
+                    onChange={e => {
+                      if (e.target.checked) {
+                        updateLocalProperty('textStroke', '#000000');
+                        updateLocalProperty('textStrokeWidth', 1);
+                      } else {
+                        updateLocalProperty('textStroke', undefined);
+                        updateLocalProperty('textStrokeWidth', 0);
+                      }
+                    }}
+                    className="rounded border-gray-300 focus:ring-2 focus:ring-green-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Text Stroke</span>
+                </div>
+
+                {localElement.textStroke && localElement.textStrokeWidth && (
+                  <div className="space-y-3 pl-6 border-l-2 border-green-200">
+                    <div className="grid grid-cols-2 gap-3">
+                      <label className="flex flex-col gap-1">
+                        <span className="text-xs font-semibold text-green-400">Stroke Width</span>
+                        <input
+                          type="number"
+                          value={localElement.textStrokeWidth}
+                          onChange={e => updateLocalProperty('textStrokeWidth', Number(e.target.value))}
+                          min={0.5}
+                          max={10}
+                          step={0.5}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors text-sm"
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1">
+                        <span className="text-xs font-semibold text-green-400">Join Style</span>
+                        <Listbox value={localElement.textStrokeJoin || 'round'} onChange={(value) => updateLocalProperty('textStrokeJoin', value)}>
+                          <div className="relative">
+                            <ListboxButton className="grid w-full cursor-default grid-cols-1 rounded-lg bg-white py-1.5 pr-2 pl-3 text-left text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-green-600 text-sm">
+                              <span className="col-start-1 row-start-1 truncate pr-6">{localElement.textStrokeJoin || 'round'}</span>
+                              <ChevronsUpDown
+                                aria-hidden="true"
+                                className="col-start-1 row-start-1 size-4 self-center justify-self-end text-gray-500"
+                              />
+                            </ListboxButton>
+
+                            <ListboxOptions
+                              transition
+                              className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white py-1 text-sm shadow-lg ring-1 ring-black/5 focus:outline-hidden data-leave:transition data-leave:duration-100 data-leave:ease-in data-closed:data-leave:opacity-0"
+                            >
+                              {['round', 'miter', 'bevel'].map((join) => (
+                                <ListboxOption
+                                  key={join}
+                                  value={join}
+                                  className="group relative cursor-default py-2 pr-4 pl-8 text-gray-600 select-none data-focus:bg-green-600 data-focus:text-white data-focus:outline-hidden"
+                                >
+                                  <span className="block truncate font-normal group-data-selected:font-semibold">{join}</span>
+
+                                  <span className="absolute inset-y-0 left-0 flex items-center pl-1.5 text-green-600 group-not-data-selected:hidden group-data-focus:text-white">
+                                    <Check aria-hidden="true" className="size-4" />
+                                  </span>
+                                </ListboxOption>
+                              ))}
+                            </ListboxOptions>
+                          </div>
+                        </Listbox>
+                      </label>
+                    </div>
+
+                    <label className="flex flex-col gap-1">
+                      <span className="text-xs font-semibold text-green-400">Stroke Color</span>
+                      <div className="flex relative">
+                        <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-green-500 outline-1 -outline-offset-1 outline-gray-300">
+                          <div
+                            className="w-4 h-4 rounded border border-gray-300 cursor-pointer hover:scale-110 transition-transform"
+                            style={{ backgroundColor: localElement.textStroke || '#000000' }}
+                          />
+                        </div>
+                        <input
+                          type="text"
+                          value={(localElement.textStroke || '#000000').replace('#', '').toUpperCase()}
+                          onChange={e => updateLocalProperty('textStroke', '#' + e.target.value.toUpperCase())}
+                          className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-green-600 uppercase"
+                          placeholder="000000"
+                        />
+                      </div>
+                    </label>
+                  </div>
+                )}
+              </div>
+
               {/* Drop Shadow Controls */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
@@ -635,6 +786,18 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
 
                   </div>
                 )}
+              </div>
+
+              {/* Text Gradient Controls */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700">Text Gradient</span>
+                </div>
+                <GradientPicker
+                  gradient={localElement.textGradient}
+                  onChange={(gradient) => updateLocalProperty('textGradient', gradient)}
+                  onRemove={() => updateLocalProperty('textGradient', undefined)}
+                />
               </div>
             </div>
           </div>

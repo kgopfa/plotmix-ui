@@ -264,8 +264,8 @@ function createImage(props: BaseObjectProps): AnimatedCanvasObject {
 }
 
 function createText(props: BaseObjectProps): AnimatedCanvasObject {
-  const width = props.width || 200;
-  const height = props.height || 40;
+  const width = props.width || 440; // Match the working example width
+  const height = 200; // Increased default height for better text wrapping
 
   return {
     ...generateCommonAttributes('text', props),
@@ -277,13 +277,34 @@ function createText(props: BaseObjectProps): AnimatedCanvasObject {
     fill: '#000000', // Override default white fill for text
     stroke: undefined, // Text typically doesn't have stroke
     strokeWidth: 0,
-    text: props.text || 'Double click to edit',
-    fontSize: 16,
-    fontFamily: 'Arial, sans-serif',
-    fontWeight: 'normal',
-    fontStyle: 'normal',
+    text: props.text || 'Rich text with a lot of options and across multiple lines', // Match working example text
+    fontSize: 36, // Match working example font size
+    fontFamily: 'Arial', // Match working example font family
+    fontWeight: 'bold', // Match working example font weight
+    fontStyle: 'italic', // Match working example font style
     textAlign: 'left',
     lineHeight: 1.2,
+    // Rich text properties - set to match working example
+    textStroke: '#4a1850', // Purple stroke color from working example
+    textStrokeWidth: 5, // Stroke width from working example
+    textStrokeJoin: 'round',
+    textDropShadow: {
+      color: '#000000',
+      blur: 4,
+      angle: Math.PI / 6,
+      distance: 6,
+      alpha: 1
+    },
+    textGradient: {
+      type: 'linear',
+      colors: [
+        { color: '#ffffff', offset: 0 },
+        { color: '#00ff99', offset: 1 }
+      ]
+    },
+    letterSpacing: 0,
+    wordWrap: true,
+    wordWrapWidth: width, // Ensure wordWrapWidth matches the element width
     lineOptions: undefined,
     pivotX: width / 2,
     pivotY: height / 2,
