@@ -1,10 +1,15 @@
 import React, { useRef, useState } from 'react';
-import { CloudUpload, FileText, Image, Video, Music, CheckCircle, AlertCircle } from 'lucide-react';
+import { CloudUpload, FileText, Image, Video, Music, CheckCircle, AlertCircle, Trash2 } from 'lucide-react';
+import { useUploadedFiles, useUploadedFilesActions } from '@/stores/use-ui-store';
 
 export const UploadsTab: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+  
+  // Get uploaded files from store
+  const { files } = useUploadedFiles();
+  const { addUploadedFile, removeUploadedFile } = useUploadedFilesActions();
 
   const supportedFormats = [
     {
@@ -80,12 +85,28 @@ export const UploadsTab: React.FC = () => {
       reader.onload = (event) => {
         const imageData = event.target?.result as string;
         if (imageData) {
-          // Dispatch custom event to handle image import in the main editor
-          const imageImportEvent = new CustomEvent('image-import', {
-            detail: { file, imageData }
-          });
-          window.dispatchEvent(imageImportEvent);
-          resolve();
+          // Add file to uploaded files store
+          const uploadedFile = {
+            id: crypto.randomUUID(),
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            uploadedAt: new Date().toISOString(),
+            dataUrl: imageData,
+          };
+          
+          try {
+            addUploadedFile(uploadedFile);
+            
+            // Dispatch custom event to handle image import in the main editor
+            const imageImportEvent = new CustomEvent('image-import', {
+              detail: { file, imageData, uploadedFileId: uploadedFile.id }
+            });
+            window.dispatchEvent(imageImportEvent);
+            resolve();
+          } catch (error) {
+            reject(error);
+          }
         } else {
           reject(new Error('Failed to read image data'));
         }
@@ -112,6 +133,36 @@ export const UploadsTab: React.FC = () => {
     if (files.length > 0) {
       handleFileUpload(files);
     }
+  };
+
+  const handleRemoveFile = (fileId: string) => {
+    removeUploadedFile(fileId);
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  const getFileIcon = (type: string) => {
+    if (type.startsWith('image/')) return Image;
+    if (type.startsWith('video/')) return Video;
+    if (type.startsWith('audio/')) return Music;
+    return FileText;
+  };
+
+  const getFileColor = (type: string) => {
+    if (type.startsWith('image/')) return 'text-green-600';
+    if (type.startsWith('video/')) return 'text-blue-600';
+    if (type.startsWith('audio/')) return 'text-purple-600';
+    return 'text-orange-600';
   };
 
   return (
@@ -158,6 +209,46 @@ export const UploadsTab: React.FC = () => {
           </div>
         )}
 
+
+
+        {/* Uploaded Files List */}
+        {files.length > 0 && (
+          <div className="mb-4">
+            <div className="text-xs font-medium text-gray-700 mb-2">Uploaded Files ({files.length})</div>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {files.map((file) => {
+                const FileIcon = getFileIcon(file.type);
+                const fileColor = getFileColor(file.type);
+                
+                return (
+                  <div key={file.id} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <FileIcon className={`w-4 h-4 ${fileColor} flex-shrink-0`} />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-gray-900 truncate">{file.name}</div>
+                          <div className="text-xs text-gray-500">
+                            {formatFileSize(file.size)} • {formatDate(file.uploadedAt)}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleRemoveFile(file.id)}
+                          className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                          title="Remove"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Supported Formats */}
         <div className="space-y-2">
           <div className="text-xs font-medium text-gray-700 mb-2">Supported Formats</div>
@@ -180,7 +271,6 @@ export const UploadsTab: React.FC = () => {
           <div className="text-xs text-gray-600 space-y-1">
             <div>• Max file size: 100MB</div>
             <div>• Max files per upload: 10</div>
-            <div>• Total storage: 1GB</div>
           </div>
         </div>
       </div>

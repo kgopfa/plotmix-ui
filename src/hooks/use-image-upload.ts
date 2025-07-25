@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { createNewObject } from '@/lib/canvas-object-factory';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
+import { useUploadedFilesActions } from '@/stores/use-ui-store';
 
 interface UseImageUploadReturn {
   imageFileInputRef: React.RefObject<HTMLInputElement | null>;
@@ -13,6 +14,7 @@ export const useImageUpload = (): UseImageUploadReturn => {
   const imageFileInputRef = useRef<HTMLInputElement>(null);
   const { elements: canvasObjects, addElement } = useCanvasStore();
   const { select: selectElement } = useSelectionStore();
+  const { linkFileToElement } = useUploadedFilesActions();
 
   // Helper function to handle image file directly
   const handleImageFile = useCallback((file: File) => {
@@ -68,7 +70,7 @@ export const useImageUpload = (): UseImageUploadReturn => {
   // Add event listener for image import from uploads tab
   useEffect(() => {
     const handleImageImport = (event: CustomEvent) => {
-      const { file, imageData } = event.detail;
+      const { file, imageData, uploadedFileId } = event.detail;
       if (file && imageData) {
         // Create new image element directly from the provided data
         const newImage = createNewObject(
@@ -86,6 +88,11 @@ export const useImageUpload = (): UseImageUploadReturn => {
         // Add to canvas and select
         addElement(newImage);
         selectElement([newImage]);
+        
+        // Link the uploaded file to the canvas element if we have an uploaded file ID
+        if (uploadedFileId) {
+          linkFileToElement(uploadedFileId, newImage.id);
+        }
       } else if (file) {
         // Fallback to old method for backward compatibility
         handleImageFile(file);
@@ -96,7 +103,7 @@ export const useImageUpload = (): UseImageUploadReturn => {
     return () => {
       window.removeEventListener('image-import', handleImageImport as EventListener);
     };
-  }, [canvasObjects, addElement, selectElement, handleImageFile]);
+  }, [canvasObjects, addElement, selectElement, handleImageFile, linkFileToElement]);
 
   return {
     imageFileInputRef,

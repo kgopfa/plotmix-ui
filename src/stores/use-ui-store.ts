@@ -64,6 +64,23 @@ interface UserPreferences {
   keyboardShortcuts: Record<string, string>;
 }
 
+// Uploaded file interface
+interface UploadedFile {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  uploadedAt: string;
+  dataUrl?: string; // For images and other files that can be displayed
+  elementId?: string; // Reference to canvas element if added to canvas
+}
+
+interface UploadedFilesState {
+  files: UploadedFile[];
+  totalSize: number;
+  maxStorage: number; // 1GB in bytes
+}
+
 interface KeyboardShortcut {
   key: string;
   ctrlKey?: boolean;
@@ -96,6 +113,7 @@ interface UIState {
   activeRightPanel: RightPanelKey | null;
   hoverRightPanel: RightPanelKey | null;
   showAnimationsTab: boolean;
+  uploadedFiles: UploadedFilesState;
 }
 
 // Actions
@@ -155,6 +173,13 @@ interface UIActions {
   setCustomCanvasSize: (width: number, height: number) => void;
   addCanvasSize: (size: CanvasSize) => void;
   removeCanvasSize: (sizeId: string) => void;
+  
+  // Uploaded Files Actions
+  addUploadedFile: (file: UploadedFile) => void;
+  removeUploadedFile: (fileId: string) => void;
+  updateUploadedFile: (fileId: string, updates: Partial<UploadedFile>) => void;
+  clearUploadedFiles: () => void;
+  linkFileToElement: (fileId: string, elementId: string) => void;
 }
 
 type UIStore = UIState & UIActions;
@@ -239,6 +264,12 @@ const defaultUserPreferences: UserPreferences = {
   },
 };
 
+const defaultUploadedFilesState: UploadedFilesState = {
+  files: [],
+  totalSize: 0,
+  maxStorage: 1024 * 1024 * 1024, // 1GB in bytes
+};
+
 const defaultKeyboardShortcuts: KeyboardShortcut[] = [
   { key: 'v', action: 'select', description: 'Select Tool' },
   { key: 'r', action: 'rectangle', description: 'Rectangle Tool' },
@@ -275,7 +306,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
       activeRightPanel: null,
       hoverRightPanel: null,
       showAnimationsTab: false,
-      isCanvasLocked: true,
+      uploadedFiles: defaultUploadedFilesState,
 
   // Panel Actions
   toggleLeftPanel: () => {
@@ -633,6 +664,56 @@ export const useUIStore = create<UIStore>((set, get) => ({
       state.isCanvasLocked = locked;
     }));
   },
+
+  // Uploaded Files Actions
+  addUploadedFile: (file: UploadedFile) => {
+    set(produce((state) => {
+      // Check if we have enough storage space
+      const newTotalSize = state.uploadedFiles.totalSize + file.size;
+      if (newTotalSize > state.uploadedFiles.maxStorage) {
+        throw new Error('Storage limit exceeded');
+      }
+      
+      state.uploadedFiles.files.push(file);
+      state.uploadedFiles.totalSize = newTotalSize;
+    }));
+  },
+
+  removeUploadedFile: (fileId: string) => {
+    set(produce((state) => {
+      const fileIndex = state.uploadedFiles.files.findIndex((f: UploadedFile) => f.id === fileId);
+      if (fileIndex !== -1) {
+        const removedFile = state.uploadedFiles.files[fileIndex];
+        state.uploadedFiles.totalSize -= removedFile.size;
+        state.uploadedFiles.files.splice(fileIndex, 1);
+      }
+    }));
+  },
+
+  updateUploadedFile: (fileId: string, updates: Partial<UploadedFile>) => {
+    set(produce((state) => {
+      const file = state.uploadedFiles.files.find((f: UploadedFile) => f.id === fileId);
+      if (file) {
+        Object.assign(file, updates);
+      }
+    }));
+  },
+
+  clearUploadedFiles: () => {
+    set(produce((state) => {
+      state.uploadedFiles.files = [];
+      state.uploadedFiles.totalSize = 0;
+    }));
+  },
+
+  linkFileToElement: (fileId: string, elementId: string) => {
+    set(produce((state) => {
+      const file = state.uploadedFiles.files.find((f: UploadedFile) => f.id === fileId);
+      if (file) {
+        file.elementId = elementId;
+      }
+    }));
+  },
 }));
 
 // Selector hooks for specific parts of the UI state
@@ -697,6 +778,18 @@ export const useCanvasActions = () => useUIStore(
     removeCanvasSize: state.removeCanvasSize,
   }))
 );
+
+export const useUploadedFilesActions = () => useUIStore(
+  useShallow((state) => ({
+    addUploadedFile: state.addUploadedFile,
+    removeUploadedFile: state.removeUploadedFile,
+    updateUploadedFile: state.updateUploadedFile,
+    clearUploadedFiles: state.clearUploadedFiles,
+    linkFileToElement: state.linkFileToElement,
+  }))
+);
+
+export const useUploadedFiles = () => useUIStore((state) => state.uploadedFiles);
 
 export const useKeyboardShortcutsStore = () => {
   const shortcuts = useUIStore((state) => state.keyboardShortcuts);
