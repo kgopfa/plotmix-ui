@@ -270,7 +270,19 @@ export const applyElementSnapping = (
   
   // Apply X snapping
   if (bestX && bestX.x !== undefined) {
-    newX = bestX.x;
+    const elementBounds = getElementBounds(element);
+    
+    // Calculate new position based on snap type
+    if (bestX.type === 'left') {
+      // Element's left edge snaps to canvas left edge
+      newX = bestX.x + elementBounds.width / 2;
+    } else if (bestX.type === 'right') {
+      // Element's right edge snaps to canvas right edge
+      newX = bestX.x - elementBounds.width / 2;
+    } else {
+      // Center alignment (centerX)
+      newX = bestX.x;
+    }
     
     // Create appropriate guide based on snap type
     const guideType = bestX.type.includes('spacing') || bestX.type.includes('distribution') ? 'spacing' : 'vertical';
@@ -301,7 +313,19 @@ export const applyElementSnapping = (
   
   // Apply Y snapping
   if (bestY && bestY.y !== undefined) {
-    newY = bestY.y;
+    const elementBounds = getElementBounds(element);
+    
+    // Calculate new position based on snap type
+    if (bestY.type === 'top') {
+      // Element's top edge snaps to canvas top edge
+      newY = bestY.y + elementBounds.height / 2;
+    } else if (bestY.type === 'bottom') {
+      // Element's bottom edge snaps to canvas bottom edge
+      newY = bestY.y - elementBounds.height / 2;
+    } else {
+      // Center alignment (centerY)
+      newY = bestY.y;
+    }
     
     // Create appropriate guide based on snap type
     const guideType = bestY.type.includes('spacing') || bestY.type.includes('distribution') ? 'spacing' : 'horizontal';

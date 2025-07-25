@@ -112,7 +112,7 @@ export const generateCanvasSnapPoints = (
  * Find canvas snap points that are within threshold of an element
  */
 export const findCanvasSnapPoints = (
-  elementBounds: { centerX: number; centerY: number },
+  elementBounds: { left: number; right: number; top: number; bottom: number; centerX: number; centerY: number },
   canvasBounds: CanvasBounds,
   snapThreshold: number = 10
 ): SnapPoint[] => {
@@ -125,9 +125,29 @@ export const findCanvasSnapPoints = (
     // Calculate distance based on snap point type
     switch (snapPoint.type) {
       case 'left':
+        // Element's left edge to canvas left edge
+        distance = Math.abs(elementBounds.left - (snapPoint.x || 0));
+        if (distance <= snapThreshold) {
+          nearbySnapPoints.push({
+            ...snapPoint,
+            distance
+          });
+        }
+        break;
+        
       case 'right':
+        // Element's right edge to canvas right edge
+        distance = Math.abs(elementBounds.right - (snapPoint.x || 0));
+        if (distance <= snapThreshold) {
+          nearbySnapPoints.push({
+            ...snapPoint,
+            distance
+          });
+        }
+        break;
+        
       case 'centerX':
-        // Vertical alignment - compare X coordinates
+        // Element's center to canvas center or midpoint
         distance = Math.abs(elementBounds.centerX - (snapPoint.x || 0));
         if (distance <= snapThreshold) {
           nearbySnapPoints.push({
@@ -138,9 +158,29 @@ export const findCanvasSnapPoints = (
         break;
         
       case 'top':
+        // Element's top edge to canvas top edge
+        distance = Math.abs(elementBounds.top - (snapPoint.y || 0));
+        if (distance <= snapThreshold) {
+          nearbySnapPoints.push({
+            ...snapPoint,
+            distance
+          });
+        }
+        break;
+        
       case 'bottom':
+        // Element's bottom edge to canvas bottom edge
+        distance = Math.abs(elementBounds.bottom - (snapPoint.y || 0));
+        if (distance <= snapThreshold) {
+          nearbySnapPoints.push({
+            ...snapPoint,
+            distance
+          });
+        }
+        break;
+        
       case 'centerY':
-        // Horizontal alignment - compare Y coordinates
+        // Element's center to canvas center or midpoint
         distance = Math.abs(elementBounds.centerY - (snapPoint.y || 0));
         if (distance <= snapThreshold) {
           nearbySnapPoints.push({
