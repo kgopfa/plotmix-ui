@@ -3,6 +3,8 @@ import { extend } from '@pixi/react';
 import { Graphics } from 'pixi.js';
 import * as PIXI from 'pixi.js';
 import { eventManager } from '@/lib/event-manager';
+import { useCanvasStore } from '@/stores/use-canvas-store';
+import { AnimatedCanvasObject } from '@/types/canvas';
 
 extend({ Graphics });
 
@@ -31,6 +33,7 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({
   const initialElementStateRef = useRef({ x: 0, y: 0, width: 0, height: 0, rotation: 0 });
   const wrappersRef = useRef<{ move?: (event: Event | PointerEvent | MouseEvent | KeyboardEvent) => void; up?: () => void }>({});
   const shiftKeyRef = useRef(false);
+  const { elements: canvasObjects } = useCanvasStore();
 
   // Calculate the rotated position of this corner handle
   const getRotatedCornerPosition = () => {
@@ -130,7 +133,11 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({
     let centerOffsetX = 0;
     let centerOffsetY = 0;
     
-    if (shiftKeyRef.current) {
+    // Circles should always scale from center since they're radially symmetric
+    const isCircle = elementId && canvasObjects?.find((el: AnimatedCanvasObject) => el.id === elementId)?.type === 'circle';
+    const shouldUseCenterScaling = shiftKeyRef.current || isCircle;
+    
+    if (shouldUseCenterScaling) {
       // Center-based scaling: scale proportionally from center
       // Calculate the scale factor based on the largest movement
       const scaleX = Math.abs(localDeltaX) / (initialState.width / 2);
