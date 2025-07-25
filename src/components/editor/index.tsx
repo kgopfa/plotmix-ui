@@ -6,7 +6,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { TimelineManager } from '@/lib/timeline-manager';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useCanvasElements, useCanvasGroups, useCanvasStore } from '@/stores/use-canvas-store';
-import { useUIStore, useActiveNav, useActiveRightPanel, useSnappingState } from '@/stores/use-ui-store';
+import { useUIStore, useActiveNav, useActiveRightPanel, useSnappingState, useCanvasState } from '@/stores/use-ui-store';
 import { useTimelineSync, useTimelineStore } from '@/stores/use-timeline-store';
 import { useCanvasMigration } from '@/hooks/use-canvas-migration';
 import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
@@ -126,6 +126,15 @@ export default function EditorCanvas() {
   const snappingState = useSnappingState();
   const { gridConfig: uiGridConfig, elementSnapConfig } = snappingState;
 
+  // Get current canvas size for snapping
+  const canvasState = useCanvasState();
+  const currentSize = canvasState.currentSizeId === 'custom'
+    ? canvasState.customSize
+    : canvasState.availableSizes.find((size) => size.id === canvasState.currentSizeId);
+
+  const canvasWidth = currentSize?.width || 1280;
+  const canvasHeight = currentSize?.height || 720;
+
   // Element snapping functionality
   const {
     snapElement,
@@ -138,7 +147,13 @@ export default function EditorCanvas() {
     snapThreshold: elementSnapConfig.snapThreshold,
     showGuides: elementSnapConfig.showGuides,
     enableSpacing: elementSnapConfig.enableSpacing,
-    enableDistribution: elementSnapConfig.enableDistribution
+    enableDistribution: elementSnapConfig.enableDistribution,
+    canvasBounds: {
+      width: canvasWidth,
+      height: canvasHeight,
+      centerX: 0, // Canvas is centered at origin
+      centerY: 0
+    }
   });
 
   // Grid snapping functionality - DISABLED to prevent jittering

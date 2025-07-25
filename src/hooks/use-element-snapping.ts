@@ -12,6 +12,7 @@ export interface ElementSnappingConfig {
   showGuides: boolean;
   enableSpacing: boolean;
   enableDistribution: boolean;
+  canvasBounds?: { width: number; height: number; centerX?: number; centerY?: number };
 }
 
 export interface UseElementSnappingReturn {
@@ -106,7 +107,7 @@ export const useElementSnapping = (
       return { x: element.x, y: element.y, guides: [] };
     }
 
-    const result = applyElementSnapping(element, allElements, config.snapThreshold, config.enableSpacing, config.enableDistribution);
+    const result = applyElementSnapping(element, allElements, config.snapThreshold, config.enableSpacing, config.enableDistribution, config.canvasBounds);
     
     // Update guides if showing guides is enabled
     if (config.showGuides) {
@@ -117,7 +118,7 @@ export const useElementSnapping = (
     
     return result;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config.enabled, config.snapThreshold, config.showGuides, isSnapTemporarilyDisabled]);
+  }, [config.enabled, config.snapThreshold, config.showGuides, config.enableSpacing, config.enableDistribution, config.canvasBounds, isSnapTemporarilyDisabled]);
 
   return {
     config,

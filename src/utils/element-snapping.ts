@@ -1,5 +1,6 @@
 import { AnimatedCanvasObject } from '../types/canvas';
 import { GridConfig } from './grid-utils';
+import { findCanvasSnapPoints, getCanvasBounds } from './canvas-snapping';
 
 export interface SnapPoint {
   x?: number;
@@ -136,10 +137,23 @@ export const findNearbySnapPoints = (
   snapThreshold: number = 10,
   gridConfig?: GridConfig,
   enableSpacing: boolean = true,
-  enableDistribution: boolean = true
+  enableDistribution: boolean = true,
+  canvasBounds?: { width: number; height: number; centerX?: number; centerY?: number }
 ): SnapPoint[] => {
   const snapPoints: SnapPoint[] = [];
   const draggedBounds = getElementBounds(draggedElement);
+  
+  // Add canvas snap points if canvas bounds are provided
+  if (canvasBounds) {
+    const canvasBoundsObj = getCanvasBounds(
+      canvasBounds.width,
+      canvasBounds.height,
+      canvasBounds.centerX || 0,
+      canvasBounds.centerY || 0
+    );
+    const canvasSnapPoints = findCanvasSnapPoints(draggedBounds, canvasBoundsObj, snapThreshold);
+    snapPoints.push(...canvasSnapPoints);
+  }
   
   // Add grid center snap points if grid config is provided
   if (gridConfig) {
@@ -243,10 +257,11 @@ export const applyElementSnapping = (
   allElements: AnimatedCanvasObject[],
   snapThreshold: number = 20, // Increased threshold for easier testing
   enableSpacing: boolean = true,
-  enableDistribution: boolean = true
+  enableDistribution: boolean = true,
+  canvasBounds?: { width: number; height: number; centerX?: number; centerY?: number }
 ): { x: number; y: number; guides: SnapGuide[] } => {
   // Disable grid snapping to prevent jittering and constant green lines
-  const snapPoints = findNearbySnapPoints(element, allElements, snapThreshold, undefined, enableSpacing, enableDistribution);
+  const snapPoints = findNearbySnapPoints(element, allElements, snapThreshold, undefined, enableSpacing, enableDistribution, canvasBounds);
   const { x: bestX, y: bestY } = getBestSnapPoints(snapPoints);
   
   let newX = element.x;

@@ -30,7 +30,19 @@ export const SnapGuides: React.FC<SnapGuidesProps> = ({
       let isDotted = false;
       
       // Different colors and styles for different alignment types
-      if (guide.sourceElementId === 'grid-center') {
+      if (guide.sourceElementId === 'canvas-edge') {
+        lineColor = 0x2E86AB; // Blue for canvas edges
+        lineWidth = 2;
+        isDotted = false; // Solid lines for canvas edges
+      } else if (guide.sourceElementId === 'canvas-center') {
+        lineColor = 0x4ECDC4; // Teal for canvas center
+        lineWidth = 2;
+        isDotted = true; // Dotted lines for canvas center
+      } else if (guide.sourceElementId === 'canvas-midpoint') {
+        lineColor = 0x45B7D1; // Light blue for canvas midpoints
+        lineWidth = 2;
+        isDotted = true; // Dotted lines for canvas midpoints
+      } else if (guide.sourceElementId === 'grid-center') {
         lineColor = 0x00BB88; // Green for grid centers
         lineWidth = 1;
       } else if (guide.type === 'spacing') {
