@@ -1,6 +1,7 @@
 import { AnimatedCanvasObject } from '../types/canvas';
 import { GridConfig } from './grid-utils';
 import { findCanvasSnapPoints, getCanvasBounds } from './canvas-snapping';
+import type { ElementBoundsCache, CachedSnapPoint } from './element-bounds-cache';
 
 export interface SnapPoint {
   x?: number;
@@ -635,6 +636,88 @@ export const findDistributionSnapPoints = (
         });
       }
     }
+  }
+  
+  return snapPoints;
+}; 
+
+/**
+ * Find nearby snap points using cached element bounds data
+ */
+export const findNearbySnapPointsCached = (
+  draggedElement: AnimatedCanvasObject,
+  cache: ElementBoundsCache,
+  snapThreshold: number = 10,
+  gridConfig?: GridConfig,
+  canvasBounds?: { width: number; height: number; centerX?: number; centerY?: number }
+): SnapPoint[] => {
+  const snapPoints: SnapPoint[] = [];
+  const draggedBounds = getElementBounds(draggedElement);
+  
+  // Add canvas snap points if canvas bounds are provided
+  if (canvasBounds) {
+    const canvasBoundsObj = getCanvasBounds(
+      canvasBounds.width,
+      canvasBounds.height,
+      canvasBounds.centerX || 0,
+      canvasBounds.centerY || 0
+    );
+    const canvasSnapPoints = findCanvasSnapPoints(draggedBounds, canvasBoundsObj, snapThreshold);
+    snapPoints.push(...canvasSnapPoints);
+  }
+  
+  // Add grid center snap points if grid config is provided
+  if (gridConfig) {
+    const gridSnapPoints = generateGridCenterSnapPoints(draggedBounds, gridConfig, snapThreshold);
+    snapPoints.push(...gridSnapPoints);
+  }
+  
+  // Use cached snap points for element-to-element alignment
+  if (cache.snapPoints) {
+    cache.snapPoints.forEach((elementSnapPoints: CachedSnapPoint[], elementId: string) => {
+      if (elementId === draggedElement.id) return;
+      
+      elementSnapPoints.forEach((snapPoint: CachedSnapPoint) => {
+        let distance: number;
+        
+        // Calculate distance based on snap point type
+        switch (snapPoint.type) {
+          case 'left':
+          case 'right':
+          case 'centerX':
+            // Vertical alignment - compare X coordinates
+            if (snapPoint.x !== undefined) {
+              distance = Math.abs(draggedBounds.centerX - snapPoint.x);
+              if (distance <= snapThreshold) {
+                snapPoints.push({
+                  type: snapPoint.type,
+                  sourceElementId: elementId,
+                  distance,
+                  x: snapPoint.x
+                });
+              }
+            }
+            break;
+            
+          case 'top':
+          case 'bottom':
+          case 'centerY':
+            // Horizontal alignment - compare Y coordinates
+            if (snapPoint.y !== undefined) {
+              distance = Math.abs(draggedBounds.centerY - snapPoint.y);
+              if (distance <= snapThreshold) {
+                snapPoints.push({
+                  type: snapPoint.type,
+                  sourceElementId: elementId,
+                  distance,
+                  y: snapPoint.y
+                });
+              }
+            }
+            break;
+        }
+      });
+    });
   }
   
   return snapPoints;

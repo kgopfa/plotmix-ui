@@ -135,6 +135,7 @@ export const ElementSnapControls: React.FC<ElementSnapControlsProps> = ({
             <div>• Element edges to canvas edges (blue solid lines)</div>
             <div>• Element centers to canvas center/midpoints (teal/light blue dotted lines)</div>
             <div>• Grid centers (green lines)</div>
+            <div>• Cached alignment detection for performance</div>
           </div>
           <div className="text-xs text-gray-400 mt-1">
             <span className="inline-block w-2 h-2 bg-red-500 rounded mr-1"></span>Edge alignment
