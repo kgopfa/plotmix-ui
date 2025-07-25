@@ -107,6 +107,7 @@ export const useElementSnapping = (
       return { x: element.x, y: element.y, guides: [] };
     }
 
+    // Use regular snapping
     const result = applyElementSnapping(element, allElements, config.snapThreshold, config.enableSpacing, config.enableDistribution, config.canvasBounds);
     
     // Update guides if showing guides is enabled
@@ -117,7 +118,6 @@ export const useElementSnapping = (
     }
     
     return result;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config.enabled, config.snapThreshold, config.showGuides, config.enableSpacing, config.enableDistribution, config.canvasBounds, isSnapTemporarilyDisabled]);
 
   return {

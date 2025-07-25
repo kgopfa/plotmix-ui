@@ -130,8 +130,8 @@ export const ElementSnapControls: React.FC<ElementSnapControlsProps> = ({
               <div className="space-y-1 pt-1 border-t border-gray-200">
           <div className="text-xs font-medium text-gray-600">Snap Points:</div>
           <div className="grid grid-cols-1 gap-1 text-xs text-gray-500">
-            <div>• Element edges to element edges (red solid lines)</div>
-            <div>• Element centers to element centers (blue dotted lines)</div>
+            <div>• Element edge-to-edge alignment (red solid lines)</div>
+            <div>• Element center-to-center alignment (blue dotted lines)</div>
             <div>• Element edges to canvas edges (blue solid lines)</div>
             <div>• Element centers to canvas center/midpoints (teal/light blue dotted lines)</div>
             <div>• Grid centers (green lines)</div>

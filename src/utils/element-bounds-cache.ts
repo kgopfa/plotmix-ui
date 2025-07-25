@@ -158,12 +158,48 @@ export const findNearbySnapPointsCached = (
     snapPoints.forEach(snapPoint => {
       let distance: number;
       
-      // Calculate distance based on snap point type
+      // Calculate distance based on snap point type for edge-to-edge snapping
       switch (snapPoint.type) {
         case 'left':
+          // Dragged element's left edge to target element's left edge
+          distance = Math.abs(elementBounds.left - (snapPoint.x || 0));
+          if (distance <= snapThreshold) {
+            nearbySnapPoints.push({
+              ...snapPoint,
+              distance
+            });
+          }
+          // Dragged element's right edge to target element's left edge
+          distance = Math.abs(elementBounds.right - (snapPoint.x || 0));
+          if (distance <= snapThreshold) {
+            nearbySnapPoints.push({
+              ...snapPoint,
+              distance
+            });
+          }
+          break;
+          
         case 'right':
+          // Dragged element's left edge to target element's right edge
+          distance = Math.abs(elementBounds.left - (snapPoint.x || 0));
+          if (distance <= snapThreshold) {
+            nearbySnapPoints.push({
+              ...snapPoint,
+              distance
+            });
+          }
+          // Dragged element's right edge to target element's right edge
+          distance = Math.abs(elementBounds.right - (snapPoint.x || 0));
+          if (distance <= snapThreshold) {
+            nearbySnapPoints.push({
+              ...snapPoint,
+              distance
+            });
+          }
+          break;
+          
         case 'centerX':
-          // Vertical alignment - compare X coordinates
+          // Center-to-center alignment
           distance = Math.abs(elementBounds.centerX - (snapPoint.x || 0));
           if (distance <= snapThreshold) {
             nearbySnapPoints.push({
@@ -174,9 +210,45 @@ export const findNearbySnapPointsCached = (
           break;
           
         case 'top':
+          // Dragged element's top edge to target element's top edge
+          distance = Math.abs(elementBounds.top - (snapPoint.y || 0));
+          if (distance <= snapThreshold) {
+            nearbySnapPoints.push({
+              ...snapPoint,
+              distance
+            });
+          }
+          // Dragged element's bottom edge to target element's top edge
+          distance = Math.abs(elementBounds.bottom - (snapPoint.y || 0));
+          if (distance <= snapThreshold) {
+            nearbySnapPoints.push({
+              ...snapPoint,
+              distance
+            });
+          }
+          break;
+          
         case 'bottom':
+          // Dragged element's top edge to target element's bottom edge
+          distance = Math.abs(elementBounds.top - (snapPoint.y || 0));
+          if (distance <= snapThreshold) {
+            nearbySnapPoints.push({
+              ...snapPoint,
+              distance
+            });
+          }
+          // Dragged element's bottom edge to target element's bottom edge
+          distance = Math.abs(elementBounds.bottom - (snapPoint.y || 0));
+          if (distance <= snapThreshold) {
+            nearbySnapPoints.push({
+              ...snapPoint,
+              distance
+            });
+          }
+          break;
+          
         case 'centerY':
-          // Horizontal alignment - compare Y coordinates
+          // Center-to-center alignment
           distance = Math.abs(elementBounds.centerY - (snapPoint.y || 0));
           if (distance <= snapThreshold) {
             nearbySnapPoints.push({

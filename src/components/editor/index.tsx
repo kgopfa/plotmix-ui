@@ -136,11 +136,7 @@ export default function EditorCanvas() {
 
   // Element snapping functionality
   // Element bounds cache for performance optimization
-  const {
-    getAlignmentHighlightsForElement,
-    markCacheDirty,
-    cacheState,
-  } = useElementBoundsCache({
+  const elementBoundsCache = useElementBoundsCache({
     elements: canvasObjects,
     snapThreshold: elementSnapConfig.snapThreshold
   });

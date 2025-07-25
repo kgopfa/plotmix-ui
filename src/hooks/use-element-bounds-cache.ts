@@ -61,6 +61,7 @@ export const useElementBoundsCache = ({ elements, snapThreshold = 10 }: UseEleme
     getAlignmentHighlightsForElement,
     markCacheDirty,
     cacheState,
-    updateCache
+    updateCache,
+    cache: cacheRef.current
   };
 }; 
