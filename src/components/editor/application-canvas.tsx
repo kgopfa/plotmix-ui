@@ -7,6 +7,7 @@ import { DesignCanvas } from './canvas/design-canvas';
 import { Viewport, ViewportWrapper, centerOnDesign, zoomToFit, resetZoom } from './viewport';
 import { useCanvasState } from '@/stores/use-ui-store';
 import { ContextMenu } from './selection/context-menu';
+import { useViewportEmptyAreaClick, useContainerEmptyAreaClick } from '@/hooks';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager';
 import type { SnapGuide } from '../../utils/element-snapping';
@@ -55,6 +56,8 @@ interface ApplicationCanvasProps {
   onSnapPoint?: (point: { x: number; y: number }, event?: { shiftKey?: boolean }) => { x: number; y: number };
   onSetSnapGuides?: (guides: SnapGuide[]) => void;
   onClearSnapGuides?: () => void;
+  // Deselection handler for empty area clicks
+  onEmptyAreaClick?: () => void;
 }
 
 export interface ApplicationCanvasRef extends TimelineCanvasRef {
@@ -188,6 +191,15 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       };
     }, [onCanvasZoomChange]);
 
+    // Use custom hook for viewport empty area click handling
+    useViewportEmptyAreaClick({
+      viewportRef,
+      tool: props.tool,
+      elements: props.elements,
+      shapeRefs: props.shapeRefs,
+      onEmptyAreaClick: props.onEmptyAreaClick,
+    });
+
     const handleContextMenuAction = useCallback(() => {
       // Handle context menu actions
       setContextMenu(null);
@@ -203,10 +215,19 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       getGroupContainers: () => props.groupContainers.current as Record<string, Container>
     }));
 
+    // Use custom hook for container empty area click handling
+    const handleApplicationCanvasClick = useContainerEmptyAreaClick({
+      tool: props.tool,
+      onEmptyAreaClick: props.onEmptyAreaClick,
+    });
+
+
+
     return (
       <div
         ref={canvasContainerRef}
         className="absolute inset-0 bg-slate-100 canvas-area"
+        onClick={handleApplicationCanvasClick}
       >
         <Application
           ref={appRef}

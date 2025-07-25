@@ -822,6 +822,11 @@ export default function EditorCanvas() {
           onSnapPoint={snapPoint}
           onSetSnapGuides={setCurrentGuides}
           onClearSnapGuides={clearElementSnapGuides}
+          // Deselection handler for empty area clicks
+          onEmptyAreaClick={() => {
+            // Deselect all elements when clicking in empty area
+            selectElement(null);
+          }}
         />
 
         {/* Path Mode Banner */}
