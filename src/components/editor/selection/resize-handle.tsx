@@ -30,6 +30,7 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({
   const resizeInProgressRef = useRef(false);
   const initialElementStateRef = useRef({ x: 0, y: 0, width: 0, height: 0, rotation: 0 });
   const wrappersRef = useRef<{ move?: (event: Event | PointerEvent | MouseEvent | KeyboardEvent) => void; up?: () => void }>({});
+  const shiftKeyRef = useRef(false);
 
   // Calculate the rotated position of this corner handle
   const getRotatedCornerPosition = () => {
@@ -124,37 +125,73 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({
     const localDeltaX = deltaX * cos + deltaY * sin;
     const localDeltaY = -deltaX * sin + deltaY * cos;
     
-    // Calculate new dimensions based on which corner is being dragged
     let newWidth = initialState.width;
     let newHeight = initialState.height;
     let centerOffsetX = 0;
     let centerOffsetY = 0;
     
-    switch (corner) {
-      case 'tl': // top-left corner
-        newWidth = initialState.width - localDeltaX;
-        newHeight = initialState.height - localDeltaY;
-        centerOffsetX = localDeltaX / 2;
-        centerOffsetY = localDeltaY / 2;
-        break;
-      case 'tr': // top-right corner
-        newWidth = initialState.width + localDeltaX;
-        newHeight = initialState.height - localDeltaY;
-        centerOffsetX = localDeltaX / 2;
-        centerOffsetY = localDeltaY / 2;
-        break;
-      case 'bl': // bottom-left corner
-        newWidth = initialState.width - localDeltaX;
-        newHeight = initialState.height + localDeltaY;
-        centerOffsetX = localDeltaX / 2;
-        centerOffsetY = localDeltaY / 2;
-        break;
-      case 'br': // bottom-right corner
-        newWidth = initialState.width + localDeltaX;
-        newHeight = initialState.height + localDeltaY;
-        centerOffsetX = localDeltaX / 2;
-        centerOffsetY = localDeltaY / 2;
-        break;
+    if (shiftKeyRef.current) {
+      // Center-based scaling: scale proportionally from center
+      // Calculate the scale factor based on the largest movement
+      const scaleX = Math.abs(localDeltaX) / (initialState.width / 2);
+      const scaleY = Math.abs(localDeltaY) / (initialState.height / 2);
+      const scaleFactor = Math.max(scaleX, scaleY);
+      
+      // Determine if we're scaling up or down based on the corner being dragged
+      // FIXED: Dragging outward (away from center) should scale up, dragging inward should scale down
+      let isScalingUp = false;
+      switch (corner) {
+        case 'tl': // top-left: moving left/up (away from center) scales up
+          isScalingUp = localDeltaX < 0 || localDeltaY < 0;
+          break;
+        case 'tr': // top-right: moving right/up (away from center) scales up
+          isScalingUp = localDeltaX > 0 || localDeltaY < 0;
+          break;
+        case 'bl': // bottom-left: moving left/down (away from center) scales up
+          isScalingUp = localDeltaX < 0 || localDeltaY > 0;
+          break;
+        case 'br': // bottom-right: moving right/down (away from center) scales up
+          isScalingUp = localDeltaX > 0 || localDeltaY > 0;
+          break;
+      }
+      
+      const finalScaleFactor = isScalingUp ? (1 + scaleFactor) : (1 - scaleFactor);
+      
+      // Apply proportional scaling
+      newWidth = initialState.width * finalScaleFactor;
+      newHeight = initialState.height * finalScaleFactor;
+      
+      // Center position stays the same for center-based scaling
+      centerOffsetX = 0;
+      centerOffsetY = 0;
+    } else {
+      // Regular corner-based resizing
+      switch (corner) {
+        case 'tl': // top-left corner
+          newWidth = initialState.width - localDeltaX;
+          newHeight = initialState.height - localDeltaY;
+          centerOffsetX = localDeltaX / 2;
+          centerOffsetY = localDeltaY / 2;
+          break;
+        case 'tr': // top-right corner
+          newWidth = initialState.width + localDeltaX;
+          newHeight = initialState.height - localDeltaY;
+          centerOffsetX = localDeltaX / 2;
+          centerOffsetY = localDeltaY / 2;
+          break;
+        case 'bl': // bottom-left corner
+          newWidth = initialState.width - localDeltaX;
+          newHeight = initialState.height + localDeltaY;
+          centerOffsetX = localDeltaX / 2;
+          centerOffsetY = localDeltaY / 2;
+          break;
+        case 'br': // bottom-right corner
+          newWidth = initialState.width + localDeltaX;
+          newHeight = initialState.height + localDeltaY;
+          centerOffsetX = localDeltaX / 2;
+          centerOffsetY = localDeltaY / 2;
+          break;
+      }
     }
     
     // Ensure minimum size
@@ -167,6 +204,7 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({
     const newCenterY = initialState.y + (centerOffsetX * sin + centerOffsetY * cos);
     
     console.log(`${corner} handle drag:`, { deltaX, deltaY, localDeltaX, localDeltaY });
+    console.log(`Shift key:`, shiftKeyRef.current);
     console.log(`New dimensions:`, { width: finalWidth, height: finalHeight });
     console.log(`New center:`, { x: newCenterX, y: newCenterY });
     
@@ -182,7 +220,8 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({
           height: finalHeight,
           x: newCenterX,
           y: newCenterY,
-          handle: corner === 'tl' ? 'top-left' : corner === 'tr' ? 'top-right' : corner === 'bl' ? 'bottom-left' : 'bottom-right'
+          handle: corner === 'tl' ? 'top-left' : corner === 'tr' ? 'top-right' : corner === 'bl' ? 'bottom-left' : 'bottom-right',
+          shiftKey: shiftKeyRef.current
         }
       });
       
@@ -255,6 +294,9 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({
 
   const handleGlobalPointerMove = (e: PointerEvent) => {
     if (!isDraggingRef.current) return;
+
+    // Update shift key state
+    shiftKeyRef.current = e.shiftKey;
 
     // Get canvas element and its bounding rect
     const canvas = document.querySelector('canvas');

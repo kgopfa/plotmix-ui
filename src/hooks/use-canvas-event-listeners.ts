@@ -3,6 +3,7 @@ import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useUIStore } from '@/stores/use-ui-store';
 import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
 import { AnimatedCanvasObject } from '@/types/canvas';
+import { useSelectionStore } from '@/stores/use-selection-store';
 
 interface UseCanvasEventListenersProps {
   gsapManager: GSAPTimelineManager;
@@ -33,6 +34,90 @@ export const useCanvasEventListeners = ({
 
       // Use the ref to get current elements to avoid stale closure
       const currentElements = elementsRef.current;
+      
+      // Check if this is a virtual group resize
+      if (id === 'virtual-group') {
+        // Handle group resize - scale all selected elements proportionally
+        const { selectedElements } = useSelectionStore.getState();
+        if (selectedElements.length > 1) {
+          // Calculate the scale factors based on the virtual group's new dimensions
+          // We need to find the original bounds of the selected elements
+          let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+          
+          selectedElements.forEach(element => {
+            const halfWidth = element.width / 2;
+            const halfHeight = element.height / 2;
+            minX = Math.min(minX, element.x - halfWidth);
+            minY = Math.min(minY, element.y - halfHeight);
+            maxX = Math.max(maxX, element.x + halfWidth);
+            maxY = Math.max(maxY, element.y + halfHeight);
+          });
+          
+          const originalWidth = maxX - minX;
+          const originalHeight = maxY - minY;
+          const originalCenterX = (minX + maxX) / 2;
+          const originalCenterY = (minY + maxY) / 2;
+          
+          // Calculate scale factors
+          const scaleX = width / originalWidth;
+          const scaleY = height / originalHeight;
+          
+          // For center-based scaling (when shift is held), use the same scale for both dimensions
+          const isShiftHeld = e.detail.shiftKey || false;
+          const finalScaleX = isShiftHeld ? Math.max(scaleX, scaleY) : scaleX;
+          const finalScaleY = isShiftHeld ? Math.max(scaleX, scaleY) : scaleY;
+          
+          console.log('Group resize:', { 
+            originalWidth, 
+            originalHeight, 
+            newWidth: width, 
+            newHeight: height, 
+            scaleX: finalScaleX, 
+            scaleY: finalScaleY,
+            isShiftHeld 
+          });
+          
+          // Update all selected elements with the new scale
+          const updatedElements = currentElements.map(el => {
+            if (selectedElements.some(selected => selected.id === el.id)) {
+              // Calculate new position relative to the group center
+              const relativeX = el.x - originalCenterX;
+              const relativeY = el.y - originalCenterY;
+              
+              // Apply scaling
+              const newX = originalCenterX + (relativeX * finalScaleX);
+              const newY = originalCenterY + (relativeY * finalScaleY);
+              const newWidth = el.width * finalScaleX;
+              const newHeight = el.height * finalScaleY;
+              
+              return {
+                ...el,
+                x: newX,
+                y: newY,
+                width: newWidth,
+                height: newHeight,
+                // For circles, update radius
+                ...(el.type === 'circle' && { radius: newHeight / 2 }),
+                // For triangles, maintain proportions and update radius
+                ...(el.type === 'triangle' && { 
+                  radius: newHeight / 2,
+                  width: (2 * newHeight) / Math.sqrt(3)
+                })
+              };
+            }
+            return el;
+          });
+          
+          // Update all elements at once
+          updatedElements.forEach(element => {
+            updateElement(element.id, element);
+          });
+          
+          return;
+        }
+      }
+      
+      // Handle individual element resize
       const updatedElements = currentElements.map((el) => {
         if (el.id !== id) return el;
 
