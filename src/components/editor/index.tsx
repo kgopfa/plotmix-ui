@@ -27,6 +27,7 @@ import { useGridSnapping } from '@/hooks/use-grid-snapping';
 import { useElementBoundsCache } from '@/hooks/use-element-bounds-cache';
 import { usePanelResize } from '@/hooks/use-panel-resize';
 import { useImageUpload } from '@/hooks/use-image-upload';
+import { useComponentImport } from '@/hooks/use-component-import';
 import { useCanvasInteractions } from '@/hooks/use-canvas-interactions';
 import { useCanvasEventListeners } from '@/hooks/use-canvas-event-listeners';
 import { MainNavBar } from './navigation/main';
@@ -90,6 +91,7 @@ export default function EditorCanvas() {
 
   const fullscreenCanvasRef = useRef<ApplicationCanvasRef | null>(null);
   const { imageFileInputRef, handleImageUpload } = useImageUpload();
+  const { handleComponentImport } = useComponentImport();
 
   // Timeline store integration
   const {

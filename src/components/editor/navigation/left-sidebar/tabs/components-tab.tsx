@@ -25,8 +25,16 @@ export function ComponentsTab() {
   }, [searchQuery, selectedCategory]);
 
   const handleComponentClick = (component: ComponentItem) => {
-    // TODO: Implement adding component to canvas
-    console.log('Adding component to canvas:', component);
+    // Dispatch custom event to handle component import in the main editor
+    const componentImportEvent = new CustomEvent('component-import', {
+      detail: { 
+        component,
+        componentId: component.id,
+        componentPath: component.path,
+        componentName: component.name
+      }
+    });
+    window.dispatchEvent(componentImportEvent);
   };
 
   return (
