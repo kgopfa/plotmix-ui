@@ -1,6 +1,7 @@
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { AnimationBlock } from './animation-block';
+import Image from 'next/image';
 import { 
   Square, 
   Circle, 
@@ -85,6 +86,20 @@ const ElementIcon = ({ element, isChild = false }: { element: AnimatedCanvasObje
     case 'path':
       return <PenTool size={iconSize} className={iconClass} />;
     case 'image':
+      // Check if this is a component (SVG from components tab)
+      if (animatedElement.imageData && animatedElement.imageData.startsWith('/components/')) {
+        return (
+          <div className="flex items-center justify-center w-3.5 h-3.5">
+            <Image 
+              src={animatedElement.imageData} 
+              alt={animatedElement.name}
+              width={14}
+              height={14}
+              className="max-w-full max-h-full object-contain"
+            />
+          </div>
+        );
+      }
       return <ImageIcon size={iconSize} className={iconClass} />;
     case 'text':
       return <Type size={iconSize} className={iconClass} />;
