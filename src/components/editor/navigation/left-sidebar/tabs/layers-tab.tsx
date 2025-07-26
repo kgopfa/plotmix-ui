@@ -1,8 +1,80 @@
 import { useEffect, FC, useState } from 'react';
-import { Layers, Eye, EyeOff, Square, Circle, Type, Image, Minus, Group, Users, Ungroup, ChevronDown, ChevronRight } from 'lucide-react';
+import { Layers, Eye, EyeOff, Square, Circle, Type, Image as ImageIcon, Minus, Group, Users, Ungroup, ChevronDown, ChevronRight } from 'lucide-react';
+import Image from 'next/image';
 import { useCanvasElements, useCanvasGroups, useCanvasOperations } from '@/stores/use-canvas-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
+
+// Component to render image thumbnails for image/SVG/component elements
+const ElementThumbnail: FC<{ element: AnimatedCanvasObject; className?: string }> = ({ element, className = "w-4 h-4" }) => {
+  const [imageError, setImageError] = useState(false);
+  
+  // Check if this element should show a thumbnail
+  const shouldShowThumbnail = element.type === 'image' || 
+                             (element.type === 'path' && element.isAnimationPath === false);
+
+  if (!shouldShowThumbnail || imageError) {
+    // Fallback to icon
+    const IconComponent = getElementIcon(element.type);
+    return <IconComponent className={`${className} text-purple-600`} />;
+  }
+
+  // Try to get image source from element
+  const imageSrc = element.imageData;
+  
+  if (!imageSrc) {
+    // Fallback to icon if no image source
+    const IconComponent = getElementIcon(element.type);
+    return <IconComponent className={`${className} text-purple-600`} />;
+  }
+
+  // Convert SVG content to data URL if needed
+  let processedImageSrc = imageSrc;
+  if (imageSrc.includes('<svg') && !imageSrc.startsWith('data:')) {
+    try {
+      const base64 = window.btoa(unescape(encodeURIComponent(imageSrc)));
+      processedImageSrc = `data:image/svg+xml;base64,${base64}`;
+    } catch (error) {
+      console.warn('Failed to convert SVG to data URL:', error);
+      processedImageSrc = imageSrc;
+    }
+  }
+
+  return (
+    <div className={`${className} relative overflow-hidden rounded border border-gray-200 bg-gray-50 flex items-center justify-center`}>
+      {processedImageSrc.startsWith('data:image/svg') || processedImageSrc.includes('<svg') ? (
+        // Handle SVG content
+        <div 
+          className="w-full h-full flex items-center justify-center"
+          dangerouslySetInnerHTML={{ __html: processedImageSrc.includes('<svg') ? processedImageSrc : '' }}
+        />
+      ) : (
+        <Image
+          src={processedImageSrc}
+          alt={element.name}
+          fill
+          className="object-cover"
+          onError={() => setImageError(true)}
+          onLoad={() => setImageError(false)}
+          unoptimized={processedImageSrc.startsWith('data:')}
+        />
+      )}
+    </div>
+  );
+};
+
+// Helper function to get element icon (moved outside component for reuse)
+const getElementIcon = (type: string) => {
+  switch (type) {
+    case 'rectangle': return Square;
+    case 'circle': return Circle;
+    case 'text': return Type;
+    case 'image': return ImageIcon;
+    case 'line': 
+    case 'simpleLine': return Minus;
+    default: return Square;
+  }
+};
 
 export const LayersTab: FC = () => {
   const canvasObjects = useCanvasElements();
@@ -30,29 +102,7 @@ export const LayersTab: FC = () => {
     });
   };
 
-  const getElementIcon = (type: string) => {
-    switch (type) {
-      case 'rectangle': return Square;
-      case 'circle': return Circle;
-      case 'text': return Type;
-      case 'image': return Image;
-      case 'line': 
-      case 'simpleLine': return Minus;
-      default: return Square;
-    }
-  };
 
-  const getElementColor = (type: string) => {
-    switch (type) {
-      case 'rectangle': return 'text-blue-600';
-      case 'circle': return 'text-green-600';
-      case 'text': return 'text-orange-600';
-      case 'image': return 'text-purple-600';
-      case 'line': 
-      case 'simpleLine': return 'text-gray-600';
-      default: return 'text-gray-600';
-    }
-  };
 
   const handleElementClick = (element: AnimatedCanvasObject, event?: React.MouseEvent) => {
     if (event && (event.metaKey || event.ctrlKey)) {
@@ -227,7 +277,6 @@ export const LayersTab: FC = () => {
                          {groupedElements
                            .filter(el => el.groupId === group.id)
                            .map((element) => {
-                             const IconComponent = getElementIcon(element.type);
                              return (
                                <div
                                  key={element.id}
@@ -238,7 +287,7 @@ export const LayersTab: FC = () => {
                                  }`}
                                >
                                  <div className="flex items-center gap-2">
-                                   <IconComponent className={`w-3 h-3 ${getElementColor(element.type)}`} />
+                                   <ElementThumbnail element={element} />
                                    <button
                                      onClick={(e) => handleElementClick(element, e)}
                                      className="text-xs text-gray-700 flex-1 truncate text-left hover:text-blue-600 transition-colors"
@@ -276,7 +325,6 @@ export const LayersTab: FC = () => {
                 Elements
               </div>
               {ungroupedElements.map((element) => {
-                const IconComponent = getElementIcon(element.type);
                 return (
                   <div
                     key={element.id}
@@ -287,7 +335,7 @@ export const LayersTab: FC = () => {
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <IconComponent className={`w-4 h-4 ${getElementColor(element.type)}`} />
+                      <ElementThumbnail element={element} />
                                              <button
                          onClick={(e) => handleElementClick(element, e)}
                          className="font-medium text-gray-700 flex-1 truncate text-left hover:text-blue-600 transition-colors"
