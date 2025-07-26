@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import Image from 'next/image';
 import { componentLibrary, ComponentItem, getComponentsByCategory, searchComponents, getAllCategories } from '@/data/components';
 
 export function ComponentsTab() {
@@ -100,9 +101,11 @@ export function ComponentsTab() {
                   title={component.description}
                 >
                   <div className="w-8 h-8 mb-1 flex items-center justify-center">
-                    <img 
+                    <Image 
                       src={component.path} 
                       alt={component.name}
+                      width={32}
+                      height={32}
                       className="max-w-full max-h-full object-contain"
                     />
                   </div>
