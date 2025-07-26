@@ -675,17 +675,27 @@ export default function EditorCanvas() {
   }, [selectedObjects]);
 
   const handleSelectionNavbarDelete = useCallback(() => {
+    const { removeElement, removeGroup } = useCanvasStore.getState();
+    
+    // Delete selected elements
     if (selectedObjects.length > 0) {
-      const { removeElement } = useCanvasStore.getState();
       selectedObjects.forEach(element => {
         removeElement(element.id);
       });
-      // Add a small delay before clearing selections to keep navbar visible briefly
-      setTimeout(() => {
-        selectElement(null);
-      }, 100);
     }
-  }, [selectedObjects, selectElement]);
+    
+    // Delete selected groups
+    if (selectedGroups.length > 0) {
+      selectedGroups.forEach(group => {
+        removeGroup(group.id);
+      });
+    }
+    
+    // Add a small delay before clearing selections to keep navbar visible briefly
+    setTimeout(() => {
+      selectElement(null);
+    }, 100);
+  }, [selectedObjects, selectedGroups, selectElement]);
 
   const handleSelectionNavbarCopy = useCallback(() => {
     // TODO: Implement copy functionality
@@ -848,6 +858,15 @@ export default function EditorCanvas() {
           onEmptyAreaClick={() => {
             // Deselect all elements when clicking in empty area
             selectElement(null);
+          }}
+          // Context menu handlers
+          onElementContextMenu={(e, elementId) => {
+            // Handle element context menu
+            console.log('Element context menu:', elementId);
+          }}
+          onGroupContextMenu={(e, groupId) => {
+            // Handle group context menu
+            console.log('Group context menu:', groupId);
           }}
         />
 

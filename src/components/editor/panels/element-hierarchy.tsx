@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
-import { ContextMenu } from '../selection/context-menu';
+import { RightClickOptions } from './right-click-options';
 import { contextMenuManager } from '@/lib/context-menu-manager';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useUIStore } from '@/stores/use-ui-store';
@@ -218,6 +218,13 @@ export function ElementHierarchy({
           if (elementToDelete) {
             const { removeElement } = useCanvasStore.getState();
             removeElement(targetId);
+          }
+        } else if (targetType === 'group') {
+          // Find and remove the group
+          const groupToDelete = groups.find(g => g.id === targetId);
+          if (groupToDelete) {
+            const { removeGroup } = useCanvasStore.getState();
+            removeGroup(targetId);
           }
         }
         break;
@@ -602,7 +609,7 @@ export function ElementHierarchy({
       </ul>
 
       {/* Element/Group Context Menu */}
-      <ContextMenu
+      <RightClickOptions
         contextMenu={contextMenu}
         onAction={handleContextMenuAction}
         onClose={() => setContextMenu(null)}

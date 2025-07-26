@@ -13,6 +13,8 @@ interface UseElementPointerHandlersProps {
   handleCanvasPointerDown: (e: FederatedPointerEvent) => void;
   startDragging: (id: string, offsetX: number, offsetY: number, isGroup?: boolean, groupOffsets?: Array<{ id: string; offsetX: number; offsetY: number }>) => void;
   startEndpointDragging: (id: string, endpoint: 'start' | 'end') => void;
+  onElementContextMenu?: (e: FederatedPointerEvent, elementId: string) => void;
+  onGroupContextMenu?: (e: FederatedPointerEvent, groupId: string) => void;
 }
 
 export const useElementPointerHandlers = ({
@@ -26,6 +28,8 @@ export const useElementPointerHandlers = ({
   handleCanvasPointerDown,
   startDragging,
   startEndpointDragging,
+  onElementContextMenu,
+  onGroupContextMenu,
 }: UseElementPointerHandlersProps) => {
   const textClickTimeRef = useRef<Map<string, number>>(new Map());
 
@@ -33,7 +37,16 @@ export const useElementPointerHandlers = ({
   const handleElementPointerDown = useCallback((id: string, shapeX: number, shapeY: number) => (e: FederatedPointerEvent) => {
     // Check for right-click (button 2) and show context menu
     if (e.button === 2) {
-      // Handle right-click context menu if needed
+      e.stopPropagation();
+      e.preventDefault();
+      
+      // Check if this is a group element
+      const element = elements.find(el => el.id === id);
+      if (element && element.groupId && onGroupContextMenu) {
+        onGroupContextMenu(e, element.groupId);
+      } else if (onElementContextMenu) {
+        onElementContextMenu(e, id);
+      }
       return;
     }
 
@@ -137,7 +150,7 @@ export const useElementPointerHandlers = ({
       startDragging(id, pos.x - shapeX, pos.y - shapeY);
       selectElement([element], isMultiSelect);
     }
-  }, [tool, isLineChaining, lineStartPoint, elements, selectedIds, selectElement, handleCanvasClick, handleCanvasPointerDown, startDragging, startEndpointDragging]);
+  }, [tool, isLineChaining, lineStartPoint, elements, selectedIds, selectElement, handleCanvasClick, handleCanvasPointerDown, startDragging, startEndpointDragging, onElementContextMenu, onGroupContextMenu]);
 
   return {
     handleElementPointerDown,

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { AnimatedCanvasObject } from '@/types/canvas';
+import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { useUIStore, useKeyboardShortcutsStore } from '@/stores/use-ui-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useCanvasOperations } from '@/stores/use-canvas-store';
@@ -26,8 +26,8 @@ export function useKeyboardShortcuts({
   onUngroup,
 }: UseKeyboardShortcutsProps = {}) {
   const { executeShortcut } = useKeyboardShortcutsStore();
-  const { selectedElements } = useSelectionStore();
-  const { removeElement } = useCanvasOperations();
+  const { selectedElements, selectedGroups } = useSelectionStore();
+  const { removeElement, removeGroup } = useCanvasOperations();
   const toolState = useUIStore((state) => state.tools);
   const { setLineChaining, setActiveTool, togglePathMode, setAnimationTarget } = useUIStore();
 
@@ -107,10 +107,13 @@ export function useKeyboardShortcuts({
 
         case 'delete':
         case 'backspace':
-          if (selectedElements.length > 0) {
+          if (selectedElements.length > 0 || selectedGroups.length > 0) {
             e.preventDefault();
             selectedElements.forEach((element: AnimatedCanvasObject) => {
               removeElement(element.id);
+            });
+            selectedGroups.forEach((group: CanvasGroup) => {
+              removeGroup(group.id);
             });
           }
           break;

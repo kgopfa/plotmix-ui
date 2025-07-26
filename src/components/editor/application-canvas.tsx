@@ -5,8 +5,10 @@ import { Application, extend, type ApplicationRef } from '@pixi/react';
 import { Container, Graphics } from 'pixi.js';
 import { DesignCanvas } from './canvas/design-canvas';
 import { Viewport, ViewportWrapper, centerOnDesign, zoomToFit, resetZoom } from './viewport';
-import { useCanvasState } from '@/stores/use-ui-store';
-import { ContextMenu } from './selection/context-menu';
+import { useCanvasState, useUIStore } from '@/stores/use-ui-store';
+import { useCanvasStore } from '@/stores/use-canvas-store';
+import { RightClickOptions } from './panels/right-click-options';
+import { contextMenuManager } from '@/lib/context-menu-manager';
 import { useViewportEmptyAreaClick, useContainerEmptyAreaClick } from '@/hooks';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager';
@@ -58,6 +60,9 @@ interface ApplicationCanvasProps {
   onClearSnapGuides?: () => void;
   // Deselection handler for empty area clicks
   onEmptyAreaClick?: () => void;
+  // Context menu handlers
+  onElementContextMenu?: (e: FederatedPointerEvent, elementId: string) => void;
+  onGroupContextMenu?: (e: FederatedPointerEvent, groupId: string) => void;
 }
 
 export interface ApplicationCanvasRef extends TimelineCanvasRef {
@@ -200,10 +205,71 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       onEmptyAreaClick: props.onEmptyAreaClick,
     });
 
-    const handleContextMenuAction = useCallback(() => {
-      // Handle context menu actions
+    const handleContextMenuAction = useCallback((action: string) => {
+      if (!contextMenu) return;
+
+      const { targetId, targetType } = contextMenu;
+      
+      switch (action) {
+        case 'animate':
+          if (targetType === 'element') {
+            // Find and select the element
+            const element = props.elements.find(el => el.id === targetId);
+            if (element) {
+              props.handleSelectElement(element.id);
+              
+              // Show the animations tab
+              const { setShowAnimationsTab } = useUIStore.getState();
+              setShowAnimationsTab(true);
+            }
+          }
+          break;
+        case 'delete':
+          if (targetType === 'element') {
+            // Find and remove the element
+            const elementToDelete = props.elements.find(el => el.id === targetId);
+            if (elementToDelete) {
+              const { removeElement } = useCanvasStore.getState();
+              removeElement(targetId);
+            }
+          } else if (targetType === 'group') {
+            // Find and remove the group
+            const groupToDelete = props.groups.find(g => g.id === targetId);
+            if (groupToDelete) {
+              const { removeGroup } = useCanvasStore.getState();
+              removeGroup(targetId);
+            }
+          } else if (targetType === 'component') {
+            // Handle component deletion (similar to group deletion)
+            const componentToDelete = props.groups.find(g => g.id === targetId);
+            if (componentToDelete) {
+              const { removeGroup } = useCanvasStore.getState();
+              removeGroup(targetId);
+            }
+          }
+          break;
+        case 'copy':
+          // TODO: Implement copy functionality
+          console.log('Copy', targetType, targetId);
+          break;
+        case 'group':
+          if (targetType === 'element') {
+            // TODO: Implement group functionality
+            console.log('Group element', targetId);
+          }
+          break;
+        case 'moveToFront':
+          // TODO: Implement move to front functionality
+          console.log('Move to front', targetType, targetId);
+          break;
+        case 'moveToBack':
+          // TODO: Implement move to back functionality
+          console.log('Move to back', targetType, targetId);
+          break;
+      }
+      
       setContextMenu(null);
-    }, []);
+    }, [contextMenu, props.elements, props.handleSelectElement]);
 
     useImperativeHandle(ref, () => ({
       getApplication: () => appRef.current,
@@ -220,6 +286,39 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       tool: props.tool,
       onEmptyAreaClick: props.onEmptyAreaClick,
     });
+
+    // Context menu handlers
+    const handleElementContextMenu = useCallback((e: FederatedPointerEvent, elementId: string) => {
+      e.stopPropagation();
+      e.preventDefault();
+      
+      // Use context menu manager to ensure only one menu is shown
+      const menuId = 'canvas-element-context-menu';
+      contextMenuManager.openContextMenu(menuId);
+      
+      setContextMenu({
+        x: e.global.x,
+        y: e.global.y,
+        targetId: elementId,
+        targetType: 'element'
+      });
+    }, []);
+
+    const handleGroupContextMenu = useCallback((e: FederatedPointerEvent, groupId: string) => {
+      e.stopPropagation();
+      e.preventDefault();
+      
+      // Use context menu manager to ensure only one menu is shown
+      const menuId = 'canvas-group-context-menu';
+      contextMenuManager.openContextMenu(menuId);
+      
+      setContextMenu({
+        x: e.global.x,
+        y: e.global.y,
+        targetId: groupId,
+        targetType: 'group'
+      });
+    }, []);
 
 
 
@@ -246,12 +345,17 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
             stopPropagation={false}
             ref={viewportRef}
           >
-            <DesignCanvas {...props} dimensions={dimensions} />
+            <DesignCanvas 
+              {...props} 
+              dimensions={dimensions}
+              onElementContextMenu={handleElementContextMenu}
+              onGroupContextMenu={handleGroupContextMenu}
+            />
           </Viewport>
         </Application>
 
         {/* Context Menu */}
-        <ContextMenu
+        <RightClickOptions
           contextMenu={contextMenu}
           onAction={handleContextMenuAction}
           onClose={() => setContextMenu(null)}

@@ -68,6 +68,9 @@ interface DesignCanvasProps {
   onSnapPoint?: (point: { x: number; y: number }, event?: { shiftKey?: boolean }) => { x: number; y: number };
   onSetSnapGuides?: (guides: SnapGuide[]) => void;
   onClearSnapGuides?: () => void;
+  // Context menu handlers
+  onElementContextMenu?: (e: FederatedPointerEvent, elementId: string) => void;
+  onGroupContextMenu?: (e: FederatedPointerEvent, groupId: string) => void;
 }
 
 export const DesignCanvas = (props: DesignCanvasProps) => {
@@ -153,6 +156,8 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
     handleCanvasPointerDown: props.handleCanvasPointerDown,
     startDragging,
     startEndpointDragging,
+    onElementContextMenu: props.onElementContextMenu,
+    onGroupContextMenu: props.onGroupContextMenu,
   });
 
   // Set up global event listeners for element dragging
@@ -271,6 +276,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
             ref={(node) => {
               if (node) groupContainers.current[group.id] = node;
             }}
+
           >
             {/* Render elements as children of the group container */}
             {groupElements.map((el) => {
@@ -325,6 +331,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                   onPointerUpOutside={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
                   onPointerOver={tool === 'select' || tool === 'draw' ? handleElementMouseMove(el.id) : undefined}
                   onPointerOut={tool === 'select' || tool === 'draw' ? handleElementMouseLeave(el.id) : undefined}
+                  
                   ref={(node) => {
                     if (node) {
                       shapeRefs.current[el.id] = node;
@@ -420,6 +427,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
             onPointerUpOutside={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
             onPointerOver={tool === 'select' || tool === 'draw' ? handleElementMouseMove(el.id) : undefined}
             onPointerOut={tool === 'select' || tool === 'draw' ? handleElementMouseLeave(el.id) : undefined}
+
             ref={(node) => {
               if (node) {
                 shapeRefs.current[el.id] = node;

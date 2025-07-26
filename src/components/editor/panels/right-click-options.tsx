@@ -1,20 +1,20 @@
 import React from 'react';
 import { Rocket, Copy, Layers, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
 
-interface ContextMenuPosition {
+interface RightClickOptionsPosition {
   x: number;
   y: number;
   targetId: string;
-  targetType?: 'element' | 'group';
+  targetType?: 'element' | 'group' | 'component';
 }
 
-interface ContextMenuProps {
-  contextMenu: ContextMenuPosition | null;
+interface RightClickOptionsProps {
+  contextMenu: RightClickOptionsPosition | null;
   onAction: (action: string) => void;
   onClose: () => void;
 }
 
-export const ContextMenu: React.FC<ContextMenuProps> = ({
+export const RightClickOptions: React.FC<RightClickOptionsProps> = ({
   contextMenu,
   onAction
 }) => {
@@ -77,18 +77,14 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
         Move to Back
       </button>
       
-      {isElement && (
-        <>
-          <div className="border-t border-gray-100 my-2 mx-1" />
-          <button
-            className="w-full px-3 py-2 text-left text-sm hover:bg-red-50 hover:text-red-600 flex items-center gap-3 rounded-lg mx-1 transition-colors"
-            onClick={() => onAction('delete')}
-          >
-            <Trash2 className="w-4 h-4" />
-            Delete
-          </button>
-        </>
-      )}
+      <div className="border-t border-gray-100 my-2 mx-1" />
+      <button
+        className="w-full px-3 py-2 text-left text-sm hover:bg-red-50 hover:text-red-600 flex items-center gap-3 rounded-lg mx-1 transition-colors"
+        onClick={() => onAction('delete')}
+      >
+        <Trash2 className="w-4 h-4" />
+        Delete
+      </button>
     </div>
   );
 }; 
