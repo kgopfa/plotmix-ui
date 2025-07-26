@@ -91,7 +91,7 @@ interface KeyboardShortcut {
 }
 
 // Navigation keys corresponding to sidebar icons
-export type NavKey = 'video' | 'scenes' | 'uploads' | 'ai' | 'text' | 'animations' | 'layers' | 'tools' | 'audio' | 'timeline';
+export type NavKey = 'video' | 'scenes' | 'uploads' | 'ai' | 'text' | 'animations' | 'layers' | 'tools' | 'components' | 'audio' | 'timeline';
 
 // Right sidebar keys
 export type RightPanelKey = 'properties' | 'animations' | 'lock';

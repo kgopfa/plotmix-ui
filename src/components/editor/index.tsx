@@ -762,9 +762,9 @@ export default function EditorCanvas() {
   }, []);
 
   // Timeline should shift when any tab with content panels is active (not toggle buttons or compact tabs)
-  // Include: scenes, uploads, ai, video, text, animations, layers
+  // Include: scenes, uploads, ai, video, text, animations, layers, components
   // Exclude: tools (compact), audio (toggle), timeline (toggle)
-  const tabsWithPanels = ['scenes', 'uploads', 'ai', 'video', 'text', 'animations', 'layers'];
+  const tabsWithPanels = ['scenes', 'uploads', 'ai', 'video', 'text', 'animations', 'layers', 'components'];
   const timelineLeftOffset = 80 + (panelState.leftPanelVisible && activeNav && tabsWithPanels.includes(activeNav) ? panelState.leftPanelWidth + 8 : 0);
 
   return (

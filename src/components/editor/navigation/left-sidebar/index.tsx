@@ -9,6 +9,7 @@ import {
   CircleFadingPlus,
   Type as TypeIcon,
   Layers,
+  Blocks,
 } from 'lucide-react'
 import {
   useActiveNav, 
@@ -26,10 +27,11 @@ import { TextTab } from './tabs/text-tab';
 import { AIToolsTab } from './tabs/ai-tools-tab';
 import { AnimationsTab } from './tabs/animations-tab';
 import { LayersTab } from './tabs/layers-tab';
+import { ComponentsTab } from './tabs/components-tab';
 
 type NavItem = { 
   name: string; 
-  key: 'video' | 'scenes' | 'uploads' | 'ai' | 'text' | 'layers' | 'tools' | 'audio' | 'timeline'; 
+  key: 'video' | 'scenes' | 'uploads' | 'ai' | 'text' | 'layers' | 'tools' | 'components' | 'audio' | 'timeline'; 
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; 
   color: string;
   hoverColor: string;
@@ -77,6 +79,14 @@ const navigation: NavItem[] = [
     hoverColor: 'hover:bg-gradient-to-r hover:from-orange-50 hover:to-yellow-50 hover:text-orange-700',
     activeColor: 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30'
   },
+  { 
+    name: 'Components', 
+    key: 'components', 
+    icon: Blocks,
+    color: 'text-teal-600',
+    hoverColor: 'hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 hover:text-teal-700',
+    activeColor: 'bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-lg shadow-teal-500/30'
+  },
 ];
 
 const bottomNavigation: NavItem[] = [
@@ -120,6 +130,9 @@ const TabContent: React.FC<{ navKey: string }> = ({ navKey }) => {
     
     case 'tools':
       return <ToolbarTab />;
+    
+    case 'components':
+      return <ComponentsTab />;
     
     case 'audio':
     case 'timeline':
