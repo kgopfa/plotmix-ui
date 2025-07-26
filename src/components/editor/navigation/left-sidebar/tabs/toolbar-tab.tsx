@@ -4,19 +4,22 @@ import {
   Square, 
   Circle, 
   Triangle, 
-  RotateCcw,
   Minus,
   Pen,
   MousePointer2,
-  Route
+  Pentagon
 } from 'lucide-react';
 
 export function ToolbarTab() {
   const { activeTool, isPathMode } = useToolState();
   const { setActiveTool } = useToolActions();
   
+  // Helper functions to map clear names to internal tool types
+  const getPolygonTool = (): ToolType => 'line';
+  const getLineTool = (): ToolType => 'simpleLine';
+  
   // Define which tools are allowed in path mode
-  const pathModeAllowedTools: ToolType[] = ['line', 'simpleLine', 'draw'];
+  const pathModeAllowedTools: ToolType[] = [getPolygonTool(), getLineTool(), 'draw'];
   
   // Function to check if a tool should be disabled
   const isToolDisabled = (tool: ToolType) => {
@@ -50,13 +53,13 @@ export function ToolbarTab() {
           hover: 'hover:bg-pink-50 hover:text-pink-700',
           text: 'text-pink-600'
         };
-      case 'line':
+      case 'line': // Polygon tool
         return {
           active: 'bg-gradient-to-r from-orange-500 to-orange-600 shadow-orange-500/30',
           hover: 'hover:bg-orange-50 hover:text-orange-700',
           text: 'text-orange-600'
         };
-      case 'simpleLine':
+      case 'simpleLine': // Line tool
         return {
           active: 'bg-gradient-to-r from-yellow-500 to-yellow-600 shadow-yellow-500/30',
           hover: 'hover:bg-yellow-50 hover:text-yellow-700',
@@ -150,33 +153,23 @@ export function ToolbarTab() {
         </button>
         
         <button
-          className={getButtonStyling('arc').buttonClass}
-          onClick={() => handleToolClick('arc')}
-          title={isToolDisabled('arc') ? "Arc (disabled in path mode)" : "Arc"}
-          disabled={isToolDisabled('arc')}
+          className={getButtonStyling(getPolygonTool()).buttonClass}
+          onClick={() => handleToolClick(getPolygonTool())}
+          title="Polygon"
+          disabled={isToolDisabled(getPolygonTool())}
         >
-          <RotateCcw className={getButtonStyling('arc').iconClass} />
-          <span className="sr-only">Arc</span>
+          <Pentagon className={getButtonStyling(getPolygonTool()).iconClass} />
+          <span className="sr-only">Polygon</span>
         </button>
         
         <button
-          className={getButtonStyling('line').buttonClass}
-          onClick={() => handleToolClick('line')}
+          className={getButtonStyling(getLineTool()).buttonClass}
+          onClick={() => handleToolClick(getLineTool())}
           title="Line"
-          disabled={isToolDisabled('line')}
+          disabled={isToolDisabled(getLineTool())}
         >
-          <Route className={getButtonStyling('line').iconClass} />
+          <Minus className={getButtonStyling(getLineTool()).iconClass} />
           <span className="sr-only">Line</span>
-        </button>
-        
-        <button
-          className={getButtonStyling('simpleLine').buttonClass}
-          onClick={() => handleToolClick('simpleLine')}
-          title="Simple Line"
-          disabled={isToolDisabled('simpleLine')}
-        >
-          <Minus className={getButtonStyling('simpleLine').iconClass} />
-          <span className="sr-only">Simple Line</span>
         </button>
         
         <button
