@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { extend } from '@pixi/react';
 import { SnapGuides } from './snap-guides';
 import { LinePreview } from '../helpers/line-preview';
-import { RichTextRenderer } from './rich-text-renderer';
+import { RichTextRenderer } from '../helpers/rich-text-renderer';
 import type { SnapGuide } from '../../../utils/element-snapping';
 import type { FederatedPointerEvent } from 'pixi.js';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
