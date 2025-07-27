@@ -16,7 +16,7 @@ import ResizeHandles from '../selection/resize-handles';
 import RadiusHandles from '../selection/radius-handles';
 import { GroupSelection } from '../selection/group-selection';
 import { useCanvasState } from '@/stores/use-ui-store';
-import { useCanvasOperations, useCanvasSortedElements } from '@/stores/use-canvas-store';
+import { useCanvasOperations } from '@/stores/use-canvas-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useTimelineStore } from '@/stores/use-timeline-store';
 import { useResponsiveCanvasPosition } from '@/hooks/use-responsive-canvas-position';
@@ -76,9 +76,6 @@ interface DesignCanvasProps {
 export const DesignCanvas = (props: DesignCanvasProps) => {
   // Get isPlaying state directly from timeline store
   const isPlaying = useTimelineStore(state => state.playback.isPlaying);
-
-  // Get sorted elements from store
-  const sortedElements = useCanvasSortedElements();
 
   const {
     snapGuides = [],
@@ -174,6 +171,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
       y={centerY}
       interactive={true}
       eventMode="static"
+      sortableChildren={true}
       hitArea={new Rectangle(-canvasFrameWidth / 2, -canvasFrameHeight / 2, canvasFrameWidth, canvasFrameHeight)}
       ref={(container) => {
         containerRef.current = container;
@@ -262,8 +260,8 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
 
       {/* Render group containers first (excluding default groups) */}
       {groups.filter(group => (group.visible !== false) && !group.isDefaultGroup).map((group) => {
-        const groupElements = sortedElements
-          .filter(el => el.groupId === group.id && (el.visible !== false));
+        const groupElements = elements
+          .filter((el: AnimatedCanvasObject) => el.groupId === group.id && (el.visible !== false));
 
         return (
           <pixiContainer
@@ -271,13 +269,14 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
             x={group.x}
             y={group.y}
             rotation={(group.rotation || 0) * Math.PI / 180}
+            zIndex={Math.max(...groupElements.map((el: AnimatedCanvasObject) => el.zIndex || 0))}
             ref={(node) => {
               if (node) groupContainers.current[group.id] = node;
             }}
 
           >
             {/* Render elements as children of the group container */}
-            {groupElements.map((el) => {
+            {groupElements.map((el: AnimatedCanvasObject) => {
               // Calculate element position relative to group center
               const relativeX = el.x - group.x;
               const relativeY = el.y - group.y;
@@ -288,6 +287,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                   x={relativeX}
                   y={relativeY}
                   pivot={{ x: 0, y: 0 }}
+                  zIndex={el.zIndex || 0}
                   interactive={tool === 'select' || tool === 'draw'}
                   eventMode={tool === 'select' || tool === 'draw' ? 'dynamic' : 'none'}
                   hitArea={(() => {
@@ -367,23 +367,24 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
       })}
 
       {/* Render elements that are not in any groups OR are in default groups */}
-      {sortedElements
-        .filter(el => {
+      {elements
+        .filter((el: AnimatedCanvasObject) => {
           const group = groups.find(g => g.id === el.groupId);
           // Render elements that are not in any group OR are in default groups
           // This ensures elements in default groups are rendered in the ungrouped section
           return (!group || group.isDefaultGroup) && (el.visible !== false);
         })
-        .map((el) => {
+        .map((el: AnimatedCanvasObject) => {
           // Handle all element types consistently, including SVGs
-          return (
-            <pixiContainer
-              key={el.id}
-              x={el.x}
-              y={el.y}
-              pivot={{ x: 0, y: 0 }}
-              interactive={tool === 'select' || tool === 'draw'}
-              eventMode={tool === 'select' || tool === 'draw' ? 'dynamic' : 'none'}
+                  return (
+          <pixiContainer
+            key={el.id}
+            x={el.x}
+            y={el.y}
+            pivot={{ x: 0, y: 0 }}
+            zIndex={el.zIndex || 0}
+            interactive={tool === 'select' || tool === 'draw'}
+            eventMode={tool === 'select' || tool === 'draw' ? 'dynamic' : 'none'}
               hitArea={(() => {
                 if (el.type === 'line' && el.lineOptions?.points) {
                   // Calculate hit area based on actual line geometry
@@ -473,6 +474,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
       {tool === 'draw' && (
         <pixiGraphics
           ref={drawingRef}
+          zIndex={1000}
           draw={(g) => {
             g.clear();
             if (currentPath.length > 1) {
@@ -493,15 +495,17 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
       )}
 
       {/* Line preview layer */}
-      <LinePreview
-        tool={tool}
-        lineStartPoint={lineStartPoint}
-        mousePos={mousePos}
-        isLineChaining={isLineChaining}
-        chainedLineIds={chainedLineIds}
-        elements={elements}
-        canvasContainerRef={containerRef}
-      />
+      <pixiContainer zIndex={1001}>
+        <LinePreview
+          tool={tool}
+          lineStartPoint={lineStartPoint}
+          mousePos={mousePos}
+          isLineChaining={isLineChaining}
+          chainedLineIds={chainedLineIds}
+          elements={elements}
+          canvasContainerRef={containerRef}
+        />
+      </pixiContainer>
 
       {/* Element handles - only for single selection and when not playing animations */}
       {!isPlaying && selectedIds.length === 1 && selectedIds.map(selectedId => {
@@ -512,26 +516,32 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         return (
           <React.Fragment key={`handles-${selectedId}`}>
             {/* Resize Handles */}
-            <ResizeHandles element={selectedElement} />
+            <pixiContainer zIndex={2000}>
+              <ResizeHandles element={selectedElement} />
+            </pixiContainer>
 
             {/* Radius Handles */}
-            <RadiusHandles
-              element={selectedElement}
-              scaleFactor={canvasScaleFactor.current}
-            />
+            <pixiContainer zIndex={2001}>
+              <RadiusHandles
+                element={selectedElement}
+                scaleFactor={canvasScaleFactor.current}
+              />
+            </pixiContainer>
           </React.Fragment>
         );
       })}
 
       {/* Multi-selection rectangle for multiple selected elements */}
       {!isPlaying && selectedIds.length > 1 && (
-        <GroupSelection
-          selectedElements={elements.filter(el => selectedIds.includes(el.id))}
-          scaleFactor={canvasScaleFactor.current}
-          onGroupDragStart={handleGroupSelectionDragStart}
-          allElements={elements}
-          groups={groups}
-        />
+        <pixiContainer zIndex={2002}>
+          <GroupSelection
+            selectedElements={elements.filter(el => selectedIds.includes(el.id))}
+            scaleFactor={canvasScaleFactor.current}
+            onGroupDragStart={handleGroupSelectionDragStart}
+            allElements={elements}
+            groups={groups}
+          />
+        </pixiContainer>
       )}
 
       {/* Rotation handles OUTSIDE the rotating containers (only for single selection and when not playing animations) */}
@@ -544,29 +554,33 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         }
 
         return (
-          <RotationHandles
-            element={selectedElement}
-            onRotate={(newRotation) => {
-              const rotationEvent = new CustomEvent('element-rotation-change', {
-                detail: {
-                  id: firstSelectedId,
-                  rotation: newRotation
-                }
-              });
-              window.dispatchEvent(rotationEvent);
-            }}
-          />
+          <pixiContainer zIndex={2003}>
+            <RotationHandles
+              element={selectedElement}
+              onRotate={(newRotation) => {
+                const rotationEvent = new CustomEvent('element-rotation-change', {
+                  detail: {
+                    id: firstSelectedId,
+                    rotation: newRotation
+                  }
+                });
+                window.dispatchEvent(rotationEvent);
+              }}
+            />
+          </pixiContainer>
         );
       })()}
 
       {/* Snap guides - positioned relative to the design canvas frame */}
-      <SnapGuides
-        guides={snapGuides}
-        canvasWidth={canvasFrameWidth}
-        canvasHeight={canvasFrameHeight}
-        canvasFrameX={-canvasFrameWidth / 2}
-        canvasFrameY={-canvasFrameHeight / 2}
-      />
+      <pixiContainer zIndex={3000}>
+        <SnapGuides
+          guides={snapGuides}
+          canvasWidth={canvasFrameWidth}
+          canvasHeight={canvasFrameHeight}
+          canvasFrameX={-canvasFrameWidth / 2}
+          canvasFrameY={-canvasFrameHeight / 2}
+        />
+      </pixiContainer>
     </pixiContainer>
   );
 }; 
