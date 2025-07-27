@@ -8,9 +8,6 @@ import type { FederatedPointerEvent } from 'pixi.js';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { Rectangle, Graphics, Container } from 'pixi.js';
 import { drawShape, applyShadowToContainer } from '@/utils/drawing-utils';
-
-// Extend PIXI components for React
-extend({ Container, Graphics });
 import ElementSelect from '../selection/element-select';
 import HoverOutline from './hover-outline';
 import CenterHighlight from './center-highlight';
@@ -25,6 +22,9 @@ import { useTimelineStore } from '@/stores/use-timeline-store';
 import { useResponsiveCanvasPosition } from '@/hooks/use-responsive-canvas-position';
 import { useElementDragging } from '@/hooks/use-element-dragging';
 import { useElementPointerHandlers } from '@/hooks/use-element-pointer-handlers';
+
+// Extend PIXI components for React
+extend({ Container, Graphics });
 
 interface DesignCanvasProps {
   dimensions: { width: number; height: number };
