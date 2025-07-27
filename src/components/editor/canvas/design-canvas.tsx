@@ -49,6 +49,7 @@ interface DesignCanvasProps {
   // Refs
   shapeRefs: React.MutableRefObject<Record<string, unknown>>;
   groupContainers: React.MutableRefObject<Record<string, unknown>>;
+  mainCanvasContainerRef: React.MutableRefObject<Container | null>;
   drawingRef: React.MutableRefObject<Graphics | null>;
   canvasScaleFactor: React.MutableRefObject<number>;
   // Handlers
@@ -176,6 +177,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
       hitArea={new Rectangle(-canvasFrameWidth / 2, -canvasFrameHeight / 2, canvasFrameWidth, canvasFrameHeight)}
       ref={(container) => {
         containerRef.current = container;
+        props.mainCanvasContainerRef.current = container;
       }}
       onPointerDown={(e: FederatedPointerEvent) => {
         // For draw tool, always call handleCanvasPointerDown to start drawing

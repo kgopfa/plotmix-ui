@@ -31,6 +31,7 @@ PixiPlugin.registerPIXI(PIXI);
 export interface TimelineCanvasRef {
   getShapeRefs: () => Record<string, PIXI.Container>;
   getGroupContainers: () => Record<string, PIXI.Container>;
+  getMainContainer: () => PIXI.Container | null;
 }
 
 /**

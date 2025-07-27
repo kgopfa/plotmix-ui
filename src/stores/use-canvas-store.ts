@@ -12,6 +12,9 @@ interface CanvasState {
   isLoading: boolean;
   pendingOperations: Set<string>;
   
+  // Canvas reference for operations
+  canvasRef: React.RefObject<{ sortChildren: () => void } | null> | null;
+  
   // History for undo/redo (future enhancement)
   history: {
     past: Array<{ elements: AnimatedCanvasObject[]; groups: CanvasGroup[] }>;
@@ -87,6 +90,9 @@ interface CanvasActions {
   
   // Subscription management
   subscribe: (callback: (state: { elements: AnimatedCanvasObject[]; groups: CanvasGroup[] }) => void) => () => void;
+  
+  // Canvas reference management
+  setCanvasRef: (ref: React.RefObject<{ sortChildren: () => void } | null>) => void;
 }
 
 type CanvasStore = CanvasState & CanvasActions;
@@ -111,6 +117,7 @@ export const useCanvasStore = create<CanvasStore>()(
     groups: [],
     isLoading: false,
     pendingOperations: new Set(),
+    canvasRef: null,
     history: {
       past: [],
       future: []
@@ -280,6 +287,14 @@ export const useCanvasStore = create<CanvasStore>()(
       
       // Notify subscribers
       notifySubscribers({ elements: get().elements, groups: get().groups });
+      
+      // Call sortChildren after z-index update
+      setTimeout(() => {
+        const canvasRef = get().canvasRef;
+        if (canvasRef?.current?.sortChildren) {
+          canvasRef.current.sortChildren();
+        }
+      }, 0);
     },
 
     sendElementToBack: (id) => {
@@ -295,6 +310,14 @@ export const useCanvasStore = create<CanvasStore>()(
       
       // Notify subscribers
       notifySubscribers({ elements: get().elements, groups: get().groups });
+      
+      // Call sortChildren after z-index update
+      setTimeout(() => {
+        const canvasRef = get().canvasRef;
+        if (canvasRef?.current?.sortChildren) {
+          canvasRef.current.sortChildren();
+        }
+      }, 0);
     },
 
     bringGroupToFront: (id) => {
@@ -320,6 +343,14 @@ export const useCanvasStore = create<CanvasStore>()(
       
       // Notify subscribers
       notifySubscribers({ elements: get().elements, groups: get().groups });
+      
+      // Call sortChildren after z-index update
+      setTimeout(() => {
+        const canvasRef = get().canvasRef;
+        if (canvasRef?.current?.sortChildren) {
+          canvasRef.current.sortChildren();
+        }
+      }, 0);
     },
 
     sendGroupToBack: (id) => {
@@ -345,6 +376,14 @@ export const useCanvasStore = create<CanvasStore>()(
       
       // Notify subscribers
       notifySubscribers({ elements: get().elements, groups: get().groups });
+      
+      // Call sortChildren after z-index update
+      setTimeout(() => {
+        const canvasRef = get().canvasRef;
+        if (canvasRef?.current?.sortChildren) {
+          canvasRef.current.sortChildren();
+        }
+      }, 0);
     },
 
     // Group operations
@@ -795,6 +834,11 @@ export const useCanvasStore = create<CanvasStore>()(
       return () => {
         subscribers.delete(callback);
       };
+    },
+
+    // Canvas reference management
+    setCanvasRef: (ref) => {
+      set({ canvasRef: ref });
     },
   })
 );

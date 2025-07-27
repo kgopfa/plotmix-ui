@@ -109,19 +109,27 @@ export default function EditorCanvas() {
   // Refs for canvas operations
   const shapeRefs = useRef<Record<string, unknown>>({});
   const groupContainers = useRef<Record<string, unknown>>({});
+  const mainCanvasContainerRef = useRef<Container | null>(null);
   const drawingRef = useRef<Graphics | null>(null);
   const canvasScaleFactor = useRef<number>(1);
 
   // Create a canvas ref that provides the shape refs to the timeline manager
   const canvasRefForTimeline = useRef<TimelineCanvasRef>({
     getShapeRefs: () => shapeRefs.current as Record<string, Container>,
-    getGroupContainers: () => groupContainers.current as Record<string, Container>
+    getGroupContainers: () => groupContainers.current as Record<string, Container>,
+    getMainContainer: () => mainCanvasContainerRef.current
   });
 
   // Set up the canvas ref for the timeline manager
   useEffect(() => {
     setTimelineCanvasRef({ current: canvasRefForTimeline.current });
   }, [setTimelineCanvasRef]);
+
+  // Set up the canvas ref for the canvas store
+  const { setCanvasRef } = useCanvasStore();
+  useEffect(() => {
+    setCanvasRef(fullscreenCanvasRef);
+  }, [setCanvasRef]);
 
   // Get snapping state from UI store
   const snappingState = useSnappingState();
@@ -857,6 +865,7 @@ export default function EditorCanvas() {
           isDrawing={isDrawing}
           shapeRefs={shapeRefs}
           groupContainers={groupContainers}
+          mainCanvasContainerRef={mainCanvasContainerRef}
           drawingRef={drawingRef}
           canvasScaleFactor={canvasScaleFactor}
           handleCanvasPointerDown={handleCanvasPointerDown}

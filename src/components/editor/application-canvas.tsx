@@ -37,6 +37,7 @@ interface ApplicationCanvasProps {
   isDrawing: boolean;
   shapeRefs: React.MutableRefObject<Record<string, unknown>>;
   groupContainers: React.MutableRefObject<Record<string, unknown>>;
+  mainCanvasContainerRef: React.MutableRefObject<Container | null>;
   drawingRef: React.MutableRefObject<Graphics | null>;
   canvasScaleFactor: React.MutableRefObject<number>;
   handleCanvasPointerDown: (e: FederatedPointerEvent) => void;
@@ -71,6 +72,7 @@ export interface ApplicationCanvasRef extends TimelineCanvasRef {
   centerOnDesign: () => void;
   zoomToFit: () => void;
   resetZoom: () => void;
+  sortChildren: () => void;
 }
 
 export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCanvasProps>(
@@ -289,7 +291,15 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       zoomToFit: () => zoomToFit(viewportRef.current, dimensions.width, dimensions.height, canvasWidth, canvasHeight),
       resetZoom: () => resetZoom(viewportRef.current, dimensions.width, dimensions.height, canvasWidth, canvasHeight),
       getShapeRefs: () => props.shapeRefs.current as Record<string, Container>,
-      getGroupContainers: () => props.groupContainers.current as Record<string, Container>
+      getGroupContainers: () => props.groupContainers.current as Record<string, Container>,
+      getMainContainer: () => props.mainCanvasContainerRef.current,
+      sortChildren: () => {
+        // Access the main canvas container and call sortChildren
+        const mainContainer = props.mainCanvasContainerRef.current;
+        if (mainContainer && mainContainer.sortChildren) {
+          mainContainer.sortChildren();
+        }
+      }
     }));
 
     // Use custom hook for container empty area click handling
