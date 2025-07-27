@@ -26,8 +26,6 @@ interface ElementHierarchyProps {
   onCopyElement?: (elementId: string) => void;
   onCopyGroup?: (groupId: string) => void;
   onGroupElements?: (elementIds: string[]) => void;
-  onMoveToFront?: (elementId: string, isElement: boolean) => void;
-  onMoveToBack?: (elementId: string, isElement: boolean) => void;
 }
 
 export function ElementHierarchy({
@@ -40,9 +38,7 @@ export function ElementHierarchy({
   onParentChange,
   onCopyElement,
   onCopyGroup,
-  onGroupElements,
-  onMoveToFront,
-  onMoveToBack
+  onGroupElements
 }: ElementHierarchyProps) {
   // Use Zustand store for selection state
   const {
@@ -241,13 +237,21 @@ export function ElementHierarchy({
         }
         break;
       case 'moveToFront':
-        if (onMoveToFront) {
-          onMoveToFront(targetId, targetType === 'element');
+        if (targetType === 'element') {
+          const { bringElementToFront } = useCanvasStore.getState();
+          bringElementToFront(targetId);
+        } else if (targetType === 'group') {
+          const { bringGroupToFront } = useCanvasStore.getState();
+          bringGroupToFront(targetId);
         }
         break;
       case 'moveToBack':
-        if (onMoveToBack) {
-          onMoveToBack(targetId, targetType === 'element');
+        if (targetType === 'element') {
+          const { sendElementToBack } = useCanvasStore.getState();
+          sendElementToBack(targetId);
+        } else if (targetType === 'group') {
+          const { sendGroupToBack } = useCanvasStore.getState();
+          sendGroupToBack(targetId);
         }
         break;
     }

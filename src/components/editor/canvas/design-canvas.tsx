@@ -16,7 +16,7 @@ import ResizeHandles from '../selection/resize-handles';
 import RadiusHandles from '../selection/radius-handles';
 import { GroupSelection } from '../selection/group-selection';
 import { useCanvasState } from '@/stores/use-ui-store';
-import { useCanvasOperations } from '@/stores/use-canvas-store';
+import { useCanvasOperations, useCanvasSortedElements } from '@/stores/use-canvas-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useTimelineStore } from '@/stores/use-timeline-store';
 import { useResponsiveCanvasPosition } from '@/hooks/use-responsive-canvas-position';
@@ -76,6 +76,9 @@ interface DesignCanvasProps {
 export const DesignCanvas = (props: DesignCanvasProps) => {
   // Get isPlaying state directly from timeline store
   const isPlaying = useTimelineStore(state => state.playback.isPlaying);
+
+  // Get sorted elements from store
+  const sortedElements = useCanvasSortedElements();
 
   const {
     snapGuides = [],
@@ -259,13 +262,8 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
 
       {/* Render group containers first (excluding default groups) */}
       {groups.filter(group => (group.visible !== false) && !group.isDefaultGroup).map((group) => {
-        const groupElements = elements.filter(el => el.groupId === group.id && (el.visible !== false));
-        
-        // Debug: Log group elements
-        if (groupElements.some(el => el.type === 'text')) {
-          console.log(`Group ${group.id} (${group.isDefaultGroup ? 'default' : 'custom'}) contains text elements:`, 
-            groupElements.filter(el => el.type === 'text').map(el => el.id));
-        }
+        const groupElements = sortedElements
+          .filter(el => el.groupId === group.id && (el.visible !== false));
 
         return (
           <pixiContainer
@@ -369,12 +367,14 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
       })}
 
       {/* Render elements that are not in any groups OR are in default groups */}
-      {elements.filter(el => {
-        const group = groups.find(g => g.id === el.groupId);
-        // Render elements that are not in any group OR are in default groups
-        // This ensures elements in default groups are rendered in the ungrouped section
-        return (!group || group.isDefaultGroup) && (el.visible !== false);
-      }).map((el) => {
+      {sortedElements
+        .filter(el => {
+          const group = groups.find(g => g.id === el.groupId);
+          // Render elements that are not in any group OR are in default groups
+          // This ensures elements in default groups are rendered in the ungrouped section
+          return (!group || group.isDefaultGroup) && (el.visible !== false);
+        })
+        .map((el) => {
         // Debug: Log ungrouped text elements
         if (el.type === 'text') {
           console.log(`Ungrouped text element: ${el.id}`);

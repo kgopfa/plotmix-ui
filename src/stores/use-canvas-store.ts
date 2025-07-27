@@ -8,6 +8,9 @@ interface CanvasState {
   elements: AnimatedCanvasObject[];
   groups: CanvasGroup[];
   
+  // Z-index management - sorted elements for efficient rendering
+  sortedElements: AnimatedCanvasObject[];
+  
   // Loading and optimistic update state
   isLoading: boolean;
   pendingOperations: Set<string>;
@@ -29,6 +32,12 @@ interface CanvasActions {
   resizeElement: (id: string, size: { width: number; height: number }) => void;
   rotateElement: (id: string, rotation: number) => void;
   setElementVisibility: (id: string, visible: boolean) => void;
+  
+  // Z-index operations
+  bringElementToFront: (id: string) => void;
+  sendElementToBack: (id: string) => void;
+  bringGroupToFront: (id: string) => void;
+  sendGroupToBack: (id: string) => void;
   
   // Group operations
   addGroup: (group: CanvasGroup) => void;
@@ -99,16 +108,30 @@ const notifySubscribers = (state: { elements: AnimatedCanvasObject[]; groups: Ca
 };
 
 export const useCanvasStore = create<CanvasStore>()(
-  (set, get) => ({
-    // Initial state
-    elements: [],
-    groups: [],
-    isLoading: false,
-    pendingOperations: new Set(),
-    history: {
-      past: [],
-      future: []
-    },
+  (set, get) => {
+    // Helper function to sort elements by z-index
+    const sortElementsByZIndex = (elements: AnimatedCanvasObject[]): AnimatedCanvasObject[] => {
+      return [...elements].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+    };
+
+    // Helper function to update sorted elements
+    const updateSortedElements = (elements: AnimatedCanvasObject[]) => {
+      set(produce((state) => {
+        state.sortedElements = sortElementsByZIndex(elements);
+      }));
+    };
+
+    return {
+      // Initial state
+      elements: [],
+      groups: [],
+      sortedElements: [],
+      isLoading: false,
+      pendingOperations: new Set(),
+      history: {
+        past: [],
+        future: []
+      },
 
     // Element operations
     addElement: (element) => {
@@ -139,6 +162,9 @@ export const useCanvasStore = create<CanvasStore>()(
         }
       }));
       
+      // Update sorted elements
+      updateSortedElements(get().elements);
+      
       // Notify subscribers
       notifySubscribers({ elements: get().elements, groups: get().groups });
     },
@@ -150,6 +176,11 @@ export const useCanvasStore = create<CanvasStore>()(
           Object.assign(element, updates);
         }
       }));
+      
+      // Update sorted elements if z-index was changed
+      if (updates.zIndex !== undefined) {
+        updateSortedElements(get().elements);
+      }
       
       // Notify subscribers
       notifySubscribers({ elements: get().elements, groups: get().groups });
@@ -166,6 +197,9 @@ export const useCanvasStore = create<CanvasStore>()(
           elementIds: group.elementIds.filter(elementId => elementId !== id)
         })).filter((group: CanvasGroup) => group.elementIds.length > 0 || !group.isDefaultGroup);
       }));
+      
+      // Update sorted elements
+      updateSortedElements(get().elements);
       
       // Notify subscribers
       notifySubscribers({ elements: get().elements, groups: get().groups });
@@ -205,6 +239,9 @@ export const useCanvasStore = create<CanvasStore>()(
           duplicatedElement.groupId = newGroup.id;
         }
       }));
+      
+      // Update sorted elements
+      updateSortedElements(get().elements);
       
       // Notify subscribers
       notifySubscribers({ elements: get().elements, groups: get().groups });
@@ -255,6 +292,99 @@ export const useCanvasStore = create<CanvasStore>()(
           element.visible = visible;
         }
       }));
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
+    },
+
+    // Z-index operations
+    bringElementToFront: (id) => {
+      set(produce((state) => {
+        const element = state.elements.find((el: AnimatedCanvasObject) => el.id === id);
+        if (element) {
+          // Find the highest z-index among all elements
+          const maxZIndex = Math.max(...state.elements.map((el: AnimatedCanvasObject) => el.zIndex || 0));
+          // Set the element's z-index to be higher than the current maximum
+          element.zIndex = maxZIndex + 1;
+        }
+      }));
+      
+      // Update sorted elements
+      updateSortedElements(get().elements);
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
+    },
+
+    sendElementToBack: (id) => {
+      set(produce((state) => {
+        const element = state.elements.find((el: AnimatedCanvasObject) => el.id === id);
+        if (element) {
+          // Find the lowest z-index among all elements
+          const minZIndex = Math.min(...state.elements.map((el: AnimatedCanvasObject) => el.zIndex || 0));
+          // Set the element's z-index to be lower than the current minimum
+          element.zIndex = minZIndex - 1;
+        }
+      }));
+      
+      // Update sorted elements
+      updateSortedElements(get().elements);
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
+    },
+
+    bringGroupToFront: (id) => {
+      set(produce((state) => {
+        const group = state.groups.find((g: CanvasGroup) => g.id === id);
+        if (group) {
+          // Find all elements in this group
+          const groupElements = state.elements.filter((el: AnimatedCanvasObject) => 
+            group.elementIds.includes(el.id)
+          );
+          
+          if (groupElements.length > 0) {
+            // Find the highest z-index among all elements
+            const maxZIndex = Math.max(...state.elements.map((el: AnimatedCanvasObject) => el.zIndex || 0));
+            
+            // Set all elements in the group to be higher than the current maximum
+            groupElements.forEach((element: AnimatedCanvasObject) => {
+              element.zIndex = maxZIndex + 1;
+            });
+          }
+        }
+      }));
+      
+      // Update sorted elements
+      updateSortedElements(get().elements);
+      
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
+    },
+
+    sendGroupToBack: (id) => {
+      set(produce((state) => {
+        const group = state.groups.find((g: CanvasGroup) => g.id === id);
+        if (group) {
+          // Find all elements in this group
+          const groupElements = state.elements.filter((el: AnimatedCanvasObject) => 
+            group.elementIds.includes(el.id)
+          );
+          
+          if (groupElements.length > 0) {
+            // Find the lowest z-index among all elements
+            const minZIndex = Math.min(...state.elements.map((el: AnimatedCanvasObject) => el.zIndex || 0));
+            
+            // Set all elements in the group to be lower than the current minimum
+            groupElements.forEach((element: AnimatedCanvasObject) => {
+              element.zIndex = minZIndex - 1;
+            });
+          }
+        }
+      }));
+      
+      // Update sorted elements
+      updateSortedElements(get().elements);
       
       // Notify subscribers
       notifySubscribers({ elements: get().elements, groups: get().groups });
@@ -601,6 +731,9 @@ export const useCanvasStore = create<CanvasStore>()(
         state.elements = elements;
       }));
       
+      // Update sorted elements
+      updateSortedElements(elements);
+      
       // Notify subscribers
       notifySubscribers({ elements: get().elements, groups: get().groups });
     },
@@ -618,6 +751,7 @@ export const useCanvasStore = create<CanvasStore>()(
       set(produce((state) => {
         state.elements = [];
         state.groups = [];
+        state.sortedElements = [];
         state.pendingOperations.clear();
       }));
       
@@ -709,8 +843,8 @@ export const useCanvasStore = create<CanvasStore>()(
         subscribers.delete(callback);
       };
     },
-  })
-);
+  };
+  });
 
 // Export utility hooks for common operations
 export const useCanvasElements = () => {
@@ -719,6 +853,10 @@ export const useCanvasElements = () => {
 
 export const useCanvasGroups = () => {
   return useCanvasStore(state => state.groups);
+};
+
+export const useCanvasSortedElements = () => {
+  return useCanvasStore(state => state.sortedElements);
 };
 
 export const useCanvasOperations = () => {

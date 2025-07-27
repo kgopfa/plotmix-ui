@@ -259,12 +259,22 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
           }
           break;
         case 'moveToFront':
-          // TODO: Implement move to front functionality
-          console.log('Move to front', targetType, targetId);
+          if (targetType === 'element') {
+            const { bringElementToFront } = useCanvasStore.getState();
+            bringElementToFront(targetId);
+          } else if (targetType === 'group') {
+            const { bringGroupToFront } = useCanvasStore.getState();
+            bringGroupToFront(targetId);
+          }
           break;
         case 'moveToBack':
-          // TODO: Implement move to back functionality
-          console.log('Move to back', targetType, targetId);
+          if (targetType === 'element') {
+            const { sendElementToBack } = useCanvasStore.getState();
+            sendElementToBack(targetId);
+          } else if (targetType === 'group') {
+            const { sendGroupToBack } = useCanvasStore.getState();
+            sendGroupToBack(targetId);
+          }
           break;
       }
       

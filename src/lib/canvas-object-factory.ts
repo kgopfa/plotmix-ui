@@ -32,6 +32,7 @@ interface CommonObjectAttributes {
   opacity: number;
   visible: boolean;
   fill: string;
+  zIndex: number;
   shadowEnabled: boolean;
   shadowColor: string;
   shadowBlur: number;
@@ -64,6 +65,10 @@ function generateCommonAttributes(
   const baseName = typeCountMap[type] || 'Shape';
   const name = `${baseName} ${existingCount + 1}`;
 
+  // Calculate default z-index based on existing elements
+  const maxZIndex = elements.length > 0 ? Math.max(...elements.map(el => el.zIndex || 0)) : 0;
+  const defaultZIndex = maxZIndex + 1;
+
   return {
     id,
     name,
@@ -74,6 +79,7 @@ function generateCommonAttributes(
     opacity: 1,
     visible: true,
     fill: '#ffffff',
+    zIndex: defaultZIndex, // Set default z-index to be above existing elements
     shadowEnabled: false,
     shadowColor: '#000000',
     shadowBlur: 0,

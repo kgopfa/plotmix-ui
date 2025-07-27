@@ -111,6 +111,7 @@ export interface AnimatedCanvasObject {
   rotation?: number;
   opacity?: number;
   visible?: boolean; // Element visibility - defaults to true
+  zIndex?: number; // Z-index for layering - higher values appear on top
   shadowEnabled?: boolean;
   shadowColor?: string;
   shadowBlur?: number;
