@@ -64,6 +64,7 @@ export const RightClickOptions: React.FC<RightClickOptionsProps> = ({
       <button
         className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-3 rounded-lg mx-1 transition-colors"
         onClick={() => onAction('moveToFront')}
+        title="Bring element to front (moves to highest layer)"
       >
         <ChevronUp className="w-4 h-4" />
         Move to Front
@@ -72,6 +73,7 @@ export const RightClickOptions: React.FC<RightClickOptionsProps> = ({
       <button
         className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-3 rounded-lg mx-1 transition-colors"
         onClick={() => onAction('moveToBack')}
+        title="Send element to back (moves to lowest layer)"
       >
         <ChevronDown className="w-4 h-4" />
         Move to Back

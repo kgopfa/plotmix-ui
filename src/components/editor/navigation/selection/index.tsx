@@ -1,7 +1,8 @@
 import React from 'react';
-import { Trash2, Rocket, EllipsisVertical, Copy, Layers, FolderPlus, FolderMinus } from 'lucide-react';
+import { Trash2, Rocket, EllipsisVertical, Copy, Layers, FolderPlus, FolderMinus, BringToFront } from 'lucide-react';
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { useUIStore } from '@/stores/use-ui-store';
+import { useCanvasStore } from '@/stores/use-canvas-store';
 
 interface SelectionNavbarProps {
   selectedElements: AnimatedCanvasObject[];
@@ -46,6 +47,28 @@ export const SelectionNavbar: React.FC<SelectionNavbarProps> = ({
 
   const isMultiSelect = selectedElements.length > 1;
   const hasGroupSelection = selectedGroups.length > 0 && selectedGroups.some(group => !group.isDefaultGroup);
+
+  // Calculate z-index info for display
+  const getZIndexInfo = () => {
+    if (selectedElements.length === 1) {
+      const element = selectedElements[0];
+      const allElements = useCanvasStore.getState().elements;
+      const sortedElements = [...allElements].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+      const currentIndex = sortedElements.findIndex(el => el.id === element.id);
+      const totalElements = sortedElements.length;
+      
+      return {
+        zIndex: element.zIndex || 0,
+        position: currentIndex + 1,
+        total: totalElements,
+        isAtBottom: currentIndex === 0,
+        isAtTop: currentIndex === totalElements - 1
+      };
+    }
+    return null;
+  };
+
+  const zIndexInfo = getZIndexInfo();
 
   const handleAnimate = () => {
     if (selectedElements.length === 1) {
@@ -163,6 +186,18 @@ export const SelectionNavbar: React.FC<SelectionNavbarProps> = ({
             </div>
           ))}
         </nav>
+
+        {/* Z-Index Indicator - only show for single element selection */}
+        {zIndexInfo && (
+          <div className="ml-4 pl-4 border-l border-gray-200 flex items-center">
+            <div className="flex flex-col items-center">
+              <div className="flex flex-row items-center gap-1 bg-purple-500 rounded-md p-1">
+                <BringToFront className="w-4 h-4 text-white" />
+                <span className="text-xs text-white font-bold">{zIndexInfo.zIndex}</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
