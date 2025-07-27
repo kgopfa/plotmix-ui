@@ -269,6 +269,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       }
       
       setContextMenu(null);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [contextMenu, props.elements, props.handleSelectElement]);
 
     useImperativeHandle(ref, () => ({
