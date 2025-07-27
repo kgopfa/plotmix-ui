@@ -40,11 +40,9 @@ export const useElementPointerHandlers = ({
       e.stopPropagation();
       e.preventDefault();
       
-      // Check if this is a group element
-      const element = elements.find(el => el.id === id);
-      if (element && element.groupId && onGroupContextMenu) {
-        onGroupContextMenu(e, element.groupId);
-      } else if (onElementContextMenu) {
+      // Always treat elements as elements, not groups, for context menu
+      // Components are elements, not groups, so they should use element context menu
+      if (onElementContextMenu) {
         onElementContextMenu(e, id);
       }
       return;

@@ -262,18 +262,23 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
           break;
         case 'moveToFront':
           if (targetType === 'element') {
+            console.log('🎯 Context menu - moveToFront for element:', targetId);
             const { bringElementToFront } = useCanvasStore.getState();
             bringElementToFront(targetId);
           } else if (targetType === 'group') {
+            console.log('🎯 Context menu - moveToFront for group:', targetId);
             const { bringGroupToFront } = useCanvasStore.getState();
             bringGroupToFront(targetId);
           }
           break;
         case 'moveToBack':
           if (targetType === 'element') {
+            console.log('🎯 Context menu - moveToBack for element:', targetId);
             const { sendElementToBack } = useCanvasStore.getState();
             sendElementToBack(targetId);
           } else if (targetType === 'group') {
+            console.log('🎯 Context menu - moveToBack for group:', targetId);
+            console.log('🎯 Available groups in props:', props.groups.map(g => ({ id: g.id, name: g.name })));
             const { sendGroupToBack } = useCanvasStore.getState();
             sendGroupToBack(targetId);
           }
