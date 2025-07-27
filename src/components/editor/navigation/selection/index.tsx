@@ -40,6 +40,9 @@ export const SelectionNavbar: React.FC<SelectionNavbarProps> = ({
   onOptions,
 }) => {
   const { setShowAnimationsTab } = useUIStore();
+  
+  // Subscribe to canvas store for real-time z-index updates
+  const allElements = useCanvasStore(state => state.elements);
 
   if (selectedElements.length === 0 && selectedGroups.length === 0) {
     return null;
@@ -48,17 +51,20 @@ export const SelectionNavbar: React.FC<SelectionNavbarProps> = ({
   const isMultiSelect = selectedElements.length > 1;
   const hasGroupSelection = selectedGroups.length > 0 && selectedGroups.some(group => !group.isDefaultGroup);
 
-  // Calculate z-index info for display
+  // Calculate z-index info for display - now uses subscribed elements for real-time updates
   const getZIndexInfo = () => {
     if (selectedElements.length === 1) {
       const element = selectedElements[0];
-      const allElements = useCanvasStore.getState().elements;
+      // Find the current element with updated z-index from the store
+      const currentElement = allElements.find(el => el.id === element.id);
+      if (!currentElement) return null;
+      
       const sortedElements = [...allElements].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
       const currentIndex = sortedElements.findIndex(el => el.id === element.id);
       const totalElements = sortedElements.length;
       
       return {
-        zIndex: element.zIndex || 0,
+        zIndex: currentElement.zIndex || 0,
         position: currentIndex + 1,
         total: totalElements,
         isAtBottom: currentIndex === 0,
