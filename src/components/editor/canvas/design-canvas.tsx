@@ -250,6 +250,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
     >
       {/* Canvas frame background - positioned in center */}
       <pixiGraphics
+        zIndex={-1}
         draw={(g) => {
           g.clear();
           g.rect(-canvasFrameWidth / 2, -canvasFrameHeight / 2, canvasFrameWidth, canvasFrameHeight);

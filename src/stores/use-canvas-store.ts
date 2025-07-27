@@ -310,8 +310,9 @@ export const useCanvasStore = create<CanvasStore>()(
         if (element) {
           // Find the lowest z-index among all elements
           const minZIndex = Math.min(...state.elements.map((el: AnimatedCanvasObject) => el.zIndex || 0));
-          // Set the element's z-index to be lower than the current minimum
-          element.zIndex = minZIndex - 1;
+          // Set the element's z-index to be lower than the current minimum, but never below 0
+          // Canvas frame background is at z-index -1, so elements should stay at 0 or higher
+          element.zIndex = Math.max(0, minZIndex - 1);
           console.log('✅ Updated element z-index to:', element.zIndex);
         } else {
           console.warn('⚠️ Element not found for id:', id);
@@ -376,9 +377,11 @@ export const useCanvasStore = create<CanvasStore>()(
             // Find the lowest z-index among all elements
             const minZIndex = Math.min(...state.elements.map((el: AnimatedCanvasObject) => el.zIndex || 0));
             
-            // Set all elements in the group to be lower than the current minimum
+            // Set all elements in the group to be lower than the current minimum, but never below 0
+            // Canvas frame background is at z-index -1, so elements should stay at 0 or higher
+            const newZIndex = Math.max(0, minZIndex - 1);
             groupElements.forEach((element: AnimatedCanvasObject) => {
-              element.zIndex = minZIndex - 1;
+              element.zIndex = newZIndex;
             });
           }
         }

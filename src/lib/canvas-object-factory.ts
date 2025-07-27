@@ -67,7 +67,7 @@ function generateCommonAttributes(
 
   // Calculate default z-index based on existing elements
   const maxZIndex = elements.length > 0 ? Math.max(...elements.map(el => el.zIndex || 0)) : 0;
-  const defaultZIndex = maxZIndex + 1;
+  const defaultZIndex = Math.max(0, maxZIndex + 1); // Ensure z-index is never below 0
 
   return {
     id,
