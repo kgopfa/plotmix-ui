@@ -329,7 +329,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                   onPointerUpOutside={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
                   onPointerOver={tool === 'select' || tool === 'draw' ? handleElementMouseMove(el.id) : undefined}
                   onPointerOut={tool === 'select' || tool === 'draw' ? handleElementMouseLeave(el.id) : undefined}
-                  
+
                   ref={(node) => {
                     if (node) {
                       shapeRefs.current[el.id] = node;
@@ -375,103 +375,99 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           return (!group || group.isDefaultGroup) && (el.visible !== false);
         })
         .map((el) => {
-        // Debug: Log ungrouped text elements
-        if (el.type === 'text') {
-          console.log(`Ungrouped text element: ${el.id}`);
-        }
-        // Handle all element types consistently, including SVGs
-        return (
-          <pixiContainer
-            key={el.id}
-            x={el.x}
-            y={el.y}
-            pivot={{ x: 0, y: 0 }}
-            interactive={tool === 'select' || tool === 'draw'}
-            eventMode={tool === 'select' || tool === 'draw' ? 'dynamic' : 'none'}
-            hitArea={(() => {
-              if (el.type === 'line' && el.lineOptions?.points) {
-                // Calculate hit area based on actual line geometry
-                const { start, end } = el.lineOptions.points;
-                const startX = start.x - el.x;
-                const startY = start.y - el.y;
-                const endX = end.x - el.x;
-                const endY = end.y - el.y;
+          // Handle all element types consistently, including SVGs
+          return (
+            <pixiContainer
+              key={el.id}
+              x={el.x}
+              y={el.y}
+              pivot={{ x: 0, y: 0 }}
+              interactive={tool === 'select' || tool === 'draw'}
+              eventMode={tool === 'select' || tool === 'draw' ? 'dynamic' : 'none'}
+              hitArea={(() => {
+                if (el.type === 'line' && el.lineOptions?.points) {
+                  // Calculate hit area based on actual line geometry
+                  const { start, end } = el.lineOptions.points;
+                  const startX = start.x - el.x;
+                  const startY = start.y - el.y;
+                  const endX = end.x - el.x;
+                  const endY = end.y - el.y;
 
-                const minX = Math.min(startX, endX);
-                const maxX = Math.max(startX, endX);
-                const minY = Math.min(startY, endY);
-                const maxY = Math.max(startY, endY);
+                  const minX = Math.min(startX, endX);
+                  const maxX = Math.max(startX, endX);
+                  const minY = Math.min(startY, endY);
+                  const maxY = Math.max(startY, endY);
 
-                // Add some padding for easier interaction
-                const padding = 10;
-                return new Rectangle(
-                  minX - padding,
-                  minY - padding,
-                  (maxX - minX) + (2 * padding),
-                  (maxY - minY) + (2 * padding)
-                );
-              } else if (el.type === 'path' || el.type === 'image') {
-                return new Rectangle(-el.width / 2, -el.height / 2, el.width, el.height);
-              } else if (el.type === 'text') {
-                // For text elements, use the element width consistently
-                const textWidth = el.width;
-                // Use a more generous height for text to accommodate wrapping
-                const textHeight = Math.max(el.height, 60); // Minimum 60px height for text
-                return new Rectangle(-textWidth / 2, -textHeight / 2, textWidth, textHeight);
-              }
-              return undefined;
-            })()}
-            rotation={el.rotation || 0}
-            onPointerDown={tool === 'select' || tool === 'draw' ? handleElementPointerDown(el.id, el.x, el.y) : undefined}
-            onPointerUp={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
-            onPointerUpOutside={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
-            onPointerOver={tool === 'select' || tool === 'draw' ? handleElementMouseMove(el.id) : undefined}
-            onPointerOut={tool === 'select' || tool === 'draw' ? handleElementMouseLeave(el.id) : undefined}
-
-            ref={(node) => {
-              if (node) {
-                shapeRefs.current[el.id] = node;
-                // Apply shadow when container is created (skip for text elements as they have their own drop shadow)
-                if (el.type !== 'text') {
-                  applyShadowToContainer(node, el);
+                  // Add some padding for easier interaction
+                  const padding = 10;
+                  return new Rectangle(
+                    minX - padding,
+                    minY - padding,
+                    (maxX - minX) + (2 * padding),
+                    (maxY - minY) + (2 * padding)
+                  );
+                } else if (el.type === 'path' || el.type === 'image') {
+                  return new Rectangle(-el.width / 2, -el.height / 2, el.width, el.height);
+                } else if (el.type === 'text') {
+                  // For text elements, use the element width consistently
+                  const textWidth = el.width;
+                  // Use a more generous height for text to accommodate wrapping
+                  const textHeight = Math.max(el.height, 60); // Minimum 60px height for text
+                  return new Rectangle(-textWidth / 2, -textHeight / 2, textWidth, textHeight);
                 }
-              }
-            }}
-          >
-            <pixiGraphics draw={(g) => drawShape(g, el)} />
+                return undefined;
+              })()}
+              rotation={el.rotation || 0}
+              onPointerDown={tool === 'select' || tool === 'draw' ? handleElementPointerDown(el.id, el.x, el.y) : undefined}
+              onPointerUp={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
+              onPointerUpOutside={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
+              onPointerOver={tool === 'select' || tool === 'draw' ? handleElementMouseMove(el.id) : undefined}
+              onPointerOut={tool === 'select' || tool === 'draw' ? handleElementMouseLeave(el.id) : undefined}
 
-            {/* Render text separately for text elements */}
-            {el.type === 'text' && editingTextId !== el.id && (
-              <RichTextRenderer key={`ungrouped-text-${el.id}`} element={el} isEditing={false} />
-            )}
-
-            {/* Show hover outline when hovered but not selected */}
-            {!isPlaying && hoveredId === el.id && !selectedIds.includes(el.id) && !isElementInCustomOrPolygonGroup(el) && (
-              <HoverOutline element={el} />
-            )}
-
-            {/* Show selection outline for all selected elements */}
-            {!isPlaying && selectedIds.includes(el.id) && !isElementInCustomOrPolygonGroup(el) && (
-              <ElementSelect
-                element={el}
-                scaleFactor={canvasScaleFactor.current}
-              />
-            )}
-
-            {/* Show center highlight when in path mode and this element is the animation target */}
-            {isPathMode && animationTarget && animationTarget.elementId === el.id && (
-              <CenterHighlight
-                isVisible={true}
-                onCenterClick={() => {
-                  if (onPathStartClick) {
-                    onPathStartClick(el.id, el.x, el.y);
+              ref={(node) => {
+                if (node) {
+                  shapeRefs.current[el.id] = node;
+                  // Apply shadow when container is created (skip for text elements as they have their own drop shadow)
+                  if (el.type !== 'text') {
+                    applyShadowToContainer(node, el);
                   }
-                }}
-              />
-            )}
-          </pixiContainer>
-        );
-      })}
+                }
+              }}
+            >
+              <pixiGraphics draw={(g) => drawShape(g, el)} />
+
+              {/* Render text separately for text elements */}
+              {el.type === 'text' && editingTextId !== el.id && (
+                <RichTextRenderer key={`ungrouped-text-${el.id}`} element={el} isEditing={false} />
+              )}
+
+              {/* Show hover outline when hovered but not selected */}
+              {!isPlaying && hoveredId === el.id && !selectedIds.includes(el.id) && !isElementInCustomOrPolygonGroup(el) && (
+                <HoverOutline element={el} />
+              )}
+
+              {/* Show selection outline for all selected elements */}
+              {!isPlaying && selectedIds.includes(el.id) && !isElementInCustomOrPolygonGroup(el) && (
+                <ElementSelect
+                  element={el}
+                  scaleFactor={canvasScaleFactor.current}
+                />
+              )}
+
+              {/* Show center highlight when in path mode and this element is the animation target */}
+              {isPathMode && animationTarget && animationTarget.elementId === el.id && (
+                <CenterHighlight
+                  isVisible={true}
+                  onCenterClick={() => {
+                    if (onPathStartClick) {
+                      onPathStartClick(el.id, el.x, el.y);
+                    }
+                  }}
+                />
+              )}
+            </pixiContainer>
+          );
+        })}
 
       {/* Drawing preview layer */}
       {tool === 'draw' && (
