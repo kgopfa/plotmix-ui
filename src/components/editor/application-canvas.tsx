@@ -338,6 +338,11 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
         ref={canvasContainerRef}
         className="absolute inset-0 bg-slate-100 canvas-area"
         onClick={handleApplicationCanvasClick}
+        onContextMenu={(e) => {
+          // Prevent browser's default context menu from appearing
+          e.preventDefault();
+          e.stopPropagation();
+        }}
       >
         <Application
           ref={appRef}

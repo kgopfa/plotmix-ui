@@ -172,6 +172,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
       interactive={true}
       eventMode="static"
       sortableChildren={true}
+      data-pixi-container="design-canvas"
       hitArea={new Rectangle(-canvasFrameWidth / 2, -canvasFrameHeight / 2, canvasFrameWidth, canvasFrameHeight)}
       ref={(container) => {
         containerRef.current = container;

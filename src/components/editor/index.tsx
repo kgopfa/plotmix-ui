@@ -758,6 +758,24 @@ export default function EditorCanvas() {
     updateSelectedGroups(detectedGroups);
   }, [selectedObjects, groups, updateSelectedGroups]);
 
+  // Prevent browser's default context menu globally
+  useEffect(() => {
+    const handleContextMenu = (e: MouseEvent) => {
+      // Only prevent context menu on the canvas area
+      const target = e.target as HTMLElement;
+      if (target.closest('.canvas-area') || target.closest('[data-pixi-container]')) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    document.addEventListener('contextmenu', handleContextMenu);
+    
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu);
+    };
+  }, []);
+
   const activeNav = useActiveNav();
 
   const handleGroupSelectionDragStart = useCallback((_virtualElement: AnimatedCanvasObject, _mouseX: number, _mouseY: number, _allElements?: AnimatedCanvasObject[]) => {
@@ -813,6 +831,11 @@ export default function EditorCanvas() {
         ref={canvasContainerRef}
         className="flex-1 relative overflow-hidden" 
         style={{ marginTop: '64px' }}
+        onContextMenu={(e) => {
+          // Prevent browser's default context menu from appearing
+          e.preventDefault();
+          e.stopPropagation();
+        }}
       >
         <ApplicationCanvas 
           ref={fullscreenCanvasRef}
