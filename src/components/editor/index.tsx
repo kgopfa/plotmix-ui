@@ -34,6 +34,8 @@ import { RightSidebar } from './navigation/right-sidebar';
 import { SelectionNavbar } from './navigation/selection/layer-info';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import type { ApplicationCanvasRef } from './application-canvas';
+import { useElementDragging } from '@/hooks/use-element-dragging';
+import { useCanvasOperations } from '@/stores/use-canvas-store';
 
 const ApplicationCanvas = dynamic(() => import('./application-canvas').then(m => m.ApplicationCanvas), { ssr: false });
 
@@ -213,6 +215,33 @@ export default function EditorCanvas() {
   // Grid and snap configuration - now properly integrated
   const gridConfig = uiGridConfig;
   const snapGuides = currentGuides;
+
+  // Element dragging functionality
+  const {
+    startDragging,
+    startEndpointDragging,
+  } = useElementDragging({
+    elements: canvasObjects,
+    moveElement: (id, position) => {
+      const { moveElement } = useCanvasStore.getState();
+      moveElement(id, position);
+    },
+    moveMultipleElements: (positions) => {
+      const { moveMultipleElements } = useCanvasStore.getState();
+      moveMultipleElements(positions);
+    },
+    updateElement: (id, updates) => {
+      const { updateElement } = useCanvasStore.getState();
+      updateElement(id, updates);
+    },
+    onSnapElement: snapElement,
+    onSnapPoint: snapPoint,
+    onSetSnapGuides: setCurrentGuides,
+    onClearSnapGuides: clearElementSnapGuides,
+  });
+
+  // Get canvas operations
+  const { moveGroup } = useCanvasOperations();
 
   // Initialize timeline subscriptions on mount
   useEffect(() => {
@@ -810,9 +839,64 @@ export default function EditorCanvas() {
 
   const activeNav = useActiveNav();
 
-  const handleGroupSelectionDragStart = useCallback((_virtualElement: AnimatedCanvasObject, _mouseX: number, _mouseY: number, _allElements?: AnimatedCanvasObject[]) => {
-    // Handle group selection drag start
-  }, []);
+  const handleGroupSelectionDragStart = useCallback((virtualElement: AnimatedCanvasObject, mouseX: number, mouseY: number, allElements?: AnimatedCanvasObject[]) => {
+    // Check if this is a real group selection (not just multi-selection)
+    const selectedGroupIds = new Set(selectedGroups.map(g => g.id));
+    const elementsInGroups = selectedObjects.filter(el => el.groupId && selectedGroupIds.has(el.groupId));
+    
+    if (elementsInGroups.length > 0) {
+      // This is a group selection - handle group movement
+      const groupId = elementsInGroups[0].groupId!;
+      const group = groups.find(g => g.id === groupId);
+      
+      if (group && !group.isDefaultGroup) {
+        // Calculate offset from group center to mouse position
+        const offsetX = mouseX - group.x;
+        const offsetY = mouseY - group.y;
+        
+        // Use the moveGroup function from useCanvasOperations
+        
+        // Set up global dragging for the group
+        const handleGroupDrag = (e: PointerEvent) => {
+          const canvasElement = document.querySelector('canvas');
+          if (!canvasElement) return;
+          
+          const rect = canvasElement.getBoundingClientRect();
+          const canvasX = e.clientX - rect.left;
+          const canvasY = e.clientY - rect.top;
+          
+          // Calculate new group position
+          const newX = canvasX - offsetX;
+          const newY = canvasY - offsetY;
+          
+          // Move the group
+          moveGroup(groupId, { x: newX, y: newY });
+        };
+        
+        const handleGroupDragEnd = () => {
+          document.removeEventListener('pointermove', handleGroupDrag);
+          document.removeEventListener('pointerup', handleGroupDragEnd);
+        };
+        
+        document.addEventListener('pointermove', handleGroupDrag);
+        document.addEventListener('pointerup', handleGroupDragEnd);
+      }
+    } else {
+      // This is multi-selection of ungrouped elements - use existing multi-element dragging
+      const offsetX = mouseX - virtualElement.x;
+      const offsetY = mouseY - virtualElement.y;
+      
+      // Calculate offsets for all selected elements
+      const groupOffsets = selectedObjects.map(element => ({
+        id: element.id,
+        offsetX: mouseX - element.x,
+        offsetY: mouseY - element.y
+      }));
+      
+      // Start multi-element dragging using the existing startDragging function
+      startDragging('virtual-group', offsetX, offsetY, true, groupOffsets);
+    }
+  }, [selectedObjects, selectedGroups, groups, startDragging, moveGroup]);
 
   const isElementInCustomOrPolygonGroup = useCallback((element: AnimatedCanvasObject) => {
     const group = groups.find(g => g.id === element.groupId);

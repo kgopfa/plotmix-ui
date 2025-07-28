@@ -115,7 +115,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
   const canvasState = useCanvasState();
 
   // Get canvas operations and selection store
-  const { moveElement, moveMultipleElements, updateElement } = useCanvasOperations();
+  const { moveElement, moveMultipleElements, updateElement, moveGroup } = useCanvasOperations();
   const { select: selectElement } = useSelectionStore();
 
   // Get current canvas size
@@ -273,6 +273,11 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         const groupElements = elements
           .filter((el: AnimatedCanvasObject) => el.groupId === group.id && (el.visible !== false));
 
+        // Check if this group is selected
+        const isGroupSelected = selectedIds.some(id => 
+          groupElements.some(el => el.id === id)
+        );
+
         return (
           <pixiContainer
             key={`group-${group.id}`}
@@ -280,11 +285,102 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
             y={group.y}
             rotation={(group.rotation || 0) * Math.PI / 180}
             zIndex={Math.max(...groupElements.map((el: AnimatedCanvasObject) => el.zIndex || 0))}
+            interactive={tool === 'select' && isGroupSelected}
+            eventMode={tool === 'select' && isGroupSelected ? 'dynamic' : 'none'}
+            cursor={tool === 'select' && isGroupSelected ? 'move' : 'default'}
+            onPointerDown={tool === 'select' && isGroupSelected ? (e: FederatedPointerEvent) => {
+              e.stopPropagation();
+              // Use the existing group selection drag start handler
+              if (props.handleGroupSelectionDragStart) {
+                // Create a virtual group element for dragging
+                const virtualGroupElement: AnimatedCanvasObject = {
+                  id: `group-${group.id}`,
+                  type: 'rectangle',
+                  name: group.name,
+                  x: group.x,
+                  y: group.y,
+                  width: 100, // Will be calculated properly in the handler
+                  height: 100,
+                  rotation: group.rotation || 0,
+                  fill: 'transparent',
+                  stroke: '#2196F3',
+                  strokeWidth: 2,
+                  opacity: 1,
+                  groupId: group.id,
+                  animations: [],
+                  cornerRadius: 0
+                };
+                props.handleGroupSelectionDragStart(virtualGroupElement, e.global.x, e.global.y, elements);
+              }
+            } : undefined}
             ref={(node) => {
               if (node) groupContainers.current[group.id] = node;
             }}
-
           >
+            {/* Add a transparent hit area for the group container */}
+            {tool === 'select' && isGroupSelected && (
+              <pixiGraphics
+                draw={(g) => {
+                  g.clear();
+                  // Calculate group bounds for hit area
+                  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                  groupElements.forEach(el => {
+                    const left = el.x - el.width / 2;
+                    const right = el.x + el.width / 2;
+                    const top = el.y - el.height / 2;
+                    const bottom = el.y + el.height / 2;
+                    
+                    minX = Math.min(minX, left);
+                    minY = Math.min(minY, top);
+                    maxX = Math.max(maxX, right);
+                    maxY = Math.max(maxY, bottom);
+                  });
+                  
+                  const groupWidth = maxX - minX;
+                  const groupHeight = maxY - minY;
+                  const groupCenterX = (minX + maxX) / 2;
+                  const groupCenterY = (minY + maxY) / 2;
+                  
+                  // Draw transparent hit area
+                  g.rect(
+                    groupCenterX - group.x - groupWidth / 2,
+                    groupCenterY - group.y - groupHeight / 2,
+                    groupWidth,
+                    groupHeight
+                  );
+                  g.fill({ color: 0x000000, alpha: 0.01 }); // Nearly transparent
+                }}
+                interactive={true}
+                eventMode="static"
+                cursor="move"
+                onPointerDown={(e: FederatedPointerEvent) => {
+                  e.stopPropagation();
+                  // Use the existing group selection drag start handler
+                  if (props.handleGroupSelectionDragStart) {
+                    // Create a virtual group element for dragging
+                    const virtualGroupElement: AnimatedCanvasObject = {
+                      id: `group-${group.id}`,
+                      type: 'rectangle',
+                      name: group.name,
+                      x: group.x,
+                      y: group.y,
+                      width: 100, // Will be calculated properly in the handler
+                      height: 100,
+                      rotation: group.rotation || 0,
+                      fill: 'transparent',
+                      stroke: '#2196F3',
+                      strokeWidth: 2,
+                      opacity: 1,
+                      groupId: group.id,
+                      animations: [],
+                      cornerRadius: 0
+                    };
+                    props.handleGroupSelectionDragStart(virtualGroupElement, e.global.x, e.global.y, elements);
+                  }
+                }}
+              />
+            )}
+            
             {/* Render elements as children of the group container */}
             {groupElements.map((el: AnimatedCanvasObject) => {
               // Calculate element position relative to group center
@@ -334,7 +430,14 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                     return undefined;
                   })()}
                   rotation={el.rotation || 0}
-                  onPointerDown={tool === 'select' || tool === 'draw' ? handleElementPointerDown(el.id, el.x, el.y) : undefined}
+                  onPointerDown={tool === 'select' || tool === 'draw' ? (e: FederatedPointerEvent) => {
+                    // If this element is part of a selected group, don't allow individual dragging
+                    if (isGroupSelected) {
+                      e.stopPropagation();
+                      return;
+                    }
+                    handleElementPointerDown(el.id, el.x, el.y)(e);
+                  } : undefined}
                   onPointerUp={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
                   onPointerUpOutside={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
                   onPointerOver={tool === 'select' || tool === 'draw' ? handleElementMouseMove(el.id) : undefined}
@@ -362,8 +465,8 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                     <HoverOutline element={el} />
                   )}
 
-                  {/* Show selection outline for all selected elements */}
-                  {!isPlaying && selectedIds.includes(el.id) && !isElementInCustomOrPolygonGroup(el) && (
+                  {/* Show selection outline for elements only if they're not part of a selected group */}
+                  {!isPlaying && selectedIds.includes(el.id) && !isElementInCustomOrPolygonGroup(el) && !isGroupSelected && (
                     <ElementSelect
                       element={el}
                       scaleFactor={canvasScaleFactor.current}
@@ -372,6 +475,67 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                 </pixiContainer>
               );
             })}
+          </pixiContainer>
+        );
+      })}
+
+      {/* Render group outlines for selected groups */}
+      {!isPlaying && groups.filter(group => (group.visible !== false) && !group.isDefaultGroup).map((group) => {
+        const groupElements = elements.filter((el: AnimatedCanvasObject) => el.groupId === group.id && (el.visible !== false));
+        const isGroupSelected = selectedIds.some(id => groupElements.some(el => el.id === id));
+        
+        if (!isGroupSelected) return null;
+        
+        // Calculate group bounds
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        groupElements.forEach(el => {
+          const left = el.x - el.width / 2;
+          const right = el.x + el.width / 2;
+          const top = el.y - el.height / 2;
+          const bottom = el.y + el.height / 2;
+          
+          minX = Math.min(minX, left);
+          minY = Math.min(minY, top);
+          maxX = Math.max(maxX, right);
+          maxY = Math.max(maxY, bottom);
+        });
+        
+        const groupWidth = maxX - minX;
+        const groupHeight = maxY - minY;
+        const groupCenterX = (minX + maxX) / 2;
+        const groupCenterY = (minY + maxY) / 2;
+        
+        // Create virtual group element for outline
+        const virtualGroupElement: AnimatedCanvasObject = {
+          id: `group-outline-${group.id}`,
+          type: 'rectangle',
+          name: group.name,
+          x: groupCenterX,
+          y: groupCenterY,
+          width: groupWidth,
+          height: groupHeight,
+          rotation: group.rotation || 0,
+          fill: 'transparent',
+          stroke: '#2196F3',
+          strokeWidth: 2,
+          opacity: 1,
+          groupId: group.id,
+          animations: [],
+          cornerRadius: 0
+        };
+        
+        return (
+          <pixiContainer
+            key={`group-outline-${group.id}`}
+            x={groupCenterX}
+            y={groupCenterY}
+            rotation={(group.rotation || 0) * Math.PI / 180}
+            zIndex={2000}
+          >
+            <ElementSelect
+              element={virtualGroupElement}
+              scaleFactor={canvasScaleFactor.current}
+            />
           </pixiContainer>
         );
       })}
@@ -429,7 +593,19 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                 return undefined;
               })()}
               rotation={el.rotation || 0}
-              onPointerDown={tool === 'select' || tool === 'draw' ? handleElementPointerDown(el.id, el.x, el.y) : undefined}
+              onPointerDown={tool === 'select' || tool === 'draw' ? (e: FederatedPointerEvent) => {
+                // Check if this element is part of a selected group
+                const elementGroup = groups.find(g => g.id === el.groupId && !g.isDefaultGroup);
+                if (elementGroup) {
+                  const groupElements = elements.filter(groupEl => groupEl.groupId === elementGroup.id);
+                  const isGroupSelected = selectedIds.some(id => groupElements.some(groupEl => groupEl.id === id));
+                  if (isGroupSelected) {
+                    e.stopPropagation();
+                    return;
+                  }
+                }
+                handleElementPointerDown(el.id, el.x, el.y)(e);
+              } : undefined}
               onPointerUp={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
               onPointerUpOutside={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
               onPointerOver={tool === 'select' || tool === 'draw' ? handleElementMouseMove(el.id) : undefined}
@@ -457,8 +633,17 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                 <HoverOutline element={el} />
               )}
 
-              {/* Show selection outline for all selected elements */}
-              {!isPlaying && selectedIds.includes(el.id) && !isElementInCustomOrPolygonGroup(el) && (
+              {/* Show selection outline for elements only if they're not part of a selected group */}
+              {!isPlaying && selectedIds.includes(el.id) && !isElementInCustomOrPolygonGroup(el) && (() => {
+                // Check if this element is part of a selected group
+                const elementGroup = groups.find(g => g.id === el.groupId && !g.isDefaultGroup);
+                if (elementGroup) {
+                  const groupElements = elements.filter(groupEl => groupEl.groupId === elementGroup.id);
+                  const isGroupSelected = selectedIds.some(id => groupElements.some(groupEl => groupEl.id === id));
+                  return !isGroupSelected; // Only show outline if group is not selected
+                }
+                return true; // Show outline for ungrouped elements
+              })() && (
                 <ElementSelect
                   element={el}
                   scaleFactor={canvasScaleFactor.current}
@@ -545,18 +730,40 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         );
       })}
 
-      {/* Multi-selection rectangle for multiple selected elements */}
-      {!isPlaying && selectedIds.length > 1 && (
-        <pixiContainer zIndex={2002}>
-          <GroupSelection
-            selectedElements={elements.filter(el => selectedIds.includes(el.id))}
-            scaleFactor={canvasScaleFactor.current}
-            onGroupDragStart={handleGroupSelectionDragStart}
-            allElements={elements}
-            groups={groups}
-          />
-        </pixiContainer>
-      )}
+      {/* Multi-selection rectangle for multiple selected elements - only show for ungrouped elements */}
+      {!isPlaying && selectedIds.length > 1 && (() => {
+        // Check if this is a group selection
+        const selectedGroupIds = new Set();
+        const elementsInGroups = selectedIds.filter(id => {
+          const element = elements.find(el => el.id === id);
+          if (element?.groupId) {
+            const group = groups.find(g => g.id === element.groupId && !g.isDefaultGroup);
+            if (group) {
+              selectedGroupIds.add(group.id);
+              return true;
+            }
+          }
+          return false;
+        });
+        
+        // If all selected elements are part of the same group, don't show multi-selection
+        if (selectedGroupIds.size === 1 && elementsInGroups.length === selectedIds.length) {
+          return null;
+        }
+        
+        // Show multi-selection for mixed or ungrouped selections
+        return (
+          <pixiContainer zIndex={2002}>
+            <GroupSelection
+              selectedElements={elements.filter(el => selectedIds.includes(el.id))}
+              scaleFactor={canvasScaleFactor.current}
+              onGroupDragStart={handleGroupSelectionDragStart}
+              allElements={elements}
+              groups={groups}
+            />
+          </pixiContainer>
+        );
+      })()}
 
       {/* Rotation handles OUTSIDE the rotating containers (only for single selection and when not playing animations) */}
       {!isPlaying && selectedIds.length === 1 && (() => {
