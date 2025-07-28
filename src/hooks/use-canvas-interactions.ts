@@ -192,6 +192,17 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
           setLineStartPoint(null);
           setActiveTool('select');
           setMaskPos(null);
+          
+          // Dispatch draw-complete event for single line path mode completion
+          if (toolState.isPathMode) {
+            const drawCompleteEvent = new CustomEvent('draw-complete', {
+              detail: {
+                element: newElement,
+                isPathMode: true
+              }
+            });
+            window.dispatchEvent(drawCompleteEvent);
+          }
         }
       }
       return;
@@ -212,6 +223,17 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
       // Switch to select tool after creating elements
       setActiveTool('select');
       setMaskPos(null);
+      
+      // Dispatch draw-complete event for path mode completion
+      if (toolState.isPathMode) {
+        const drawCompleteEvent = new CustomEvent('draw-complete', {
+          detail: {
+            element: newElement,
+            isPathMode: true
+          }
+        });
+        window.dispatchEvent(drawCompleteEvent);
+      }
     }
   }, [toolState, canvasObjects, addElement, selectElement, snapPoint, setActiveTool, setMaskPos, setLineStartPoint, setLineChaining, addChainedLineId, setClosingShape, setShowAnimationsTab]);
 
@@ -303,6 +325,17 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
         
         // Switch to select tool after creating the path
         setActiveTool('select');
+        
+        // Dispatch draw-complete event for path mode completion
+        if (toolState.isPathMode) {
+          const drawCompleteEvent = new CustomEvent('draw-complete', {
+            detail: {
+              element: newPathElement,
+              isPathMode: true
+            }
+          });
+          window.dispatchEvent(drawCompleteEvent);
+        }
       }
       
       // Clear the current path
