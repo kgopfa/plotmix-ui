@@ -120,10 +120,7 @@ export function detectLineAlignment(
   const lineCenterY = (startPoint.y + endPoint.y) / 2;
   
   for (const element of elements) {
-    // Skip animation paths and lines for alignment detection
-    if (element.type === 'line' || element.type === 'path') {
-      continue;
-    }
+    
     
     // Calculate element bounds
     const elementLeft = element.x - element.width / 2;
