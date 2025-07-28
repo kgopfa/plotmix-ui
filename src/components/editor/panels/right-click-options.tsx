@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Rocket, Copy, Layers, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
 
 interface RightClickOptionsPosition {
@@ -16,14 +16,37 @@ interface RightClickOptionsProps {
 
 export const RightClickOptions: React.FC<RightClickOptionsProps> = ({
   contextMenu,
-  onAction
+  onAction,
+  onClose
 }) => {
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Handle click outside to close menu
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+
+    // Add event listener when menu is open
+    if (contextMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    // Cleanup event listener
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [contextMenu, onClose]);
+
   if (!contextMenu) return null;
 
   const isElement = contextMenu.targetType === 'element' || !contextMenu.targetType; // Default to element for backward compatibility
 
   return (
     <div
+      ref={menuRef}
       className="fixed z-50 bg-white border border-gray-200 rounded-xl shadow-xl py-2 min-w-[180px] text-gray-900"
       style={{
         left: contextMenu.x,
