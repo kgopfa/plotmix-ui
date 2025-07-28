@@ -64,6 +64,8 @@ interface ApplicationCanvasProps {
   // Context menu handlers
   onElementContextMenu?: (e: FederatedPointerEvent, elementId: string) => void;
   onGroupContextMenu?: (e: FederatedPointerEvent, groupId: string) => void;
+  // Shift key state for constrained drawing
+  shiftKey?: boolean;
 }
 
 export interface ApplicationCanvasRef extends TimelineCanvasRef {

@@ -72,6 +72,8 @@ interface DesignCanvasProps {
   // Context menu handlers
   onElementContextMenu?: (e: FederatedPointerEvent, elementId: string) => void;
   onGroupContextMenu?: (e: FederatedPointerEvent, groupId: string) => void;
+  // Shift key state for constrained drawing
+  shiftKey?: boolean;
 }
 
 export const DesignCanvas = (props: DesignCanvasProps) => {
@@ -103,6 +105,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
     onPathStartClick,
     handleGroupSelectionDragStart,
     isElementInCustomOrPolygonGroup,
+    shiftKey = false,
   } = props;
 
   // Get canvas size from UI store
@@ -508,6 +511,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           chainedLineIds={chainedLineIds}
           elements={elements}
           canvasContainerRef={containerRef}
+          shiftKey={shiftKey}
         />
       </pixiContainer>
 

@@ -4,7 +4,7 @@ import { createNewObject } from '@/lib/canvas-object-factory';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useUIStore } from '@/stores/use-ui-store';
-import { convertPointerEventToDesignCanvasCoords } from '@/utils/coordinate-utils';
+import { convertPointerEventToDesignCanvasCoords, constrainToAxis } from '@/utils/coordinate-utils';
 
 interface UseCanvasInteractionsProps {
   snapPoint: (point: { x: number; y: number }, event?: { shiftKey?: boolean }) => { x: number; y: number };
@@ -95,6 +95,14 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
         
         if (firstLine?.lineOptions?.points) {
           const startPoint = firstLine.lineOptions.points.start;
+          let endPoint = startPoint;
+          
+          // Apply shift constraint if shift key is held
+          const shiftKey = 'shiftKey' in e.nativeEvent ? e.nativeEvent.shiftKey : false;
+          if (shiftKey) {
+            endPoint = constrainToAxis(toolState.lineStartPoint!, { x: snappedPos.x, y: snappedPos.y });
+          }
+          
           const clickDistance = Math.hypot(snappedPos.x - startPoint.x, snappedPos.y - startPoint.y);
           
           if (clickDistance <= 30) { // Within 30px of start point - close the polygon
@@ -110,7 +118,7 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
               undefined, // height
               undefined, // text
               toolState.lineStartPoint!, // Start from current line start point
-              startPoint // End at the polygon's origin point
+              endPoint // End at the constrained or original point
             );
             
             // If in path mode, mark it as a path
@@ -137,7 +145,13 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
       } else {
         // Second click: Create the line from start to end point
         const startPoint = toolState.lineStartPoint;
-        const endPoint = { x: snappedPos.x, y: snappedPos.y };
+        let endPoint = { x: snappedPos.x, y: snappedPos.y };
+        
+        // Apply shift constraint if shift key is held
+        const shiftKey = 'shiftKey' in e.nativeEvent ? e.nativeEvent.shiftKey : false;
+        if (shiftKey) {
+          endPoint = constrainToAxis(startPoint, endPoint);
+        }
         
         // Check if the line has sufficient length (minimum 5 pixels)
         const distance = Math.hypot(endPoint.x - startPoint.x, endPoint.y - startPoint.y);

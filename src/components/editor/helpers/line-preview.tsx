@@ -1,7 +1,7 @@
 import React from 'react';
 import type { AnimatedCanvasObject } from '@/types/canvas';
 import type { Container } from 'pixi.js';
-import { convertGlobalToDesignCanvasCoords } from '@/utils/coordinate-utils';
+import { convertGlobalToDesignCanvasCoords, constrainToAxis } from '@/utils/coordinate-utils';
 
 interface LinePreviewProps {
   tool: string;
@@ -11,6 +11,7 @@ interface LinePreviewProps {
   chainedLineIds: string[];
   elements: AnimatedCanvasObject[];
   canvasContainerRef?: React.RefObject<Container | null>;
+  shiftKey?: boolean;
 }
 
 export const LinePreview: React.FC<LinePreviewProps> = ({
@@ -21,6 +22,7 @@ export const LinePreview: React.FC<LinePreviewProps> = ({
   chainedLineIds,
   elements,
   canvasContainerRef,
+  shiftKey = false,
 }) => {
   // Only render when we have the necessary data for line preview
   if (!(tool === 'line' || tool === 'simpleLine') || !lineStartPoint || !mousePos) {
@@ -53,6 +55,9 @@ export const LinePreview: React.FC<LinePreviewProps> = ({
     return null;
   }
 
+  // Apply shift constraint if shift key is held
+  const constrainedMousePos = shiftKey ? constrainToAxis(lineStartPoint, localMousePos) : localMousePos;
+
 
 
   return (
@@ -63,7 +68,7 @@ export const LinePreview: React.FC<LinePreviewProps> = ({
 
         // Check if we're in chaining mode and if mouse is near a point that can close the shape
         let canCloseShape = false;
-        let snapToPoint = localMousePos;
+        let snapToPoint = constrainedMousePos;
 
         if (isLineChaining && chainedLineIds.length > 0) {
           // Find the first line in the chain by its ID
@@ -73,8 +78,8 @@ export const LinePreview: React.FC<LinePreviewProps> = ({
           if (firstLine?.lineOptions?.points?.start) {
             const originalStartPoint = firstLine.lineOptions.points.start;
             const distanceToOriginalStart = Math.hypot(
-              localMousePos.x - originalStartPoint.x, 
-              localMousePos.y - originalStartPoint.y
+              constrainedMousePos.x - originalStartPoint.x, 
+              constrainedMousePos.y - originalStartPoint.y
             );
 
             // Use same threshold as closing logic - 30px for easier polygon closing

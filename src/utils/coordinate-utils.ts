@@ -58,3 +58,33 @@ export function convertPointerEventToDesignCanvasCoords(
 ): { x: number; y: number } {
   return convertGlobalToDesignCanvasCoords(e.global, designCanvasContainer);
 }
+
+/**
+ * Constrain a point to the nearest axis (horizontal or vertical) from a start point
+ * This is used for shift-constrained line drawing, similar to Photoshop behavior
+ * 
+ * @param startPoint - The starting point of the line
+ * @param currentPoint - The current mouse position
+ * @returns The constrained point that lies on either the horizontal or vertical axis from the start point
+ */
+export function constrainToAxis(
+  startPoint: { x: number; y: number },
+  currentPoint: { x: number; y: number }
+): { x: number; y: number } {
+  const deltaX = Math.abs(currentPoint.x - startPoint.x);
+  const deltaY = Math.abs(currentPoint.y - startPoint.y);
+  
+  // If the horizontal distance is greater, constrain to horizontal axis
+  if (deltaX > deltaY) {
+    return {
+      x: currentPoint.x,
+      y: startPoint.y
+    };
+  } else {
+    // Otherwise, constrain to vertical axis
+    return {
+      x: startPoint.x,
+      y: currentPoint.y
+    };
+  }
+}

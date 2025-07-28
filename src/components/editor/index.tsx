@@ -99,6 +99,9 @@ export default function EditorCanvas() {
   // Canvas zoom state - will be implemented with pixi-viewport
   const [canvasZoom, setCanvasZoom] = useState(1);
 
+  // Shift key state for constrained drawing
+  const [shiftKey, setShiftKey] = useState(false);
+
   // Animation playback state - needed for UI hiding during playback
   const isPlaying = useTimelineStore(state => state.playback.isPlaying);
 
@@ -764,6 +767,29 @@ export default function EditorCanvas() {
     updateSelectedGroups(detectedGroups);
   }, [selectedObjects, groups, updateSelectedGroups]);
 
+  // Track shift key state for constrained drawing
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') {
+        setShiftKey(true);
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') {
+        setShiftKey(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keyup', handleKeyUp);
+    
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
+
   // Prevent browser's default context menu globally
   useEffect(() => {
     const handleContextMenu = (e: MouseEvent) => {
@@ -898,6 +924,7 @@ export default function EditorCanvas() {
             // Handle group context menu
             console.log('Group context menu:', groupId);
           }}
+          shiftKey={shiftKey}
         />
 
         {/* Path Mode Banner */}
