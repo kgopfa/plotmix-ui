@@ -14,11 +14,9 @@ import { Graphics, Container } from 'pixi.js';
 import { PropertiesPanel } from './navigation/right-sidebar/properties-panel';
 import { AnimationsPanel } from './navigation/right-sidebar/animations-panel';
 import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager';
-
 import { Timeline } from './timeline';
 import { MaskOverlay } from './helpers/mask-overlay';
 import { AnimatedCanvasObject, ElementAnimation, CanvasGroup } from '@/types/canvas';
-
 import dynamic from 'next/dynamic';
 import { useCanvasDimensions } from '@/hooks/use-canvas-dimensions';
 import { useTimelineIntegration } from '@/hooks/use-timeline-integration';
@@ -33,7 +31,7 @@ import { useCanvasEventListeners } from '@/hooks/use-canvas-event-listeners';
 import { MainNavBar } from './navigation/main';
 import { LeftSidebar } from './navigation/left-sidebar';
 import { RightSidebar } from './navigation/right-sidebar';
-import { SelectionNavbar } from './navigation/selection';
+import { SelectionNavbar } from './navigation/selection/layer-info';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import type { ApplicationCanvasRef } from './application-canvas';
 
