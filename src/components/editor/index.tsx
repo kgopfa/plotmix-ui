@@ -798,20 +798,7 @@ export default function EditorCanvas() {
     updateSelectedGroups(detectedGroups);
   }, [selectedObjects, groups, updateSelectedGroups]);
 
-  // Auto-open layers panel when nothing is selected
-  useEffect(() => {
-    if (!hasSelection && activeRightPanel !== 'layers') {
-      setActiveRightPanel('layers');
-    }
-  }, [hasSelection, activeRightPanel, setActiveRightPanel]);
 
-  // Ensure right panel is visible when layers should be shown
-  useEffect(() => {
-    const { toggleRightPanel } = useUIStore.getState();
-    if (!hasSelection && !panelState.rightPanelVisible) {
-      toggleRightPanel();
-    }
-  }, [hasSelection, panelState.rightPanelVisible]);
 
   // Track shift key state for constrained drawing
   useEffect(() => {
@@ -1080,17 +1067,17 @@ export default function EditorCanvas() {
 
         {/* Floating Right Panel - Content */}
         {(() => {
-          // Show layers panel when nothing is selected, or show other panels when there's a selection
-          const shouldShow = panelState.rightPanelVisible && !isPlaying && (
-            (!hasSelection && activeRightPanel === 'layers') || 
-            (hasSelection && activeRightPanel && (activeRightPanel === 'properties' || activeRightPanel === 'animations' || activeRightPanel === 'layers'))
+          // Show right panel when there's a selection or when layers is explicitly selected
+          const shouldShow = panelState.rightPanelVisible && activeRightPanel && !isPlaying && (
+            activeRightPanel === 'layers' || 
+            (hasSelection && (activeRightPanel === 'properties' || activeRightPanel === 'animations'))
           );
           return shouldShow;
         })() && (
           <>
             <div
               className={`absolute right-20 bg-white border border-gray-200 rounded-lg shadow-sm overflow-y-auto z-30 mb-2 transform transition-all duration-300 ease-out ${
-                (hasSelection || activeRightPanel === 'layers')
+                hasSelection 
                   ? 'translate-x-0 opacity-100' 
                   : 'translate-x-full opacity-0'
               }`}
