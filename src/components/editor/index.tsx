@@ -13,6 +13,7 @@ import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
 import { Graphics, Container } from 'pixi.js';
 import { PropertiesPanel } from './navigation/right-sidebar/properties-panel';
 import { AnimationsPanel } from './navigation/right-sidebar/animations-panel';
+import { LayersTab } from './navigation/right-sidebar/tabs/layers-tab';
 import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager';
 import { Timeline } from './timeline';
 import { MaskOverlay } from './helpers/mask-overlay';
@@ -85,6 +86,7 @@ export default function EditorCanvas() {
   } = useUIStore();
 
   const activeRightPanel = useActiveRightPanel();
+  const setActiveRightPanel = useUIStore(state => state.setActiveRightPanel);
 
   const MASK_OFFSET_X = 0;
   const MASK_OFFSET_Y = 0;
@@ -796,6 +798,21 @@ export default function EditorCanvas() {
     updateSelectedGroups(detectedGroups);
   }, [selectedObjects, groups, updateSelectedGroups]);
 
+  // Auto-open layers panel when nothing is selected
+  useEffect(() => {
+    if (!hasSelection && activeRightPanel !== 'layers') {
+      setActiveRightPanel('layers');
+    }
+  }, [hasSelection, activeRightPanel, setActiveRightPanel]);
+
+  // Ensure right panel is visible when layers should be shown
+  useEffect(() => {
+    const { toggleRightPanel } = useUIStore.getState();
+    if (!hasSelection && !panelState.rightPanelVisible) {
+      toggleRightPanel();
+    }
+  }, [hasSelection, panelState.rightPanelVisible]);
+
   // Track shift key state for constrained drawing
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1063,16 +1080,17 @@ export default function EditorCanvas() {
 
         {/* Floating Right Panel - Content */}
         {(() => {
-          // Only show right panel when there's a selection and not playing
-          const shouldShow = panelState.rightPanelVisible && activeRightPanel && hasSelection && !isPlaying && (
-            activeRightPanel === 'properties' || activeRightPanel === 'animations'
+          // Show layers panel when nothing is selected, or show other panels when there's a selection
+          const shouldShow = panelState.rightPanelVisible && !isPlaying && (
+            (!hasSelection && activeRightPanel === 'layers') || 
+            (hasSelection && activeRightPanel && (activeRightPanel === 'properties' || activeRightPanel === 'animations' || activeRightPanel === 'layers'))
           );
           return shouldShow;
         })() && (
           <>
             <div
               className={`absolute right-20 bg-white border border-gray-200 rounded-lg shadow-sm overflow-y-auto z-30 mb-2 transform transition-all duration-300 ease-out ${
-                hasSelection 
+                (hasSelection || activeRightPanel === 'layers')
                   ? 'translate-x-0 opacity-100' 
                   : 'translate-x-full opacity-0'
               }`}
@@ -1093,6 +1111,9 @@ export default function EditorCanvas() {
                   onInspectorChange={handleInspectorChange}
                   onGroupInspectorChange={handleGroupInspectorChange}
                 />
+              )}
+              { activeRightPanel === 'layers' && (
+                <LayersTab />
               )}
             </div>
           </>

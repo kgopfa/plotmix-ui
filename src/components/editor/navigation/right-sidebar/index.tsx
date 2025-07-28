@@ -4,11 +4,12 @@ import React from 'react';
 import {
   SwatchBook,
   VectorSquare,
+  Layers,
 } from 'lucide-react';
-import { useActiveRightPanel } from '@/stores/use-ui-store';
+import { useActiveRightPanel, useSetActiveRightPanel } from '@/stores/use-ui-store';
 
 // Navigation item type for right sidebar
-type RightNavKey = 'properties' | 'animations';
+type RightNavKey = 'properties' | 'animations' | 'layers';
 interface RightNavItem {
   name: string;
   key: RightNavKey;
@@ -37,10 +38,19 @@ const navigation: RightNavItem[] = [
     hoverColor: 'hover:bg-purple-50 hover:text-purple-700',
     activeColor: 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30'
   },
+  { 
+    name: 'Layers', 
+    key: 'layers', 
+    icon: Layers,
+    color: 'text-indigo-600',
+    hoverColor: 'hover:bg-indigo-50 hover:text-indigo-700',
+    activeColor: 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/30'
+  },
 ];
 
 export const RightSidebar: React.FC = () => {
   const activePanel = useActiveRightPanel();
+  const setActiveRightPanel = useSetActiveRightPanel();
 
   return (
     <div className="m-2 fixed right-0 top-16 z-40 w-16 overflow-visible transition-all duration-300 ease-out translate-x-0 opacity-100">
@@ -64,7 +74,9 @@ export const RightSidebar: React.FC = () => {
                           : `${item.color} ${item.hoverColor} hover:shadow-md`
                         }
                       `}
-                      onClick={() => {}}
+                      onClick={() => {
+                        setActiveRightPanel(activePanel === item.key ? null : item.key);
+                      }}
                       title={item.name}
                     >
                       <IconComponent 

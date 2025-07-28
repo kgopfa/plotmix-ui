@@ -91,10 +91,10 @@ interface KeyboardShortcut {
 }
 
 // Navigation keys corresponding to sidebar icons
-export type NavKey = 'video' | 'scenes' | 'uploads' | 'ai' | 'text' | 'animations' | 'layers' | 'tools' | 'components' | 'audio' | 'timeline';
+export type NavKey = 'video' | 'scenes' | 'uploads' | 'ai' | 'text' | 'animations' | 'tools' | 'components' | 'audio' | 'timeline';
 
 // Right sidebar keys
-export type RightPanelKey = 'properties' | 'animations' | 'lock';
+export type RightPanelKey = 'properties' | 'animations' | 'layers' | 'lock';
 
 interface NavigationState {
   activeNav: NavKey | null; // sticks after click
@@ -162,7 +162,7 @@ interface UIActions {
   // Navigation
   setActiveNav: (nav: NavKey | null) => void;
   setHoverNav: (nav: NavKey | null) => void;
-  setActiveRightPanel: (panel: RightPanelKey) => void;
+  setActiveRightPanel: (panel: RightPanelKey | null) => void;
   setHoverRightPanel: (panel: RightPanelKey | null) => void;
   
   // Animations tab (independent of navigation)
@@ -597,7 +597,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
   },
 
   // Right panel action
-  setActiveRightPanel: (panel: RightPanelKey) => {
+  setActiveRightPanel: (panel: RightPanelKey | null) => {
     set(produce((state) => {
       state.activeRightPanel = panel;
     }));

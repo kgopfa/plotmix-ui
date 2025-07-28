@@ -8,7 +8,6 @@ import {
   Hourglass,
   CircleFadingPlus,
   Type as TypeIcon,
-  Layers,
   Blocks,
 } from 'lucide-react'
 import {
@@ -26,12 +25,12 @@ import { UploadsTab } from './tabs/uploads-tab';
 import { TextTab } from './tabs/text-tab';
 import { AIToolsTab } from './tabs/ai-tools-tab';
 import { AnimationsTab } from './tabs/animations-tab';
-import { LayersTab } from './tabs/layers-tab';
+
 import { ComponentsTab } from './tabs/components-tab';
 
 type NavItem = { 
   name: string; 
-  key: 'video' | 'scenes' | 'uploads' | 'ai' | 'text' | 'layers' | 'tools' | 'components' | 'audio' | 'timeline'; 
+  key: 'video' | 'scenes' | 'uploads' | 'ai' | 'text' | 'tools' | 'components' | 'audio' | 'timeline'; 
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; 
   color: string;
   hoverColor: string;
@@ -63,14 +62,7 @@ const navigation: NavItem[] = [
     hoverColor: 'hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 hover:text-blue-700',
     activeColor: 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30'
   },
-  { 
-    name: 'Layers', 
-    key: 'layers', 
-    icon: Layers,
-    color: 'text-indigo-600',
-    hoverColor: 'hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 hover:text-indigo-700',
-    activeColor: 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/30'
-  },
+
   { 
     name: 'Tools', 
     key: 'tools', 
@@ -122,8 +114,7 @@ const TabContent: React.FC<{ navKey: string }> = ({ navKey }) => {
     case 'animations':
       return <AnimationsTab />;
     
-    case 'layers':
-      return <LayersTab />;
+
     
     case 'ai':
       return <AIToolsTab />;

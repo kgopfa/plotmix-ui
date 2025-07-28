@@ -172,7 +172,7 @@ export const LayersTab: FC = () => {
   });
 
   return (
-    <div className="h-full w-96 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
+    <div className="h-full w-80 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
       <div className="p-4 border-b border-gray-100">
         <div className="flex items-center gap-2">
           <Layers className="w-5 h-5 text-indigo-600" />
@@ -320,7 +320,7 @@ export const LayersTab: FC = () => {
           {/* Ungrouped Elements */}
           {ungroupedElements.length > 0 && (
             <div className="space-y-1">
-              <div className="text-xs font-medium text-gray-700 mb-2 flex items-center gap-2">
+              <div className="text-xs font-medium text-gray-700 mb-4 flex items-center gap-2">
                 <Layers className="w-3 h-3" />
                 Elements
               </div>
