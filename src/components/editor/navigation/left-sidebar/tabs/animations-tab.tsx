@@ -8,13 +8,15 @@ import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
 import { generateAnimationDisplayName } from '@/utils/animation-utils';
 
 export const AnimationsTab: React.FC = () => {
-  const { selectedElements, select } = useSelectionStore();
-  const { addElementAnimation, getElementById } = useCanvasStore();
+  const { selectedElements, selectedGroups, select } = useSelectionStore();
+  const { addElementAnimation, addGroupAnimation, getElementById } = useCanvasStore();
   const setActiveRightPanel = useSetActiveRightPanel();
   const animationSelectionManager = AnimationSelectionManager.getInstance();
 
   const selectedElement = selectedElements.length === 1 ? selectedElements[0] : null;
-  const hasSelection = selectedElements.length > 0;
+  const selectedGroup = selectedGroups.length === 1 ? selectedGroups[0] : null;
+  const hasSelection = selectedElements.length > 0 || selectedGroups.length > 0;
+  const hasGroupSelection = selectedGroup && !selectedGroup.isDefaultGroup;
 
   const animationTypes = [
     {
@@ -69,7 +71,7 @@ export const AnimationsTab: React.FC = () => {
   ];
 
   const handleAddAnimation = (animationType: AnimationType) => {
-    if (!selectedElement) return;
+    if (!selectedElement && !selectedGroup) return;
 
     const defaultProperties = {
       rotate: { rotation: 360 },
@@ -96,7 +98,7 @@ export const AnimationsTab: React.FC = () => {
 
     const newAnimation: ElementAnimation = {
       id: `${animationType}-${Date.now()}`,
-      displayName: generateAnimationDisplayName(animationType, selectedElement.animations),
+      displayName: generateAnimationDisplayName(animationType, selectedElement?.animations || selectedGroup?.animations || []),
       type: animationType,
       startTime: 0,
       duration: 1,
@@ -107,13 +109,27 @@ export const AnimationsTab: React.FC = () => {
       yoyo: false
     };
 
-    // Add the animation to the element
-    addElementAnimation(selectedElement.id, newAnimation);
+    if (selectedElement) {
+      // Add the animation to the element
+      addElementAnimation(selectedElement.id, newAnimation);
 
-    // Get the updated element from canvas store and refresh selection store
-    const updatedElement = getElementById(selectedElement.id);
-    if (updatedElement) {
-      select(updatedElement);
+      // Get the updated element from canvas store and refresh selection store
+      const updatedElement = getElementById(selectedElement.id);
+      if (updatedElement) {
+        select(updatedElement);
+      }
+
+      // Select the newly created animation in the animations panel after the next render cycle
+      setTimeout(() => {
+        // Use the updated element for selection
+        const finalUpdatedElement = getElementById(selectedElement.id);
+        if (finalUpdatedElement) {
+          animationSelectionManager.selectAnimation(finalUpdatedElement, newAnimation);
+        }
+      }, 50);
+    } else if (selectedGroup) {
+      // Add the animation to the group
+      addGroupAnimation(selectedGroup.id, newAnimation);
     }
 
     // Switch to the right sidebar animations panel
@@ -122,15 +138,6 @@ export const AnimationsTab: React.FC = () => {
     // Close the left sidebar animations tab
     const { setShowAnimationsTab } = useUIStore.getState();
     setShowAnimationsTab(false);
-
-    // Select the newly created animation in the animations panel after the next render cycle
-    setTimeout(() => {
-      // Use the updated element for selection
-      const finalUpdatedElement = getElementById(selectedElement.id);
-      if (finalUpdatedElement) {
-        animationSelectionManager.selectAnimation(finalUpdatedElement, newAnimation);
-      }
-    }, 50);
   };
 
   return (
@@ -144,11 +151,21 @@ export const AnimationsTab: React.FC = () => {
       
       <div className="flex-1 p-4 overflow-y-auto">
         <div className="space-y-3 text-sm">
-          {/* Selected Element Info */}
+          {/* Selected Element/Group Info */}
           {hasSelection && (
             <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <div className="font-medium text-blue-900 mb-2 text-xs">Selected Element</div>
-              {selectedElements.length === 1 ? (
+              <div className="font-medium text-blue-900 mb-2 text-xs">
+                {hasGroupSelection ? 'Selected Group' : 'Selected Element'}
+              </div>
+              {hasGroupSelection ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                  <span className="text-purple-700 font-medium">{selectedGroup?.name}</span>
+                  <span className="text-xs text-purple-600 bg-purple-100 px-2 py-0.5 rounded">
+                    {selectedGroup?.type}
+                  </span>
+                </div>
+              ) : selectedElements.length === 1 ? (
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                   <span className="text-blue-700 font-medium">{selectedElement?.name}</span>
@@ -175,7 +192,7 @@ export const AnimationsTab: React.FC = () => {
           )}
 
           {/* Add Animation Section */}
-          {selectedElement && (
+          {(selectedElement || hasGroupSelection) && (
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-xs font-medium text-gray-700 mb-3">
                 <Plus className="w-4 h-4" />

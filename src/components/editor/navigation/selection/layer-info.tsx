@@ -77,7 +77,7 @@ export const SelectionNavbar: React.FC<SelectionNavbarProps> = ({
   const zIndexInfo = getZIndexInfo();
 
   const handleAnimate = () => {
-    if (selectedElements.length === 1) {
+    if (selectedElements.length === 1 || hasGroupSelection) {
       setShowAnimationsTab(true);
     }
     onAnimate();
@@ -92,8 +92,8 @@ export const SelectionNavbar: React.FC<SelectionNavbarProps> = ({
       color: 'text-purple-600',
       hoverColor: 'hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700',
       activeColor: 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30',
-      title: 'Add animations to this element',
-      showCondition: (elements) => elements.length === 1 && !hasGroupSelection
+      title: hasGroupSelection ? 'Add animations to this group' : 'Add animations to this element',
+      showCondition: (elements) => (elements.length === 1 && !hasGroupSelection) || hasGroupSelection
     },
     {
       id: 'copy',
