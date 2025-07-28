@@ -74,6 +74,8 @@ interface DesignCanvasProps {
   onGroupContextMenu?: (e: FederatedPointerEvent, groupId: string) => void;
   // Shift key state for constrained drawing
   shiftKey?: boolean;
+  // Snapping state for alignment guides
+  isSnappingEnabled?: boolean;
 }
 
 export const DesignCanvas = (props: DesignCanvasProps) => {
@@ -106,6 +108,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
     handleGroupSelectionDragStart,
     isElementInCustomOrPolygonGroup,
     shiftKey = false,
+    isSnappingEnabled = true,
   } = props;
 
   // Get canvas size from UI store
@@ -512,6 +515,9 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           elements={elements}
           canvasContainerRef={containerRef}
           shiftKey={shiftKey}
+          canvasWidth={canvasFrameWidth}
+          canvasHeight={canvasFrameHeight}
+          isSnappingEnabled={isSnappingEnabled}
         />
       </pixiContainer>
 

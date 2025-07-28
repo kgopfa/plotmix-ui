@@ -1,7 +1,8 @@
 import React from 'react';
 import type { AnimatedCanvasObject } from '@/types/canvas';
 import type { Container } from 'pixi.js';
-import { convertGlobalToDesignCanvasCoords, constrainToAxis } from '@/utils/coordinate-utils';
+import { convertGlobalToDesignCanvasCoords, constrainToAxis, detectLineAlignment } from '@/utils/coordinate-utils';
+import { LineAlignmentGuides } from './line-alignment-guides';
 
 interface LinePreviewProps {
   tool: string;
@@ -12,6 +13,9 @@ interface LinePreviewProps {
   elements: AnimatedCanvasObject[];
   canvasContainerRef?: React.RefObject<Container | null>;
   shiftKey?: boolean;
+  canvasWidth?: number;
+  canvasHeight?: number;
+  isSnappingEnabled?: boolean;
 }
 
 export const LinePreview: React.FC<LinePreviewProps> = ({
@@ -23,6 +27,9 @@ export const LinePreview: React.FC<LinePreviewProps> = ({
   elements,
   canvasContainerRef,
   shiftKey = false,
+  canvasWidth = 1280,
+  canvasHeight = 720,
+  isSnappingEnabled = true,
 }) => {
   // Only render when we have the necessary data for line preview
   if (!(tool === 'line' || tool === 'simpleLine') || !lineStartPoint || !mousePos) {
@@ -58,10 +65,13 @@ export const LinePreview: React.FC<LinePreviewProps> = ({
   // Apply shift constraint if shift key is held
   const constrainedMousePos = shiftKey ? constrainToAxis(lineStartPoint, localMousePos) : localMousePos;
 
-
+  // Detect alignment guides for the line being drawn (only when snapping is disabled)
+  const alignmentGuides = !isSnappingEnabled ? detectLineAlignment(lineStartPoint, constrainedMousePos, elements, 10) : [];
 
   return (
-    <pixiGraphics
+    <pixiContainer>
+      {/* Line preview */}
+      <pixiGraphics
       eventMode="none"
       draw={(g) => {
         g.clear();
@@ -156,5 +166,17 @@ export const LinePreview: React.FC<LinePreviewProps> = ({
         }
       }}
     />
+    
+    {/* Alignment guides */}
+    {alignmentGuides.length > 0 && (
+      <LineAlignmentGuides
+        guides={alignmentGuides}
+        canvasWidth={canvasWidth}
+        canvasHeight={canvasHeight}
+        canvasFrameX={-canvasWidth / 2}
+        canvasFrameY={-canvasHeight / 2}
+      />
+    )}
+  </pixiContainer>
   );
 }; 

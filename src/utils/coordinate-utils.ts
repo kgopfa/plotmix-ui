@@ -88,3 +88,126 @@ export function constrainToAxis(
     };
   }
 }
+
+/**
+ * Detect alignment between a line being drawn and existing elements
+ * This provides visual feedback without actually snapping the line
+ * 
+ * @param startPoint - The starting point of the line being drawn
+ * @param endPoint - The current end point of the line being drawn
+ * @param elements - All existing elements to check alignment against
+ * @param alignmentThreshold - Distance threshold for alignment detection
+ * @returns Array of alignment guides for visual feedback
+ */
+export interface LineAlignmentGuide {
+  type: 'horizontal' | 'vertical';
+  position: number;
+  sourceElementId: string;
+  alignmentType: 'edge' | 'center';
+  elementBounds: { left: number; right: number; top: number; bottom: number; centerX: number; centerY: number };
+}
+
+export function detectLineAlignment(
+  startPoint: { x: number; y: number },
+  endPoint: { x: number; y: number },
+  elements: Array<{ id: string; x: number; y: number; width: number; height: number; type?: string }>,
+  alignmentThreshold: number = 10
+): LineAlignmentGuide[] {
+  const guides: LineAlignmentGuide[] = [];
+  
+  // Calculate line center points
+  const lineCenterX = (startPoint.x + endPoint.x) / 2;
+  const lineCenterY = (startPoint.y + endPoint.y) / 2;
+  
+  for (const element of elements) {
+    // Skip animation paths and lines for alignment detection
+    if (element.type === 'line' || element.type === 'path') {
+      continue;
+    }
+    
+    // Calculate element bounds
+    const elementLeft = element.x - element.width / 2;
+    const elementRight = element.x + element.width / 2;
+    const elementTop = element.y - element.height / 2;
+    const elementBottom = element.y + element.height / 2;
+    const elementCenterX = element.x;
+    const elementCenterY = element.y;
+    
+    // Check horizontal alignment (vertical guides)
+    const horizontalAlignments = [
+      { type: 'edge' as const, pos: elementLeft, name: 'left' },
+      { type: 'edge' as const, pos: elementRight, name: 'right' },
+      { type: 'center' as const, pos: elementCenterX, name: 'centerX' }
+    ];
+    
+    for (const alignment of horizontalAlignments) {
+      // Check if line's X coordinates align with this element's X coordinate
+      const lineXCoords = [startPoint.x, endPoint.x, lineCenterX];
+      
+      for (const lineX of lineXCoords) {
+        const distance = Math.abs(lineX - alignment.pos);
+        if (distance <= alignmentThreshold) {
+          guides.push({
+            type: 'vertical',
+            position: alignment.pos,
+            sourceElementId: element.id,
+            alignmentType: alignment.type,
+            elementBounds: {
+              left: elementLeft,
+              right: elementRight,
+              top: elementTop,
+              bottom: elementBottom,
+              centerX: elementCenterX,
+              centerY: elementCenterY
+            }
+          });
+          break; // Only add one guide per element per alignment type
+        }
+      }
+    }
+    
+    // Check vertical alignment (horizontal guides)
+    const verticalAlignments = [
+      { type: 'edge' as const, pos: elementTop, name: 'top' },
+      { type: 'edge' as const, pos: elementBottom, name: 'bottom' },
+      { type: 'center' as const, pos: elementCenterY, name: 'centerY' }
+    ];
+    
+    for (const alignment of verticalAlignments) {
+      // Check if line's Y coordinates align with this element's Y coordinate
+      const lineYCoords = [startPoint.y, endPoint.y, lineCenterY];
+      
+      for (const lineY of lineYCoords) {
+        const distance = Math.abs(lineY - alignment.pos);
+        if (distance <= alignmentThreshold) {
+          guides.push({
+            type: 'horizontal',
+            position: alignment.pos,
+            sourceElementId: element.id,
+            alignmentType: alignment.type,
+            elementBounds: {
+              left: elementLeft,
+              right: elementRight,
+              top: elementTop,
+              bottom: elementBottom,
+              centerX: elementCenterX,
+              centerY: elementCenterY
+            }
+          });
+          break; // Only add one guide per element per alignment type
+        }
+      }
+    }
+  }
+  
+  // Remove duplicate guides (same position and type)
+  const uniqueGuides = guides.filter((guide, index, self) => 
+    index === self.findIndex(g => 
+      g.type === guide.type && 
+      Math.abs(g.position - guide.position) < 1 &&
+      g.alignmentType === guide.alignmentType
+    )
+  );
+  
+  return uniqueGuides;
+}

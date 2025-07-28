@@ -925,6 +925,7 @@ export default function EditorCanvas() {
             console.log('Group context menu:', groupId);
           }}
           shiftKey={shiftKey}
+          isSnappingEnabled={elementSnapConfig.enabled && !isElementSnapDisabled}
         />
 
         {/* Path Mode Banner */}

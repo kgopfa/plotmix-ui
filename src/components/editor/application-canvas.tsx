@@ -66,6 +66,8 @@ interface ApplicationCanvasProps {
   onGroupContextMenu?: (e: FederatedPointerEvent, groupId: string) => void;
   // Shift key state for constrained drawing
   shiftKey?: boolean;
+  // Snapping state for alignment guides
+  isSnappingEnabled?: boolean;
 }
 
 export interface ApplicationCanvasRef extends TimelineCanvasRef {
