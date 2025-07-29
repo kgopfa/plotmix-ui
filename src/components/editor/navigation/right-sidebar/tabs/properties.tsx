@@ -171,94 +171,96 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
 
         {/* Line-specific properties */}
         {localElement.type === 'line' ? (
-          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-            <h4 className="font-medium text-gray-800 mb-3 flex items-center gap-2">
-              <div className="w-1 h-1 bg-orange-500 rounded-full"></div>
-              Line Properties
-            </h4>
-            <div className="grid grid-cols-2 gap-3">
-              <label className="flex flex-col gap-1">
-                <span className="text-sm font-medium text-orange-400">Length</span>
-                <input
-                  type="number"
-                  value={Math.round(calculateLineLength(localElement.lineOptions!.points))}
-                  onChange={e => {
-                    const newLength = Number(e.target.value);
-                    if (newLength <= 0) return;
-
-                    const angle = calculateNorthAngle(localElement.lineOptions!.points) * Math.PI / 180;
-                    const start = localElement.lineOptions!.points.start;
-                    const end = {
-                      x: start.x + newLength * Math.sin(angle),
-                      y: start.y + newLength * Math.cos(angle)
-                    };
-
-                    // Calculate new dimensions
-                    const width = Math.abs(end.x - start.x);
-                    const height = Math.abs(end.y - start.y);
-
-                    // Update both the line's dimensions and points
-                    const updatedLineOptions = {
-                      ...localElement.lineOptions!,
-                      points: { start, end }
-                    };
-
-                    updateLineGeometry(width, height, updatedLineOptions);
-                  }}
-                  min={1}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-                />
-              </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-sm font-medium text-orange-400">Angle (°)</span>
-                <input
-                  type="number"
-                  value={Math.round(calculateNorthAngle(localElement.lineOptions!.points))}
-                  onChange={e => {
-                    const newAngle = Number(e.target.value) * Math.PI / 180;
-                    const length = calculateLineLength(localElement.lineOptions!.points);
-                    const start = localElement.lineOptions!.points.start;
-                    const end = {
-                      x: start.x + length * Math.sin(newAngle),
-                      y: start.y + length * Math.cos(newAngle)
-                    };
-
-                    // Calculate new dimensions
-                    const width = Math.abs(end.x - start.x);
-                    const height = Math.abs(end.y - start.y);
-
-                    // Update both the line's dimensions and points
-                    const updatedLineOptions = {
-                      ...localElement.lineOptions!,
-                      points: { start, end }
-                    };
-
-                    updateLineGeometry(width, height, updatedLineOptions);
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-                />
-              </label>
+          <div className="space-y-4 mt-2">
+            <div className="flex items-center mt-2 gap-2 pb-2 border-b border-gray-200">
+              <h4 className="font-semibold text-orange-600 text-sm">Line Properties</h4>
             </div>
 
-            <div className="mt-3 space-y-3">
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={localElement.lineOptions?.dotted ?? false}
-                  onChange={e => updateLineOptions({ dotted: e.target.checked })}
-                  className="rounded border-gray-300 focus:ring-2 focus:ring-orange-500"
-                />
-                <span className="text-sm font-medium text-gray-700">Dotted line</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={localElement.lineOptions?.arrow ?? false}
-                  onChange={e => updateLineOptions({ arrow: e.target.checked })}
-                  className="rounded border-gray-300 focus:ring-2 focus:ring-orange-500"
-                />
-                <span className="text-sm font-medium text-gray-700">Show arrow</span>
-              </label>
+            <div className="space-y-4 mt-2">
+              <div className="grid grid-cols-2 gap-3">
+                <label className="flex flex-col gap-1">
+                  <span className="text-xs font-semibold text-orange-400">Length</span>
+                  <input
+                    type="number"
+                    value={Math.round(calculateLineLength(localElement.lineOptions!.points))}
+                    onChange={e => {
+                      const newLength = Number(e.target.value);
+                      if (newLength <= 0) return;
+
+                      const angle = calculateNorthAngle(localElement.lineOptions!.points) * Math.PI / 180;
+                      const start = localElement.lineOptions!.points.start;
+                      const end = {
+                        x: start.x + newLength * Math.sin(angle),
+                        y: start.y + newLength * Math.cos(angle)
+                      };
+
+                      // Calculate new dimensions
+                      const width = Math.abs(end.x - start.x);
+                      const height = Math.abs(end.y - start.y);
+
+                      // Update both the line's dimensions and points
+                      const updatedLineOptions = {
+                        ...localElement.lineOptions!,
+                        points: { start, end }
+                      };
+
+                      updateLineGeometry(width, height, updatedLineOptions);
+                    }}
+                    min={1}
+                    className="block w-full grow rounded-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-orange-600"
+                  />
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span className="text-xs font-semibold text-orange-400">Angle (°)</span>
+                  <input
+                    type="number"
+                    value={Math.round(calculateNorthAngle(localElement.lineOptions!.points))}
+                    onChange={e => {
+                      const newAngle = Number(e.target.value) * Math.PI / 180;
+                      const length = calculateLineLength(localElement.lineOptions!.points);
+                      const start = localElement.lineOptions!.points.start;
+                      const end = {
+                        x: start.x + length * Math.sin(newAngle),
+                        y: start.y + length * Math.cos(newAngle)
+                      };
+
+                      // Calculate new dimensions
+                      const width = Math.abs(end.x - start.x);
+                      const height = Math.abs(end.y - start.y);
+
+                      // Update both the line's dimensions and points
+                      const updatedLineOptions = {
+                        ...localElement.lineOptions!,
+                        points: { start, end }
+                      };
+
+                      updateLineGeometry(width, height, updatedLineOptions);
+                    }}
+                    className="block w-full grow rounded-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-orange-600"
+                  />
+                </label>
+              </div>
+
+              <div className="space-y-3">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={localElement.lineOptions?.dotted ?? false}
+                    onChange={e => updateLineOptions({ dotted: e.target.checked })}
+                    className="rounded border-gray-300 focus:ring-2 focus:ring-orange-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Dotted line</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={localElement.lineOptions?.arrow ?? false}
+                    onChange={e => updateLineOptions({ arrow: e.target.checked })}
+                    className="rounded border-gray-300 focus:ring-2 focus:ring-orange-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Show arrow</span>
+                </label>
+              </div>
             </div>
           </div>
         ) : (
