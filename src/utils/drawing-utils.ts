@@ -236,11 +236,12 @@ export const drawDottedCurve = (
     points.push({ x, y });
   }
   
-  new AnimationPath(graphics, { dash: dashPattern, width, color, alpha })
-    .moveTo(points[0].x, points[0].y);
+  // Use AnimationPath to draw the dotted curve
+  const animationPath = new AnimationPath(graphics, { dash: dashPattern, width, color, alpha });
+  animationPath.moveTo(points[0].x, points[0].y);
   
   for (let i = 1; i < points.length; i++) {
-    graphics.lineTo(points[i].x, points[i].y);
+    animationPath.lineTo(points[i].x, points[i].y);
   }
 };
 
