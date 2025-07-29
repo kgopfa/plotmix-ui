@@ -463,8 +463,21 @@ export const useCanvasStore = create<CanvasStore>()(
           group.elementIds.forEach((elementId: string) => {
             const element = state.elements.find((el: AnimatedCanvasObject) => el.id === elementId);
             if (element) {
-              element.x += deltaX;
-              element.y += deltaY;
+              // Calculate the offset by which the element is moving
+              const elementDeltaX = deltaX;
+              const elementDeltaY = deltaY;
+              
+              // Update the element's center position
+              element.x += elementDeltaX;
+              element.y += elementDeltaY;
+              
+              // For lines, also update the start and end points to maintain their relative positions
+              if (element.type === 'line' && element.lineOptions?.points) {
+                element.lineOptions.points.start.x += elementDeltaX;
+                element.lineOptions.points.start.y += elementDeltaY;
+                element.lineOptions.points.end.x += elementDeltaX;
+                element.lineOptions.points.end.y += elementDeltaY;
+              }
             }
           });
         }

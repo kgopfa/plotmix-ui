@@ -222,6 +222,7 @@ export default function EditorCanvas() {
   const {
     startDragging,
     startEndpointDragging,
+    setupGlobalEventListeners,
   } = useElementDragging({
     elements: canvasObjects,
     moveElement: (id, position) => {
@@ -242,8 +243,11 @@ export default function EditorCanvas() {
     onClearSnapGuides: clearElementSnapGuides,
   });
 
-  // Get canvas operations
-  const { moveGroup } = useCanvasOperations();
+  // Set up global event listeners for dragging
+  useEffect(() => {
+    const cleanup = setupGlobalEventListeners();
+    return cleanup;
+  }, [setupGlobalEventListeners]);
 
   // Initialize timeline subscriptions on mount
   useEffect(() => {
@@ -849,41 +853,20 @@ export default function EditorCanvas() {
     const elementsInGroups = selectedObjects.filter(el => el.groupId && selectedGroupIds.has(el.groupId));
     
     if (elementsInGroups.length > 0) {
-      // This is a group selection - handle group movement
+      // This is a group selection - handle group movement using the existing drag system
       const groupId = elementsInGroups[0].groupId!;
       const group = groups.find(g => g.id === groupId);
       
       if (group && !group.isDefaultGroup) {
-        // Calculate offset from group center to mouse position
-        const offsetX = mouseX - group.x;
-        const offsetY = mouseY - group.y;
+        // Calculate offsets for all elements in the group
+        const groupOffsets = elementsInGroups.map(element => ({
+          id: element.id,
+          offsetX: mouseX - element.x,
+          offsetY: mouseY - element.y
+        }));
         
-        // Use the moveGroup function from useCanvasOperations
-        
-        // Set up global dragging for the group
-        const handleGroupDrag = (e: PointerEvent) => {
-          const canvasElement = document.querySelector('canvas');
-          if (!canvasElement) return;
-          
-          const rect = canvasElement.getBoundingClientRect();
-          const canvasX = e.clientX - rect.left;
-          const canvasY = e.clientY - rect.top;
-          
-          // Calculate new group position
-          const newX = canvasX - offsetX;
-          const newY = canvasY - offsetY;
-          
-          // Move the group
-          moveGroup(groupId, { x: newX, y: newY });
-        };
-        
-        const handleGroupDragEnd = () => {
-          document.removeEventListener('pointermove', handleGroupDrag);
-          document.removeEventListener('pointerup', handleGroupDragEnd);
-        };
-        
-        document.addEventListener('pointermove', handleGroupDrag);
-        document.addEventListener('pointerup', handleGroupDragEnd);
+        // Start group dragging using the existing startDragging function
+        startDragging('virtual-group', mouseX - group.x, mouseY - group.y, true, groupOffsets);
       }
     } else {
       // This is multi-selection of ungrouped elements - use existing multi-element dragging
@@ -900,7 +883,7 @@ export default function EditorCanvas() {
       // Start multi-element dragging using the existing startDragging function
       startDragging('virtual-group', offsetX, offsetY, true, groupOffsets);
     }
-  }, [selectedObjects, selectedGroups, groups, startDragging, moveGroup]);
+  }, [selectedObjects, selectedGroups, groups, startDragging]);
 
   const isElementInCustomOrPolygonGroup = useCallback((element: AnimatedCanvasObject) => {
     const group = groups.find(g => g.id === element.groupId);
