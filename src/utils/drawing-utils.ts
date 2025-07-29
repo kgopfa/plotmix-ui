@@ -187,6 +187,63 @@ export const drawDottedLine = (
     .lineTo(end.x, end.y);
 };
 
+export const drawSmoothCurve = (
+  graphics: Graphics,
+  start: { x: number; y: number },
+  controlPoint: { x: number; y: number },
+  end: { x: number; y: number },
+  color: number,
+  width: number,
+  alpha: number
+) => {
+  graphics
+    .clear()
+    .moveTo(start.x, start.y)
+    .quadraticCurveTo(controlPoint.x, controlPoint.y, end.x, end.y)
+    .stroke({
+      color,
+      width,
+      alpha
+    });
+};
+
+export const drawDottedCurve = (
+  graphics: Graphics,
+  start: { x: number; y: number },
+  controlPoint: { x: number; y: number },
+  end: { x: number; y: number },
+  color: number,
+  width: number,
+  alpha: number,
+  dashPattern: [number, number] = [10, 5],
+  shouldClear: boolean = true
+) => {
+  if (shouldClear) {
+    graphics.clear();
+  }
+  
+  // For dotted curves, we'll approximate with line segments
+  // This is a simplified approach - for more precise dotted curves,
+  // we'd need to sample points along the quadratic curve
+  const steps = 20;
+  const points: Array<{ x: number; y: number }> = [];
+  
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const invT = 1 - t;
+    const x = invT * invT * start.x + 2 * invT * t * controlPoint.x + t * t * end.x;
+    const y = invT * invT * start.y + 2 * invT * t * controlPoint.y + t * t * end.y;
+    points.push({ x, y });
+  }
+  
+  new AnimationPath(graphics, { dash: dashPattern, width, color, alpha })
+    .moveTo(points[0].x, points[0].y);
+  
+  for (let i = 1; i < points.length; i++) {
+    graphics.lineTo(points[i].x, points[i].y);
+  }
+};
+
 export const drawLine = (
   graphics: Graphics,
   shape: AnimatedCanvasObject & {
@@ -194,8 +251,10 @@ export const drawLine = (
     strokeWidth?: number;
     lineOptions?: {
       points?: { start: { x: number; y: number }; end: { x: number; y: number } };
+      controlPoint?: { x: number; y: number };
       dotted?: boolean;
       arrow?: boolean;
+      isCurved?: boolean;
     };
   }
 ) => {
@@ -215,10 +274,24 @@ export const drawLine = (
     y: smoothLinePosition(shape.lineOptions.points.end.y - shape.y)
   };
 
-  if (shape.lineOptions.dotted) {
-    drawDottedLine(graphics, start, end, color, width, alpha);
+  // Check if line is curved
+  if (shape.lineOptions.isCurved && shape.lineOptions.controlPoint) {
+    const controlPoint = {
+      x: smoothLinePosition(shape.lineOptions.controlPoint.x - shape.x),
+      y: smoothLinePosition(shape.lineOptions.controlPoint.y - shape.y)
+    };
+
+    if (shape.lineOptions.dotted) {
+      drawDottedCurve(graphics, start, controlPoint, end, color, width, alpha);
+    } else {
+      drawSmoothCurve(graphics, start, controlPoint, end, color, width, alpha);
+    }
   } else {
-    drawSmoothLine(graphics, start, end, color, width, alpha);
+    if (shape.lineOptions.dotted) {
+      drawDottedLine(graphics, start, end, color, width, alpha);
+    } else {
+      drawSmoothLine(graphics, start, end, color, width, alpha);
+    }
   }
 
   if (shape.lineOptions.arrow) {
@@ -293,13 +366,23 @@ function drawElement(graphics: Graphics, shape: AnimatedCanvasObject) {
     case 'line':
       if (shape.lineOptions?.points) {
         const { start, end } = shape.lineOptions.points;
+        const { controlPoint, isCurved } = shape.lineOptions;
         const startX = smoothLinePosition(start.x - shape.x);
         const startY = smoothLinePosition(start.y - shape.y);
         const endX = smoothLinePosition(end.x - shape.x);
         const endY = smoothLinePosition(end.y - shape.y);
-        graphics
-          .moveTo(startX, startY)
-          .lineTo(endX, endY);
+        
+        if (isCurved && controlPoint) {
+          const controlX = smoothLinePosition(controlPoint.x - shape.x);
+          const controlY = smoothLinePosition(controlPoint.y - shape.y);
+          graphics
+            .moveTo(startX, startY)
+            .quadraticCurveTo(controlX, controlY, endX, endY);
+        } else {
+          graphics
+            .moveTo(startX, startY)
+            .lineTo(endX, endY);
+        }
       }
       break;
 

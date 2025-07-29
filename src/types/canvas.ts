@@ -123,8 +123,10 @@ export interface AnimatedCanvasObject {
   pivotY?: number;
   lineOptions?: {
     points: {start: {x: number, y: number}, end: {x: number, y: number}};
+    controlPoint?: {x: number, y: number}; // Optional control point for curved lines
     arrow: boolean;
     dotted: boolean;
+    isCurved?: boolean; // Flag to indicate if line is curved vs straight
   };
   pathPoints?: Array<{x: number, y: number}>;
   imageData?: string;

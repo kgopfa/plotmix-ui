@@ -209,14 +209,31 @@ export const useCanvasEventListeners = ({
       }
     };
 
-    // Add event listeners for both resize and border radius changes
+    const handleLineControlPointDrag = (e: CustomEvent) => {
+      const { id, x, y } = e.detail;
+      
+      const element = elementsRef.current.find(el => el.id === id);
+      if (element && element.type === 'line' && element.lineOptions) {
+        // Update the control point
+        const updatedLineOptions = {
+          ...element.lineOptions,
+          controlPoint: { x, y },
+          isCurved: true
+        };
+        updateElement(id, { ...element, lineOptions: updatedLineOptions });
+      }
+    };
+
+    // Add event listeners for resize, border radius changes, and control point dragging
     window.addEventListener('element-resize', handleElementResize as EventListener);
     window.addEventListener('element-border-radius-change', handleBorderRadiusChange as EventListener);
+    window.addEventListener('line-control-point-drag', handleLineControlPointDrag as EventListener);
 
     // Clean up the event listeners when component unmounts
     return () => {
       window.removeEventListener('element-resize', handleElementResize as EventListener);
       window.removeEventListener('element-border-radius-change', handleBorderRadiusChange as EventListener);
+      window.removeEventListener('line-control-point-drag', handleLineControlPointDrag as EventListener);
     };
   }, [gsapManager, updateAnimationsForPathElement, updateElement]);
 

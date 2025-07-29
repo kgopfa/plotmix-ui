@@ -14,6 +14,7 @@ import CenterHighlight from './center-highlight';
 import RotationHandles from '../selection/rotation-handles';
 import ResizeHandles from '../selection/resize-handles';
 import RadiusHandles from '../selection/radius-handles';
+import CurveHandle from '../selection/curve-handle';
 import { GroupSelection } from '../selection/group-selection';
 import { useCanvasState } from '@/stores/use-ui-store';
 import { useCanvasOperations } from '@/stores/use-canvas-store';
@@ -752,6 +753,23 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
               <RadiusHandles
                 element={selectedElement}
                 scaleFactor={canvasScaleFactor.current}
+              />
+            </pixiContainer>
+
+            {/* Curve Handle - only for line elements */}
+            <pixiContainer zIndex={2002}>
+              <CurveHandle
+                element={selectedElement}
+                onControlPointDrag={(x, y) => {
+                  const controlPointEvent = new CustomEvent('line-control-point-drag', {
+                    detail: {
+                      id: selectedId,
+                      x,
+                      y
+                    }
+                  });
+                  window.dispatchEvent(controlPointEvent);
+                }}
               />
             </pixiContainer>
           </React.Fragment>
