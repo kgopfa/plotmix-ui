@@ -227,8 +227,21 @@ export const useCanvasStore = create<CanvasStore>()(
       set(produce((state) => {
         const element = state.elements.find((el: AnimatedCanvasObject) => el.id === id);
         if (element) {
+          // Calculate the offset by which the element is moving
+          const deltaX = position.x - element.x;
+          const deltaY = position.y - element.y;
+          
+          // Update the element's center position
           element.x = position.x;
           element.y = position.y;
+          
+          // For lines, also update the start and end points to maintain their relative positions
+          if (element.type === 'line' && element.lineOptions?.points) {
+            element.lineOptions.points.start.x += deltaX;
+            element.lineOptions.points.start.y += deltaY;
+            element.lineOptions.points.end.x += deltaX;
+            element.lineOptions.points.end.y += deltaY;
+          }
         }
       }));
       
@@ -691,8 +704,21 @@ export const useCanvasStore = create<CanvasStore>()(
         movements.forEach(({ id, x, y }) => {
           const element = state.elements.find((el: AnimatedCanvasObject) => el.id === id);
           if (element) {
+            // Calculate the offset by which the element is moving
+            const deltaX = x - element.x;
+            const deltaY = y - element.y;
+            
+            // Update the element's center position
             element.x = x;
             element.y = y;
+            
+            // For lines, also update the start and end points to maintain their relative positions
+            if (element.type === 'line' && element.lineOptions?.points) {
+              element.lineOptions.points.start.x += deltaX;
+              element.lineOptions.points.start.y += deltaY;
+              element.lineOptions.points.end.x += deltaX;
+              element.lineOptions.points.end.y += deltaY;
+            }
           }
         });
       }));
