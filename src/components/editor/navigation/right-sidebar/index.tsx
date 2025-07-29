@@ -42,9 +42,9 @@ const navigation: RightNavItem[] = [
     name: 'Layers', 
     key: 'layers', 
     icon: Layers,
-    color: 'text-stone-600',
-    hoverColor: 'hover:bg-stone-50 hover:text-stone-700',
-    activeColor: 'bg-gradient-to-r from-stone-500 to-stone-600 text-white shadow-lg shadow-stone-500/30'
+    color: 'text-red-600',
+    hoverColor: 'hover:bg-red-50 hover:text-red-700',
+    activeColor: 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30'
   },
 ];
 
