@@ -287,7 +287,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                   <MenuButton className="group relative flex rounded-full bg-white/95 backdrop-blur-sm text-sm focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 border border-gray-200/50 shadow-sm">
                     <span className="absolute -inset-1.5" />
                     <span className="sr-only">Open user menu</span>
-                    <div className="size-8 rounded-full bg-gradient-to-r from-gray-400 to-gray-500 flex items-center justify-center shadow-sm">
+                    <div className="size-8 rounded-full bg-amber-500 flex items-center justify-center">
                       <span className="text-white font-medium text-sm">U</span>
                     </div>
                   </MenuButton>
@@ -325,7 +325,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
 
               <button
                 type="button"
-                className="group relative inline-flex w-28 h-9 items-center gap-x-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 px-3 py-2 text-sm font-semibold text-white shadow-sm shadow-indigo-500/30 hover:from-indigo-600 hover:to-purple-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 mr-4 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95"
+                className="group relative inline-flex w-28 h-9 items-center gap-x-2.5 rounded-md bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm shadow-indigo-500/30 hover:from-indigo-600 hover:to-purple-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 mr-4 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95"
               >
                 <Upload className="size-4 ml-1.5 transition-all duration-200 group-hover:scale-110" />
                 <span className="text-sm">Share</span>
