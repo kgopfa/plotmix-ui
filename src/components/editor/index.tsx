@@ -1076,11 +1076,7 @@ export default function EditorCanvas() {
         })() && (
           <>
             <div
-              className={`absolute right-20 bg-white border border-gray-200 rounded-lg shadow-sm overflow-y-auto z-30 mb-2 transform transition-all duration-300 ease-out ${
-                hasSelection 
-                  ? 'translate-x-0 opacity-100' 
-                  : 'translate-x-full opacity-0'
-              }`}
+              className={`absolute right-20 bg-white border border-gray-200 rounded-lg shadow-sm overflow-y-auto z-30 mb-2 transform transition-all duration-300 ease-out translate-x-0 opacity-100`}
               style={{ 
                 width: `${panelState.rightPanelWidth / 16}rem`, 
                 top: '8px', 

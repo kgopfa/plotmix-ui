@@ -324,16 +324,30 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                   g.clear();
                   // Calculate group bounds for hit area
                   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                  
+                  // Check if this is a polygon group (all elements are lines)
+                  const isPolygonGroup = group.type === 'polygon' || groupElements.every(el => el.type === 'line');
+                  
                   groupElements.forEach(el => {
-                    const left = el.x - el.width / 2;
-                    const right = el.x + el.width / 2;
-                    const top = el.y - el.height / 2;
-                    const bottom = el.y + el.height / 2;
-                    
-                    minX = Math.min(minX, left);
-                    minY = Math.min(minY, top);
-                    maxX = Math.max(maxX, right);
-                    maxY = Math.max(maxY, bottom);
+                    if (isPolygonGroup && el.type === 'line' && el.lineOptions?.points) {
+                      // For polygon groups, use the actual line endpoints
+                      const { start, end } = el.lineOptions.points;
+                      minX = Math.min(minX, start.x, end.x);
+                      minY = Math.min(minY, start.y, end.y);
+                      maxX = Math.max(maxX, start.x, end.x);
+                      maxY = Math.max(maxY, start.y, end.y);
+                    } else {
+                      // For regular groups, use element bounds
+                      const left = el.x - el.width / 2;
+                      const right = el.x + el.width / 2;
+                      const top = el.y - el.height / 2;
+                      const bottom = el.y + el.height / 2;
+                      
+                      minX = Math.min(minX, left);
+                      minY = Math.min(minY, top);
+                      maxX = Math.max(maxX, right);
+                      maxY = Math.max(maxY, bottom);
+                    }
                   });
                   
                   const groupWidth = maxX - minX;
@@ -488,16 +502,30 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         
         // Calculate group bounds
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        
+        // Check if this is a polygon group (all elements are lines)
+        const isPolygonGroup = group.type === 'polygon' || groupElements.every(el => el.type === 'line');
+        
         groupElements.forEach(el => {
-          const left = el.x - el.width / 2;
-          const right = el.x + el.width / 2;
-          const top = el.y - el.height / 2;
-          const bottom = el.y + el.height / 2;
-          
-          minX = Math.min(minX, left);
-          minY = Math.min(minY, top);
-          maxX = Math.max(maxX, right);
-          maxY = Math.max(maxY, bottom);
+          if (isPolygonGroup && el.type === 'line' && el.lineOptions?.points) {
+            // For polygon groups, use the actual line endpoints
+            const { start, end } = el.lineOptions.points;
+            minX = Math.min(minX, start.x, end.x);
+            minY = Math.min(minY, start.y, end.y);
+            maxX = Math.max(maxX, start.x, end.x);
+            maxY = Math.max(maxY, start.y, end.y);
+          } else {
+            // For regular groups, use element bounds
+            const left = el.x - el.width / 2;
+            const right = el.x + el.width / 2;
+            const top = el.y - el.height / 2;
+            const bottom = el.y + el.height / 2;
+            
+            minX = Math.min(minX, left);
+            minY = Math.min(minY, top);
+            maxX = Math.max(maxX, right);
+            maxY = Math.max(maxY, bottom);
+          }
         });
         
         const groupWidth = maxX - minX;
