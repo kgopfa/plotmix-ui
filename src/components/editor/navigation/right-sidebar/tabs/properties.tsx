@@ -5,7 +5,8 @@ import {
 } from '@/types/canvas';
 import {
   calculateLineLength,
-  calculateNorthAngle
+  calculateNorthAngle,
+  updateLineFromLengthAndNorthAngle
 } from '@/utils/drawing-utils';
 import { ColorPicker } from './color-picker';
 import { FontSelector } from './font-selector';
@@ -102,8 +103,14 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
     height: number,
     lineOptions: NonNullable<AnimatedCanvasObject['lineOptions']>
   ) => {
+    // Calculate the new center position based on the updated line endpoints
+    const centerX = (lineOptions.points.start.x + lineOptions.points.end.x) / 2;
+    const centerY = (lineOptions.points.start.y + lineOptions.points.end.y) / 2;
+
     setLocalElement(prev => ({
       ...prev,
+      x: centerX,
+      y: centerY,
       width,
       height,
       lineOptions
@@ -111,6 +118,8 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
 
     setIsDirty(prev => ({
       ...prev,
+      x: true,
+      y: true,
       width: true,
       height: true,
       lineOptions: true
@@ -187,12 +196,9 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                       const newLength = Number(e.target.value);
                       if (newLength <= 0) return;
 
-                      const angle = calculateNorthAngle(localElement.lineOptions!.points) * Math.PI / 180;
+                      const currentAngle = calculateNorthAngle(localElement.lineOptions!.points);
                       const start = localElement.lineOptions!.points.start;
-                      const end = {
-                        x: start.x + newLength * Math.sin(angle),
-                        y: start.y + newLength * Math.cos(angle)
-                      };
+                      const end = updateLineFromLengthAndNorthAngle(start, newLength, currentAngle);
 
                       // Calculate new dimensions
                       const width = Math.abs(end.x - start.x);
@@ -216,13 +222,10 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                     type="number"
                     value={Math.round(calculateNorthAngle(localElement.lineOptions!.points))}
                     onChange={e => {
-                      const newAngle = Number(e.target.value) * Math.PI / 180;
+                      const newAngle = Number(e.target.value);
                       const length = calculateLineLength(localElement.lineOptions!.points);
                       const start = localElement.lineOptions!.points.start;
-                      const end = {
-                        x: start.x + length * Math.sin(newAngle),
-                        y: start.y + length * Math.cos(newAngle)
-                      };
+                      const end = updateLineFromLengthAndNorthAngle(start, length, newAngle);
 
                       // Calculate new dimensions
                       const width = Math.abs(end.x - start.x);
@@ -250,6 +253,34 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                     className="rounded border-gray-300 focus:ring-2 focus:ring-orange-500"
                   />
                   <span className="text-sm font-medium text-gray-700">Dotted line</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={localElement.lineOptions?.isCurved ?? false}
+                    onChange={e => {
+                      if (e.target.checked) {
+                        // Convert to curved line by adding a control point at the midpoint
+                        const { start, end } = localElement.lineOptions!.points;
+                        const controlPoint = {
+                          x: (start.x + end.x) / 2,
+                          y: (start.y + end.y) / 2
+                        };
+                        updateLineOptions({ 
+                          isCurved: true, 
+                          controlPoint 
+                        });
+                      } else {
+                        // Convert back to straight line by removing control point
+                        updateLineOptions({ 
+                          isCurved: false, 
+                          controlPoint: undefined 
+                        });
+                      }
+                    }}
+                    className="rounded border-gray-300 focus:ring-2 focus:ring-orange-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Curved line</span>
                 </label>
                 <label className="flex items-center gap-2">
                   <input
