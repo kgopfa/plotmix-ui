@@ -293,6 +293,10 @@ const defaultKeyboardShortcuts: KeyboardShortcut[] = [
   { key: 'c', metaKey: true, action: 'copy', description: 'Copy (Mac)' },
   { key: 'v', ctrlKey: true, action: 'paste', description: 'Paste' },
   { key: 'v', metaKey: true, action: 'paste', description: 'Paste (Mac)' },
+  { key: 'g', ctrlKey: true, action: 'group', description: 'Group Selected' },
+  { key: 'g', metaKey: true, action: 'group', description: 'Group Selected (Mac)' },
+  { key: 'g', ctrlKey: true, shiftKey: true, action: 'ungroup', description: 'Ungroup Selected' },
+  { key: 'g', metaKey: true, shiftKey: true, action: 'ungroup', description: 'Ungroup Selected (Mac)' },
   { key: 'Escape', action: 'escape', description: 'Escape/Cancel' },
 ];
 
