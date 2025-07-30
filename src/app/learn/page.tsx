@@ -3,14 +3,14 @@
 import { useState, useRef } from 'react';
 import { 
   Sparkles, 
-  Paperclip, 
-  Image as ImageIcon, 
-  FileText, 
-  Settings, 
-  X,
-  ChevronDown,
-  ChevronUp,
+  Plus, 
+  SlidersHorizontal, 
+  Globe, 
+  AudioLines, 
+  Music2, 
+  X
 } from 'lucide-react';
+import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
 
 interface Attachment {
   id: string;
@@ -19,12 +19,7 @@ interface Attachment {
   size: string;
 }
 
-interface PromptOptions {
-  model: string;
-  temperature: number;
-  maxTokens: number;
-  topP: number;
-}
+
 
 interface Suggestion {
   id: string;
@@ -96,22 +91,15 @@ const suggestions: Suggestion[] = [
 export default function LearnPage() {
   const [prompt, setPrompt] = useState('');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
-  const [showOptions, setShowOptions] = useState(false);
-  const [options, setOptions] = useState<PromptOptions>({
-    model: 'gpt-4',
-    temperature: 0.7,
-    maxTokens: 2048,
-    topP: 1.0
-  });
+
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim()) return;
     
     // Handle prompt submission here
-    console.log('Submitting prompt:', { prompt, attachments, options });
+    console.log('Submitting prompt:', { prompt, attachments });
     
     // For now, just clear the prompt
     setPrompt('');
@@ -244,9 +232,9 @@ export default function LearnPage() {
                     className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm"
                   >
                     {attachment.type === 'image' ? (
-                      <ImageIcon className="w-4 h-4 text-blue-500" />
+                      <div className="w-4 h-4 bg-blue-500 rounded-sm" />
                     ) : (
-                      <FileText className="w-4 h-4 text-green-500" />
+                      <div className="w-4 h-4 bg-green-500 rounded-sm" />
                     )}
                     <span className="text-gray-700 font-medium">
                       {attachment.name}
@@ -273,147 +261,111 @@ export default function LearnPage() {
                 onChange={(e) => setPrompt(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Describe what you want to visualize on the canvas..."
-                className="w-full min-h-[140px] p-4 pr-16 resize-none border-0 focus:ring-0 focus:outline-none bg-transparent text-gray-900 placeholder-gray-500 text-base leading-relaxed"
-                style={{ fontFamily: 'inherit' }}
+                className="w-full min-h-[140px] p-4 pr-16 resize-none border-0 focus:ring-0 focus:outline-none bg-transparent text-gray-900 placeholder-gray-500 text-base leading-relaxed font-medium"
+                style={{ fontFamily: 'Inter, system-ui, -apple-system, sans-serif' }}
               />
-              
-              {/* Submit Button */}
+            </div>
+
+            {/* Bottom Controls */}
+            <div className="flex items-center justify-between pt-4">
+              {/* Left side - Attachment and Options buttons */}
+              <div className="flex items-center gap-3">
+                {/* Attachments button */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="inline-flex items-center justify-center w-10 h-10 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+
+                {/* Options Popover */}
+                <Popover className="relative">
+                  <PopoverButton className="inline-flex items-center justify-center w-10 h-10 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                    <SlidersHorizontal className="w-4 h-4" />
+                  </PopoverButton>
+
+                  <PopoverPanel
+                    transition
+                    className="absolute left-1/2 z-10 mt-2 flex w-screen max-w-max -translate-x-1/2 bg-transparent px-4 transition data-closed:translate-y-1 data-closed:opacity-0 data-enter:duration-200 data-enter:ease-out data-leave:duration-150 data-leave:ease-in"
+                  >
+                    <div className="w-56 flex-auto overflow-hidden rounded-xl bg-white text-sm shadow-lg ring-1 ring-gray-900/5">
+                      <div className="p-4">
+                        <div className="flex items-center justify-between py-2">
+                          <div className="flex items-center gap-3">
+                            <Globe className="size-4 text-blue-600" />
+                            <span className="text-gray-900">Web Search</span>
+                          </div>
+                          <div className="group relative inline-flex w-11 shrink-0 rounded-full bg-gray-200 p-0.5 inset-ring inset-ring-gray-900/5 outline-offset-2 outline-blue-600 transition-colors duration-200 ease-in-out has-checked:bg-blue-600 has-focus-visible:outline-2">
+                            <span className="size-5 rounded-full bg-white shadow-xs ring-1 ring-gray-900/5 transition-transform duration-200 ease-in-out group-has-checked:translate-x-5" />
+                            <input
+                              name="web-search"
+                              type="checkbox"
+                              aria-label="Enable web search"
+                              className="absolute inset-0 appearance-none focus:outline-hidden"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center justify-between py-3">
+                          <div className="flex items-center gap-3">
+                            <AudioLines className="size-4 text-green-600" />
+                            <span className="text-gray-900">Audio</span>
+                          </div>
+                          <div className="group relative inline-flex w-11 shrink-0 rounded-full bg-gray-200 p-0.5 inset-ring inset-ring-gray-900/5 outline-offset-2 outline-green-600 transition-colors duration-200 ease-in-out has-checked:bg-green-600 has-focus-visible:outline-2">
+                            <span className="size-5 rounded-full bg-white shadow-xs ring-1 ring-gray-900/5 transition-transform duration-200 ease-in-out group-has-checked:translate-x-5" />
+                            <input
+                              name="audio"
+                              type="checkbox"
+                              aria-label="Enable audio"
+                              className="absolute inset-0 appearance-none focus:outline-hidden"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center justify-between py-2">
+                          <div className="flex items-center gap-3">
+                            <Music2 className="size-4 text-purple-600" />
+                            <span className="text-gray-900">Music</span>
+                          </div>
+                          <div className="group relative inline-flex w-11 shrink-0 rounded-full bg-gray-200 p-0.5 inset-ring inset-ring-gray-900/5 outline-offset-2 outline-purple-600 transition-colors duration-200 ease-in-out has-checked:bg-purple-600 has-focus-visible:outline-2">
+                            <span className="size-5 rounded-full bg-white shadow-xs ring-1 ring-gray-900/5 transition-transform duration-200 ease-in-out group-has-checked:translate-x-5" />
+                            <input
+                              name="music"
+                              type="checkbox"
+                              aria-label="Enable music"
+                              className="absolute inset-0 appearance-none focus:outline-hidden"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </PopoverPanel>
+                </Popover>
+              </div>
+
+              {/* Right side - Submit Button */}
               <button
                 type="submit"
                 disabled={!prompt.trim()}
-                className="absolute bottom-4 right-4 p-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30"
+                className="inline-flex items-center p-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30"
                 title="Generate content (⌘+Enter)"
               >
                 <Sparkles className="w-5 h-5 text-white" />
               </button>
+
+              {/* Hidden file inputs */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                onChange={handleFileUpload}
+                className="hidden"
+                accept=".txt,.pdf,.doc,.docx,.csv,.json,.md,image/*"
+              />
             </div>
 
-            {/* Bottom Controls */}
-            <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-              {/* Left side - Attachment buttons */}
-              <div className="flex items-center gap-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  accept=".txt,.pdf,.doc,.docx,.csv,.json,.md"
-                />
-                <input
-                  ref={imageInputRef}
-                  type="file"
-                  multiple
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  accept="image/*"
-                />
-                
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 hover:text-green-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95"
-                  title="Attach files"
-                >
-                  <Paperclip className="w-4 h-4 transition-all duration-200 group-hover:scale-110" />
-                </button>
-                
-                <button
-                  type="button"
-                  onClick={() => imageInputRef.current?.click()}
-                  className="group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 hover:text-blue-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95"
-                  title="Attach images"
-                >
-                  <ImageIcon className="w-4 h-4 transition-all duration-200 group-hover:scale-110" />
-                </button>
-              </div>
 
-              {/* Right side - Options toggle */}
-              <button
-                type="button"
-                onClick={() => setShowOptions(!showOptions)}
-                className="group relative inline-flex items-center gap-2 px-3 py-2 rounded-xl text-gray-500 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95"
-              >
-                <Settings className="w-4 h-4 transition-all duration-200 group-hover:scale-110" />
-                <span className="text-sm font-medium">Options</span>
-                {showOptions ? (
-                  <ChevronUp className="w-4 h-4 transition-all duration-200 group-hover:scale-110" />
-                ) : (
-                  <ChevronDown className="w-4 h-4 transition-all duration-200 group-hover:scale-110" />
-                )}
-              </button>
-            </div>
-
-            {/* Options Panel */}
-            {showOptions && (
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Model Selection */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
-                      Model
-                    </label>
-                    <select
-                      value={options.model}
-                      onChange={(e) => setOptions(prev => ({ ...prev, model: e.target.value }))}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
-                    >
-                      <option value="gpt-4">GPT-4</option>
-                      <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                      <option value="claude-3">Claude 3</option>
-                    </select>
-                  </div>
-
-                  {/* Temperature */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
-                      Temperature: {options.temperature}
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="2"
-                      step="0.1"
-                      value={options.temperature}
-                      onChange={(e) => setOptions(prev => ({ ...prev, temperature: parseFloat(e.target.value) }))}
-                      className="w-full h-2 bg-gradient-to-r from-gray-200 to-gray-300 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
-                  </div>
-
-                  {/* Max Tokens */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
-                      Max Tokens: {options.maxTokens}
-                    </label>
-                    <input
-                      type="range"
-                      min="100"
-                      max="4096"
-                      step="100"
-                      value={options.maxTokens}
-                      onChange={(e) => setOptions(prev => ({ ...prev, maxTokens: parseInt(e.target.value) }))}
-                      className="w-full h-2 bg-gradient-to-r from-gray-200 to-gray-300 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
-                  </div>
-
-                  {/* Top P */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
-                      Top P: {options.topP}
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.1"
-                      value={options.topP}
-                      onChange={(e) => setOptions(prev => ({ ...prev, topP: parseFloat(e.target.value) }))}
-                      className="w-full h-2 bg-gradient-to-r from-gray-200 to-gray-300 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
           </form>
         </div>
 
@@ -421,7 +373,7 @@ export default function LearnPage() {
         <div className="mt-6 text-center">
           <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
             <p className="text-xs text-gray-500">
-              Press ⌘+Enter to generate • AI will create visual content for your canvas
+              Press ⌘+Enter to generate 
             </p>
           </div>
         </div>
