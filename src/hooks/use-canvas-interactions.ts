@@ -241,7 +241,9 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
     if (id) {
       const element = canvasObjects.find(e => e.id === id);
       if (element) {
-        selectElement(isMultiSelect ? [element] : [element], isMultiSelect);
+        // For multi-select, pass the single element with addToSelection=true
+        // For single select, pass the single element with addToSelection=false
+        selectElement(element, isMultiSelect);
       }
     } else {
       selectElement(null);

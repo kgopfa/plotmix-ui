@@ -59,8 +59,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           onInspectorChange={onInspectorChange}
         />
       ) : (
-        <div className="p-4 text-gray-600">
-          <p>Multiple elements selected. Group them to edit as a group.</p>
+        <div className="bg-blue-50 rounded p-3 space-y-1 border border-blue-100">
+          <div className="text-xs font-semibold text-gray-800 mb-1">💡 Tip:</div>
+          <div className="text-xs text-gray-700">
+            Press <kbd className="bg-blue-200 px-1 rounded text-xs font-mono">Cmd+G</kbd> to group the selected elements
+          </div>
         </div>
       )}
     </div>

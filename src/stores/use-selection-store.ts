@@ -46,6 +46,8 @@ export const useSelectionStore = create<SelectionStore>((set, get) => ({
   select: (element, addToSelection = false) => {
     const state = get();
     
+
+    
     if (element === null) {
       set({ selectedElements: [], selectedGroups: [] });
     } else if (Array.isArray(element)) {

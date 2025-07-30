@@ -15,7 +15,7 @@ import RotationHandles from '../selection/rotation-handles';
 import ResizeHandles from '../selection/resize-handles';
 import RadiusHandles from '../selection/radius-handles';
 import CurveHandle from '../selection/curve-handle';
-import { GroupSelection } from '../selection/group-selection';
+
 import { useCanvasState } from '@/stores/use-ui-store';
 import { useCanvasOperations } from '@/stores/use-canvas-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
@@ -106,7 +106,6 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
     handleElementMouseMove,
     handleElementMouseLeave,
     onPathStartClick,
-    handleGroupSelectionDragStart,
     isElementInCustomOrPolygonGroup,
     shiftKey = false,
     isSnappingEnabled = true,
@@ -153,6 +152,8 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
   // Use element pointer handlers hook
   const {
     handleElementPointerDown,
+    handleElementPointerMove,
+    handleElementPointerUp,
   } = useElementPointerHandlers({
     tool,
     isLineChaining,
@@ -218,14 +219,20 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         }
       }}
       onPointerMove={(e: FederatedPointerEvent) => {
+        // Call the element pointer move handler for drag detection
+        handleElementPointerMove(e);
         // Call the canvas pointer move handler for drawing and other interactions
         props.handleCanvasPointerMove(e);
       }}
       onPointerUp={() => {
+        // Call the element pointer up handler
+        handleElementPointerUp();
         // Call the canvas pointer up handler
         props.handlePointerUp();
       }}
       onPointerUpOutside={() => {
+        // Call the element pointer up handler
+        handleElementPointerUp();
         // Call the canvas pointer up handler
         props.handlePointerUp();
       }}
@@ -776,7 +783,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         );
       })}
 
-      {/* Multi-selection rectangle for multiple selected elements - only show for ungrouped elements */}
+      {/* Individual selection outlines for multiple selected elements - only show for ungrouped elements */}
       {!isPlaying && selectedIds.length > 1 && (() => {
         // Check if this is a group selection
         const selectedGroupIds = new Set();
@@ -792,23 +799,32 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           return false;
         });
         
-        // If all selected elements are part of the same group, don't show multi-selection
+        // If all selected elements are part of the same group, don't show individual selection outlines
+        // (groups will show their own group selection outlines)
         if (selectedGroupIds.size === 1 && elementsInGroups.length === selectedIds.length) {
           return null;
         }
         
-        // Show multi-selection for mixed or ungrouped selections
-        return (
-          <pixiContainer zIndex={2002}>
-            <GroupSelection
-              selectedElements={elements.filter(el => selectedIds.includes(el.id))}
-              scaleFactor={canvasScaleFactor.current}
-              onGroupDragStart={handleGroupSelectionDragStart}
-              allElements={elements}
-              groups={groups}
-            />
-          </pixiContainer>
-        );
+        // Show individual selection outlines for each selected element
+        return selectedIds.map((selectedId) => {
+          const selectedElement = elements.find(el => el.id === selectedId);
+          if (!selectedElement) return null;
+          
+          return (
+            <pixiContainer
+              key={`multi-select-${selectedId}`}
+              x={selectedElement.x}
+              y={selectedElement.y}
+              rotation={selectedElement.rotation || 0}
+              zIndex={2002}
+            >
+              <ElementSelect
+                element={selectedElement}
+                scaleFactor={canvasScaleFactor.current}
+              />
+            </pixiContainer>
+          );
+        });
       })()}
 
       {/* Rotation handles OUTSIDE the rotating containers (only for single selection and when not playing animations) */}
