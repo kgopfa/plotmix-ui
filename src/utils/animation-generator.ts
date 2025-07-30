@@ -49,6 +49,10 @@ export interface GroupAnimationConfig extends BaseAnimationConfig {
   type: 'group';
   group: CanvasGroup;
   elementTargets: Container[];
+  // Stagger properties for group animations
+  stagger?: number;
+  staggerFrom?: 'start' | 'end' | 'center';
+  staggerEase?: string;
 }
 
 export function isColorAnimationConfig(config: BaseAnimationConfig): config is ColorAnimationConfig {
@@ -382,6 +386,10 @@ export function generateGroupAnimationConfig(
     repeatDelay: animation.repeatDelay,
     yoyo: animation.yoyo,
     yoyoReturnEase: animation.yoyoReturnEasing ?? animation.easing ?? 'power1.out',
-    properties: animationProps
+    properties: animationProps,
+    // Add stagger properties
+    stagger: animation.stagger,
+    staggerFrom: animation.staggerFrom,
+    staggerEase: animation.staggerEase
   };
 } 

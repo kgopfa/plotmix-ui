@@ -1,8 +1,9 @@
 import {
   AnimatedCanvasObject,
-  ElementAnimation
+  ElementAnimation,
+  CanvasGroup
 } from '@/types/canvas';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
 import { useTimelineStore } from '@/stores/use-timeline-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
@@ -10,26 +11,39 @@ import { AnimationCard } from './animation-card';
 import { generateAnimationDisplayName, updateAnimationDisplayNames } from '@/utils/animation-utils';
 
 interface AnimationsTabProps {
-  selectedElement: AnimatedCanvasObject;
+  selectedElement?: AnimatedCanvasObject;
+  selectedGroup?: CanvasGroup;
   localAnimations: ElementAnimation[];
   onEnterPathMode: (id: string) => void;
+  onGroupInspectorChange?: (
+    groupId: string,
+    prop: string,
+    value: string | number | boolean | ElementAnimation[]
+  ) => void;
 }
 
 export function AnimationsTab({
   selectedElement,
+  selectedGroup,
   localAnimations,
-  onEnterPathMode
+  onEnterPathMode,
+  onGroupInspectorChange
 }: AnimationsTabProps) {
   // Local state is the single source of truth for this component
   const [animations, setAnimations] = useState<ElementAnimation[]>(localAnimations);
   const [selectedAnimationId, setSelectedAnimationId] = useState<string | null>(null);
   const animationSelectionManager = AnimationSelectionManager.getInstance();
+  const isSyncingRef = useRef(false);
 
   // Get stores for direct updates
   const canvasStore = useCanvasStore();
   const { updateAnimationDuration, updateAnimationRepeat, updateTracks, buildGSAPTimeline } = useTimelineStore();
 
-  // Sync local state when props change (initial load or element switch)
+  // Determine the current selection type and ID
+  const currentSelection = selectedGroup || selectedElement;
+  const selectionId = currentSelection?.id;
+
+  // Sync local state when props change (initial load or element/group switch)
   useEffect(() => {
     // Migrate existing animations to include displayName if missing
     const migratedAnimations = localAnimations.map(animation => {
@@ -46,15 +60,32 @@ export function AnimationsTab({
     const updatedAnimations = updateAnimationDisplayNames(migratedAnimations);
     
     setAnimations(updatedAnimations);
-  }, [localAnimations, localAnimations.length, selectedElement.id]); // Reset when element changes
+  }, [localAnimations, localAnimations.length, selectionId]); // Reset when element/group changes
 
   // Auto-rebuild timeline when animations change
   useEffect(() => {
-    if (animations.length > 0 || localAnimations.length !== animations.length) {
-      console.log(`🎬 Animations changed for element ${selectedElement.id}, rebuilding timeline...`);
+    // Prevent infinite loop by checking if we're already syncing
+    if (isSyncingRef.current) {
+      return;
+    }
 
-      // Update Canvas Store first
-      canvasStore.updateElement(selectedElement.id, { animations });
+    const animationsChanged = animations.length > 0 || localAnimations.length !== animations.length;
+    
+    if (animationsChanged) {
+      console.log(`🎬 Animations changed for ${selectedGroup ? 'group' : 'element'} ${selectionId}, rebuilding timeline...`);
+
+      isSyncingRef.current = true;
+
+      // Update Canvas Store first based on selection type
+      if (selectedGroup) {
+        // For groups, use the group inspector change handler
+        if (onGroupInspectorChange) {
+          onGroupInspectorChange(selectedGroup.id, 'animations', animations);
+        }
+      } else if (selectedElement) {
+        // For elements, update directly in canvas store
+        canvasStore.updateElement(selectedElement.id, { animations });
+      }
 
       // Force Timeline Store to sync with Canvas Store
       const canvasElements = canvasStore.getAllElements();
@@ -72,20 +103,24 @@ export function AnimationsTab({
       setTimeout(() => {
         updateTracks();
         buildGSAPTimeline();
+        // Reset sync flag after a short delay to allow for any subsequent updates
+        setTimeout(() => {
+          isSyncingRef.current = false;
+        }, 100);
       }, 0);
     }
-  }, [animations, selectedElement.id, canvasStore, updateTracks, buildGSAPTimeline]);
+  }, [animations, selectionId, selectedGroup, selectedElement, canvasStore, updateTracks, buildGSAPTimeline, onGroupInspectorChange]);
 
   // Listen for animation selections
   useEffect(() => {
     return animationSelectionManager.subscribe((selection) => {
-      if (selection && selection.elementId === selectedElement.id) {
+      if (selection && selection.elementId === selectionId) {
         setSelectedAnimationId(selection.animationId);
       } else {
         setSelectedAnimationId(null);
       }
     });
-  }, [animationSelectionManager, selectedElement.id]);
+  }, [animationSelectionManager, selectionId]);
 
 
 
@@ -96,17 +131,17 @@ export function AnimationsTab({
       const animation = updatedAnimations.find(a => a.id === animationId);
       if (animation) {
         if (changedField === 'repeat') {
-          updateAnimationRepeat(animationId, selectedElement.id, animation.repeat ?? 0, animation.repeatDelay, animation.yoyo);
+          updateAnimationRepeat(animationId, selectionId!, animation.repeat ?? 0, animation.repeatDelay, animation.yoyo);
         } else if (changedField === 'repeatDelay') {
-          updateAnimationRepeat(animationId, selectedElement.id, animation.repeat ?? 0, animation.repeatDelay, animation.yoyo);
+          updateAnimationRepeat(animationId, selectionId!, animation.repeat ?? 0, animation.repeatDelay, animation.yoyo);
         } else if (changedField === 'yoyo') {
-          updateAnimationRepeat(animationId, selectedElement.id, animation.repeat ?? 0, animation.repeatDelay, animation.yoyo);
+          updateAnimationRepeat(animationId, selectionId!, animation.repeat ?? 0, animation.repeatDelay, animation.yoyo);
         }
       }
     } else if (changedField === 'duration' && animationId) {
       const animation = updatedAnimations.find(a => a.id === animationId);
       if (animation) {
-        updateAnimationDuration(animationId, selectedElement.id, animation.duration);
+        updateAnimationDuration(animationId, selectionId!, animation.duration);
       }
     }
 
@@ -225,6 +260,7 @@ export function AnimationsTab({
             key={animation.id}
             animation={animation}
             selectedElement={selectedElement}
+            selectedGroup={selectedGroup}
             isSelected={selectedAnimationId === animation.id}
             onAnimationChange={handleAnimationChange}
             onDuplicateAnimation={handleDuplicateAnimation}

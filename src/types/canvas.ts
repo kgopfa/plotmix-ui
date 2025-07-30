@@ -81,6 +81,10 @@ export interface ElementAnimation {
   repeatDelay?: number;
   yoyo?: boolean;
   yoyoReturnEasing?: GsapEase;
+  // Stagger properties for group animations
+  stagger?: number; // Delay between each element in the group (in seconds)
+  staggerFrom?: 'start' | 'end' | 'center'; // Direction of stagger
+  staggerEase?: GsapEase; // Easing for the stagger effect
 }
 
 export interface BaseAnimationConfig {

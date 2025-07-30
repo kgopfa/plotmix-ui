@@ -695,12 +695,24 @@ export class GSAPTimelineManager {
     const repeatDelay = animation.repeatDelay ?? 0;
     const yoyo = animation.yoyo ?? false;
 
-    if (yoyo) {
-      // When yoyo is enabled, each cycle includes forward + return
-      this.addYoyoGroupAnimation(config, groupContainer, animation, cycleDuration, repeat, repeatDelay);
+    // Check if stagger is enabled
+    const stagger = config.stagger ?? 0;
+    const hasStagger = stagger > 0;
+
+    if (hasStagger) {
+      // Apply stagger animation to individual elements
+      if (yoyo) {
+        this.addStaggeredYoyoGroupAnimation(config, animation, cycleDuration, repeat, repeatDelay);
+      } else {
+        this.addStaggeredNormalGroupAnimation(config, animation, cycleDuration, repeat, repeatDelay);
+      }
     } else {
-      // Normal repeated animation without yoyo
-      this.addNormalGroupAnimation(config, groupContainer, animation, cycleDuration, repeat, repeatDelay);
+      // Apply animation to entire group container (existing behavior)
+      if (yoyo) {
+        this.addYoyoGroupAnimation(config, groupContainer, animation, cycleDuration, repeat, repeatDelay);
+      } else {
+        this.addNormalGroupAnimation(config, groupContainer, animation, cycleDuration, repeat, repeatDelay);
+      }
     }
   }
 
@@ -835,6 +847,173 @@ export class GSAPTimelineManager {
 
       currentTime += cycleDuration + (cycle < totalCycles - 1 ? repeatDelay : 0);
     }
+  }
+
+  /**
+   * Add staggered normal group animation to individual elements
+   */
+  private addStaggeredNormalGroupAnimation(
+    config: GroupAnimationConfig,
+    animation: ElementAnimation,
+    cycleDuration: number,
+    repeat: number,
+    repeatDelay: number
+  ) {
+    const totalCycles = repeat === -1 ? 10 : (1 + repeat);
+    const stagger = config.stagger ?? 0;
+    const staggerFrom = config.staggerFrom ?? 'start';
+
+    // Get individual element containers
+    const shapeRefs = this.canvasRef?.current?.getShapeRefs();
+    if (!shapeRefs) return;
+
+    const groupElements = config.group.elementIds
+      .map(id => shapeRefs[id])
+      .filter(container => container && !container.destroyed);
+
+    if (groupElements.length === 0) return;
+
+    // Calculate stagger timing based on direction
+    const totalStaggerTime = (groupElements.length - 1) * stagger;
+    let staggerStartTime = config.startTime;
+    
+    if (staggerFrom === 'end') {
+      staggerStartTime = config.startTime - totalStaggerTime;
+    } else if (staggerFrom === 'center') {
+      staggerStartTime = config.startTime - (totalStaggerTime / 2);
+    }
+
+    // Get target animation properties
+    let targetProps: Record<string, number> = {};
+    switch (animation.type) {
+      case 'move':
+        targetProps = {
+          x: config.properties.x || 0,
+          y: config.properties.y || 0
+        };
+        break;
+      case 'rotate':
+        targetProps = { rotation: config.properties.rotation || 0 };
+        break;
+      case 'scale':
+        targetProps = {
+          scaleX: config.properties.scaleX || 1,
+          scaleY: config.properties.scaleY || 1
+        };
+        break;
+      case 'fade':
+        targetProps = { alpha: config.properties.alpha || 1 };
+        break;
+    }
+
+    // Apply animation to each element with stagger
+    groupElements.forEach((elementContainer, index) => {
+      const elementStartTime = staggerStartTime + (index * stagger);
+      
+      for (let cycle = 0; cycle < totalCycles; cycle++) {
+        const cycleStartTime = elementStartTime + (cycle * (cycleDuration + repeatDelay));
+        
+        this.timeline.to(
+          elementContainer,
+          {
+            pixi: targetProps,
+            duration: cycleDuration,
+            ease: config.ease
+          },
+          cycleStartTime
+        );
+      }
+    });
+  }
+
+  /**
+   * Add staggered yoyo group animation to individual elements
+   */
+  private addStaggeredYoyoGroupAnimation(
+    config: GroupAnimationConfig,
+    animation: ElementAnimation,
+    cycleDuration: number,
+    repeat: number,
+    repeatDelay: number
+  ) {
+    const totalCycles = repeat === -1 ? 10 : (1 + repeat);
+    const stagger = config.stagger ?? 0;
+    const staggerFrom = config.staggerFrom ?? 'start';
+
+    // Get individual element containers
+    const shapeRefs = this.canvasRef?.current?.getShapeRefs();
+    if (!shapeRefs) return;
+
+    const groupElements = config.group.elementIds
+      .map(id => shapeRefs[id])
+      .filter(container => container && !container.destroyed);
+
+    if (groupElements.length === 0) return;
+
+    // Calculate stagger timing based on direction
+    const totalStaggerTime = (groupElements.length - 1) * stagger;
+    let staggerStartTime = config.startTime;
+    
+    if (staggerFrom === 'end') {
+      staggerStartTime = config.startTime - totalStaggerTime;
+    } else if (staggerFrom === 'center') {
+      staggerStartTime = config.startTime - (totalStaggerTime / 2);
+    }
+
+    // Get target animation properties
+    let targetProps: Record<string, number> = {};
+    switch (animation.type) {
+      case 'move':
+        targetProps = {
+          x: config.properties.x || 0,
+          y: config.properties.y || 0
+        };
+        break;
+      case 'rotate':
+        targetProps = { rotation: config.properties.rotation || 0 };
+        break;
+      case 'scale':
+        targetProps = {
+          scaleX: config.properties.scaleX || 1,
+          scaleY: config.properties.scaleY || 1
+        };
+        break;
+      case 'fade':
+        targetProps = { alpha: config.properties.alpha || 1 };
+        break;
+    }
+
+    // Apply yoyo animation to each element with stagger
+    groupElements.forEach((elementContainer, index) => {
+      const elementStartTime = staggerStartTime + (index * stagger);
+      
+      for (let cycle = 0; cycle < totalCycles; cycle++) {
+        const cycleStartTime = elementStartTime + (cycle * (cycleDuration + repeatDelay));
+        const halfCycleDuration = cycleDuration / 2;
+
+        // Forward journey
+        this.timeline.to(
+          elementContainer,
+          {
+            pixi: targetProps,
+            duration: halfCycleDuration,
+            ease: config.ease
+          },
+          cycleStartTime
+        );
+
+        // Return journey (yoyo)
+        this.timeline.to(
+          elementContainer,
+          {
+            pixi: { x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1, alpha: 1 }, // Reset to original
+            duration: halfCycleDuration,
+            ease: config.yoyoReturnEase ?? config.ease
+          },
+          cycleStartTime + halfCycleDuration
+        );
+      }
+    });
   }
 
   /**

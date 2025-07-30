@@ -1,7 +1,6 @@
 import React from 'react';
 import { AnimatedCanvasObject, ElementAnimation } from '@/types/canvas';
 import { AnimationsTab } from './tabs/animations';
-import { GroupAnimationsTab } from './tabs/group-animations';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useAnimationHandlers } from '@/hooks/use-animation-handlers';
 import { useGroupAnimationHandlers } from '@/hooks/use-group-animation-handlers';
@@ -51,10 +50,6 @@ export const AnimationsPanel: React.FC<AnimationsPanelProps> = ({
 
   const {
     localGroupAnimations,
-    handleGroupAnimationChange,
-    handleAddGroupAnimation,
-    handleDeleteGroupAnimation,
-    handleDuplicateGroupAnimation,
   } = useGroupAnimationHandlers(selectedGroup, onGroupInspectorChange);
 
   if (!hasSelection) {
@@ -64,13 +59,11 @@ export const AnimationsPanel: React.FC<AnimationsPanelProps> = ({
   return (
     <div className="h-full overflow-y-auto p-2 text-gray-800 pb-80">
       {hasGroupSelection ? (
-        <GroupAnimationsTab
+        <AnimationsTab
           selectedGroup={selectedGroup!}
           localAnimations={localGroupAnimations}
-          onAddAnimation={handleAddGroupAnimation}
-          onDeleteAnimation={handleDeleteGroupAnimation}
-          onDuplicateAnimation={handleDuplicateGroupAnimation}
-          onAnimationChange={handleGroupAnimationChange}
+          onEnterPathMode={handleEnterPathMode}
+          onGroupInspectorChange={onGroupInspectorChange}
         />
       ) : hasIndividualElement ? (
         <AnimationsTab

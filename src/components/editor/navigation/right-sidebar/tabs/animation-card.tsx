@@ -1,7 +1,8 @@
 import {
   AnimatedCanvasObject,
   ElementAnimation,
-  EASING_OPTIONS
+  EASING_OPTIONS,
+  CanvasGroup
 } from '@/types/canvas';
 import { ChevronDown, ChevronRight, ChevronsUpDown, Check } from 'lucide-react';
 import { useState } from 'react';
@@ -9,7 +10,8 @@ import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headless
 
 interface AnimationCardProps {
   animation: ElementAnimation;
-  selectedElement: AnimatedCanvasObject;
+  selectedElement?: AnimatedCanvasObject;
+  selectedGroup?: CanvasGroup;
   isSelected: boolean;
   onAnimationChange: (id: string, field: string, value: string | number | boolean) => void;
   onDuplicateAnimation: (id: string) => void;
@@ -20,6 +22,7 @@ interface AnimationCardProps {
 export function AnimationCard({
   animation,
   selectedElement,
+  selectedGroup,
   isSelected,
   onAnimationChange,
   onDuplicateAnimation,
@@ -255,12 +258,12 @@ export function AnimationCard({
                     <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-gray-500 outline-1 -outline-offset-1 outline-gray-300">
                       <div
                         className="w-4 h-4 rounded border border-gray-300"
-                        style={{ backgroundColor: animation.properties.fillColor ?? selectedElement.fill ?? '#000000' }}
+                        style={{ backgroundColor: animation.properties.fillColor ?? selectedElement?.fill ?? '#000000' }}
                       />
                     </div>
                     <input
                       type="color"
-                      value={animation.properties.fillColor ?? selectedElement.fill ?? '#000000'}
+                                              value={animation.properties.fillColor ?? selectedElement?.fill ?? '#000000'}
                       onChange={e => onAnimationChange(animation.id, 'properties.fillColor', e.target.value)}
                       className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
                     />
@@ -279,7 +282,7 @@ export function AnimationCard({
                       min="0"
                       max="1"
                       step="0.1"
-                      value={animation.properties.alpha ?? selectedElement.opacity ?? 1}
+                                              value={animation.properties.alpha ?? selectedElement?.opacity ?? 1}
                       onChange={e => onAnimationChange(animation.id, 'properties.alpha', e.target.value)}
                       className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
                     />
@@ -347,6 +350,63 @@ export function AnimationCard({
               </div>
             </div>
           </div>
+
+          {/* Stagger Settings - Only show for groups */}
+          {selectedGroup && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+                <h4 className="font-semibold text-gray-600 text-sm">Stagger Settings</h4>
+                <span className="text-xs text-gray-500">({selectedGroup.elementIds.length} elements)</span>
+              </div>
+              
+              <div className="bg-purple-50/50 p-4 rounded-lg border border-purple-200/50">
+                <div className="space-y-3">
+                  <label className="flex flex-col gap-1">
+                    <span className="text-xs font-semibold text-gray-400">Delay Between Elements</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={animation.stagger ?? 0}
+                      onChange={e => onAnimationChange(animation.id, 'stagger', e.target.value)}
+                      className="block w-full rounded-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-purple-600"
+                      placeholder="0"
+                      title="Delay in seconds between each element in the group"
+                    />
+                  </label>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <label className="flex flex-col gap-1">
+                      <span className="text-xs font-semibold text-gray-400">Direction</span>
+                      <select
+                        value={animation.staggerFrom ?? 'start'}
+                        onChange={e => onAnimationChange(animation.id, 'staggerFrom', e.target.value)}
+                        className="block w-full rounded-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-purple-600"
+                      >
+                        <option value="start">Start</option>
+                        <option value="end">End</option>
+                        <option value="center">Center</option>
+                      </select>
+                    </label>
+                    <label className="flex flex-col gap-1">
+                      <span className="text-xs font-semibold text-gray-400">Stagger Easing</span>
+                      <select
+                        value={animation.staggerEase ?? 'none'}
+                        onChange={e => onAnimationChange(animation.id, 'staggerEase', e.target.value)}
+                        className="block w-full rounded-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-purple-600"
+                      >
+                        {EASING_OPTIONS.map(ease => (
+                          <option key={ease} value={ease}>
+                            {ease}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
