@@ -1,11 +1,11 @@
 import { useRef, useState, useMemo, useEffect } from 'react';
-import { Play, Pause, RotateCcw, Clock, Monitor } from 'lucide-react';
+import { Play, Pause, RotateCcw, Clock, Monitor, ChevronUp, ChevronDown } from 'lucide-react';
 import { TimelineTrack } from '@/components/editor/timeline/timeline-track';
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { useCanvasElements, useCanvasGroups } from '@/stores/use-canvas-store';
 import { useTimelineStore } from '@/stores/use-timeline-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
-import { usePanelState } from '@/stores/use-ui-store';
+import { usePanelState, useUIStore } from '@/stores/use-ui-store';
 import { useShallow } from 'zustand/react/shallow';
 
 interface TimelineProps {
@@ -47,6 +47,7 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
 
   // Get panel state for collapse functionality
   const { isTimelineCollapsed } = usePanelState();
+  const toggleTimelineCollapse = useUIStore(state => state.toggleTimelineCollapse);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [scrollLeft, setScrollLeft] = useState(0);
@@ -289,6 +290,19 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
               title="Zoom"
             />
           </div>
+
+          {/* Timeline Collapse/Expand Button */}
+          <button
+            onClick={toggleTimelineCollapse}
+            className="h-10 w-10 flex items-center justify-center bg-white/60 backdrop-blur-sm border border-gray-200/30 rounded-lg shadow-md shadow-gray-200/30 cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg"
+            title={isTimelineCollapsed ? "Expand Timeline" : "Collapse Timeline"}
+          >
+            {isTimelineCollapsed ? (
+              <ChevronUp size={16} stroke="#6b7280" strokeWidth={2} />
+            ) : (
+              <ChevronDown size={16} stroke="#6b7280" strokeWidth={2} />
+            )}
+          </button>
         </div>
       </div>
 

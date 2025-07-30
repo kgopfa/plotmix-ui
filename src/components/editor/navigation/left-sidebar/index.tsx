@@ -5,7 +5,6 @@ import {
   WandSparkles,
   Palette,
   VolumeOff,
-  Hourglass,
   CircleFadingPlus,
   Type as TypeIcon,
   Blocks,
@@ -15,8 +14,6 @@ import {
   useSetActiveNav,
   useSetHoverNav,
   useHoverNav,
-  usePanelActions,
-  usePanelState,
   useUIStore
 } from '@/stores/use-ui-store';
 
@@ -90,14 +87,6 @@ const bottomNavigation: NavItem[] = [
     hoverColor: 'hover:bg-gradient-to-r hover:from-gray-50 hover:to-slate-50 hover:text-gray-700',
     activeColor: 'bg-gradient-to-r from-gray-500 to-gray-600 text-white shadow-lg shadow-gray-500/30'
   },
-  {
-    name: 'Timeline',
-    key: 'timeline',
-    icon: Hourglass,
-    color: 'text-cyan-600',
-    hoverColor: 'hover:bg-gradient-to-r hover:from-cyan-50 hover:to-teal-50 hover:text-cyan-700',
-    activeColor: 'bg-gradient-to-r from-cyan-500 to-cyan-600 text-white shadow-lg shadow-cyan-500/30'
-  },
 ];
 
 
@@ -126,8 +115,7 @@ const TabContent: React.FC<{ navKey: string }> = ({ navKey }) => {
       return <ComponentsTab />;
 
     case 'audio':
-    case 'timeline':
-      // These are toggle buttons, no preview needed
+      // This is a toggle button, no preview needed
       return null;
 
     default:
@@ -140,8 +128,7 @@ export const LeftSidebar: React.FC = () => {
   const hoverNav = useHoverNav();
   const setActiveNav = useSetActiveNav();
   const setHoverNav = useSetHoverNav();
-  const { toggleTimelineCollapse } = usePanelActions();
-  const { isTimelineCollapsed } = usePanelState();
+
   const showAnimationsTab = useUIStore(state => state.showAnimationsTab);
   const setShowAnimationsTab = useUIStore(state => state.setShowAnimationsTab);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -253,7 +240,7 @@ export const LeftSidebar: React.FC = () => {
           <nav className="mb-6">
             <ul role="list" className="flex flex-col items-center space-y-3">
               {bottomNavigation.map((item: NavItem) => {
-                const isActive = item.key === 'timeline' ? isTimelineCollapsed : activeNav === item.key;
+                const isActive = activeNav === item.key;
                 return (
                   <li key={item.name}>
                     <div className="relative">
@@ -270,11 +257,7 @@ export const LeftSidebar: React.FC = () => {
                           }
                         `}
                         onClick={() => {
-                          if (item.key === 'timeline') {
-                            toggleTimelineCollapse();
-                          } else {
-                            setActiveNav(activeNav === item.key ? null : item.key);
-                          }
+                          setActiveNav(activeNav === item.key ? null : item.key);
                         }}
                         onMouseEnter={() => handleHoverEnter(item.key)}
                         onMouseLeave={() => handleHoverLeave()}
