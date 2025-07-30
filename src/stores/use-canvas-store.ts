@@ -20,6 +20,12 @@ interface CanvasState {
     past: Array<{ elements: AnimatedCanvasObject[]; groups: CanvasGroup[] }>;
     future: Array<{ elements: AnimatedCanvasObject[]; groups: CanvasGroup[] }>;
   };
+  
+  // Clipboard for copy/paste operations
+  clipboard: {
+    elements: AnimatedCanvasObject[];
+    groups: CanvasGroup[];
+  };
 }
 
 interface CanvasActions {
@@ -68,6 +74,11 @@ interface CanvasActions {
   updateLineControlPoint: (id: string, controlPoint: { x: number; y: number }) => void;
   convertLineToCurve: (id: string) => void;
   convertCurveToLine: (id: string) => void;
+  
+  // Clipboard operations
+  copyElements: (elementIds: string[]) => void;
+  pasteElements: () => AnimatedCanvasObject[];
+  clearClipboard: () => void;
   
   // Utility operations
   findElement: (id: string) => AnimatedCanvasObject | undefined;
@@ -126,6 +137,10 @@ export const useCanvasStore = create<CanvasStore>()(
     history: {
       past: [],
       future: []
+    },
+    clipboard: {
+      elements: [],
+      groups: []
     },
 
     // Element operations
@@ -935,6 +950,88 @@ export const useCanvasStore = create<CanvasStore>()(
       notifySubscribers({ elements: get().elements, groups: get().groups });
     },
 
+    // Clipboard operations
+    copyElements: (elementIds: string[]) => {
+      set(produce((state) => {
+        // Find the elements to copy
+        const elementsToCopy = state.elements.filter((el: AnimatedCanvasObject) => 
+          elementIds.includes(el.id)
+        );
+        
+        // Deep clone the elements to avoid reference issues
+        const clonedElements = elementsToCopy.map((element: AnimatedCanvasObject) => ({
+          ...element,
+          animations: element.animations.map((anim: ElementAnimation) => ({
+            ...anim,
+            id: crypto.randomUUID()
+          }))
+        }));
+        
+        // Store in clipboard
+        state.clipboard.elements = clonedElements;
+        state.clipboard.groups = []; // For now, we'll handle groups separately if needed
+      }));
+    },
+
+    pasteElements: () => {
+      const state = get();
+      const pastedElements: AnimatedCanvasObject[] = [];
+      
+      if (state.clipboard.elements.length > 0) {
+        set(produce((state) => {
+          // Create new elements with offset positions and new IDs
+          const newElements = state.clipboard.elements.map((element: AnimatedCanvasObject) => {
+            const newElement: AnimatedCanvasObject = {
+              ...element,
+              id: crypto.randomUUID(),
+              name: `${element.name} Copy`,
+              x: element.x + 20,
+              y: element.y + 20,
+              animations: element.animations.map((anim: ElementAnimation) => ({
+                ...anim,
+                id: crypto.randomUUID()
+              }))
+            };
+            
+            // Create a new group for the pasted element
+            const newGroup: CanvasGroup = {
+              id: crypto.randomUUID(),
+              name: `${newElement.name} Group`,
+              elementIds: [newElement.id],
+              x: newElement.x,
+              y: newElement.y,
+              rotation: 0,
+              visible: true,
+              type: 'custom',
+              isDefaultGroup: true,
+              animations: []
+            };
+            
+            state.groups.push(newGroup);
+            newElement.groupId = newGroup.id;
+            pastedElements.push(newElement);
+            
+            return newElement;
+          });
+          
+          // Add the new elements to the canvas
+          state.elements.push(...newElements);
+        }));
+        
+        // Notify subscribers
+        notifySubscribers({ elements: get().elements, groups: get().groups });
+      }
+      
+      return pastedElements;
+    },
+
+    clearClipboard: () => {
+      set(produce((state) => {
+        state.clipboard.elements = [];
+        state.clipboard.groups = [];
+      }));
+    },
+
     // Subscription management
     subscribe: (callback) => {
       subscribers.add(callback);
@@ -982,6 +1079,11 @@ export const useCanvasOperations = () => {
       setGroupVisibility: state.setGroupVisibility,
       
       createGroupFromElements: state.createGroupFromElements,
+      
+      // Clipboard operations
+      copyElements: state.copyElements,
+      pasteElements: state.pasteElements,
+      clearClipboard: state.clearClipboard,
       ungroupElements: state.ungroupElements,
       
       updateMultipleElements: state.updateMultipleElements,

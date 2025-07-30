@@ -116,7 +116,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
   const canvasState = useCanvasState();
 
   // Get canvas operations and selection store
-  const { moveElement, moveMultipleElements, updateElement, moveGroup } = useCanvasOperations();
+  const { moveElement, moveMultipleElements, updateElement } = useCanvasOperations();
   const { select: selectElement } = useSelectionStore();
 
   // Get current canvas size

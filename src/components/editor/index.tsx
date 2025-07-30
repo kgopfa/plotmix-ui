@@ -703,13 +703,6 @@ export default function EditorCanvas() {
     );
   }, [canvasObjects, selectedGroups, setCanvasObjects, setGroups]);
 
-  // Enhanced keyboard shortcuts integration
-  useKeyboardShortcuts({
-    onSelectAll: handleSelectAll,
-    onGroup: handleGroupElements,
-    onUngroup: handleUngroupElements,
-  });
-
   // Selection navbar handlers
   const handleSelectionNavbarAnimate = useCallback(() => {
     if (selectedObjects.length === 1) {
@@ -742,9 +735,12 @@ export default function EditorCanvas() {
   }, [selectedObjects, selectedGroups, selectElement]);
 
   const handleSelectionNavbarCopy = useCallback(() => {
-    // TODO: Implement copy functionality
-    console.log('Copy selected elements');
-  }, []);
+    if (selectedObjects.length > 0) {
+      const { copyElements } = useCanvasStore.getState();
+      const elementIds = selectedObjects.map(element => element.id);
+      copyElements(elementIds);
+    }
+  }, [selectedObjects]);
 
   const handleSelectionNavbarDuplicate = useCallback(() => {
     if (selectedObjects.length > 0) {
@@ -765,6 +761,16 @@ export default function EditorCanvas() {
     }
   }, [selectedObjects, selectElement]);
 
+  const handlePaste = useCallback(() => {
+    const { pasteElements } = useCanvasStore.getState();
+    const pastedElements = pasteElements();
+    
+    if (pastedElements.length > 0) {
+      // Select the newly pasted elements
+      selectElement(pastedElements);
+    }
+  }, [selectElement]);
+
   const handleSelectionNavbarGroup = useCallback(() => {
     if (selectedObjects.length > 1) {
       handleGroupElements();
@@ -781,6 +787,16 @@ export default function EditorCanvas() {
     // TODO: Implement options menu
     console.log('Show options for selected elements');
   }, []);
+
+  // Enhanced keyboard shortcuts integration
+  useKeyboardShortcuts({
+    onSelectAll: handleSelectAll,
+    onCopy: handleSelectionNavbarCopy,
+    onPaste: handlePaste,
+    onDuplicate: handleSelectionNavbarDuplicate,
+    onGroup: handleGroupElements,
+    onUngroup: handleUngroupElements,
+  });
 
   // Update group selection whenever groups or selected objects change
   useEffect(() => {
