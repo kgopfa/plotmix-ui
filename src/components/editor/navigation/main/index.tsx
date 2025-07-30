@@ -140,9 +140,9 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
 
               <button
                 type="button"
-                className="group relative inline-flex w-28 h-9 items-center gap-x-2.5 rounded-md bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm shadow-indigo-500/30 hover:from-indigo-600 hover:to-purple-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 mr-4 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95"
+                className="group relative inline-flex w-28 h-9 items-center gap-x-2.5 rounded-md bg-gradient-to-r from-purple-500 to-purple-600 px-3 py-2 text-sm font-semibold text-white shadow-lg shadow-purple-500/30 hover:from-purple-600 hover:to-purple-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-600 mr-4 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95"
               >
-                <Upload className="size-4 ml-1.5 transition-all duration-200 group-hover:scale-110" />
+                <Upload className="size-4 ml-1.5 transition-all duration-200 group-hover:scale-110 drop-shadow-sm" />
                 <span className="text-sm">Share</span>
               </button>
             </div>

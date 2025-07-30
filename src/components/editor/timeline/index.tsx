@@ -228,9 +228,9 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
         <div className="flex items-center gap-4">
           <button
             onClick={handlePlayPause}
-            className="h-12 w-12 flex items-center justify-center bg-gradient-to-r from-fuchsia-500 to-fuchsia-600 text-white rounded-xl shadow-lg shadow-fuchsia-500/30 transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95"
+            className="h-12 w-12 flex items-center justify-center bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl shadow-lg shadow-purple-500/30 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 cursor-pointer"
           >
-            {playback.isPlaying ? <Pause size={24} fill="currentColor" strokeWidth={0} /> : <Play size={24} fill="currentColor" strokeWidth={0} />}
+            {playback.isPlaying ? <Pause size={24} fill="currentColor" strokeWidth={0} className="drop-shadow-sm" /> : <Play size={24} fill="currentColor" strokeWidth={0} className="drop-shadow-sm" />}
           </button>
           <button
             onClick={handleStop}
@@ -245,28 +245,28 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
 
         <div className="flex items-center gap-3">
           {/* Zoom Mode Buttons */}
-          <div className="flex gap-1 overflow-hidden bg-white/60 backdrop-blur-sm rounded-lg p-1 border border-gray-200/30">
+          <div className="flex gap-1 overflow-hidden bg-white/95 backdrop-blur-sm rounded-md p-1 border border-gray-200/50 shadow-xl shadow-gray-200/50 ring-1 ring-gray-200/50">
             <button
-              className={`px-2 text-xs w-18 h-8 rounded-md flex flex-row items-center justify-center cursor-pointer transition-all duration-200 ${
+              className={`px-3 py-2 text-sm font-semibold rounded-md flex flex-row items-center justify-center cursor-pointer transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 ${
                 zoomMode === 'time' 
-                  ? 'bg-gradient-to-r from-zinc-500 to-zinc-600 text-white shadow-md shadow-zinc-500/30' 
-                  : 'text-gray-600 hover:bg-gray-100/80'
+                  ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30' 
+                  : 'text-gray-500 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700'
               }`}
               onClick={() => setZoomMode('time')}
             >
-              <Clock size={18} />
-              <span className="font-medium ml-1 text-xs">Time</span>
+              <Clock size={16} className={`transition-all duration-200 ${zoomMode === 'time' ? 'text-white drop-shadow-sm' : 'text-gray-500 group-hover:text-purple-700'}`} />
+              <span className="font-semibold ml-2 text-sm">Time</span>
             </button>
             <button
-              className={`px-2 text-xs w-18 h-8 rounded-md flex flex-row items-center justify-center cursor-pointer transition-all duration-200 ${
+              className={`px-3 py-2 text-sm font-semibold rounded-md flex flex-row items-center justify-center cursor-pointer transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 ${
                 zoomMode === 'view' 
-                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md shadow-blue-500/30' 
-                  : 'text-blue-600 hover:bg-blue-100/80'
+                  ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30' 
+                  : 'text-gray-500 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700'
               }`}
               onClick={() => setZoomMode('view')}
             >
-              <Monitor size={18} />
-              <span className="font-medium ml-1 text-xs">View</span>
+              <Monitor size={16} className={`transition-all duration-200 ${zoomMode === 'view' ? 'text-white drop-shadow-sm' : 'text-gray-500 group-hover:text-purple-700'}`} />
+              <span className="font-semibold ml-2 text-sm">View</span>
             </button>
           </div>
 
