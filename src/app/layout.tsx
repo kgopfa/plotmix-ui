@@ -1,11 +1,21 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import "./fonts.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+const interVariable = localFont({
+  src: [
+    {
+      path: "../../public/fonts/InterVariable.woff2",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/InterVariable-Italic.woff2",
+      style: "italic",
+    },
+  ],
+  variable: "--font-inter",
 });
 
 const geistMono = Geist_Mono({
@@ -26,7 +36,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${interVariable.variable} ${geistMono.variable} font-sans antialiased`}
       >
         {children}
       </body>

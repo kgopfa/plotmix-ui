@@ -36,7 +36,6 @@ import { SelectionNavbar } from './navigation/selection/layer-info';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import type { ApplicationCanvasRef } from './application-canvas';
 import { useElementDragging } from '@/hooks/use-element-dragging';
-import { useCanvasOperations } from '@/stores/use-canvas-store';
 
 const ApplicationCanvas = dynamic(() => import('./application-canvas').then(m => m.ApplicationCanvas), { ssr: false });
 
