@@ -11,13 +11,13 @@ import {
   Blocks,
 } from 'lucide-react'
 import {
-  useActiveNav, 
-  useSetActiveNav, 
-  useSetHoverNav, 
-  useHoverNav, 
-  usePanelActions, 
-  usePanelState, 
-  useUIStore 
+  useActiveNav,
+  useSetActiveNav,
+  useSetHoverNav,
+  useHoverNav,
+  usePanelActions,
+  usePanelState,
+  useUIStore
 } from '@/stores/use-ui-store';
 
 import { ToolbarTab } from './tabs/toolbar-tab';
@@ -28,52 +28,52 @@ import { AnimationsTab } from './tabs/animations-tab';
 
 import { ComponentsTab } from './tabs/components-tab';
 
-type NavItem = { 
-  name: string; 
-  key: 'video' | 'scenes' | 'uploads' | 'ai' | 'text' | 'tools' | 'components' | 'audio' | 'timeline'; 
-  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; 
+type NavItem = {
+  name: string;
+  key: 'video' | 'scenes' | 'uploads' | 'ai' | 'text' | 'tools' | 'components' | 'audio' | 'timeline';
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   color: string;
   hoverColor: string;
   activeColor: string;
 };
 
 const navigation: NavItem[] = [
-  { 
-    name: 'Uploads', 
-    key: 'uploads', 
+  {
+    name: 'Uploads',
+    key: 'uploads',
     icon: CircleFadingPlus,
     color: 'text-green-600',
     hoverColor: 'hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 hover:text-green-700',
     activeColor: 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30'
   },
-  { 
-    name: 'AI', 
-    key: 'ai', 
+  {
+    name: 'AI',
+    key: 'ai',
     icon: WandSparkles,
     color: 'text-purple-600',
     hoverColor: 'hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700',
     activeColor: 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30'
   },
-  { 
-    name: 'Text', 
-    key: 'text', 
+  {
+    name: 'Text',
+    key: 'text',
     icon: (props: React.SVGProps<SVGSVGElement>) => <TypeIcon {...props} strokeWidth={2.5} />,
     color: 'text-blue-600',
     hoverColor: 'hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 hover:text-blue-700',
     activeColor: 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30'
   },
 
-  { 
-    name: 'Tools', 
-    key: 'tools', 
+  {
+    name: 'Tools',
+    key: 'tools',
     icon: Palette,
     color: 'text-orange-600',
     hoverColor: 'hover:bg-gradient-to-r hover:from-orange-50 hover:to-yellow-50 hover:text-orange-700',
     activeColor: 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30'
   },
-  { 
-    name: 'Components', 
-    key: 'components', 
+  {
+    name: 'Components',
+    key: 'components',
     icon: Blocks,
     color: 'text-teal-600',
     hoverColor: 'hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 hover:text-teal-700',
@@ -82,17 +82,17 @@ const navigation: NavItem[] = [
 ];
 
 const bottomNavigation: NavItem[] = [
-  { 
-    name: 'Audio', 
-    key: 'audio', 
+  {
+    name: 'Audio',
+    key: 'audio',
     icon: VolumeOff,
     color: 'text-gray-600',
     hoverColor: 'hover:bg-gradient-to-r hover:from-gray-50 hover:to-slate-50 hover:text-gray-700',
     activeColor: 'bg-gradient-to-r from-gray-500 to-gray-600 text-white shadow-lg shadow-gray-500/30'
   },
-  { 
-    name: 'Timeline', 
-    key: 'timeline', 
+  {
+    name: 'Timeline',
+    key: 'timeline',
     icon: Hourglass,
     color: 'text-cyan-600',
     hoverColor: 'hover:bg-gradient-to-r hover:from-cyan-50 hover:to-teal-50 hover:text-cyan-700',
@@ -110,26 +110,26 @@ const TabContent: React.FC<{ navKey: string }> = ({ navKey }) => {
 
     case 'text':
       return <TextTab />;
-    
+
     case 'animations':
       return <AnimationsTab />;
-    
 
-    
+
+
     case 'ai':
       return <AIToolsTab />;
-    
+
     case 'tools':
       return <ToolbarTab />;
-    
+
     case 'components':
       return <ComponentsTab />;
-    
+
     case 'audio':
     case 'timeline':
       // These are toggle buttons, no preview needed
       return null;
-    
+
     default:
       return null;
   }
@@ -219,23 +219,22 @@ export const LeftSidebar: React.FC = () => {
                           w-12 h-12 rounded-xl font-medium
                           transition-all duration-200 ease-out
                           transform hover:scale-105 active:scale-95
-                          ${isActive 
-                            ? item.activeColor 
+                          ${isActive
+                            ? item.activeColor
                             : `${item.color} ${item.hoverColor} hover:shadow-md`
                           }
                         `}
-                        onClick={()=>{
+                        onClick={() => {
                           setActiveNav(activeNav === item.key ? null : item.key);
                         }}
-                        onMouseEnter={()=>handleHoverEnter(item.key)}
-                        onMouseLeave={()=>handleHoverLeave()}
+                        onMouseEnter={() => handleHoverEnter(item.key)}
+                        onMouseLeave={() => handleHoverLeave()}
                         title={item.name}
                       >
-                        <item.icon 
-                          aria-hidden="true" 
-                          className={`w-5 h-5 transition-all duration-200 ${
-                            isActive ? 'drop-shadow-sm' : 'group-hover:scale-110'
-                          }`} 
+                        <item.icon
+                          aria-hidden="true"
+                          className={`w-5 h-5 transition-all duration-200 ${isActive ? 'drop-shadow-sm' : 'group-hover:scale-110'
+                            }`}
                         />
                         <span className="sr-only">{item.name}</span>
                         {/* Active indicator */}
@@ -265,27 +264,26 @@ export const LeftSidebar: React.FC = () => {
                           w-12 h-12 rounded-xl font-medium
                           transition-all duration-200 ease-out
                           transform hover:scale-105 active:scale-95
-                          ${isActive 
-                            ? item.activeColor 
+                          ${isActive
+                            ? item.activeColor
                             : `${item.color} ${item.hoverColor} hover:shadow-md`
                           }
                         `}
-                        onClick={()=>{
+                        onClick={() => {
                           if (item.key === 'timeline') {
                             toggleTimelineCollapse();
                           } else {
                             setActiveNav(activeNav === item.key ? null : item.key);
                           }
                         }}
-                        onMouseEnter={()=>handleHoverEnter(item.key)}
-                        onMouseLeave={()=>handleHoverLeave()}
+                        onMouseEnter={() => handleHoverEnter(item.key)}
+                        onMouseLeave={() => handleHoverLeave()}
                         title={item.name}
                       >
-                        <item.icon 
-                          aria-hidden="true" 
-                          className={`w-5 h-5 transition-all duration-200 ${
-                            isActive ? 'drop-shadow-sm' : 'group-hover:scale-110'
-                          }`} 
+                        <item.icon
+                          aria-hidden="true"
+                          className={`w-5 h-5 transition-all duration-200 ${isActive ? 'drop-shadow-sm' : 'group-hover:scale-110'
+                            }`}
                         />
                         <span className="sr-only">{item.name}</span>
                         {/* Active indicator */}
@@ -307,10 +305,9 @@ export const LeftSidebar: React.FC = () => {
         <>
           {/* Transparent bridge to ensure seamless hover */}
           <div
-            className={`fixed pointer-events-auto ${
-              showAnimationsTab ? 'z-[45]' : 'z-[40]'
-            }`}
-            style={{ 
+            className={`fixed pointer-events-auto ${showAnimationsTab ? 'z-[45]' : 'z-[40]'
+              }`}
+            style={{
               left: '72px', // Start right after sidebar
               top: '72px',
               width: '16px', // Bridge gap between sidebar and panel
@@ -323,13 +320,12 @@ export const LeftSidebar: React.FC = () => {
               }
             }}
           />
-          
+
           {/* Actual tab panel */}
           <div
-            className={`fixed pointer-events-none tab-panel-area ${
-              showAnimationsTab ? 'z-[45]' : 'z-[40]'
-            }`}
-            style={{ 
+            className={`fixed pointer-events-none tab-panel-area ${showAnimationsTab ? 'z-[45]' : 'z-[40]'
+              }`}
+            style={{
               left: '80px', // Position after bridge
               top: '72px',
               maxHeight: 'calc(100vh - 80px)',
@@ -337,12 +333,11 @@ export const LeftSidebar: React.FC = () => {
               width: '384px', // Fixed width for the panel content
             }}
           >
-            <div 
-              className={`pointer-events-auto h-full ${
-                showAnimationsTab 
-                  ? 'transform transition-all duration-300 ease-out' 
+            <div
+              className={`pointer-events-auto h-full ${showAnimationsTab
+                  ? 'transform transition-all duration-300 ease-out'
                   : 'animate-in slide-in-from-left-2 fade-in duration-200'
-              }`}
+                }`}
               style={showAnimationsTab ? { animation: 'slideInFromLeft 0.3s ease-out' } : {}}
               onMouseEnter={() => {
                 // Keep hover state active when entering tab content
