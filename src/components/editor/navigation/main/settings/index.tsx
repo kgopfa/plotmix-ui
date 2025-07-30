@@ -19,8 +19,8 @@ import { useElementSnapping } from '@/hooks/use-element-snapping';
 
 // Settings navigation configuration
 const settingsNavigation = [
-  { name: 'Video Settings', href: '#', icon: Video },
-  { name: 'Snapping Settings', href: '#', icon: Move3D },
+  { name: 'Video Settings', icon: Video },
+  { name: 'Snapping Settings', icon: Move3D },
 ];
 
 function classNames(...classes: (string | boolean | undefined)[]): string {
@@ -131,18 +131,15 @@ export const SettingsDropdown: React.FC = () => {
             {settingsNavigation.map((item) => (
               <li key={item.name}>
                 <MenuItem>
-                  <a
-                    href={item.href}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleSettingsClick(item.name);
-                    }}
+                  <button
+                    type="button"
+                    onClick={() => handleSettingsClick(item.name)}
                     onMouseEnter={() => handleSettingsHover(item.name)}
                     className={classNames(
                       currentSettingsItem === item.name || hoveredSettingsItem === item.name
                         ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30'
                         : 'text-gray-500 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 data-focus:bg-purple-50 data-focus:text-purple-700',
-                      'group flex gap-x-3 rounded-md py-2 px-4 text-sm font-semibold data-focus:outline-hidden cursor-pointer',
+                      'group flex gap-x-3 rounded-md py-2 px-4 text-sm font-semibold data-focus:outline-hidden cursor-pointer w-full text-left',
                     )}
                   >
                     <item.icon
@@ -155,7 +152,7 @@ export const SettingsDropdown: React.FC = () => {
                       )}
                     />
                     {item.name}
-                  </a>
+                  </button>
                 </MenuItem>
               </li>
             ))}
