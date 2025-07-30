@@ -126,7 +126,7 @@ export function GroupPropertiesTab({ selectedGroup, onGroupInspectorChange }: Gr
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium text-gray-700">Type</span>
-              <span className="text-sm text-gray-600">{localGroup.isDefaultGroup ? 'Default Group' : 'Custom Group'}</span>
+                              <span className="text-sm text-gray-600">{localGroup.isDefaultGroup ? 'Default Group' : 'Group'}</span>
             </div>
           </div>
         </div>

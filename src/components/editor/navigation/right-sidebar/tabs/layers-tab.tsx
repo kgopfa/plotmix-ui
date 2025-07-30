@@ -1,5 +1,5 @@
 import { useEffect, FC, useState } from 'react';
-import { Layers, Eye, EyeOff, Square, Circle, Type, Image as ImageIcon, Minus, Group, ChevronDown, ChevronRight } from 'lucide-react';
+import { Layers, Eye, EyeOff, Square, Circle, Type, Image as ImageIcon, Minus, Folder, ChevronDown, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import { useCanvasElements, useCanvasGroups, useCanvasOperations } from '@/stores/use-canvas-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
@@ -171,7 +171,7 @@ export const LayersTab: FC = () => {
           {groups.filter(group => !group.isDefaultGroup).length > 0 && (
             <div className="space-y-1">
               <div className="text-xs font-medium text-gray-700 mb-2 flex items-center gap-2">
-                <Group className="w-3 h-3" />
+                <Folder className="w-3 h-3" />
                 Groups
               </div>
                              {groups.filter(group => !group.isDefaultGroup).map((group) => {
@@ -200,7 +200,7 @@ export const LayersTab: FC = () => {
                              <ChevronDown className="w-3 h-3 text-gray-500" />
                            )}
                          </button>
-                         <Group className="w-4 h-4 text-purple-600" />
+                         <Folder className="w-4 h-4 text-purple-600" />
                          <button
                            onClick={() => handleGroupClick(group)}
                            className="font-medium text-gray-700 flex-1 truncate text-left hover:text-indigo-600 transition-colors"

@@ -350,7 +350,7 @@ export default function EditorCanvas() {
       switch (type) {
         case 'custom':
           const customGroupCount = groups.filter(g => !g.isDefaultGroup && g.type === 'custom').length;
-          return `Custom Group ${customGroupCount + 1}`;
+          return `Group ${customGroupCount + 1}`;
         case 'polygon':
           const polygonGroupCount = groups.filter(g => !g.isDefaultGroup && g.type === 'polygon').length;
           return `Polygon ${polygonGroupCount + 1}`;
