@@ -4,7 +4,7 @@ import React, { useRef, useEffect } from 'react'
 import {
   WandSparkles,
   Palette,
-  VolumeOff,
+  Trash2,
   CircleFadingPlus,
   Type as TypeIcon,
   Blocks,
@@ -16,6 +16,7 @@ import {
   useHoverNav,
   useUIStore
 } from '@/stores/use-ui-store';
+import { useCanvasOperations } from '@/stores/use-canvas-store';
 
 import { ToolbarTab } from './tabs/toolbar-tab';
 import { UploadsTab } from './tabs/uploads-tab';
@@ -27,7 +28,7 @@ import { ComponentsTab } from './tabs/components-tab';
 
 type NavItem = {
   name: string;
-  key: 'video' | 'scenes' | 'uploads' | 'ai' | 'text' | 'tools' | 'components' | 'audio' | 'timeline';
+  key: 'video' | 'scenes' | 'uploads' | 'ai' | 'text' | 'tools' | 'components' | 'audio' | 'timeline' | 'reset';
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   color: string;
   hoverColor: string;
@@ -80,16 +81,14 @@ const navigation: NavItem[] = [
 
 const bottomNavigation: NavItem[] = [
   {
-    name: 'Audio',
-    key: 'audio',
-    icon: VolumeOff,
-    color: 'text-gray-600',
-    hoverColor: 'hover:bg-gradient-to-r hover:from-gray-50 hover:to-slate-50 hover:text-gray-700',
-    activeColor: 'bg-gradient-to-r from-gray-500 to-gray-600 text-white shadow-lg shadow-gray-500/30'
+    name: 'Clear Canvas',
+    key: 'reset',
+    icon: Trash2,
+    color: 'text-red-600',
+    hoverColor: 'hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 hover:text-red-700',
+    activeColor: 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30'
   },
 ];
-
-
 
 // Tab Content Component - Used for both hover and sticky tabs
 const TabContent: React.FC<{ navKey: string }> = ({ navKey }) => {
@@ -115,7 +114,8 @@ const TabContent: React.FC<{ navKey: string }> = ({ navKey }) => {
       return <ComponentsTab />;
 
     case 'audio':
-      // This is a toggle button, no preview needed
+    case 'reset':
+      // These are toggle buttons, no preview needed
       return null;
 
     default:
@@ -128,6 +128,7 @@ export const LeftSidebar: React.FC = () => {
   const hoverNav = useHoverNav();
   const setActiveNav = useSetActiveNav();
   const setHoverNav = useSetHoverNav();
+  const { clearCanvas } = useCanvasOperations();
 
   const showAnimationsTab = useUIStore(state => state.showAnimationsTab);
   const setShowAnimationsTab = useUIStore(state => state.setShowAnimationsTab);
@@ -257,7 +258,15 @@ export const LeftSidebar: React.FC = () => {
                           }
                         `}
                         onClick={() => {
-                          setActiveNav(activeNav === item.key ? null : item.key);
+                          if (item.key === 'reset') {
+                            // Show confirmation dialog before clearing canvas
+                            if (window.confirm('Are you sure you want to clear the entire canvas? This action cannot be undone.')) {
+                              clearCanvas();
+                              setActiveNav(null);
+                            }
+                          } else {
+                            setActiveNav(activeNav === item.key ? null : item.key);
+                          }
                         }}
                         onMouseEnter={() => handleHoverEnter(item.key)}
                         onMouseLeave={() => handleHoverLeave()}
