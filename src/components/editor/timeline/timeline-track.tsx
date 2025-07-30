@@ -15,6 +15,8 @@ import {
   Folder, 
   Package2, 
   Pentagon,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 
 const MAX_DURATION_SECONDS = 120;
@@ -169,16 +171,18 @@ export function TimelineTrack({
         style={{ paddingLeft: `${8 + depth * 16}px` }}
         onClick={handleTrackClick}
       >
+        <div className="flex items-center gap-2">
+          <ElementIcon element={element} isChild={isChild} />
+          <span className="truncate">{name}</span>
+        </div>
         {(isGroup || ('type' in element)) && onToggleExpansion && (!isGroup || !('type' in element) || (element as CanvasGroup).type !== 'polygon') && (
           <button
             onClick={handleExpandToggle}
-            className="w-4 h-4 flex items-center justify-center hover:bg-white/80 backdrop-blur-sm rounded text-xs transition-all duration-200 hover:shadow-sm"
+            className="w-4 h-4 flex ml-1 items-center justify-center hover:bg-white/80 backdrop-blur-sm rounded text-xs transition-all duration-200 hover:shadow-sm"
           >
-            {isExpanded ? '▼' : '▶'}
+            {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
           </button>
         )}
-        <ElementIcon element={element} isChild={isChild} />
-        <span className="truncate">{name}</span>
       </div>
 
       {/* Track Content */}

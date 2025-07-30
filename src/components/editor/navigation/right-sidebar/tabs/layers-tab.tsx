@@ -83,13 +83,33 @@ export const LayersTab: FC = () => {
   const { setElementVisibility, setGroupVisibility } = useCanvasOperations();
   const { selectedElements, selectedGroups, select: selectElement, selectGroup, updateSelectedGroups } = useSelectionStore();
 
-  // State for collapsed groups
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  // State for collapsed groups - initialize with all groups collapsed
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
+    const nonDefaultGroups = groups.filter(group => !group.isDefaultGroup);
+    return new Set(nonDefaultGroups.map(group => group.id));
+  });
 
   // Keep selection store in sync with current groups
   useEffect(() => {
     updateSelectedGroups(groups);
   }, [groups, updateSelectedGroups]);
+
+  // Keep collapsed groups in sync when new groups are added
+  useEffect(() => {
+    const nonDefaultGroups = groups.filter(group => !group.isDefaultGroup);
+    const newGroupIds = nonDefaultGroups.map(group => group.id);
+    
+    setCollapsedGroups(prev => {
+      const newSet = new Set(prev);
+      // Add any new groups to collapsed state
+      newGroupIds.forEach(id => {
+        if (!newSet.has(id)) {
+          newSet.add(id);
+        }
+      });
+      return newSet;
+    });
+  }, [groups]);
 
 
 
