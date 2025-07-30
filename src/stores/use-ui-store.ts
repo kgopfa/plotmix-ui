@@ -99,6 +99,7 @@ export type RightPanelKey = 'properties' | 'animations' | 'layers' | 'lock';
 interface NavigationState {
   activeNav: NavKey | null; // sticks after click
   hoverNav: NavKey | null;  // transient while hovering
+  interactedNav: NavKey | null; // remains visible after interaction, even without hover
 }
 
 // Combined UI State
@@ -162,6 +163,7 @@ interface UIActions {
   // Navigation
   setActiveNav: (nav: NavKey | null) => void;
   setHoverNav: (nav: NavKey | null) => void;
+  setInteractedNav: (nav: NavKey | null) => void;
   setActiveRightPanel: (panel: RightPanelKey | null) => void;
   setHoverRightPanel: (panel: RightPanelKey | null) => void;
   
@@ -302,7 +304,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
       canvas: defaultCanvasState,
       preferences: defaultUserPreferences,
       keyboardShortcuts: defaultKeyboardShortcuts,
-      navigation: { activeNav: null, hoverNav: null },
+      navigation: { activeNav: null, hoverNav: null, interactedNav: null },
       activeRightPanel: null,
       hoverRightPanel: null,
       showAnimationsTab: false,
@@ -596,6 +598,12 @@ export const useUIStore = create<UIStore>((set, get) => ({
     }));
   },
 
+  setInteractedNav: (nav: NavKey | null) => {
+    set(produce((state) => {
+      state.navigation.interactedNav = nav;
+    }));
+  },
+
   // Right panel action
   setActiveRightPanel: (panel: RightPanelKey | null) => {
     set(produce((state) => {
@@ -725,8 +733,10 @@ export const useUserPreferences = () => useUIStore((state) => state.preferences)
 export const useNavigationState = () => useUIStore((state) => state.navigation);
 export const useActiveNav = () => useUIStore((state) => state.navigation.activeNav);
 export const useHoverNav = () => useUIStore((state) => state.navigation.hoverNav);
+export const useInteractedNav = () => useUIStore((state) => state.navigation.interactedNav);
 export const useSetActiveNav = () => useUIStore((state) => state.setActiveNav);
 export const useSetHoverNav = () => useUIStore((state) => state.setHoverNav);
+export const useSetInteractedNav = () => useUIStore((state) => state.setInteractedNav);
 export const useActiveRightPanel = () => useUIStore((state) => state.activeRightPanel);
 export const useSetActiveRightPanel = () => useUIStore((state) => state.setActiveRightPanel);
 export const useHoverRightPanel = () => useUIStore((state) => state.hoverRightPanel);

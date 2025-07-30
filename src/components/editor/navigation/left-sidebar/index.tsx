@@ -14,6 +14,8 @@ import {
   useSetActiveNav,
   useSetHoverNav,
   useHoverNav,
+  useInteractedNav,
+  useSetInteractedNav,
   useUIStore
 } from '@/stores/use-ui-store';
 import { useCanvasOperations } from '@/stores/use-canvas-store';
@@ -102,8 +104,6 @@ const TabContent: React.FC<{ navKey: string }> = ({ navKey }) => {
     case 'animations':
       return <AnimationsTab />;
 
-
-
     case 'ai':
       return <AIToolsTab />;
 
@@ -126,8 +126,10 @@ const TabContent: React.FC<{ navKey: string }> = ({ navKey }) => {
 export const LeftSidebar: React.FC = () => {
   const activeNav = useActiveNav();
   const hoverNav = useHoverNav();
+  const interactedNav = useInteractedNav();
   const setActiveNav = useSetActiveNav();
   const setHoverNav = useSetHoverNav();
+  const setInteractedNav = useSetInteractedNav();
   const { clearCanvas } = useCanvasOperations();
   const [showClearDialog, setShowClearDialog] = useState(false);
 
@@ -148,6 +150,10 @@ export const LeftSidebar: React.FC = () => {
     clearHoverTimeout();
     if (!activeNav) {
       setHoverNav(itemKey);
+      // Clear interacted nav when hovering over a different tab
+      if (interactedNav && interactedNav !== itemKey) {
+        setInteractedNav(null);
+      }
     }
   };
 
@@ -178,6 +184,7 @@ export const LeftSidebar: React.FC = () => {
     if (!target.closest('button')) {
       setActiveNav(null);
       setHoverNav(null);
+      setInteractedNav(null);
       // Also hide animations tab if it's open
       if (showAnimationsTab) {
         setShowAnimationsTab(false);
@@ -189,6 +196,7 @@ export const LeftSidebar: React.FC = () => {
   const handleClearCanvas = () => {
     clearCanvas();
     setActiveNav(null);
+    setInteractedNav(null);
   };
 
   return (
@@ -295,8 +303,8 @@ export const LeftSidebar: React.FC = () => {
         </div>
       </div>
 
-      {/* Tab Panel - Shows on hover (when no active tab) OR when active (sticky) OR when animations tab is shown */}
-      {(activeNav || (!activeNav && hoverNav) || showAnimationsTab) && (
+      {/* Tab Panel - Shows on hover, when active, when interacted, or when animations tab is shown */}
+      {(activeNav || (!activeNav && hoverNav) || (!activeNav && !hoverNav && interactedNav) || showAnimationsTab) && (
         <>
           {/* Transparent bridge to ensure seamless hover */}
           <div
@@ -352,8 +360,18 @@ export const LeftSidebar: React.FC = () => {
                 }
               }}
             >
-              <div className={`h-full ${(activeNav || hoverNav) === 'tools' ? '' : 'overflow-hidden'}`}>
-                <TabContent navKey={showAnimationsTab ? 'animations' : (activeNav || hoverNav!)} />
+              <div 
+                className={`h-full ${(activeNav || hoverNav || interactedNav) === 'tools' ? '' : 'overflow-hidden'}`}
+                onClick={() => {
+                  // When user clicks inside the tab content area, mark the current hover tab as interacted
+                  if (!activeNav && hoverNav) {
+                    setInteractedNav(hoverNav);
+                  }
+                }}
+              >
+                <TabContent 
+                  navKey={showAnimationsTab ? 'animations' : (activeNav || hoverNav || interactedNav)!} 
+                />
               </div>
             </div>
           </div>
