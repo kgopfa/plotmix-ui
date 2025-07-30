@@ -46,10 +46,10 @@ const suggestions: Suggestion[] = [
   },
   {
     id: '3',
-    title: 'Design TicketMaster',
-    description: 'Design a ticket booking system',
-    prompt: 'Design a ticket booking system like TicketMaster. Include user registration, event creation, ticket purchasing with seat selection, payment processing, and handling high concurrent traffic during popular events.',
-    category: 'design'
+    title: 'Binary Search',
+    description: 'Visualize binary search algorithm',
+    prompt: 'Create a visual representation of binary search algorithm. Show a sorted array and demonstrate how the algorithm finds a target value by repeatedly dividing the search interval in half.',
+    category: 'algorithm'
   },
   {
     id: '4',
@@ -60,10 +60,10 @@ const suggestions: Suggestion[] = [
   },
   {
     id: '5',
-    title: 'Explain Binary Search',
-    description: 'Visualize binary search algorithm',
-    prompt: 'Create a visual representation of binary search algorithm. Show a sorted array and demonstrate how the algorithm finds a target value by repeatedly dividing the search interval in half.',
-    category: 'algorithm'
+    title: 'Design Twitter',
+    description: 'Create a system design for Twitter',
+    prompt: 'Design a system similar to Twitter. Include user authentication, tweet creation and storage, timeline generation, follow/unfollow functionality, and real-time notifications. Show the database schema, API endpoints, and system architecture.',
+    category: 'design'
   },
   {
     id: '6',
@@ -74,16 +74,16 @@ const suggestions: Suggestion[] = [
   },
   {
     id: '7',
-    title: 'Explain Quick Sort',
-    description: 'Visualize quicksort algorithm',
-    prompt: 'Create a visual representation of the quicksort algorithm. Show how the pivot selection, partitioning, and recursive sorting work step by step with a sample array.',
-    category: 'algorithm'
-  },
-  {
-    id: '8',
     title: 'Design Uber',
     description: 'Design a ride-sharing system',
     prompt: 'Design a ride-sharing system like Uber. Include user and driver apps, real-time location tracking, ride matching algorithm, payment processing, and handling peak demand scenarios.',
+    category: 'design'
+  },
+  {
+    id: '8',
+    title: 'Design Spotify Top K',
+    description: 'Design a system to find top K songs',
+    prompt: 'Design a system to find the top K most played songs on Spotify. Consider millions of users, real-time play counts, and efficient data structures. Include the algorithm, database design, and scaling considerations.',
     category: 'design'
   }
 ];
