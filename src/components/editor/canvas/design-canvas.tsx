@@ -85,9 +85,6 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
   
   // Get selection store functions
   const { selectGroup } = useSelectionStore();
-  
-  // Track if a group selection just occurred to prevent immediate deselection
-  const groupSelectionRef = useRef(false);
 
   const {
     snapGuides = [],
@@ -250,8 +247,15 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
             return e.global.x >= minX && e.global.x <= maxX && e.global.y >= minY && e.global.y <= maxY;
           });
 
-          // Only call canvas click handler if no element or group was hit
-          if (!hitElement && !hitGroup && !groupSelectionRef.current) {
+          // Check if any group is currently selected
+          const hasSelectedGroups = props.groups.some(group => 
+            !group.isDefaultGroup && props.selectedIds.some(id => 
+              props.elements.find(el => el.id === id)?.groupId === group.id
+            )
+          );
+
+          // Only call canvas click handler if no element or group was hit AND no group is selected
+          if (!hitElement && !hitGroup && !hasSelectedGroups) {
             props.handleCanvasClick(e);
           }
         } else {
@@ -266,12 +270,16 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         props.handleCanvasPointerMove(e);
       }}
       onPointerUp={() => {
+        // Clear the drag flag when pointer up occurs
+        // hasDraggedRef.current = false; // Removed
         // Call the element pointer up handler
         handleElementPointerUp();
         // Call the canvas pointer up handler
         props.handlePointerUp();
       }}
       onPointerUpOutside={() => {
+        // Clear the drag flag when pointer up occurs
+        // hasDraggedRef.current = false; // Removed
         // Call the element pointer up handler
         handleElementPointerUp();
         // Call the canvas pointer up handler
@@ -328,8 +336,15 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
             return e.global.x >= minX && e.global.x <= maxX && e.global.y >= minY && e.global.y <= maxY;
           });
 
-          // Only call canvas click handler if no element or group was hit
-          if (!hitElement && !hitGroup && !groupSelectionRef.current) {
+          // Check if any group is currently selected
+          const hasSelectedGroups = props.groups.some(group => 
+            !group.isDefaultGroup && props.selectedIds.some(id => 
+              props.elements.find(el => el.id === id)?.groupId === group.id
+            )
+          );
+
+          // Only call canvas click handler if no element or group was hit AND no group is selected
+          if (!hitElement && !hitGroup && !hasSelectedGroups) {
             props.handleCanvasClick(e);
           }
         } else {
@@ -383,22 +398,14 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                 return;
               }
               
-              // Handle group selection
+              // Handle group selection - same approach as timeline
               const isMultiSelect = (e.nativeEvent && 'metaKey' in e.nativeEvent) ?
                 (e.nativeEvent.metaKey || e.nativeEvent.ctrlKey) : false;
               
-              // Select the group
+              // Select the group directly (same as timeline)
               selectGroup(group, isMultiSelect);
               
-              // Mark that a group selection just occurred
-              groupSelectionRef.current = true;
-              
-              // Clear the flag after a short delay
-              setTimeout(() => {
-                groupSelectionRef.current = false;
-              }, 100);
-              
-              // If the group is already selected, start dragging
+              // Handle dragging if the group is already selected
               if (isGroupSelected && props.handleGroupSelectionDragStart) {
                 // Create a virtual group element for dragging
                 const virtualGroupElement: AnimatedCanvasObject = {
@@ -416,8 +423,9 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                   opacity: 1,
                   groupId: group.id,
                   animations: [],
-                  cornerRadius: 0
+                  zIndex: Math.max(...groupElements.map((el: AnimatedCanvasObject) => el.zIndex || 0))
                 };
+                
                 props.handleGroupSelectionDragStart(virtualGroupElement, e.global.x, e.global.y, elements);
               }
             } : undefined}
@@ -490,18 +498,10 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                   const isMultiSelect = (e.nativeEvent && 'metaKey' in e.nativeEvent) ?
                     (e.nativeEvent.metaKey || e.nativeEvent.ctrlKey) : false;
                   
-                  // Select the group
+                  // Select the group directly (same as timeline)
                   selectGroup(group, isMultiSelect);
                   
-                  // Mark that a group selection just occurred
-                  groupSelectionRef.current = true;
-                  
-                  // Clear the flag after a short delay
-                  setTimeout(() => {
-                    groupSelectionRef.current = false;
-                  }, 100);
-                  
-                  // If the group is already selected, start dragging
+                  // Handle dragging if the group is already selected
                   if (isGroupSelected && props.handleGroupSelectionDragStart) {
                     // Create a virtual group element for dragging
                     const virtualGroupElement: AnimatedCanvasObject = {
@@ -519,8 +519,9 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                       opacity: 1,
                       groupId: group.id,
                       animations: [],
-                      cornerRadius: 0
+                      zIndex: Math.max(...groupElements.map((el: AnimatedCanvasObject) => el.zIndex || 0))
                     };
+                    
                     props.handleGroupSelectionDragStart(virtualGroupElement, e.global.x, e.global.y, elements);
                   }
                 }}
