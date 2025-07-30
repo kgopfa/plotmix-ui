@@ -284,7 +284,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
             key={`group-${group.id}`}
             x={group.x}
             y={group.y}
-            rotation={(group.rotation || 0) * Math.PI / 180}
+            rotation={group.rotation || 0}
             zIndex={Math.max(...groupElements.map((el: AnimatedCanvasObject) => el.zIndex || 0))}
             interactive={tool === 'select' && isGroupSelected}
             eventMode={tool === 'select' && isGroupSelected ? 'dynamic' : 'none'}
@@ -558,7 +558,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
             key={`group-outline-${group.id}`}
             x={groupCenterX}
             y={groupCenterY}
-            rotation={(group.rotation || 0) * Math.PI / 180}
+            rotation={group.rotation || 0}
             zIndex={2000}
           >
             <ElementSelect
