@@ -50,70 +50,84 @@ export function GroupPropertiesTab({ selectedGroup, onGroupInspectorChange }: Gr
   };
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h3 className="text-lg font-semibold mb-2">Group Properties</h3>
-        
-        {/* Group Name */}
-        <div className="space-y-2">
-          <label className="block text-sm font-medium">
-            Name:
+    <div className="flex flex-col gap-6 p-4">
+      {/* Header */}
+      <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+        <h4 className="font-semibold text-blue-600 text-sm">Group Properties</h4>
+      </div>
+
+      {/* Basic Properties */}
+      <div className="space-y-4">
+        <div className="space-y-4">
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold text-blue-400">Name</span>
             <input
               type="text"
               value={localGroup.name}
               onChange={(e) => updateLocalProperty('name', e.target.value)}
-              className="w-full mt-1 px-2 py-1 border rounded text-sm"
+              className="block w-full grow rounded-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600"
+              placeholder="Group name"
             />
           </label>
-        </div>
 
-        {/* Position */}
-        <div className="space-y-2 mt-4">
-          <h4 className="text-sm font-medium">Position</h4>
-          <div className="grid grid-cols-2 gap-2">
-            <label className="block text-sm">
-              X:
-              <input
-                type="number"
-                value={localGroup.x}
-                onChange={(e) => updateLocalProperty('x', Number(e.target.value))}
-                className="w-full mt-1 px-2 py-1 border rounded text-sm"
-                step="1"
-              />
-            </label>
-            <label className="block text-sm">
-              Y:
-              <input
-                type="number"
-                value={localGroup.y}
-                onChange={(e) => updateLocalProperty('y', Number(e.target.value))}
-                className="w-full mt-1 px-2 py-1 border rounded text-sm"
-                step="1"
-              />
-            </label>
+          <div className="grid grid-cols-1 gap-1">
+            <span className="text-xs font-semibold text-blue-400">Position</span>
+            <div className="flex flex-row gap-2">
+              <div className="flex">
+                <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-blue-500 outline-1 -outline-offset-1 outline-gray-300">
+                  X
+                </div>
+                <input
+                  type="number"
+                  value={Math.round(localGroup.x)}
+                  onChange={(e) => updateLocalProperty('x', Math.round(Number(e.target.value)))}
+                  className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600"
+                  step="1"
+                />
+              </div>
+              <div className="flex">
+                <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-blue-500 outline-1 -outline-offset-1 outline-gray-300">
+                  Y
+                </div>
+                <input
+                  type="number"
+                  value={Math.round(localGroup.y)}
+                  onChange={(e) => updateLocalProperty('y', Math.round(Number(e.target.value)))}
+                  className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600"
+                  step="1"
+                />
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* Rotation */}
-        <div className="space-y-2 mt-4">
-          <label className="block text-sm font-medium">
-            Rotation (degrees):
+          <div className="grid grid-cols-1 gap-1">
+            <span className="text-xs font-semibold text-blue-400">Rotation</span>
             <input
               type="number"
               value={Math.round((localGroup.rotation || 0) * (180 / Math.PI))}
               onChange={(e) => updateLocalProperty('rotation', Number(e.target.value) * (Math.PI / 180))}
-              className="w-full mt-1 px-2 py-1 border rounded text-sm"
+              className="block w-full grow rounded-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600"
               step="1"
+              placeholder="0"
             />
-          </label>
+          </div>
         </div>
 
-        {/* Group Info */}
-        <div className="space-y-2 mt-4">
-          <h4 className="text-sm font-medium">Group Info</h4>
-          <div className="text-sm text-gray-600 space-y-1">
-            <p>Elements: {localGroup.elementIds.length}</p>
-            <p>Type: {localGroup.isDefaultGroup ? 'Default Group' : 'Custom Group'}</p>
+        {/* Group Info Section */}
+        <div className="space-y-4 mt-2">
+          <div className="flex items-center mt-2 gap-2 pb-2 border-b border-gray-200">
+            <h4 className="font-semibold text-green-600 text-sm">Group Info</h4>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium text-gray-700">Elements</span>
+              <span className="text-sm text-gray-600">{localGroup.elementIds.length}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium text-gray-700">Type</span>
+              <span className="text-sm text-gray-600">{localGroup.isDefaultGroup ? 'Default Group' : 'Custom Group'}</span>
+            </div>
           </div>
         </div>
       </div>
