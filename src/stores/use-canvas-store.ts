@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { produce } from 'immer';
 import { useShallow } from 'zustand/react/shallow';
 import { AnimatedCanvasObject, CanvasGroup, ElementAnimation } from '@/types/canvas';
+import { useSelectionStore } from './use-selection-store';
 
 interface CanvasState {
   // Core state
@@ -199,6 +200,15 @@ export const useCanvasStore = create<CanvasStore>()(
           elementIds: group.elementIds.filter(elementId => elementId !== id)
         })).filter((group: CanvasGroup) => group.elementIds.length > 0 || !group.isDefaultGroup);
       }));
+      
+      // Clear selection for the deleted element
+      const { selectedElements, clearSelections } = useSelectionStore.getState();
+      const deletedElementWasSelected = selectedElements.some(el => el.id === id);
+      if (deletedElementWasSelected) {
+        // If the deleted element was selected, clear all selections
+        // This ensures the properties panel is hidden when elements are deleted
+        clearSelections();
+      }
       
       // Notify subscribers
       notifySubscribers({ elements: get().elements, groups: get().groups });
@@ -464,6 +474,15 @@ export const useCanvasStore = create<CanvasStore>()(
           el.groupId === id ? { ...el, groupId: undefined } : el
         );
       }));
+      
+      // Clear selection for the deleted group
+      const { selectedGroups, clearSelections } = useSelectionStore.getState();
+      const deletedGroupWasSelected = selectedGroups.some(group => group.id === id);
+      if (deletedGroupWasSelected) {
+        // If the deleted group was selected, clear all selections
+        // This ensures the properties panel is hidden when groups are deleted
+        clearSelections();
+      }
       
       // Notify subscribers
       notifySubscribers({ elements: get().elements, groups: get().groups });
@@ -870,6 +889,10 @@ export const useCanvasStore = create<CanvasStore>()(
         state.groups = [];
         state.pendingOperations.clear();
       }));
+      
+      // Clear selection state when canvas is cleared
+      const { clearSelections } = useSelectionStore.getState();
+      clearSelections();
       
       // Notify subscribers
       notifySubscribers({ elements: get().elements, groups: get().groups });

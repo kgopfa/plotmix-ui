@@ -689,6 +689,11 @@ export const useTimelineStore = create<TimelineStore>()(
           state.ui = { ...initialUIState };
           state.error = null;
         }));
+        
+        // Clear selection state when timeline is reset
+        const { clearSelections } = useSelectionStore.getState();
+        clearSelections();
+        
         get().buildGSAPTimeline();
       },
 

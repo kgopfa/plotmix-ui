@@ -31,6 +31,7 @@ interface SelectionActions {
   // Internal helpers
   updateSelectedGroupsInternal: (groups: CanvasGroup[]) => void;
   calculateBounds: (elements: AnimatedCanvasObject[]) => { x: number; y: number; width: number; height: number };
+  cleanupStaleSelections: () => { validSelectedElements: AnimatedCanvasObject[], validSelectedGroups: CanvasGroup[] };
 }
 
 type SelectionStore = SelectionState & SelectionActions;
@@ -139,12 +140,13 @@ export const useSelectionStore = create<SelectionStore>((set, get) => ({
   },
 
   getFirstSelected: () => {
-    const selectedElements = get().selectedElements;
-    return selectedElements.length > 0 ? selectedElements[0] : null;
+    const { validSelectedElements } = get().cleanupStaleSelections();
+    return validSelectedElements.length > 0 ? validSelectedElements[0] : null;
   },
 
   hasMultipleSelection: () => {
-    return get().selectedElements.length > 1;
+    const { validSelectedElements } = get().cleanupStaleSelections();
+    return validSelectedElements.length > 1;
   },
 
   // Group operations
@@ -231,6 +233,34 @@ export const useSelectionStore = create<SelectionStore>((set, get) => ({
     });
 
     set({ selectedGroups });
+  },
+
+  // Helper function to clean up stale selections
+  cleanupStaleSelections: () => {
+    const state = get();
+    const canvasElements = useCanvasStore.getState().elements;
+    const canvasGroups = useCanvasStore.getState().groups;
+    
+    // Remove elements that no longer exist in the canvas
+    const validSelectedElements = state.selectedElements.filter(el => 
+      canvasElements.some(canvasEl => canvasEl.id === el.id)
+    );
+    
+    // Remove groups that no longer exist in the canvas
+    const validSelectedGroups = state.selectedGroups.filter(group => 
+      canvasGroups.some(canvasGroup => canvasGroup.id === group.id)
+    );
+    
+    // Update state if cleanup was needed
+    if (validSelectedElements.length !== state.selectedElements.length || 
+        validSelectedGroups.length !== state.selectedGroups.length) {
+      set({ 
+        selectedElements: validSelectedElements,
+        selectedGroups: validSelectedGroups 
+      });
+    }
+    
+    return { validSelectedElements, validSelectedGroups };
   },
 
   calculateBounds: (elements) => {
