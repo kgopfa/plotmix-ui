@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useRef, useEffect } from 'react'
+import React, { useRef, useEffect, useState } from 'react'
 import {
   WandSparkles,
   Palette,
@@ -23,8 +23,8 @@ import { UploadsTab } from './tabs/uploads-tab';
 import { TextTab } from './tabs/text-tab';
 import { AIToolsTab } from './tabs/ai-tools-tab';
 import { AnimationsTab } from './tabs/animations-tab';
-
 import { ComponentsTab } from './tabs/components-tab';
+import { ClearCanvasDialog } from './clear-canvas-dialog';
 
 type NavItem = {
   name: string;
@@ -129,6 +129,7 @@ export const LeftSidebar: React.FC = () => {
   const setActiveNav = useSetActiveNav();
   const setHoverNav = useSetHoverNav();
   const { clearCanvas } = useCanvasOperations();
+  const [showClearDialog, setShowClearDialog] = useState(false);
 
   const showAnimationsTab = useUIStore(state => state.showAnimationsTab);
   const setShowAnimationsTab = useUIStore(state => state.setShowAnimationsTab);
@@ -182,6 +183,12 @@ export const LeftSidebar: React.FC = () => {
         setShowAnimationsTab(false);
       }
     }
+  };
+
+  // Handle canvas clear confirmation
+  const handleClearCanvas = () => {
+    clearCanvas();
+    setActiveNav(null);
   };
 
   return (
@@ -259,11 +266,7 @@ export const LeftSidebar: React.FC = () => {
                         `}
                         onClick={() => {
                           if (item.key === 'reset') {
-                            // Show confirmation dialog before clearing canvas
-                            if (window.confirm('Are you sure you want to clear the entire canvas? This action cannot be undone.')) {
-                              clearCanvas();
-                              setActiveNav(null);
-                            }
+                            setShowClearDialog(true);
                           } else {
                             setActiveNav(activeNav === item.key ? null : item.key);
                           }
@@ -356,6 +359,13 @@ export const LeftSidebar: React.FC = () => {
           </div>
         </>
       )}
+
+      {/* Clear Canvas Confirmation Dialog */}
+      <ClearCanvasDialog
+        open={showClearDialog}
+        onClose={() => setShowClearDialog(false)}
+        onConfirm={handleClearCanvas}
+      />
     </>
   )
 } 
