@@ -1,8 +1,9 @@
 import { useEffect, FC, useState } from 'react';
-import { Layers, Eye, EyeOff, Square, Circle, Type, Image as ImageIcon, Minus, Group, Users, Ungroup, ChevronDown, ChevronRight } from 'lucide-react';
+import { Layers, Eye, EyeOff, Square, Circle, Type, Image as ImageIcon, Minus, Group, ChevronDown, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import { useCanvasElements, useCanvasGroups, useCanvasOperations } from '@/stores/use-canvas-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
+
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 
 // Component to render image thumbnails for image/SVG/component elements
@@ -79,8 +80,8 @@ const getElementIcon = (type: string) => {
 export const LayersTab: FC = () => {
   const canvasObjects = useCanvasElements();
   const groups = useCanvasGroups();
-  const { setElementVisibility, setGroupVisibility, createGroupFromElements, ungroupElements } = useCanvasOperations();
-  const { selectedElements, selectedGroups, select: selectElement, selectGroup, canGroup, canUngroup, createGroupFromSelected, updateSelectedGroups } = useSelectionStore();
+  const { setElementVisibility, setGroupVisibility } = useCanvasOperations();
+  const { selectedElements, selectedGroups, select: selectElement, selectGroup, updateSelectedGroups } = useSelectionStore();
 
   // State for collapsed groups
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
@@ -89,6 +90,8 @@ export const LayersTab: FC = () => {
   useEffect(() => {
     updateSelectedGroups(groups);
   }, [groups, updateSelectedGroups]);
+
+
 
   const toggleGroupCollapse = (groupId: string) => {
     setCollapsedGroups(prev => {
@@ -128,28 +131,7 @@ export const LayersTab: FC = () => {
     setGroupVisibility(group.id, group.visible === false);
   };
 
-  const handleCreateGroup = () => {
-    if (!canGroup()) return;
-    
-    const groupInfo = createGroupFromSelected();
-    if (groupInfo) {
-      const elementIds = selectedElements.map(el => el.id);
-      createGroupFromElements(elementIds, groupInfo);
-      
-      // Clear selection after grouping
-      selectElement(null);
-    }
-  };
 
-  const handleUngroup = () => {
-    if (!canUngroup() || selectedGroups.length === 0) return;
-    
-    const group = selectedGroups[0];
-    ungroupElements(group.id);
-    
-    // Clear selection after ungrouping
-    selectElement(null);
-  };
 
   const isElementSelected = (elementId: string) => {
     return selectedElements.some(el => el.id === elementId);
@@ -183,34 +165,7 @@ export const LayersTab: FC = () => {
       <div className="flex-1 p-4 overflow-y-auto">
         <div className="space-y-2 text-sm">
 
-          {/* Grouping Controls */}
-          {(canGroup() || canUngroup()) && (
-            <div className="p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200">
-              <div className="font-medium text-gray-700 mb-2 text-xs">Group Management</div>
-              <div className="flex gap-2">
-                {canGroup() && (
-                  <button
-                    onClick={handleCreateGroup}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-purple-600 text-white text-xs rounded-md hover:bg-purple-700 transition-colors"
-                    title={`Group ${selectedElements.length} selected elements`}
-                  >
-                    <Users className="w-3 h-3" />
-                    Group ({selectedElements.length})
-                  </button>
-                )}
-                {canUngroup() && (
-                  <button
-                    onClick={handleUngroup}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-orange-600 text-white text-xs rounded-md hover:bg-orange-700 transition-colors"
-                    title="Ungroup selected group"
-                  >
-                    <Ungroup className="w-3 h-3" />
-                    Ungroup
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
+
 
           {/* Groups */}
           {groups.filter(group => !group.isDefaultGroup).length > 0 && (
