@@ -82,6 +82,12 @@ interface DesignCanvasProps {
 export const DesignCanvas = (props: DesignCanvasProps) => {
   // Get isPlaying state directly from timeline store
   const isPlaying = useTimelineStore(state => state.playback.isPlaying);
+  
+  // Get selection store functions
+  const { selectGroup } = useSelectionStore();
+  
+  // Track if a group selection just occurred to prevent immediate deselection
+  const groupSelectionRef = useRef(false);
 
   const {
     snapGuides = [],
@@ -209,8 +215,43 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
               e.global.y <= bounds.y + bounds.height;
           });
 
-          // Only call canvas click handler if no element was hit
-          if (!hitElement) {
+          // Also check for group hits
+          const hitGroup = props.groups.find(group => {
+            if (group.visible === false || group.isDefaultGroup) return false;
+            
+            const groupElements = props.elements.filter(el => el.groupId === group.id && el.visible !== false);
+            if (groupElements.length === 0) return false;
+            
+            // Calculate group bounds
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            
+            const isPolygonGroup = group.type === 'polygon' || groupElements.every(el => el.type === 'line');
+            
+            groupElements.forEach(el => {
+              if (isPolygonGroup && el.type === 'line' && el.lineOptions?.points) {
+                const { start, end } = el.lineOptions.points;
+                minX = Math.min(minX, start.x, end.x);
+                minY = Math.min(minY, start.y, end.y);
+                maxX = Math.max(maxX, start.x, end.x);
+                maxY = Math.max(maxY, start.y, end.y);
+              } else {
+                const left = el.x - el.width / 2;
+                const right = el.x + el.width / 2;
+                const top = el.y - el.height / 2;
+                const bottom = el.y + el.height / 2;
+                
+                minX = Math.min(minX, left);
+                minY = Math.min(minY, top);
+                maxX = Math.max(maxX, right);
+                maxY = Math.max(maxY, bottom);
+              }
+            });
+            
+            return e.global.x >= minX && e.global.x <= maxX && e.global.y >= minY && e.global.y <= maxY;
+          });
+
+          // Only call canvas click handler if no element or group was hit
+          if (!hitElement && !hitGroup && !groupSelectionRef.current) {
             props.handleCanvasClick(e);
           }
         } else {
@@ -252,8 +293,43 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
               e.global.y <= bounds.y + bounds.height;
           });
 
-          // Only call canvas click handler if no element was hit
-          if (!hitElement) {
+          // Also check for group hits
+          const hitGroup = props.groups.find(group => {
+            if (group.visible === false || group.isDefaultGroup) return false;
+            
+            const groupElements = props.elements.filter(el => el.groupId === group.id && el.visible !== false);
+            if (groupElements.length === 0) return false;
+            
+            // Calculate group bounds
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            
+            const isPolygonGroup = group.type === 'polygon' || groupElements.every(el => el.type === 'line');
+            
+            groupElements.forEach(el => {
+              if (isPolygonGroup && el.type === 'line' && el.lineOptions?.points) {
+                const { start, end } = el.lineOptions.points;
+                minX = Math.min(minX, start.x, end.x);
+                minY = Math.min(minY, start.y, end.y);
+                maxX = Math.max(maxX, start.x, end.x);
+                maxY = Math.max(maxY, start.y, end.y);
+              } else {
+                const left = el.x - el.width / 2;
+                const right = el.x + el.width / 2;
+                const top = el.y - el.height / 2;
+                const bottom = el.y + el.height / 2;
+                
+                minX = Math.min(minX, left);
+                minY = Math.min(minY, top);
+                maxX = Math.max(maxX, right);
+                maxY = Math.max(maxY, bottom);
+              }
+            });
+            
+            return e.global.x >= minX && e.global.x <= maxX && e.global.y >= minY && e.global.y <= maxY;
+          });
+
+          // Only call canvas click handler if no element or group was hit
+          if (!hitElement && !hitGroup && !groupSelectionRef.current) {
             props.handleCanvasClick(e);
           }
         } else {
@@ -293,13 +369,37 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
             y={group.y}
             rotation={group.rotation || 0}
             zIndex={Math.max(...groupElements.map((el: AnimatedCanvasObject) => el.zIndex || 0))}
-            interactive={tool === 'select' && isGroupSelected}
-            eventMode={tool === 'select' && isGroupSelected ? 'dynamic' : 'none'}
-            cursor={tool === 'select' && isGroupSelected ? 'move' : 'default'}
-            onPointerDown={tool === 'select' && isGroupSelected ? (e: FederatedPointerEvent) => {
+            interactive={tool === 'select'}
+            eventMode={tool === 'select' ? 'dynamic' : 'none'}
+            cursor={tool === 'select' ? 'move' : 'default'}
+            onPointerDown={tool === 'select' ? (e: FederatedPointerEvent) => {
               e.stopPropagation();
-              // Use the existing group selection drag start handler
-              if (props.handleGroupSelectionDragStart) {
+              
+              // Check if this is a right-click for context menu
+              if (e.button === 2) {
+                if (props.onGroupContextMenu) {
+                  props.onGroupContextMenu(e, group.id);
+                }
+                return;
+              }
+              
+              // Handle group selection
+              const isMultiSelect = (e.nativeEvent && 'metaKey' in e.nativeEvent) ?
+                (e.nativeEvent.metaKey || e.nativeEvent.ctrlKey) : false;
+              
+              // Select the group
+              selectGroup(group, isMultiSelect);
+              
+              // Mark that a group selection just occurred
+              groupSelectionRef.current = true;
+              
+              // Clear the flag after a short delay
+              setTimeout(() => {
+                groupSelectionRef.current = false;
+              }, 100);
+              
+              // If the group is already selected, start dragging
+              if (isGroupSelected && props.handleGroupSelectionDragStart) {
                 // Create a virtual group element for dragging
                 const virtualGroupElement: AnimatedCanvasObject = {
                   id: `group-${group.id}`,
@@ -326,7 +426,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
             }}
           >
             {/* Add a transparent hit area for the group container */}
-            {tool === 'select' && isGroupSelected && (
+            {tool === 'select' && (
               <pixiGraphics
                 draw={(g) => {
                   g.clear();
@@ -377,8 +477,32 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                 cursor="move"
                 onPointerDown={(e: FederatedPointerEvent) => {
                   e.stopPropagation();
-                  // Use the existing group selection drag start handler
-                  if (props.handleGroupSelectionDragStart) {
+                  
+                  // Check if this is a right-click for context menu
+                  if (e.button === 2) {
+                    if (props.onGroupContextMenu) {
+                      props.onGroupContextMenu(e, group.id);
+                    }
+                    return;
+                  }
+                  
+                  // Handle group selection
+                  const isMultiSelect = (e.nativeEvent && 'metaKey' in e.nativeEvent) ?
+                    (e.nativeEvent.metaKey || e.nativeEvent.ctrlKey) : false;
+                  
+                  // Select the group
+                  selectGroup(group, isMultiSelect);
+                  
+                  // Mark that a group selection just occurred
+                  groupSelectionRef.current = true;
+                  
+                  // Clear the flag after a short delay
+                  setTimeout(() => {
+                    groupSelectionRef.current = false;
+                  }, 100);
+                  
+                  // If the group is already selected, start dragging
+                  if (isGroupSelected && props.handleGroupSelectionDragStart) {
                     // Create a virtual group element for dragging
                     const virtualGroupElement: AnimatedCanvasObject = {
                       id: `group-${group.id}`,
