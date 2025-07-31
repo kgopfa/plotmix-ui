@@ -69,12 +69,12 @@ export default function ContentPage() {
           </div>
 
           {/* Tab content */}
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col h-full">
             {activeTab === 'Chat' && (
               <>
                 {/* Scrollable messages area */}
-                <div className="flex-1 overflow-y-auto space-y-4 pb-4">
-                  <div className="space-y-3">
+                <div className="flex-1 overflow-y-auto">
+                  <div className="space-y-4">
                     {shardedCounterChat.map((message) => (
                       message.isUser ? (
                         <UserMessage
@@ -93,10 +93,10 @@ export default function ContentPage() {
                   </div>
                 </div>
 
-                {/* Fixed input area at bottom */}
-                <div className="bg-white mb-4">
-                  <div className="max-w-md">
-                    <div className="bg-white border border-gray-200 rounded-4xl shadow-xl">
+                {/* Sticky input area at bottom */}
+                <div className="sticky bottom-0 bg-transparent">
+                  <div className="max-w-md mx-auto">
+                    <div className="mb-4 bg-white border border-gray-200 rounded-4xl shadow-xl">
                       <div className="p-4">
                         <div className="relative">
                           <textarea
