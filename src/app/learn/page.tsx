@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { NavigationSidebar } from '@/components/shared/navigation-sidebar';
 import { SuggestionsSection } from '@/components/learn/suggestions-section';
 import { PromptInput } from '@/components/learn/prompt-input';
-import { navigation } from '@/data/learn-navigation';
+import { navigation } from '@/data/shared-navigation';
 import { suggestions, type Suggestion } from '@/data/learn-suggestions';
 
 interface Attachment {

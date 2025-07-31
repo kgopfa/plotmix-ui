@@ -5,9 +5,6 @@ import {
   X,
   Menu,
   User,
-  MessagesSquare,
-  Clapperboard,
-  CirclePlus
 } from 'lucide-react';
 import { Dialog, DialogBackdrop, DialogPanel, TransitionChild } from '@headlessui/react';
 
