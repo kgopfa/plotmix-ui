@@ -38,7 +38,7 @@ const navigation = [
     href: '#',
     icon: CirclePlus,
     current: false,
-    color: 'text-green-600',
+    color: 'text-gray-500',
     hoverColor: 'hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 hover:text-green-700',
     activeColor: 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30'
   },
@@ -47,7 +47,7 @@ const navigation = [
     href: '#',
     icon: MessagesSquare,
     current: false,
-    color: 'text-blue-600',
+    color: 'text-gray-500',
     hoverColor: 'hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 hover:text-blue-700',
     activeColor: 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30'
   },
@@ -56,7 +56,7 @@ const navigation = [
     href: '#',
     icon: Clapperboard,
     current: false,
-    color: 'text-fuchsia-600',
+    color: 'text-gray-500',
     hoverColor: 'hover:bg-gradient-to-r hover:from-fuchsia-50 hover:to-fuchsia-50 hover:text-fuchsia-700',
     activeColor: 'bg-gradient-to-r from-fuchsia-500 to-fuchsia-600 text-white shadow-lg shadow-fuchsia-500/30'
   },
@@ -254,7 +254,7 @@ export default function LearnPage() {
                         item.current
                           ? item.activeColor
                           : `${item.color} ${item.hoverColor} hover:shadow-md`,
-                        'relative group flex flex-col items-center justify-center w-10 h-10 rounded-xl font-medium transition-all duration-200 ease-out transform hover:scale-105 active:scale-95',
+                        'relative group flex flex-col items-center justify-center w-10 h-10 rounded-lg font-medium transition-all duration-200 ease-out transform hover:scale-105 active:scale-95',
                       )}
                     >
                       <item.icon
