@@ -8,7 +8,7 @@ interface LLMMessageProps {
 export const LLMMessage: React.FC<LLMMessageProps> = ({ message }) => {
   return (
     <div className="flex justify-start mb-2">
-      <div className="px-4 py-3 w-full">
+      <div className="px-2 py-3 w-full">
         <div className="flex items-start space-x-2">
           <div className="flex-1">
             <p className="text-sm text-gray-800 leading-relaxed">{message}</p>
