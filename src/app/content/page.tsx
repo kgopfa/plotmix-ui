@@ -43,7 +43,7 @@ export default function ContentPage() {
       <div className="hidden lg:fixed lg:inset-y-0 lg:right-0 lg:z-50 lg:flex lg:w-1/7 lg:flex-col">
         <div className="flex grow flex-col gap-y-5 overflow-y-auto border-l border-gray-200 bg-white px-6">
           {/* Horizontal tabs */}
-          <div className="sticky top-0 flex mt-2 space-x-6 p-2">
+          <div className="sticky top-0 bg-white flex mt-2 space-x-6 p-2">
             <button
               onClick={() => setActiveTab('Chat')}
               className={classNames(
