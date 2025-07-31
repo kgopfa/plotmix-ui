@@ -133,7 +133,7 @@ export const PlaybackCanvas = forwardRef<PlaybackCanvasRef, PlaybackCanvasProps>
           ref={appRef}
           width={dimensions.width}
           height={dimensions.height}
-          backgroundColor={0xF1F5F9}
+          backgroundColor={0xF5F5F5}
           antialias={true}
           resolution={typeof window !== 'undefined' ? window.devicePixelRatio || 2 : 2}
           autoDensity={true}
