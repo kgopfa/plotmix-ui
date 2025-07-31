@@ -73,24 +73,30 @@ export default function ContentPage() {
           <div className="flex-1 flex flex-col h-full">
             {activeTab === 'Chat' && (
               <>
-                {/* Scrollable messages area */}
-                <div className="flex-1 overflow-y-auto">
-                  <div className="space-y-4">
-                    {shardedCounterChat.map((message) => (
-                      message.isUser ? (
-                        <UserMessage
-                          key={message.id}
-                          message={message.message}
-                          timestamp={message.timestamp}
-                        />
-                      ) : (
-                        <LLMMessage
-                          key={message.id}
-                          message={message.message}
-                          timestamp={message.timestamp}
-                        />
-                      )
-                    ))}
+                {/* Chat heading */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Chat</div>
+                    {/* Scrollable messages area */}
+                    <div className="flex-1 overflow-y-auto">
+                      <div className="space-y-4">
+                        {shardedCounterChat.map((message) => (
+                          message.isUser ? (
+                            <UserMessage
+                              key={message.id}
+                              message={message.message}
+                              timestamp={message.timestamp}
+                            />
+                          ) : (
+                            <LLMMessage
+                              key={message.id}
+                              message={message.message}
+                              timestamp={message.timestamp}
+                            />
+                          )
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
