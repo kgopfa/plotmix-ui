@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { 
-  Sparkles, 
-  Plus, 
-  SlidersHorizontal, 
-  Globe, 
-  AudioLines, 
-  Music2, 
+import {
+  Sparkles,
+  Plus,
+  SlidersHorizontal,
+  Globe,
+  AudioLines,
+  Music2,
   X,
   Menu,
   User,
@@ -33,29 +33,29 @@ interface Suggestion {
 }
 
 const navigation = [
-  { 
-    name: 'New Chat', 
-    href: '#', 
-    icon: CirclePlus, 
-    current: false, 
+  {
+    name: 'New Chat',
+    href: '#',
+    icon: CirclePlus,
+    current: false,
     color: 'text-green-600',
     hoverColor: 'hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 hover:text-green-700',
     activeColor: 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30'
   },
-  { 
-    name: 'Chats', 
-    href: '#', 
-    icon: MessagesSquare, 
-    current: false, 
+  {
+    name: 'Chats',
+    href: '#',
+    icon: MessagesSquare,
+    current: false,
     color: 'text-blue-600',
     hoverColor: 'hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 hover:text-blue-700',
     activeColor: 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30'
   },
-  { 
-    name: 'Content', 
-    href: '#', 
-    icon: Clapperboard, 
-    current: false, 
+  {
+    name: 'Content',
+    href: '#',
+    icon: Clapperboard,
+    current: false,
     color: 'text-fuchsia-600',
     hoverColor: 'hover:bg-gradient-to-r hover:from-fuchsia-50 hover:to-fuchsia-50 hover:text-fuchsia-700',
     activeColor: 'bg-gradient-to-r from-fuchsia-500 to-fuchsia-600 text-white shadow-lg shadow-fuchsia-500/30'
@@ -135,10 +135,10 @@ export default function LearnPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim()) return;
-    
+
     // Handle prompt submission here
     console.log('Submitting prompt:', { prompt, attachments });
-    
+
     // For now, just clear the prompt
     setPrompt('');
   };
@@ -212,9 +212,9 @@ export default function LearnPage() {
                           'group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold transition-all duration-200 ease-out transform hover:scale-105 active:scale-95',
                         )}
                       >
-                        <item.icon 
-                          aria-hidden="true" 
-                          className={`w-5 h-5 transition-all duration-200 ${item.current ? 'drop-shadow-sm' : 'group-hover:scale-110'}`} 
+                        <item.icon
+                          aria-hidden="true"
+                          className={`w-5 h-5 transition-all duration-200 ${item.current ? 'drop-shadow-sm' : 'group-hover:scale-110'}`}
                         />
                         {item.name}
                       </a>
@@ -222,7 +222,7 @@ export default function LearnPage() {
                   ))}
                 </ul>
               </nav>
-              
+
               {/* User avatar at bottom */}
               <div className="flex items-center gap-x-3 px-2 py-3">
                 <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
@@ -257,9 +257,9 @@ export default function LearnPage() {
                         'relative group flex flex-col items-center justify-center w-10 h-10 rounded-xl font-medium transition-all duration-200 ease-out transform hover:scale-105 active:scale-95',
                       )}
                     >
-                      <item.icon 
-                        aria-hidden="true" 
-                        className={`w-5 h-5 transition-all duration-200 ${item.current ? 'drop-shadow-sm' : 'group-hover:scale-110'}`} 
+                      <item.icon
+                        aria-hidden="true"
+                        className={`w-5 h-5 transition-all duration-200 ${item.current ? 'drop-shadow-sm' : 'group-hover:scale-110'}`}
                       />
                       <span className="sr-only">{item.name}</span>
                       {/* Active indicator */}
@@ -272,7 +272,7 @@ export default function LearnPage() {
               ))}
             </ul>
           </nav>
-          
+
           {/* User avatar at bottom */}
           <div className="mb-6">
             <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
@@ -330,7 +330,7 @@ export default function LearnPage() {
                   Quick Suggestions
                 </h2>
               </div>
-              
+
               <div className="relative overflow-hidden">
                 {/* Top row - scrolls left */}
                 <div className="flex gap-4 animate-scroll-left">
@@ -354,7 +354,7 @@ export default function LearnPage() {
                     </button>
                   ))}
                 </div>
-                
+
                 {/* Bottom row - scrolls right */}
                 <div className="flex gap-4 mt-4 animate-scroll-right">
                   {[...suggestions, ...suggestions, ...suggestions].map((suggestion, index) => (
@@ -466,7 +466,7 @@ export default function LearnPage() {
                                 />
                               </div>
                             </div>
-                            
+
                             <div className="flex items-center justify-between py-3">
                               <div className="flex items-center gap-3">
                                 <AudioLines className="size-4 text-green-600" />
@@ -482,7 +482,7 @@ export default function LearnPage() {
                                 />
                               </div>
                             </div>
-                            
+
                             <div className="flex items-center justify-between py-2">
                               <div className="flex items-center gap-3">
                                 <Music2 className="size-4 text-purple-600" />
@@ -508,10 +508,12 @@ export default function LearnPage() {
                   <button
                     type="submit"
                     disabled={!prompt.trim()}
-                    className="inline-flex items-center p-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30"
+                    className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30"
                     title="Generate content (⌘+Enter)"
                   >
-                    <Sparkles className="w-5 h-5 text-white" />
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5 text-white">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
+                    </svg>
                   </button>
 
                   {/* Hidden file inputs */}
@@ -531,7 +533,7 @@ export default function LearnPage() {
             <div className="mt-6 text-center">
               <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
                 <p className="text-xs text-gray-500">
-                  Press ⌘+Enter to generate 
+                  Press ⌘+Enter to generate
                 </p>
               </div>
             </div>
