@@ -4,10 +4,11 @@ import { useState } from 'react';
 import { NavigationSidebar } from '@/components/shared/navigation-sidebar';
 import { UserMessage } from '@/components/content/user-message';
 import { LLMMessage } from '@/components/content/llm-message';
+import { TranscriptSegment } from '@/components/content/transcript-segment';
 import { CircleFadingPlus } from 'lucide-react';
 
 import { navigation } from '@/data/shared-navigation';
-import { shardedCounterChat } from '@/data/chat-messages';
+import { shardedCounterChat, betterStackMonitoringTranscript } from '@/data/chat-messages';
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ')
@@ -140,40 +141,19 @@ export default function ContentPage() {
             {activeTab === 'Sections' && (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Sections</div>
-                  <div className="space-y-1">
-                    <div className="flex items-center space-x-2 text-sm cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
-                      <span className="text-gray-400 font-mono">0:00</span>
-                      <span className="text-gray-700">Introduction to Sharded Counters</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-sm cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
-                      <span className="text-gray-400 font-mono">0:15</span>
-                      <span className="text-gray-700">Why Use Sharding for High Traffic</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-sm cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
-                      <span className="text-gray-400 font-mono">0:32</span>
-                      <span className="text-gray-700">Basic Sharded Counter Architecture</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-sm cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
-                      <span className="text-gray-400 font-mono">0:48</span>
-                      <span className="text-gray-700">Shard Selection Strategies</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-sm cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
-                      <span className="text-gray-400 font-mono">1:05</span>
-                      <span className="text-gray-700">Consistency Trade-offs</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-sm cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
-                      <span className="text-gray-400 font-mono">1:22</span>
-                      <span className="text-gray-700">Performance Benchmarks</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-sm cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
-                      <span className="text-gray-400 font-mono">1:38</span>
-                      <span className="text-gray-700">Implementation Example</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-sm cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
-                      <span className="text-gray-400 font-mono">1:55</span>
-                      <span className="text-gray-700">Best Practices & Conclusion</span>
-                    </div>
+                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Transcript</div>
+                  <div className="space-y-2">
+                    {betterStackMonitoringTranscript.map((segment) => (
+                      <TranscriptSegment
+                        key={segment.id}
+                        timestamp={segment.timestamp}
+                        text={segment.text}
+                        onClick={() => {
+                          // Handle transcript segment click - could seek to timestamp
+                          console.log('Clicked segment at:', segment.timestamp);
+                        }}
+                      />
+                    ))}
                   </div>
                 </div>
               </div>
