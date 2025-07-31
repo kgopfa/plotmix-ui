@@ -26,7 +26,7 @@ import { TextTab } from './tabs/text-tab';
 import { AIToolsTab } from './tabs/ai-tools-tab';
 import { AnimationsTab } from './tabs/animations-tab';
 import { ComponentsTab } from './tabs/components-tab';
-import { ClearCanvasDialog } from './clear-canvas-dialog';
+import { ClearCanvasDialog } from '../../panels/clear-canvas-dialog';
 
 type NavItem = {
   name: string;
