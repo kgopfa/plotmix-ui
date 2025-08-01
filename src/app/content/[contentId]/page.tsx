@@ -81,7 +81,7 @@ export default function ContentDetailPage() {
             className="inline-flex items-center gap-x-2 p-5 rounded-2xl text-white bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all duration-200 transform hover:scale-105"
           >
             <Pencil strokeWidth={2.5} aria-hidden="true" className="-ml-0.5 size-5" />
-            <span className="hidden sm:block font-bold">Edit Content</span>
+            <span className="hidden sm:block font-bold">Open in Editor</span>
           </Link>
         </div>
       </main>

@@ -39,7 +39,7 @@ graph TD
 | Route Pattern | Component | Purpose | Navigation Access |
 |---------------|-----------|---------|-------------------|
 | `/content/[contentId]` | `content/[contentId]/page.tsx` | Generated content view with chat sidebar | Generated from `/learn` |
-| `/editor/[contentId]` | `editor/[contentId]/page.tsx` | Canvas editor (source of content) | "Edit Content" button |
+| `/editor/[contentId]` | `editor/[contentId]/page.tsx` | Canvas editor (source of content) | "Open in Editor" button |
 
 ### Special Routes
 
@@ -144,7 +144,7 @@ window.location.href = `/content/${contentId}`;
 
 // Next.js Link component for editor
 <Link href={`/editor/${contentId}`}>
-  Edit Content
+  Open in Editor
 </Link>
 ```
 
