@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { 
   X,
   Menu,
@@ -12,7 +13,6 @@ interface NavigationItem {
   name: string;
   href: string;
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-  current: boolean;
   color: string;
   hoverColor: string;
   activeColor: string;
@@ -61,21 +61,19 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({ navigation
                 <ul role="list" className="-mx-2 flex-1 space-y-1">
                   {navigation.map((item) => (
                     <li key={item.name}>
-                      <a
+                      <Link
                         href={item.href}
                         className={classNames(
-                          item.current
-                            ? item.activeColor
-                            : `${item.color} ${item.hoverColor}`,
+                          `${item.color} ${item.hoverColor}`,
                           'group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold transition-all duration-200 ease-out transform hover:scale-105 active:scale-95',
                         )}
                       >
                         <item.icon
                           aria-hidden="true"
-                          className={`w-5 h-5 transition-all duration-200 ${item.current ? 'drop-shadow-sm' : 'group-hover:scale-110'}`}
+                          className="w-5 h-5 transition-all duration-200 group-hover:scale-110"
                         />
                         {item.name}
-                      </a>
+                      </Link>
                     </li>
                   ))}
                 </ul>
@@ -106,25 +104,19 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({ navigation
               {navigation.map((item) => (
                 <li key={item.name}>
                   <div className="relative">
-                    <a
+                    <Link
                       href={item.href}
                       className={classNames(
-                        item.current
-                          ? item.activeColor
-                          : `${item.color} ${item.hoverColor} hover:shadow-md`,
+                        `${item.color} ${item.hoverColor} hover:shadow-md`,
                         'relative group flex flex-col items-center justify-center w-10 h-10 rounded-lg font-medium transition-all duration-200 ease-out transform hover:scale-105 active:scale-95',
                       )}
                     >
                       <item.icon
                         aria-hidden="true"
-                        className={`w-5 h-5 transition-all duration-200 ${item.current ? 'drop-shadow-sm' : 'group-hover:scale-110'}`}
+                        className="w-5 h-5 transition-all duration-200 group-hover:scale-110"
                       />
                       <span className="sr-only">{item.name}</span>
-                      {/* Active indicator */}
-                      {item.current && (
-                        <div className="absolute -right-1 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-white rounded-full shadow-sm"></div>
-                      )}
-                    </a>
+                    </Link>
                   </div>
                 </li>
               ))}
