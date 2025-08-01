@@ -30,7 +30,7 @@ export const SuggestionsSection: React.FC<SuggestionsSectionProps> = ({
       <div className="relative overflow-hidden">
         {/* Top row - scrolls left */}
         <div className="flex gap-4 animate-scroll-left">
-          {[...suggestions, ...suggestions, ...suggestions].map((suggestion, index) => (
+          {[...suggestions, ...suggestions].map((suggestion, index) => (
             <button
               key={`top-${suggestion.id}-${index}`}
               onClick={() => onSuggestionClick(suggestion)}
@@ -53,7 +53,7 @@ export const SuggestionsSection: React.FC<SuggestionsSectionProps> = ({
         
         {/* Bottom row - scrolls right */}
         <div className="flex gap-4 mt-4 animate-scroll-right">
-          {[...suggestions, ...suggestions, ...suggestions].map((suggestion, index) => (
+          {[...suggestions, ...suggestions].map((suggestion, index) => (
             <button
               key={`bottom-${suggestion.id}-${index}`}
               onClick={() => onSuggestionClick(suggestion)}

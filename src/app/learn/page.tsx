@@ -43,32 +43,6 @@ export default function LearnPage() {
 
       <main className="lg:pl-20">
         <div className="min-h-screen bg-white flex items-center justify-center">
-          <style jsx>{`
-            @keyframes scroll-left {
-              0% { transform: translateX(0); }
-              100% { transform: translateX(-50%); }
-            }
-            
-            @keyframes scroll-right {
-              0% { transform: translateX(-50%); }
-              100% { transform: translateX(0); }
-            }
-            
-            .animate-scroll-left {
-              animation: scroll-left 40s linear infinite;
-              will-change: transform;
-            }
-            
-            .animate-scroll-right {
-              animation: scroll-right 40s linear infinite;
-              will-change: transform;
-            }
-            
-            .animate-scroll-left:hover,
-            .animate-scroll-right:hover {
-              animation-play-state: paused;
-            }
-          `}</style>
           
           {/* Main Content */}
           <div className="flex flex-col max-w-4xl w-full px-6 py-8">
