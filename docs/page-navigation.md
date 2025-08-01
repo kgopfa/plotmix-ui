@@ -9,18 +9,18 @@ PlotMix AI uses Next.js App Router for client-side navigation with a structured 
 ```mermaid
 graph TD
     A[Home /] --> B[Learn /learn]
-    B --> C[Chat Session /learn/[chatId]]
-    C --> D[Content View /content/[contentId]]
-    D --> E[Editor /editor/[contentId]]
+    B --> C[Content Generated /content/[contentId]]
+    C --> D[Editor /editor/[contentId]]
+    C --> E[Continue Chat in Sidebar]
     
     B --> F[Content Library /content]
-    F --> D
+    F --> C
     
     style A fill:#e1f5fe
     style B fill:#f3e5f5
-    style C fill:#e8f5e8
-    style D fill:#fff3e0
-    style E fill:#ffebee
+    style C fill:#fff3e0
+    style D fill:#ffebee
+    style E fill:#e8f5e8
     style F fill:#fce4ec
 ```
 
@@ -38,9 +38,8 @@ graph TD
 
 | Route Pattern | Component | Purpose | Navigation Access |
 |---------------|-----------|---------|-------------------|
-| `/learn/[chatId]` | `learn/[chatId]/page.tsx` | Individual chat session | Generated from `/learn` |
-| `/content/[contentId]` | `content/[contentId]/page.tsx` | Specific content view | Generated from chat session |
-| `/editor/[contentId]` | `editor/[contentId]/page.tsx` | Content editor | "Edit Content" button |
+| `/content/[contentId]` | `content/[contentId]/page.tsx` | Generated content view with chat sidebar | Generated from `/learn` |
+| `/editor/[contentId]` | `editor/[contentId]/page.tsx` | Canvas editor (source of content) | "Edit Content" button |
 
 ### Special Routes
 
@@ -63,51 +62,42 @@ graph TD
 - Feature cards → Direct to respective sections
 
 ### 2. Learn Hub (`/learn`)
-**Purpose**: Chat creation and AI interaction
+**Purpose**: Chat creation and content generation
 **Components**:
 - AI suggestions section
 - Prompt input interface
 - Content generation triggers
 
 **User Actions**:
-- Enter prompt → Creates new chat session
+- Enter prompt → Generates content directly
 - Click suggestions → Populates prompt
-- Submit → Navigates to `/learn/[chatId]`
+- Submit → Navigates to `/content/[contentId]`
 
-**Generated Chat ID Format**: `chat-{timestamp}`
+**Generated Content ID Format**: `content-{timestamp}`
 
-### 3. Chat Session (`/learn/[chatId]`)
-**Purpose**: AI interaction and content generation
+### 3. Content View (`/content/[contentId]`)
+**Purpose**: Display generated content with continued chat interaction
 **Components**:
-- Chat interface with AI suggestions
-- Content generation button
-- Loading states and progress indicators
-
-**User Actions**:
-- Interact with AI suggestions
-- Generate content → Navigates to `/content/[contentId]`
-- Content ID Format: `{chatId}-{timestamp}`
-
-### 4. Content View (`/content/[contentId]`)
-**Purpose**: Display generated content with editing options
-**Components**:
-- Video player for content display
-- Content metadata (ID, generation time)
+- Video player for content display (created by editor)
+- Chat sidebar with "Activity" and "Content" tabs
 - Edit and share controls
+- Content metadata (ID, generation time)
 
 **User Actions**:
-- View generated content
-- "Edit Content" → Navigates to `/editor/[contentId]`
+- View generated video content
+- Continue chatting via sidebar → Updates content
+- "Edit Content" → Navigates to `/editor/[contentId]` (source editor)
 - Share content (future feature)
 
-### 5. Content Editor (`/editor/[contentId]`)
-**Purpose**: Edit specific generated content
+### 4. Content Editor (`/editor/[contentId]`)
+**Purpose**: Canvas editor that creates the video content
 **Components**:
 - Full editor canvas interface
 - Content ID overlay indicator
 - All editor tools and features
+- Real-time content creation
 
-**Context**: Loads with specific content for editing
+**Context**: This is the source editor that generates the video content shown on the content page
 
 ## Navigation Components
 
@@ -143,19 +133,16 @@ interface NavigationItem {
 
 ### Route Parameters
 ```typescript
-// Chat ID parameter
-const chatId = params.chatId as string;
-
 // Content ID parameter  
 const contentId = params.contentId as string;
 ```
 
 ### Navigation Methods
 ```typescript
-// Programmatic navigation
-window.location.href = `/learn/${chatId}`;
+// Programmatic navigation to content
+window.location.href = `/content/${contentId}`;
 
-// Next.js Link component
+// Next.js Link component for editor
 <Link href={`/editor/${contentId}`}>
   Edit Content
 </Link>
@@ -163,11 +150,8 @@ window.location.href = `/learn/${chatId}`;
 
 ### Dynamic Route Generation
 ```typescript
-// Chat session creation
-const chatId = `chat-${Date.now()}`;
-
-// Content generation
-const contentId = `${chatId}-${Date.now()}`;
+// Content generation from learn page
+const contentId = `content-${Date.now()}`;
 ```
 
 ## Error Handling

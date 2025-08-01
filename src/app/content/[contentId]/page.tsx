@@ -19,12 +19,12 @@ export default function ContentDetailPage() {
       <main className="relative min-h-screen bg-white pt-16 lg:pt-0 lg:pl-20 lg:pr-[calc(100vw/7)]">
         <div className="flex flex-row items-center px-10 h-36">
           <div className="flex flex-col gap-y-2">
-            <h2 className="text-3xl font-bold text-gray-900">Generated Content</h2>
+            <h2 className="text-3xl font-bold text-gray-900">Sharded counter design guide</h2>
 
             <div className="flex flex-row items-center gap-x-2">
-              <p className="text-gray-500 text-sm font-medium">Content ID: {contentId}</p>
+              <p className="text-gray-500 text-sm font-medium">John Doe</p>
               <div className="w-1 h-1 bg-gray-400 rounded-full" />
-              <p className="text-gray-500 text-sm font-medium">Just generated</p>
+              <p className="text-gray-500 text-sm font-medium">2 hours ago</p>
             </div>
           </div>
 
