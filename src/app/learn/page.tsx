@@ -22,11 +22,9 @@ export default function LearnPage() {
     e.preventDefault();
     if (!prompt.trim()) return;
     
-    // Handle prompt submission here
-    console.log('Submitting prompt:', { prompt, attachments });
-    
-    // For now, just clear the prompt
-    setPrompt('');
+    // Create a new chat session and navigate to it
+    const chatId = `chat-${Date.now()}`;
+    window.location.href = `/learn/${chatId}`;
   };
 
   const handleSuggestionClick = (suggestion: Suggestion) => {
