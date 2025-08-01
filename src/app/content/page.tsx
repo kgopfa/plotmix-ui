@@ -3,7 +3,7 @@
 import { NavigationSidebar } from '@/components/shared/navigation-sidebar';
 import { ContentSidebar } from '@/components/content/content-sidebar';
 import { navigation } from '@/data/shared-navigation';
-import { Link2, UserPlus } from 'lucide-react';
+import { Link2, Pencil, UserPlus } from 'lucide-react';
 
 export default function ContentPage() {
   return (
@@ -11,7 +11,7 @@ export default function ContentPage() {
       <NavigationSidebar navigation={navigation} />
 
       {/* Main content area - responsive layout */}
-      <main className="min-h-screen bg-white pt-16 lg:pt-0 lg:pl-20 lg:pr-[calc(100vw/7)]">
+      <main className="relative min-h-screen bg-white pt-16 lg:pt-0 lg:pl-20 lg:pr-[calc(100vw/7)]">
         <div className="flex flex-row items-center px-10 h-36">
           <div className="flex flex-col gap-y-2">
             <h2 className="text-3xl font-bold text-gray-900">Sharded counter design guide</h2>
@@ -38,6 +38,7 @@ export default function ContentPage() {
             >
               <Link2 strokeWidth={2.5} aria-hidden="true" className="-ml-0.5 size-5" />
             </button>
+
           </div>
         </div>
         <div className="flex justify-center mt-14 min-h-screen">
@@ -66,6 +67,17 @@ export default function ContentPage() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
             </div>
           </div>
+        </div>
+        
+        {/* Edit Button - Bottom Right of Main */}
+        <div className="fixed bottom-8 right-[calc(100vw/7+2rem)] z-50">
+          <button
+            type="button"
+            className="inline-flex items-center gap-x-2 p-5 rounded-2xl text-white bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          >
+            <Pencil strokeWidth={2.5} aria-hidden="true" className="-ml-0.5 size-5" />
+            <span className="hidden sm:block font-bold">Edit Content</span>
+          </button>
         </div>
       </main>
 
