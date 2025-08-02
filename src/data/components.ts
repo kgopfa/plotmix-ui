@@ -240,48 +240,6 @@ export const componentLibrary: ComponentItem[] = [
     description: 'GitHub code repository'
   },
 
-  // Client & Media
-  {
-    id: 'client-computer',
-    name: 'Computer Client',
-    category: 'client',
-    path: '/components/client-computer.svg',
-    tags: ['computer', 'desktop', 'client', 'device'],
-    description: 'Desktop computer client'
-  },
-  {
-    id: 'client-mobile',
-    name: 'Mobile Client',
-    category: 'client',
-    path: '/components/client-mobile.svg',
-    tags: ['mobile', 'phone', 'client', 'device'],
-    description: 'Mobile phone client'
-  },
-  {
-    id: 'video-media',
-    name: 'Video Media',
-    category: 'media',
-    path: '/components/video-media.svg',
-    tags: ['video', 'media', 'streaming', 'content'],
-    description: 'Video media content'
-  },
-  {
-    id: 'images',
-    name: 'Images',
-    category: 'media',
-    path: '/components/images.svg',
-    tags: ['images', 'media', 'photos', 'content'],
-    description: 'Image media content'
-  },
-  {
-    id: 'packet-message',
-    name: 'Message Packet',
-    category: 'infrastructure',
-    path: '/components/packet-message.svg',
-    tags: ['message', 'packet', 'communication', 'data'],
-    description: 'Message packet for communication'
-  },
-
   // Shapes
   {
     id: 'cube',
