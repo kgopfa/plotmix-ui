@@ -278,7 +278,7 @@ export function AnimationCard({
                     min="0"
                     max="1"
                     step="0.1"
-                    value={animation.properties.alpha ?? selectedElement?.opacity ?? 1}
+                    value={animation.properties.alpha ?? (selectedGroup?.opacity ?? selectedElement?.opacity ?? 1)}
                     onChange={e => onAnimationChange(animation.id, 'properties.alpha', e.target.value)}
                     className="block w-full grow rounded-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
                   />

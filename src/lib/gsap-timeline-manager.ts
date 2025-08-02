@@ -767,7 +767,7 @@ export class GSAPTimelineManager {
           };
           break;
         case 'fade':
-          targetProps = { alpha: config.properties.alpha || 1 };
+          targetProps = { alpha: config.properties.alpha !== undefined ? config.properties.alpha : 1 };
           break;
       }
 
@@ -830,7 +830,7 @@ export class GSAPTimelineManager {
         };
         break;
       case 'fade':
-        targetProps = { alpha: config.properties.alpha || 1 };
+        targetProps = { alpha: config.properties.alpha !== undefined ? config.properties.alpha : 1 };
         break;
     }
 
@@ -902,7 +902,7 @@ export class GSAPTimelineManager {
         };
         break;
       case 'fade':
-        targetProps = { alpha: config.properties.alpha || 1 };
+        targetProps = { alpha: config.properties.alpha !== undefined ? config.properties.alpha : 1 };
         break;
     }
 
@@ -979,7 +979,7 @@ export class GSAPTimelineManager {
         };
         break;
       case 'fade':
-        targetProps = { alpha: config.properties.alpha || 1 };
+        targetProps = { alpha: config.properties.alpha !== undefined ? config.properties.alpha : 1 };
         break;
     }
 
