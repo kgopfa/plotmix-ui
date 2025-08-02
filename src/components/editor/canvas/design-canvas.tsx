@@ -544,6 +544,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                   x={relativeX}
                   y={relativeY}
                   pivot={{ x: 0, y: 0 }}
+                  alpha={el.opacity ?? 1}
                   zIndex={el.zIndex || 0}
                   interactive={tool === 'select' || tool === 'draw'}
                   eventMode={tool === 'select' || tool === 'draw' ? 'dynamic' : 'none'}
@@ -760,6 +761,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
             x={el.x}
             y={el.y}
             pivot={{ x: 0, y: 0 }}
+            alpha={el.opacity ?? 1}
             zIndex={el.zIndex || 0}
             interactive={tool === 'select' || tool === 'draw'}
             eventMode={tool === 'select' || tool === 'draw' ? 'dynamic' : 'none'}

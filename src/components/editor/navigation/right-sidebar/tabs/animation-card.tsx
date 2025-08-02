@@ -273,20 +273,15 @@ export function AnimationCard({
               {animation.type === 'fade' && (
                 <div className="grid grid-cols-1 gap-1">
                   <span className="text-xs font-semibold text-gray-400">Opacity</span>
-                  <div className="flex">
-                    <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-gray-500 outline-1 -outline-offset-1 outline-gray-300">
-                      %
-                    </div>
-                    <input
-                      type="number"
-                      min="0"
-                      max="1"
-                      step="0.1"
-                                              value={animation.properties.alpha ?? selectedElement?.opacity ?? 1}
-                      onChange={e => onAnimationChange(animation.id, 'properties.alpha', e.target.value)}
-                      className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
-                    />
-                  </div>
+                  <input
+                    type="number"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={animation.properties.alpha ?? selectedElement?.opacity ?? 1}
+                    onChange={e => onAnimationChange(animation.id, 'properties.alpha', e.target.value)}
+                    className="block w-full grow rounded-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
+                  />
                 </div>
               )}
               {animation.type === 'path' && (

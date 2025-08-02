@@ -362,6 +362,19 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
               />
             </div>
           </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold text-purple-400">Opacity</span>
+            <input
+              type="number"
+              value={localElement.opacity ?? 1}
+              onChange={e => updateLocalProperty('opacity', Number(e.target.value))}
+              min={0}
+              max={1}
+              step={0.1}
+              className="block w-full grow rounded-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-purple-600"
+            />
+          </label>
         </div>
       </div>
 
