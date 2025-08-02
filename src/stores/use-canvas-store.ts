@@ -180,7 +180,21 @@ export const useCanvasStore = create<CanvasStore>()(
       set(produce((state) => {
         const element = state.elements.find((el: AnimatedCanvasObject) => el.id === id);
         if (element) {
-          Object.assign(element, updates);
+          // Handle lineOptions specially to preserve controlPoint and isCurved
+          if (updates.lineOptions && element.type === 'line') {
+            element.lineOptions = {
+              ...element.lineOptions,
+              ...updates.lineOptions,
+              // Ensure controlPoint and isCurved are preserved
+              controlPoint: updates.lineOptions.controlPoint ?? element.lineOptions?.controlPoint,
+              isCurved: updates.lineOptions.isCurved ?? element.lineOptions?.isCurved ?? true
+            };
+            // Remove lineOptions from updates to avoid double assignment
+            const { lineOptions, ...otherUpdates } = updates;
+            Object.assign(element, otherUpdates);
+          } else {
+            Object.assign(element, updates);
+          }
         }
       }));
       

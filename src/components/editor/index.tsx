@@ -582,9 +582,15 @@ export default function EditorCanvas() {
         setCanvasObjects(prevElements => {
           const newElements = prevElements.map(el => {
             if (el.id === selectedObject.id) {
+              const newLineOptions = value as NonNullable<AnimatedCanvasObject['lineOptions']>;
               updatedElement = {
                 ...el,
-                lineOptions: value as NonNullable<AnimatedCanvasObject['lineOptions']>
+                lineOptions: {
+                  ...newLineOptions,
+                  // Ensure controlPoint and isCurved are preserved
+                  controlPoint: newLineOptions.controlPoint ?? el.lineOptions?.controlPoint,
+                  isCurved: newLineOptions.isCurved ?? el.lineOptions?.isCurved ?? true
+                }
               };
               return updatedElement;
             }

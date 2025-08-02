@@ -92,7 +92,13 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
   const updateLineOptions = (updates: Partial<NonNullable<AnimatedCanvasObject['lineOptions']>>) => {
     setLocalElement(prev => ({
       ...prev,
-      lineOptions: { ...prev.lineOptions!, ...updates }
+      lineOptions: { 
+        ...prev.lineOptions!, 
+        ...updates,
+        // Ensure controlPoint and isCurved are preserved when updating other properties
+        controlPoint: updates.controlPoint ?? prev.lineOptions!.controlPoint,
+        isCurved: updates.isCurved ?? prev.lineOptions!.isCurved ?? true
+      }
     }));
     setIsDirty(prev => ({ ...prev, lineOptions: true }));
   };
@@ -113,7 +119,12 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
       y: centerY,
       width,
       height,
-      lineOptions
+      lineOptions: {
+        ...lineOptions,
+        // Ensure controlPoint and isCurved are preserved
+        controlPoint: lineOptions.controlPoint ?? prev.lineOptions!.controlPoint,
+        isCurved: lineOptions.isCurved ?? prev.lineOptions!.isCurved ?? true
+      }
     }));
 
     setIsDirty(prev => ({
