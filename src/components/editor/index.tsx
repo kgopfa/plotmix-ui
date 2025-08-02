@@ -367,6 +367,7 @@ export default function EditorCanvas() {
       x: bounds.x,
       y: bounds.y,
       rotation: 0,
+      opacity: 1,
       animations: [],
       ...additionalProperties
     };
@@ -648,6 +649,8 @@ export default function EditorCanvas() {
             return { ...group, y: value as number };
           } else if (prop === 'rotation') {
             return { ...group, rotation: value as number };
+          } else if (prop === 'opacity') {
+            return { ...group, opacity: value as number };
           }
         }
         return group;

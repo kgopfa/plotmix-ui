@@ -197,6 +197,7 @@ export const useSelectionStore = create<SelectionStore>((set, get) => ({
       y: centerY,
       rotation: 0,
       visible: true,
+      opacity: 1,
       type: groupType,
       isDefaultGroup: false,
       animations: []

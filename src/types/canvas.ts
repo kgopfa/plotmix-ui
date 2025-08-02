@@ -180,6 +180,7 @@ export interface CanvasGroup {
   y: number;
   rotation?: number; // Group rotation
   visible?: boolean; // Group visibility - defaults to true
+  opacity?: number; // Group opacity - defaults to 1
   type: 'text' | 'custom' | 'polygon'; // Group type determines presentation and behavior
   isDefaultGroup: boolean; // True for auto-created single-object groups
   isAnimationPath?: boolean; // True for groups that are animation paths

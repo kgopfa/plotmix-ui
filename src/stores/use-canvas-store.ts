@@ -159,6 +159,7 @@ export const useCanvasStore = create<CanvasStore>()(
             y: element.y,
             rotation: 0,
             visible: true,
+            opacity: 1,
             type: 'custom',
             isDefaultGroup: true,
             animations: []
@@ -593,6 +594,7 @@ export const useCanvasStore = create<CanvasStore>()(
         y: elements.reduce((sum, el) => sum + el.y, 0) / elements.length,
         rotation: 0,
         visible: true,
+        opacity: 1,
         type: 'custom',
         isDefaultGroup: false,
         animations: [],

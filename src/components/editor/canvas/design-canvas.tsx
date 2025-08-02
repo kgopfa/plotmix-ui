@@ -386,6 +386,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
             x={group.x}
             y={group.y}
             rotation={group.rotation || 0}
+            alpha={group.opacity ?? 1}
             zIndex={Math.max(...groupElements.map((el: AnimatedCanvasObject) => el.zIndex || 0))}
             interactive={tool === 'select'}
             eventMode={tool === 'select' ? 'dynamic' : 'none'}
@@ -682,7 +683,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           fill: 'transparent',
           stroke: '#2196F3',
           strokeWidth: 2,
-          opacity: 1,
+          opacity: group.opacity ?? 1,
           groupId: group.id,
           animations: [],
           cornerRadius: 0
