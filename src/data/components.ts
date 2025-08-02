@@ -1,7 +1,7 @@
 export interface ComponentItem {
   id: string;
   name: string;
-  category: 'cloud' | 'database' | 'infrastructure' | 'client' | 'media' | 'shapes';
+  category: 'cloud' | 'database' | 'infrastructure' | 'client' | 'media' | 'shapes' | 'storage' | 'communication' | 'ui';
   path: string;
   tags: string[];
   description?: string;
@@ -290,6 +290,160 @@ export const componentLibrary: ComponentItem[] = [
     path: '/components/cube.svg',
     tags: ['cube', '3d', 'shape', 'geometry'],
     description: '3D cube shape'
+  },
+
+  // Native Components
+  {
+    id: 'cpu',
+    name: 'CPU',
+    category: 'infrastructure',
+    path: '/components/native/cpu.png',
+    tags: ['cpu', 'processor', 'hardware', 'compute'],
+    description: 'Central Processing Unit'
+  },
+  {
+    id: 'gpu',
+    name: 'GPU',
+    category: 'infrastructure',
+    path: '/components/native/gpu.png',
+    tags: ['gpu', 'graphics', 'hardware', 'compute'],
+    description: 'Graphics Processing Unit'
+  },
+  {
+    id: 'ram',
+    name: 'RAM',
+    category: 'infrastructure',
+    path: '/components/native/ram.png',
+    tags: ['ram', 'memory', 'hardware', 'storage'],
+    description: 'Random Access Memory'
+  },
+  {
+    id: 'server',
+    name: 'Server',
+    category: 'infrastructure',
+    path: '/components/native/server.png',
+    tags: ['server', 'hardware', 'compute', 'hosting'],
+    description: 'Server hardware'
+  },
+  {
+    id: 'pc',
+    name: 'PC',
+    category: 'client',
+    path: '/components/native/pc.png',
+    tags: ['pc', 'computer', 'desktop', 'client'],
+    description: 'Personal Computer'
+  },
+  {
+    id: 'laptop',
+    name: 'Laptop',
+    category: 'client',
+    path: '/components/native/laptop.png',
+    tags: ['laptop', 'computer', 'portable', 'client'],
+    description: 'Laptop computer'
+  },
+  {
+    id: 'phone',
+    name: 'Phone',
+    category: 'client',
+    path: '/components/native/phone.png',
+    tags: ['phone', 'mobile', 'device', 'client'],
+    description: 'Mobile phone'
+  },
+  {
+    id: 'database-native',
+    name: 'Database',
+    category: 'database',
+    path: '/components/native/database.png',
+    tags: ['database', 'storage', 'data', 'db'],
+    description: 'Database storage'
+  },
+  {
+    id: 'cloud-native',
+    name: 'Cloud',
+    category: 'cloud',
+    path: '/components/native/cloud.png',
+    tags: ['cloud', 'storage', 'computing'],
+    description: 'Cloud computing'
+  },
+  {
+    id: 'bucket',
+    name: 'Bucket',
+    category: 'storage',
+    path: '/components/native/bucket.png',
+    tags: ['bucket', 'storage', 'container'],
+    description: 'Storage bucket'
+  },
+  {
+    id: 'box',
+    name: 'Box',
+    category: 'storage',
+    path: '/components/native/box.png',
+    tags: ['box', 'container', 'storage'],
+    description: 'Storage box'
+  },
+  {
+    id: 'boxes',
+    name: 'Boxes',
+    category: 'storage',
+    path: '/components/native/boxes.png',
+    tags: ['boxes', 'containers', 'storage', 'multiple'],
+    description: 'Multiple storage boxes'
+  },
+  {
+    id: 'cdn',
+    name: 'CDN',
+    category: 'infrastructure',
+    path: '/components/native/CDN.png',
+    tags: ['cdn', 'content-delivery', 'network', 'distribution'],
+    description: 'Content Delivery Network'
+  },
+  {
+    id: 'message',
+    name: 'Message',
+    category: 'communication',
+    path: '/components/native/message.png',
+    tags: ['message', 'communication', 'notification'],
+    description: 'Message/notification'
+  },
+  {
+    id: 'envelope',
+    name: 'Envelope',
+    category: 'communication',
+    path: '/components/native/envelope.png',
+    tags: ['envelope', 'email', 'communication'],
+    description: 'Email envelope'
+  },
+  {
+    id: 'folder',
+    name: 'Folder',
+    category: 'storage',
+    path: '/components/native/folder.png',
+    tags: ['folder', 'directory', 'storage', 'file-management'],
+    description: 'File folder'
+  },
+  {
+    id: 'bulb',
+    name: 'Bulb',
+    category: 'ui',
+    path: '/components/native/bulb.png',
+    tags: ['bulb', 'light', 'idea', 'ui'],
+    description: 'Light bulb/idea'
+  },
+  {
+    id: 'gears',
+    name: 'Gears',
+    category: 'infrastructure',
+    path: '/components/native/gears.png',
+    tags: ['gears', 'settings', 'configuration', 'mechanical'],
+    description: 'Settings/configuration gears'
+  },
+  {
+    id: 'cylinder',
+    name: 'Cylinder',
+    category: 'storage',
+    path: '/components/native/cylinder.png',
+    tags: ['cylinder', 'storage', 'container', '3d'],
+    description: 'Cylindrical storage container'
   }
 ];
 
