@@ -13,8 +13,10 @@ import HoverOutline from './hover-outline';
 import CenterHighlight from './center-highlight';
 import RotationHandles from '../selection/rotation-handles';
 import ResizeHandles from '../selection/resize-handles';
+import ResizeHandle from '../selection/resize-handle';
 import RadiusHandles from '../selection/radius-handles';
 import CurveHandle from '../selection/curve-handle';
+import { GroupSelection } from '../selection/group-selection';
 
 import { useCanvasState } from '@/stores/use-ui-store';
 import { useCanvasOperations } from '@/stores/use-canvas-store';
@@ -109,6 +111,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
     handleElementMouseMove,
     handleElementMouseLeave,
     onPathStartClick,
+    handleGroupSelectionDragStart,
     isElementInCustomOrPolygonGroup,
     shiftKey = false,
     isSnappingEnabled = true,
@@ -686,18 +689,57 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         };
         
         return (
-          <pixiContainer
-            key={`group-outline-${group.id}`}
-            x={groupCenterX}
-            y={groupCenterY}
-            rotation={group.rotation || 0}
-            zIndex={2000}
-          >
-            <ElementSelect
-              element={virtualGroupElement}
-              scaleFactor={canvasScaleFactor.current}
+          <React.Fragment key={`group-outline-${group.id}`}>
+            <pixiContainer
+              x={groupCenterX}
+              y={groupCenterY}
+              rotation={group.rotation || 0}
+              zIndex={2000}
+            >
+              <ElementSelect
+                element={virtualGroupElement}
+                scaleFactor={canvasScaleFactor.current}
+              />
+            </pixiContainer>
+            
+            {/* Resize handles for group */}
+            <ResizeHandle
+              elementX={groupCenterX}
+              elementY={groupCenterY}
+              elementWidth={groupWidth}
+              elementHeight={groupHeight}
+              elementRotation={group.rotation || 0}
+              corner="tl"
+              elementId={`group-outline-${group.id}`}
             />
-          </pixiContainer>
+            <ResizeHandle
+              elementX={groupCenterX}
+              elementY={groupCenterY}
+              elementWidth={groupWidth}
+              elementHeight={groupHeight}
+              elementRotation={group.rotation || 0}
+              corner="tr"
+              elementId={`group-outline-${group.id}`}
+            />
+            <ResizeHandle
+              elementX={groupCenterX}
+              elementY={groupCenterY}
+              elementWidth={groupWidth}
+              elementHeight={groupHeight}
+              elementRotation={group.rotation || 0}
+              corner="bl"
+              elementId={`group-outline-${group.id}`}
+            />
+            <ResizeHandle
+              elementX={groupCenterX}
+              elementY={groupCenterY}
+              elementWidth={groupWidth}
+              elementHeight={groupHeight}
+              elementRotation={group.rotation || 0}
+              corner="br"
+              elementId={`group-outline-${group.id}`}
+            />
+          </React.Fragment>
         );
       })}
 
@@ -908,7 +950,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         );
       })}
 
-      {/* Individual selection outlines for multiple selected elements - only show for ungrouped elements */}
+      {/* Group selection for multiple selected elements */}
       {!isPlaying && selectedIds.length > 1 && (() => {
         // Check if this is a group selection
         const selectedGroupIds = new Set();
@@ -924,32 +966,30 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           return false;
         });
         
-        // If all selected elements are part of the same group, don't show individual selection outlines
+        // If all selected elements are part of the same group, don't show group selection outline
         // (groups will show their own group selection outlines)
         if (selectedGroupIds.size === 1 && elementsInGroups.length === selectedIds.length) {
           return null;
         }
         
-        // Show individual selection outlines for each selected element
-        return selectedIds.map((selectedId) => {
-          const selectedElement = elements.find(el => el.id === selectedId);
-          if (!selectedElement) return null;
-          
-          return (
-            <pixiContainer
-              key={`multi-select-${selectedId}`}
-              x={selectedElement.x}
-              y={selectedElement.y}
-              rotation={selectedElement.rotation || 0}
-              zIndex={2002}
-            >
-              <ElementSelect
-                element={selectedElement}
-                scaleFactor={canvasScaleFactor.current}
-              />
-            </pixiContainer>
-          );
-        });
+        // Get the selected elements
+        const selectedElements = selectedIds
+          .map(id => elements.find(el => el.id === id))
+          .filter((el): el is AnimatedCanvasObject => el !== undefined);
+        
+        if (selectedElements.length === 0) return null;
+        
+        return (
+          <pixiContainer zIndex={2002}>
+            <GroupSelection
+              selectedElements={selectedElements}
+              scaleFactor={canvasScaleFactor.current}
+              onGroupDragStart={handleGroupSelectionDragStart}
+              allElements={elements}
+              groups={groups}
+            />
+          </pixiContainer>
+        );
       })()}
 
       {/* Rotation handles OUTSIDE the rotating containers (only for single selection and when not playing animations) */}

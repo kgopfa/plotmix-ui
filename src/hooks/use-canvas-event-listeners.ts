@@ -35,16 +35,29 @@ export const useCanvasEventListeners = ({
       // Use the ref to get current elements to avoid stale closure
       const currentElements = elementsRef.current;
       
-      // Check if this is a virtual group resize
-      if (id === 'virtual-group') {
+      // Check if this is a virtual group resize or group outline resize
+      if (id === 'virtual-group' || id.startsWith('group-outline-')) {
         // Handle group resize - scale all selected elements proportionally
-        const { selectedElements } = useSelectionStore.getState();
-        if (selectedElements.length > 1) {
+        let elementsToResize: AnimatedCanvasObject[] = [];
+        
+        if (id === 'virtual-group') {
+          // Multi-selection group
+          const { selectedElements } = useSelectionStore.getState();
+          if (selectedElements.length > 1) {
+            elementsToResize = selectedElements;
+          }
+        } else {
+          // Actual group - get elements in the group
+          const groupId = id.replace('group-outline-', '');
+          elementsToResize = currentElements.filter(el => el.groupId === groupId);
+        }
+        
+        if (elementsToResize.length > 0) {
           // Calculate the scale factors based on the virtual group's new dimensions
-          // We need to find the original bounds of the selected elements
+          // We need to find the original bounds of the elements to resize
           let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
           
-          selectedElements.forEach(element => {
+          elementsToResize.forEach(element => {
             const halfWidth = element.width / 2;
             const halfHeight = element.height / 2;
             minX = Math.min(minX, element.x - halfWidth);
@@ -74,12 +87,13 @@ export const useCanvasEventListeners = ({
             newHeight: height, 
             scaleX: finalScaleX, 
             scaleY: finalScaleY,
-            isShiftHeld 
+            isShiftHeld,
+            elementCount: elementsToResize.length
           });
           
-          // Update all selected elements with the new scale
+          // Update all elements in the group with the new scale
           const updatedElements = currentElements.map(el => {
-            if (selectedElements.some(selected => selected.id === el.id)) {
+            if (elementsToResize.some(elementToResize => elementToResize.id === el.id)) {
               // Calculate new position relative to the group center
               const relativeX = el.x - originalCenterX;
               const relativeY = el.y - originalCenterY;

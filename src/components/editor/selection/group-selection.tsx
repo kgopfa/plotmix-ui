@@ -281,7 +281,43 @@ export const GroupSelection: React.FC<GroupSelectionProps> = ({
         />
       </pixiContainer>
       
-      {/* No resize handles for ungrouped multiselect - only for actual groups */}
+      {/* Resize handles for multi-selection groups */}
+      <ResizeHandle
+        elementX={virtualGroupElement.x}
+        elementY={virtualGroupElement.y}
+        elementWidth={virtualGroupElement.width}
+        elementHeight={virtualGroupElement.height}
+        elementRotation={virtualGroupElement.rotation || 0}
+        corner="tl"
+        elementId={virtualGroupElement.id}
+      />
+      <ResizeHandle
+        elementX={virtualGroupElement.x}
+        elementY={virtualGroupElement.y}
+        elementWidth={virtualGroupElement.width}
+        elementHeight={virtualGroupElement.height}
+        elementRotation={virtualGroupElement.rotation || 0}
+        corner="tr"
+        elementId={virtualGroupElement.id}
+      />
+      <ResizeHandle
+        elementX={virtualGroupElement.x}
+        elementY={virtualGroupElement.y}
+        elementWidth={virtualGroupElement.width}
+        elementHeight={virtualGroupElement.height}
+        elementRotation={virtualGroupElement.rotation || 0}
+        corner="bl"
+        elementId={virtualGroupElement.id}
+      />
+      <ResizeHandle
+        elementX={virtualGroupElement.x}
+        elementY={virtualGroupElement.y}
+        elementWidth={virtualGroupElement.width}
+        elementHeight={virtualGroupElement.height}
+        elementRotation={virtualGroupElement.rotation || 0}
+        corner="br"
+        elementId={virtualGroupElement.id}
+      />
     </React.Fragment>
   );
 }; 

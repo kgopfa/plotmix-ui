@@ -391,6 +391,7 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({
       interactive={true}
       cursor={getCursor()}
       onPointerDown={handlePointerDown}
+      zIndex={2004}
     />
   );
 };
