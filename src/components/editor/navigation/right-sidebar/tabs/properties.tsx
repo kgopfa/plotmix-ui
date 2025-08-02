@@ -254,34 +254,7 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                   />
                   <span className="text-sm font-medium text-gray-700">Dotted line</span>
                 </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={localElement.lineOptions?.isCurved ?? false}
-                    onChange={e => {
-                      if (e.target.checked) {
-                        // Convert to curved line by adding a control point at the midpoint
-                        const { start, end } = localElement.lineOptions!.points;
-                        const controlPoint = {
-                          x: (start.x + end.x) / 2,
-                          y: (start.y + end.y) / 2
-                        };
-                        updateLineOptions({ 
-                          isCurved: true, 
-                          controlPoint 
-                        });
-                      } else {
-                        // Convert back to straight line by removing control point
-                        updateLineOptions({ 
-                          isCurved: false, 
-                          controlPoint: undefined 
-                        });
-                      }
-                    }}
-                    className="rounded border-gray-300 focus:ring-2 focus:ring-orange-500"
-                  />
-                  <span className="text-sm font-medium text-gray-700">Curved line</span>
-                </label>
+
                 <label className="flex items-center gap-2">
                   <input
                     type="checkbox"

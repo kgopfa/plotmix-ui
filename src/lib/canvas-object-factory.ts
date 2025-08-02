@@ -190,21 +190,29 @@ function createLine(props: BaseObjectProps & { startPoint?: { x: number; y: numb
   const centerX = (startPoint.x + endPoint.x) / 2;
   const centerY = (startPoint.y + endPoint.y) / 2;
 
-  return {
-    ...generateCommonAttributes('line', props),
-    type: 'line',
-    x: centerX,
-    y: centerY,
-    width,
-    height,
-    lineOptions: {
-      points: { start: startPoint, end: endPoint },
-      arrow: false,
-      dotted: props.isPath || false, // Make dotted if it's an animation path
-    },
-    isAnimationPath: props.isPath || false,
-    cornerRadius: 0,
-  };
+      // Calculate control point for curved line (midpoint)
+    const controlPoint = {
+      x: (startPoint.x + endPoint.x) / 2,
+      y: (startPoint.y + endPoint.y) / 2
+    };
+
+    return {
+      ...generateCommonAttributes('line', props),
+      type: 'line',
+      x: centerX,
+      y: centerY,
+      width,
+      height,
+      lineOptions: {
+        points: { start: startPoint, end: endPoint },
+        controlPoint,
+        isCurved: true, // Lines are always curved by default
+        arrow: false,
+        dotted: props.isPath || false, // Make dotted if it's an animation path
+      },
+      isAnimationPath: props.isPath || false,
+      cornerRadius: 0,
+    };
 }
 
 function createPath(props: BaseObjectProps): AnimatedCanvasObject {

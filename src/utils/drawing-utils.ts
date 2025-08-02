@@ -275,24 +275,16 @@ export const drawLine = (
     y: smoothLinePosition(shape.lineOptions.points.end.y - shape.y)
   };
 
-  // Check if line is curved
-  if (shape.lineOptions.isCurved && shape.lineOptions.controlPoint) {
-    const controlPoint = {
-      x: smoothLinePosition(shape.lineOptions.controlPoint.x - shape.x),
-      y: smoothLinePosition(shape.lineOptions.controlPoint.y - shape.y)
-    };
+  // Lines are always curved by default
+  const controlPoint = {
+    x: smoothLinePosition(shape.lineOptions.controlPoint!.x - shape.x),
+    y: smoothLinePosition(shape.lineOptions.controlPoint!.y - shape.y)
+  };
 
-    if (shape.lineOptions.dotted) {
-      drawDottedCurve(graphics, start, controlPoint, end, color, width, alpha);
-    } else {
-      drawSmoothCurve(graphics, start, controlPoint, end, color, width, alpha);
-    }
+  if (shape.lineOptions.dotted) {
+    drawDottedCurve(graphics, start, controlPoint, end, color, width, alpha);
   } else {
-    if (shape.lineOptions.dotted) {
-      drawDottedLine(graphics, start, end, color, width, alpha);
-    } else {
-      drawSmoothLine(graphics, start, end, color, width, alpha);
-    }
+    drawSmoothCurve(graphics, start, controlPoint, end, color, width, alpha);
   }
 
   if (shape.lineOptions.arrow) {
@@ -367,23 +359,18 @@ function drawElement(graphics: Graphics, shape: AnimatedCanvasObject) {
     case 'line':
       if (shape.lineOptions?.points) {
         const { start, end } = shape.lineOptions.points;
-        const { controlPoint, isCurved } = shape.lineOptions;
+        const { controlPoint } = shape.lineOptions;
         const startX = smoothLinePosition(start.x - shape.x);
         const startY = smoothLinePosition(start.y - shape.y);
         const endX = smoothLinePosition(end.x - shape.x);
         const endY = smoothLinePosition(end.y - shape.y);
         
-        if (isCurved && controlPoint) {
-          const controlX = smoothLinePosition(controlPoint.x - shape.x);
-          const controlY = smoothLinePosition(controlPoint.y - shape.y);
-          graphics
-            .moveTo(startX, startY)
-            .quadraticCurveTo(controlX, controlY, endX, endY);
-        } else {
-          graphics
-            .moveTo(startX, startY)
-            .lineTo(endX, endY);
-        }
+        // Lines are always curved by default
+        const controlX = smoothLinePosition(controlPoint!.x - shape.x);
+        const controlY = smoothLinePosition(controlPoint!.y - shape.y);
+        graphics
+          .moveTo(startX, startY)
+          .quadraticCurveTo(controlX, controlY, endX, endY);
       }
       break;
 
@@ -415,9 +402,15 @@ function drawShapeAsPath(graphics: Graphics, shape: AnimatedCanvasObject) {
 
     if (shape.type === 'line' && shape.lineOptions?.points) {
       const { start, end } = shape.lineOptions.points;
+      const { controlPoint } = shape.lineOptions;
+      
+      // Lines are always curved by default
+      const controlX = controlPoint!.x - shape.x;
+      const controlY = controlPoint!.y - shape.y;
+      
       dashLine
         .moveTo(start.x - shape.x, start.y - shape.y)
-        .lineTo(end.x - shape.x, end.y - shape.y);
+        .quadraticCurveTo(controlX, controlY, end.x - shape.x, end.y - shape.y);
 
       // Make sure the line is actually drawn
       graphics.stroke({ color: grayColor, width: 2, alpha: 0.7 });

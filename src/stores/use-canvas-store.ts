@@ -65,16 +65,14 @@ interface CanvasActions {
   removeElementAnimation: (elementId: string, animationId: string) => void;
   addGroupAnimation: (groupId: string, animation: ElementAnimation) => void;
   updateGroupAnimation: (groupId: string, animationId: string, updates: Partial<ElementAnimation>) => void;
-  removeGroupAnimation: (groupId: string, animationId: string) => void;
-  
-  // Bulk operations
-  updateMultipleElements: (updates: Array<{ id: string; updates: Partial<AnimatedCanvasObject> }>) => void;
-  moveMultipleElements: (movements: Array<{ id: string; x: number; y: number }>) => void;
-  
-  // Curve operations
-  updateLineControlPoint: (id: string, controlPoint: { x: number; y: number }) => void;
-  convertLineToCurve: (id: string) => void;
-  convertCurveToLine: (id: string) => void;
+      removeGroupAnimation: (groupId: string, animationId: string) => void;
+    
+    // Bulk operations
+    updateMultipleElements: (updates: Array<{ id: string; updates: Partial<AnimatedCanvasObject> }>) => void;
+    moveMultipleElements: (movements: Array<{ id: string; x: number; y: number }>) => void;
+    
+    // Curve operations
+    updateLineControlPoint: (id: string, controlPoint: { x: number; y: number }) => void;
   
   // Clipboard operations
   copyElements: (elementIds: string[]) => void;
@@ -793,39 +791,7 @@ export const useCanvasStore = create<CanvasStore>()(
         const element = state.elements.find((el: AnimatedCanvasObject) => el.id === id);
         if (element && element.type === 'line' && element.lineOptions) {
           element.lineOptions.controlPoint = controlPoint;
-          element.lineOptions.isCurved = true;
-        }
-      }));
-      
-      // Notify subscribers
-      notifySubscribers({ elements: get().elements, groups: get().groups });
-    },
-
-    convertLineToCurve: (id) => {
-      set(produce((state) => {
-        const element = state.elements.find((el: AnimatedCanvasObject) => el.id === id);
-        if (element && element.type === 'line' && element.lineOptions?.points) {
-          const { start, end } = element.lineOptions.points;
-          // Calculate midpoint as initial control point
-          const controlPoint = {
-            x: (start.x + end.x) / 2,
-            y: (start.y + end.y) / 2
-          };
-          element.lineOptions.controlPoint = controlPoint;
-          element.lineOptions.isCurved = true;
-        }
-      }));
-      
-      // Notify subscribers
-      notifySubscribers({ elements: get().elements, groups: get().groups });
-    },
-
-    convertCurveToLine: (id) => {
-      set(produce((state) => {
-        const element = state.elements.find((el: AnimatedCanvasObject) => el.id === id);
-        if (element && element.type === 'line' && element.lineOptions) {
-          delete element.lineOptions.controlPoint;
-          element.lineOptions.isCurved = false;
+          // Lines are always curved by default, so no need to set isCurved
         }
       }));
       

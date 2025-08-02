@@ -75,10 +75,9 @@ const CurveHandle: React.FC<CurveHandleProps> = ({ element, onControlPointDrag }
         const size = 8;
         const halfSize = size / 2;
         
-        // Check if line is curved to determine color
-        const isCurved = element.lineOptions?.isCurved;
-        const fillColor = isCurved ? 0x4CAF50 : 0x2196F3; // Green if curved, blue if straight
-        const strokeColor = isCurved ? 0x2E7D32 : 0x1976D2; // Darker green/blue
+        // Lines are always curved by default
+        const fillColor = 0x4CAF50; // Green for curved lines
+        const strokeColor = 0x2E7D32; // Darker green
         
         // Diamond shape for control point
         g.moveTo(0, -halfSize);
