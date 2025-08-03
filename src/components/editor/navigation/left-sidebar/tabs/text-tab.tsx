@@ -1,10 +1,13 @@
 import React from 'react';
-import { AlignLeft, Bold, Italic, Underline } from 'lucide-react';
-import { useToolState, useToolActions } from '@/stores/use-ui-store';
+import { AlignLeft, Bold, Italic, Underline, X } from 'lucide-react';
+import { useToolState, useToolActions, useSetActiveNav, useSetHoverNav, useSetInteractedNav } from '@/stores/use-ui-store';
 
 export const TextTab: React.FC = () => {
   const { activeTool } = useToolState();
   const { setActiveTool } = useToolActions();
+  const setActiveNav = useSetActiveNav();
+  const setHoverNav = useSetHoverNav();
+  const setInteractedNav = useSetInteractedNav();
 
   const textTools = [
     {
@@ -51,7 +54,25 @@ export const TextTab: React.FC = () => {
   return (
     <div className="h-full bg-white border-r border-gray-200 shadow-md rounded-xl overflow-y-auto p-4 space-y-6">
       <div className="space-y-4">
-        <div className="text-lg font-bold text-gray-800 mb-4">Text Tools</div>
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-lg font-bold text-gray-800">Text Tools</div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setActiveNav(null);
+              setHoverNav(null);
+              setInteractedNav(null);
+              // Prevent immediate re-hovering by adding a small delay
+              setTimeout(() => {
+                setHoverNav(null);
+              }, 50);
+            }}
+            className="p-1 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-100"
+            title="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
         
         <div className="space-y-3">
           <div className="text-sm font-semibold text-gray-700 mb-3">Text Tools</div>

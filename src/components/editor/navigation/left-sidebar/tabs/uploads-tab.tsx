@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
-import { CloudUpload, FileText, Image, Video, Music, CheckCircle, AlertCircle, Trash2 } from 'lucide-react';
-import { useUploadedFiles, useUploadedFilesActions } from '@/stores/use-ui-store';
+import { CloudUpload, FileText, Image, Video, Music, CheckCircle, AlertCircle, Trash2, X } from 'lucide-react';
+import { useUploadedFiles, useUploadedFilesActions, useSetActiveNav, useSetHoverNav, useSetInteractedNav } from '@/stores/use-ui-store';
 
 export const UploadsTab: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -10,6 +10,9 @@ export const UploadsTab: React.FC = () => {
   // Get uploaded files from store
   const { files } = useUploadedFiles();
   const { addUploadedFile, removeUploadedFile } = useUploadedFilesActions();
+  const setActiveNav = useSetActiveNav();
+  const setHoverNav = useSetHoverNav();
+  const setInteractedNav = useSetInteractedNav();
 
   const supportedFormats = [
     {
@@ -168,9 +171,27 @@ export const UploadsTab: React.FC = () => {
   return (
     <div className="h-full w-96 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
       <div className="p-4 border-b border-gray-100">
-        <div className="flex items-center gap-2">
-          <CloudUpload className="w-5 h-5 text-green-600" />
-          <h3 className="font-semibold text-gray-900">Uploads</h3>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CloudUpload className="w-5 h-5 text-green-600" />
+            <h3 className="font-semibold text-gray-900">Uploads</h3>
+          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setActiveNav(null);
+              setHoverNav(null);
+              setInteractedNav(null);
+              // Prevent immediate re-hovering by adding a small delay
+              setTimeout(() => {
+                setHoverNav(null);
+              }, 50);
+            }}
+            className="p-1 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-100"
+            title="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       </div>
       

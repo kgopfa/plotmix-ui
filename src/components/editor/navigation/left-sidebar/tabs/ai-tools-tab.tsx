@@ -1,7 +1,12 @@
 import React from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, X } from 'lucide-react';
+import { useSetActiveNav, useSetHoverNav, useSetInteractedNav } from '@/stores/use-ui-store';
 
 export const AIToolsTab: React.FC = () => {
+  const setActiveNav = useSetActiveNav();
+  const setHoverNav = useSetHoverNav();
+  const setInteractedNav = useSetInteractedNav();
+  
   const aiFeatures = [
     {
       name: 'Auto Animations',
@@ -45,9 +50,27 @@ export const AIToolsTab: React.FC = () => {
   return (
     <div className="h-full w-96 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
       <div className="p-4 border-b border-gray-100">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-purple-600" />
-          <h3 className="font-semibold text-gray-900">AI Tools</h3>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-purple-600" />
+            <h3 className="font-semibold text-gray-900">AI Tools</h3>
+          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setActiveNav(null);
+              setHoverNav(null);
+              setInteractedNav(null);
+              // Prevent immediate re-hovering by adding a small delay
+              setTimeout(() => {
+                setHoverNav(null);
+              }, 50);
+            }}
+            className="p-1 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-100"
+            title="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       </div>
       <div className="flex-1 p-4 overflow-y-auto">

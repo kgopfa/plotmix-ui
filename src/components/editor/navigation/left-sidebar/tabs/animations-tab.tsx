@@ -1,5 +1,5 @@
 import React from 'react';
-import { Zap, Plus } from 'lucide-react';
+import { Zap, Plus, X } from 'lucide-react';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useSetActiveRightPanel, useUIStore } from '@/stores/use-ui-store';
@@ -11,6 +11,7 @@ export const AnimationsTab: React.FC = () => {
   const { selectedElements, selectedGroups, select } = useSelectionStore();
   const { addElementAnimation, addGroupAnimation, getElementById } = useCanvasStore();
   const setActiveRightPanel = useSetActiveRightPanel();
+  const { setShowAnimationsTab } = useUIStore();
   const animationSelectionManager = AnimationSelectionManager.getInstance();
 
   const selectedElement = selectedElements.length === 1 ? selectedElements[0] : null;
@@ -143,9 +144,18 @@ export const AnimationsTab: React.FC = () => {
   return (
     <div className="h-full w-96 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
       <div className="p-4 border-b border-gray-100">
-        <div className="flex items-center gap-2">
-          <Zap className="w-5 h-5 text-purple-600" />
-          <h3 className="font-semibold text-gray-900">Animations</h3>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Zap className="w-5 h-5 text-purple-600" />
+            <h3 className="font-semibold text-gray-900">Animations</h3>
+          </div>
+          <button
+            onClick={() => setShowAnimationsTab(false)}
+            className="p-1 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-100"
+            title="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       </div>
       

@@ -1,10 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
+import { X } from 'lucide-react';
 import { componentLibrary, ComponentItem, getComponentsByCategory, searchComponents, getAllCategories } from '@/data/components';
+import { useSetActiveNav, useSetHoverNav, useSetInteractedNav } from '@/stores/use-ui-store';
 
 export function ComponentsTab() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const setActiveNav = useSetActiveNav();
+  const setHoverNav = useSetHoverNav();
+  const setInteractedNav = useSetInteractedNav();
   
   const categories = getAllCategories();
   
@@ -41,8 +46,26 @@ export function ComponentsTab() {
   return (
     <div className="bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-xl shadow-gray-200/50 rounded-2xl p-6 w-96 h-full flex flex-col">
       <div className="flex items-center justify-between mb-6 flex-shrink-0">
-        <h2 className="text-lg font-semibold text-gray-900">Components</h2>
-        <div className="text-sm text-gray-500">{filteredComponents.length} items</div>
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-gray-900">Components</h2>
+          <div className="text-sm text-gray-500">{filteredComponents.length} items</div>
+        </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setActiveNav(null);
+            setHoverNav(null);
+            setInteractedNav(null);
+            // Prevent immediate re-hovering by adding a small delay
+            setTimeout(() => {
+              setHoverNav(null);
+            }, 50);
+          }}
+          className="p-1 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-100"
+          title="Close"
+        >
+          <X className="w-4 h-4" />
+        </button>
       </div>
       
       <div className="flex flex-col h-full space-y-4">
