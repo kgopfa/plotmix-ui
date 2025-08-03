@@ -1,8 +1,9 @@
 import { useEffect, FC, useState } from 'react';
-import { Eye, EyeOff, Square, Circle, Type, Image as ImageIcon, Minus, Folder, ChevronDown, ChevronRight } from 'lucide-react';
+import { Eye, EyeOff, Square, Circle, Type, Image as ImageIcon, Minus, Folder, ChevronDown, ChevronRight, X } from 'lucide-react';
 import Image from 'next/image';
 import { useCanvasElements, useCanvasGroups, useCanvasOperations } from '@/stores/use-canvas-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
+import { useSetActiveRightPanel } from '@/stores/use-ui-store';
 
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 
@@ -82,6 +83,7 @@ export const LayersTab: FC = () => {
   const groups = useCanvasGroups();
   const { setElementVisibility, setGroupVisibility } = useCanvasOperations();
   const { selectedElements, selectedGroups, select: selectElement, selectGroup, updateSelectedGroups } = useSelectionStore();
+  const setActiveRightPanel = useSetActiveRightPanel();
 
   // State for collapsed groups - initialize with all groups collapsed
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
@@ -176,8 +178,17 @@ export const LayersTab: FC = () => {
   return (
     <div className="h-full p-4 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
       <div className="p-2 border-b border-gray-100">
-        <div className="flex items-center gap-3">
-          <h3 className="font-semibold text-red-500 text-sm">Layers</h3>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h3 className="font-semibold text-red-500 text-sm">Layers</h3>
+          </div>
+          <button
+            onClick={() => setActiveRightPanel(null)}
+            className="p-1 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-100"
+            title="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       </div>
 

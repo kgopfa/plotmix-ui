@@ -11,8 +11,9 @@ import {
 import { ColorPicker } from './color-picker';
 import { FontSelector } from './font-selector';
 import { GradientPicker } from './gradient-picker';
-import { Weight, SquareRoundCorner, ChevronsUpDown, Check } from 'lucide-react';
+import { Weight, SquareRoundCorner, ChevronsUpDown, Check, X } from 'lucide-react';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react';
+import { useSetActiveRightPanel } from '@/stores/use-ui-store';
 
 interface PropertiesTabProps {
   selectedElement: AnimatedCanvasObject;
@@ -32,6 +33,7 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
   const [showStrokeColorPicker, setShowStrokeColorPicker] = useState(false);
   const fillColorTriggerRef = useRef<HTMLDivElement>(null);
   const strokeColorTriggerRef = useRef<HTMLDivElement>(null);
+  const setActiveRightPanel = useSetActiveRightPanel();
 
   // Sync with parent component when selected element changes
   useEffect(() => {
@@ -140,8 +142,15 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
   return (
     <div className="flex flex-col gap-6 p-4">
       {/* Header */}
-      <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+      <div className="flex items-center justify-between pb-2 border-b border-gray-200">
         <h4 className="font-semibold text-blue-600 text-sm">Properties</h4>
+        <button
+          onClick={() => setActiveRightPanel(null)}
+          className="p-1 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-100"
+          title="Close"
+        >
+          <X className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Basic Properties */}

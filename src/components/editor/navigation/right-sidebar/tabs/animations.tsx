@@ -9,6 +9,8 @@ import { useTimelineStore } from '@/stores/use-timeline-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { AnimationCard } from './animation-card';
 import { generateAnimationDisplayName, updateAnimationDisplayNames } from '@/utils/animation-utils';
+import { X } from 'lucide-react';
+import { useSetActiveRightPanel } from '@/stores/use-ui-store';
 
 interface AnimationsTabProps {
   selectedElement?: AnimatedCanvasObject;
@@ -34,6 +36,7 @@ export function AnimationsTab({
   const [selectedAnimationId, setSelectedAnimationId] = useState<string | null>(null);
   const animationSelectionManager = AnimationSelectionManager.getInstance();
   const isSyncingRef = useRef(false);
+  const setActiveRightPanel = useSetActiveRightPanel();
 
   // Get stores for direct updates
   const canvasStore = useCanvasStore();
@@ -233,8 +236,15 @@ export function AnimationsTab({
   return (
     <div className="flex flex-col gap-4 p-4">
       {/* Header */}
-      <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+      <div className="flex items-center justify-between pb-2 border-b border-gray-200">
         <h4 className="font-semibold text-purple-500 text-sm">Animations</h4>
+        <button
+          onClick={() => setActiveRightPanel(null)}
+          className="p-1 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-100"
+          title="Close"
+        >
+          <X className="w-4 h-4" />
+        </button>
       </div>
 
       {/* No animations state */}
