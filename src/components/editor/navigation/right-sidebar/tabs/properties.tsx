@@ -92,8 +92,8 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
   const updateLineOptions = (updates: Partial<NonNullable<AnimatedCanvasObject['lineOptions']>>) => {
     setLocalElement(prev => ({
       ...prev,
-      lineOptions: { 
-        ...prev.lineOptions!, 
+      lineOptions: {
+        ...prev.lineOptions!,
         ...updates,
         // Ensure controlPoint and isCurved are preserved when updating other properties
         controlPoint: updates.controlPoint ?? prev.lineOptions!.controlPoint,
@@ -609,8 +609,6 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                   className="grid w-full cursor-default grid-cols-1 rounded-lg bg-white py-1.5 pr-2 pl-3 text-left text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-green-600 text-sm"
                 />
               </label>
-
-
 
               {/* Text Stroke/Outline Controls */}
               <div className="space-y-3">

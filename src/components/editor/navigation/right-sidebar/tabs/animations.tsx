@@ -72,8 +72,6 @@ export function AnimationsTab({
     const animationsChanged = animations.length > 0 || localAnimations.length !== animations.length;
     
     if (animationsChanged) {
-      console.log(`🎬 Animations changed for ${selectedGroup ? 'group' : 'element'} ${selectionId}, rebuilding timeline...`);
-
       isSyncingRef.current = true;
 
       // Update Canvas Store first based on selection type
@@ -109,6 +107,7 @@ export function AnimationsTab({
         }, 100);
       }, 0);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [animations, selectionId, selectedGroup, selectedElement, canvasStore, updateTracks, buildGSAPTimeline, onGroupInspectorChange]);
 
   // Listen for animation selections
@@ -189,8 +188,6 @@ export function AnimationsTab({
 
   // Handle all animation changes through local state
   const handleAnimationChange = (id: string, field: string, value: string | number | boolean) => {
-    console.log(`Animation change: ${field} = ${value} for animation ${id}`);
-
     const updatedAnimations = animations.map(anim => {
       if (anim.id !== id) return anim;
 
@@ -237,7 +234,7 @@ export function AnimationsTab({
     <div className="flex flex-col gap-4 p-4">
       {/* Header */}
       <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
-        <h4 className="font-semibold text-gray-700 text-sm">Animations</h4>
+        <h4 className="font-semibold text-purple-500 text-sm">Animations</h4>
       </div>
 
       {/* No animations state */}

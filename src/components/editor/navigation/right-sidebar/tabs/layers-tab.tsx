@@ -1,5 +1,5 @@
 import { useEffect, FC, useState } from 'react';
-import { Layers, Eye, EyeOff, Square, Circle, Type, Image as ImageIcon, Minus, Folder, ChevronDown, ChevronRight } from 'lucide-react';
+import { Eye, EyeOff, Square, Circle, Type, Image as ImageIcon, Minus, Folder, ChevronDown, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import { useCanvasElements, useCanvasGroups, useCanvasOperations } from '@/stores/use-canvas-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
@@ -174,15 +174,14 @@ export const LayersTab: FC = () => {
   });
 
   return (
-    <div className="h-full w-80 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
-      <div className="p-4 border-b border-gray-100">
+    <div className="h-full p-4 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
+      <div className="p-2 border-b border-gray-100">
         <div className="flex items-center gap-3">
-          <Layers className="w-5 h-5 text-indigo-600" />
-          <h3 className="font-semibold text-gray-800">Layers</h3>
+          <h3 className="font-semibold text-red-500 text-sm">Layers</h3>
         </div>
       </div>
 
-      <div className="flex-1 p-4 overflow-y-auto">
+      <div className="flex-1 px-1 py-4 overflow-y-auto">
         <div className="space-y-2 text-sm">
 
           {/* Groups */}
