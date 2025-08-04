@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist_Mono } from "next/font/google";
 import localFont from "next/font/local";
-import { SessionProvider } from "next-auth/react";
+import AuthSessionProvider from "@/components/providers/session-provider";
 import { AuthProvider } from "@/lib/auth-context";
 import "./globals.css";
 import "./fonts.css";
@@ -40,11 +40,11 @@ export default function RootLayout({
       <body
         className={`${interVariable.variable} ${geistMono.variable} font-sans antialiased h-full`}
       >
-        <SessionProvider>
+        <AuthSessionProvider>
           <AuthProvider>
             {children}
           </AuthProvider>
-        </SessionProvider>
+        </AuthSessionProvider>
       </body>
     </html>
   );
