@@ -1,16 +1,59 @@
+"use client"
+
 import Image from 'next/image';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Register() {
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+  });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Registration failed');
+        return;
+      }
+
+      // Registration successful, redirect to login
+      router.push('/login?message=Registration successful. Please sign in.');
+    } catch {
+      setError('An error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
-      {/*
-        This example requires updating your template:
-
-        ```
-        <html class="h-full bg-white">
-        <body class="h-full">
-        ```
-      */}
       <div className="flex min-h-full bg-white">
         <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
           <div className="mx-auto w-full max-w-sm lg:w-96">
@@ -31,35 +74,45 @@ export default function Register() {
 
             <div className="mt-6">
               <div>
-                <form action="#" method="POST" className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {error && (
+                    <div className="rounded-md bg-red-50 p-4">
+                      <div className="text-sm text-red-700">{error}</div>
+                    </div>
+                  )}
+
                   <div className="flex flex-row gap-4">
                     <div>
-                      <label htmlFor="first_name" className="block text-sm/6 font-medium text-gray-900">
+                      <label htmlFor="firstName" className="block text-sm/6 font-medium text-gray-900">
                         First Name
                       </label>
                       <div className="mt-2">
                         <input
-                          id="first_name"
-                          name="first_name"
+                          id="firstName"
+                          name="firstName"
                           type="text"
                           required
-                          autoComplete="first_name"
+                          value={formData.firstName}
+                          onChange={handleChange}
+                          autoComplete="given-name"
                           className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label htmlFor="last_name" className="block text-sm/6 font-medium text-gray-900">
+                      <label htmlFor="lastName" className="block text-sm/6 font-medium text-gray-900">
                         Last Name
                       </label>
                       <div className="mt-2">
                         <input
-                          id="last_name"
-                          name="last_name"
+                          id="lastName"
+                          name="lastName"
                           type="text"
                           required
-                          autoComplete="last_name"
+                          value={formData.lastName}
+                          onChange={handleChange}
+                          autoComplete="family-name"
                           className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
                         />
                       </div>
@@ -76,6 +129,8 @@ export default function Register() {
                         name="email"
                         type="email"
                         required
+                        value={formData.email}
+                        onChange={handleChange}
                         autoComplete="email"
                         className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
                       />
@@ -92,56 +147,21 @@ export default function Register() {
                         name="password"
                         type="password"
                         required
-                        autoComplete="current-password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        autoComplete="new-password"
                         className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
                       />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex gap-3">
-                      <div className="flex h-6 shrink-0 items-center">
-                        <div className="group grid size-4 grid-cols-1">
-                          <input
-                            id="remember-me"
-                            name="remember-me"
-                            type="checkbox"
-                            className="col-start-1 row-start-1 appearance-none rounded-sm border border-gray-300 bg-white checked:border-indigo-600 checked:bg-indigo-600 indeterminate:border-indigo-600 indeterminate:bg-indigo-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:border-gray-300 disabled:bg-gray-100 disabled:checked:bg-gray-100 forced-colors:appearance-auto"
-                          />
-                          <svg
-                            fill="none"
-                            viewBox="0 0 14 14"
-                            className="pointer-events-none col-start-1 row-start-1 size-3.5 self-center justify-self-center stroke-white group-has-disabled:stroke-gray-950/25"
-                          >
-                            <path
-                              d="M3 8L6 11L11 3.5"
-                              strokeWidth={2}
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className="opacity-0 group-has-checked:opacity-100"
-                            />
-                            <path
-                              d="M3 7H11"
-                              strokeWidth={2}
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className="opacity-0 group-has-indeterminate:opacity-100"
-                            />
-                          </svg>
-                        </div>
-                      </div>
-                      <label htmlFor="remember-me" className="block text-sm/6 text-gray-900">
-                        Remember me
-                      </label>
                     </div>
                   </div>
 
                   <div>
                     <button
                       type="submit"
-                      className="flex w-full justify-center rounded-md px-3 py-1.5 text-sm/6 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 transform"
+                      disabled={loading}
+                      className="flex w-full justify-center rounded-md px-3 py-1.5 text-sm/6 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 transform disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Register
+                      {loading ? 'Creating account...' : 'Register'}
                     </button>
                   </div>
                 </form>
