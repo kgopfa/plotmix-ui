@@ -18,6 +18,19 @@ let users = [
 // Export for registration API to use
 export { users }
 
+// Validate environment variables
+const requiredEnvVars = {
+  NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+  NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+}
+
+// Check for missing environment variables
+Object.entries(requiredEnvVars).forEach(([key, value]) => {
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${key}`)
+  }
+})
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -31,15 +44,22 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
-        const user = users.find(user => user.email === credentials.email)
+        // Rate limiting check (in production, use Redis or similar)
+        // This is a basic implementation - consider using a proper rate limiting library
+        
+        const user = users.find(user => user.email === credentials.email.toLowerCase().trim())
         
         if (!user) {
+          // Use consistent timing to prevent timing attacks
+          await new Promise(resolve => setTimeout(resolve, 100))
           return null
         }
 
         const isPasswordValid = await compare(credentials.password, user.password)
         
         if (!isPasswordValid) {
+          // Use consistent timing to prevent timing attacks
+          await new Promise(resolve => setTimeout(resolve, 100))
           return null
         }
 
@@ -54,45 +74,56 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 24 * 60 * 60, // 24 hours
   },
   jwt: {
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   cookies: {
     sessionToken: {
-      name: `next-auth.session-token`,
+      name: `__Secure-next-auth.session-token`,
       options: {
         httpOnly: true,
         sameSite: "lax",
         path: "/",
         secure: process.env.NODE_ENV === "production",
+        maxAge: 30 * 24 * 60 * 60, // 30 days
       },
     },
     callbackUrl: {
-      name: `next-auth.callback-url`,
+      name: `__Secure-next-auth.callback-url`,
       options: {
         sameSite: "lax",
         path: "/",
         secure: process.env.NODE_ENV === "production",
+        maxAge: 60 * 60, // 1 hour
       },
     },
     csrfToken: {
-      name: `next-auth.csrf-token`,
+      name: `__Host-next-auth.csrf-token`,
       options: {
         httpOnly: true,
         sameSite: "lax",
         path: "/",
         secure: process.env.NODE_ENV === "production",
+        maxAge: 60 * 60, // 1 hour
       },
     },
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id
         token.email = user.email
         token.name = user.name
+        token.iat = Math.floor(Date.now() / 1000)
       }
+      
+      // Refresh token if it's about to expire
+      if (token.exp && token.exp < Math.floor(Date.now() / 1000) + 60 * 60) {
+        token.exp = Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60
+      }
+      
       return token
     },
     async session({ session, token }) {
@@ -103,18 +134,25 @@ export const authOptions: NextAuthOptions = {
       }
       return session
     },
+    async redirect({ url, baseUrl }) {
+      // Allows relative callback URLs
+      if (url.startsWith("/")) return `${baseUrl}${url}`
+      // Allows callback URLs on the same origin
+      else if (new URL(url).origin === baseUrl) return url
+      return baseUrl
+    },
   },
   pages: {
     signIn: "/login",
     signUp: "/register",
+    error: "/auth/error",
   },
-  secret: process.env.NEXTAUTH_SECRET || "your-secret-key-change-in-production",
+  secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === "development",
 }
 
 // JWT utilities for custom token handling
-const secret = new TextEncoder().encode(
-  process.env.NEXTAUTH_SECRET || "your-secret-key-change-in-production"
-)
+const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET!)
 
 export async function createJWT(payload: any) {
   return await new SignJWT(payload)

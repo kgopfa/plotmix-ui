@@ -30,6 +30,7 @@
     "pixi.js": "^8.2.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "zod": "^4.0.14",
     "zustand": "^5.0.5"
   },
   "devDependencies": {

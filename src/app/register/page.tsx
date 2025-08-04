@@ -13,18 +13,61 @@ export default function Register() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState({
+    score: 0,
+    feedback: '',
+    isValid: false,
+  });
   const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
+
+    // Password strength validation
+    if (name === 'password') {
+      const strength = validatePasswordStrength(value);
+      setPasswordStrength(strength);
+    }
+  };
+
+  const validatePasswordStrength = (password: string) => {
+    const minLength = password.length >= 8;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChar = /[^A-Za-z0-9]/.test(password);
+
+    const score = [minLength, hasUpperCase, hasLowerCase, hasNumbers, hasSpecialChar]
+      .filter(Boolean).length;
+
+    const feedback = [];
+    if (!minLength) feedback.push('At least 8 characters');
+    if (!hasUpperCase) feedback.push('One uppercase letter');
+    if (!hasLowerCase) feedback.push('One lowercase letter');
+    if (!hasNumbers) feedback.push('One number');
+    if (!hasSpecialChar) feedback.push('One special character');
+
+    return {
+      score,
+      feedback: feedback.join(', '),
+      isValid: score === 5,
+    };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    
+    // Client-side validation
+    if (!passwordStrength.isValid) {
+      setError('Please ensure your password meets all requirements');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -153,6 +196,34 @@ export default function Register() {
                         className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
                       />
                     </div>
+                    {formData.password && (
+                      <div className="mt-2">
+                        <div className="flex items-center space-x-2">
+                          <div className="flex space-x-1">
+                            {[1, 2, 3, 4, 5].map((level) => (
+                              <div
+                                key={level}
+                                className={`h-2 w-8 rounded-full ${
+                                  passwordStrength.score >= level
+                                    ? passwordStrength.isValid
+                                      ? 'bg-green-500'
+                                      : 'bg-yellow-500'
+                                    : 'bg-gray-200'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-xs text-gray-500">
+                            {passwordStrength.score}/5
+                          </span>
+                        </div>
+                        {passwordStrength.feedback && (
+                          <p className="mt-1 text-xs text-gray-600">
+                            {passwordStrength.feedback}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -223,11 +294,11 @@ export default function Register() {
         </div>
         <div className="relative hidden w-0 flex-1 lg:block">
           <Image
-            alt=""
-            src="https://images.unsplash.com/photo-1496917756835-20cb06e75b4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1908&q=80"
+            alt="Register background"
+            src="/bg-image.avif"
             className="absolute inset-0 size-full object-cover"
-            width={100}
-            height={100}
+            width={1920}
+            height={1080}
           />
         </div>
       </div>
