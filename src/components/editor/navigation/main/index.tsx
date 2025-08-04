@@ -35,8 +35,6 @@ interface MainNavBarProps {
   onUngroupElements: () => void;
 }
 
-
-
 export const MainNavBar: React.FC<MainNavBarProps> = ({
   onGroupElements,
   onUngroupElements
@@ -44,7 +42,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
   const [projectName, setProjectName] = useState('Project Name');
 
   return (
-    <Disclosure as="nav" className="bg-gradient-to-r from-slate-50 to-gray-50 backdrop-blur-sm border-b border-gray-200/50 shadow-xl shadow-gray-200/50">
+    <Disclosure as="nav" className="bg-gradient-to-r from-slate-50 to-gray-50 backdrop-blur-sm border-b border-gray-200/50 shadow-sm shadow-gray-200/50">
       <div className="mx-auto max-w-full px-2 sm:px-4 lg:px-0">
         <div className="flex h-16 justify-between">
           <div className="flex lg:pl-0 lg:pr-0">
@@ -140,7 +138,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
 
               <button
                 type="button"
-                className="group relative inline-flex w-28 h-9 items-center gap-x-2.5 rounded-md bg-gradient-to-r from-purple-500 to-purple-600 px-3 py-2 text-sm font-semibold text-white shadow-lg shadow-purple-500/30 hover:from-purple-600 hover:to-purple-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-600 mr-4 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95"
+                className="group relative inline-flex w-28 h-9 items-center gap-x-2.5 rounded-md bg-gradient-to-r from-purple-500 to-purple-600 px-3 py-2 text-sm font-semibold text-white shadow-sm shadow-purple-500/30 hover:from-purple-600 hover:to-purple-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-600 mr-4 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95"
               >
                 <Upload className="size-4 ml-1.5 transition-all duration-200 group-hover:scale-110 drop-shadow-sm" />
                 <span className="text-sm">Share</span>
@@ -149,8 +147,6 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
           </div>
         </div>
       </div>
-
-
 
       {/* Mobile menu */}
       <DisclosurePanel className="lg:hidden">

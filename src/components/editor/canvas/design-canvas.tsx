@@ -361,7 +361,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         zIndex={-1}
         draw={(g) => {
           g.clear();
-          g.rect(-canvasFrameWidth / 2, -canvasFrameHeight / 2, canvasFrameWidth, canvasFrameHeight);
+          g.roundRect(-canvasFrameWidth / 2, -canvasFrameHeight / 2, canvasFrameWidth, canvasFrameHeight, 14);
           g.fill({ color: 0xFFFFFF, alpha: 1 });
           // Always use the default border color
           g.stroke({ color: 0xE2E8F0, width: 1 });
