@@ -34,9 +34,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="h-full bg-white">
       <body
-        className={`${interVariable.variable} ${geistMono.variable} font-sans antialiased`}
+        className={`${interVariable.variable} ${geistMono.variable} font-sans antialiased h-full`}
       >
         {children}
       </body>
