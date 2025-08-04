@@ -24,7 +24,7 @@ export default function Login() {
       if (result?.error) {
         setError('Invalid email or password');
       } else {
-        router.push('/editor'); // Redirect to protected route
+        router.push('/'); // Redirect to home page
       }
     } catch {
       setError('An error occurred. Please try again.');
@@ -148,7 +148,17 @@ export default function Login() {
                       disabled={loading}
                       className="flex w-full justify-center rounded-md px-3 py-1.5 text-sm/6 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 transform disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {loading ? 'Signing in...' : 'Sign in'}
+                      {loading ? (
+                        <div className="flex items-center space-x-2">
+                          <div className="flex space-x-1">
+                            <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                            <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                            <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                          </div>
+                        </div>
+                      ) : (
+                        'Sign in'
+                      )}
                     </button>
                   </div>
                 </form>

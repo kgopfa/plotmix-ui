@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth-context';
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -19,6 +20,7 @@ export default function Register() {
     isValid: false,
   });
   const router = useRouter();
+  const { signIn } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -86,8 +88,16 @@ export default function Register() {
         return;
       }
 
-      // Registration successful, redirect to login
-      router.push('/login?message=Registration successful. Please sign in.');
+      // Registration successful, automatically sign in the user
+      const signInResult = await signIn({ email: formData.email, password: formData.password });
+      
+      if (signInResult?.error) {
+        setError('Registration successful but automatic sign-in failed. Please sign in manually.');
+        router.push('/login?message=Registration successful. Please sign in.');
+      } else {
+        // Sign-in successful, redirect to home page
+        router.push('/');
+      }
     } catch {
       setError('An error occurred. Please try again.');
     } finally {
@@ -232,7 +242,17 @@ export default function Register() {
                       disabled={loading}
                       className="flex w-full justify-center rounded-md px-3 py-1.5 text-sm/6 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 transform disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {loading ? 'Creating account...' : 'Register'}
+                      {loading ? (
+                        <div className="flex items-center space-x-2">
+                          <div className="flex space-x-1">
+                            <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                            <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                            <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                          </div>
+                        </div>
+                      ) : (
+                        'Register'
+                      )}
                     </button>
                   </div>
                 </form>
