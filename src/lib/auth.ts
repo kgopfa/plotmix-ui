@@ -131,6 +131,8 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string
         session.user.email = token.email as string
         session.user.name = token.name as string
+        // Include the JWT token as accessToken for API calls
+        session.accessToken = token as any
       }
       return session
     },
