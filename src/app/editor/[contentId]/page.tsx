@@ -13,7 +13,7 @@ export default function EditorPage() {
       <div className="absolute top-4 left-4 z-50 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 text-sm text-gray-600">
         Editing: {contentId}
       </div>
-      <EditorCanvas contentId={contentId} />
+      <EditorCanvas />
     </div>
   );
 } 

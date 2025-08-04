@@ -6,16 +6,22 @@ A powerful canvas-based animation editor built with GSAP, PixiJS, and React.
 
 ## Getting Started
 
-First, run the development server:
+This project uses [pnpm](https://pnpm.io/) as the package manager. Make sure you have pnpm installed:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+npm install -g pnpm
+```
+
+Install dependencies:
+
+```bash
+pnpm install
+```
+
+Then run the development server:
+
+```bash
 pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.

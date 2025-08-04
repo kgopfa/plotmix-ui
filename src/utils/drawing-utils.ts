@@ -408,9 +408,16 @@ function drawShapeAsPath(graphics: Graphics, shape: AnimatedCanvasObject) {
       const controlX = controlPoint!.x - shape.x;
       const controlY = controlPoint!.y - shape.y;
       
-      dashLine
-        .moveTo(start.x - shape.x, start.y - shape.y)
-        .quadraticCurveTo(controlX, controlY, end.x - shape.x, end.y - shape.y);
+      // Approximate quadratic curve with multiple line segments
+      const segments = 10;
+      dashLine.moveTo(start.x - shape.x, start.y - shape.y);
+      
+      for (let i = 1; i <= segments; i++) {
+        const t = i / segments;
+        const x = (1 - t) * (1 - t) * (start.x - shape.x) + 2 * (1 - t) * t * controlX + t * t * (end.x - shape.x);
+        const y = (1 - t) * (1 - t) * (start.y - shape.y) + 2 * (1 - t) * t * controlY + t * t * (end.y - shape.y);
+        dashLine.lineTo(x, y);
+      }
 
       // Make sure the line is actually drawn
       graphics.stroke({ color: grayColor, width: 2, alpha: 0.7 });

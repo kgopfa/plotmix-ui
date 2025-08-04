@@ -190,6 +190,7 @@ export const useCanvasStore = create<CanvasStore>()(
               isCurved: updates.lineOptions.isCurved ?? element.lineOptions?.isCurved ?? true
             };
             // Remove lineOptions from updates to avoid double assignment
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { lineOptions, ...otherUpdates } = updates;
             Object.assign(element, otherUpdates);
           } else {
@@ -1096,8 +1097,6 @@ export const useCanvasOperations = () => {
       
       // Curve operations
       updateLineControlPoint: state.updateLineControlPoint,
-      convertLineToCurve: state.convertLineToCurve,
-      convertCurveToLine: state.convertCurveToLine,
       
       clearCanvas: state.clearCanvas
     }))
