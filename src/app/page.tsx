@@ -43,11 +43,13 @@ export default function HomePage() {
             </div>
           </div>
 
+          <div className="flex flex-col p-12">
+            <h1 className="text-4xl font-bold text-gray-800">Welcome to PlotMix</h1>
+          </div>
+
           {/* Main content area */}
           <div className="flex items-center justify-center flex-1 p-8">
-            <div className="text-center">
-
-            </div>
+            
           </div>
         </div>
       </main>
