@@ -70,9 +70,9 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({ navigation
 
             <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white px-6 pb-2 ring-1 ring-gray-200">
               <div className="flex h-16 shrink-0 items-center">
-                <div className="h-8 w-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                <Link href="/" className="h-8 w-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/30 hover:shadow-xl transition-shadow duration-200">
                   <span className="text-white font-bold text-sm">R</span>
-                </div>
+                </Link>
               </div>
               <nav className="flex flex-1 flex-col">
                 <ul role="list" className="-mx-2 flex-1 space-y-1">
@@ -111,9 +111,9 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({ navigation
       <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:block lg:w-20 lg:overflow-y-auto lg:bg-white lg:border-r lg:border-gray-200">
         <div className="flex flex-col items-center h-full">
           <div className="flex h-16 shrink-0 items-center justify-center mt-6">
-            <div className="h-10 w-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/30">
+            <Link href="/" className="h-10 w-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/30 hover:shadow-xl transition-shadow duration-200">
               <span className="text-white font-bold text-sm">R</span>
-            </div>
+            </Link>
           </div>
           <nav className="mt-6 pb-6 flex-1">
             <ul role="list" className="flex flex-col items-center space-y-3">
