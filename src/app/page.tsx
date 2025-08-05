@@ -33,8 +33,8 @@ export default function HomePage() {
   };
 
   // Show only first 8 projects initially, or all if showAllProjects is true
-  const displayedProjects = showAllProjects 
-    ? communityProjects 
+  const displayedProjects = showAllProjects
+    ? communityProjects
     : communityProjects.slice(0, 8);
 
   return (
@@ -66,8 +66,9 @@ export default function HomePage() {
 
           {/* Hero section */}
           <div className='p-8'>
-            <div className="flex flex-col border border-gray-200 rounded-3xl p-8">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+            {/* Community Projects */}
+            <div className="flex flex-col border border-gray-200 rounded-3xl px-8 py-7">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-5">
                 <div>
                   <h1 className="text-xl font-semibold text-gray-900 mb-2">See what you can do</h1>
                   <p className="text-gray-600 text-sm">Explore community projects and get inspired</p>
@@ -77,7 +78,7 @@ export default function HomePage() {
                   Create Your Own
                 </Link>
               </div>
-              
+
               {/* Community Projects Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-8 gap-6 max-w-none">
                 {displayedProjects.map((project) => (
@@ -88,17 +89,17 @@ export default function HomePage() {
                   />
                 ))}
               </div>
-              
+
               {/* View More/Less Button */}
               {communityProjects.length > 8 && (
-                <div className="flex justify-center mt-8">
-                  <button 
+                <div className="flex justify-center mt-6">
+                  <button
                     onClick={showAllProjects ? handleViewLess : handleViewMore}
                     className="flex items-center gap-x-2 text-purple-700 hover:text-purple-800 font-medium text-sm transition-colors px-4 py-2 rounded-lg hover:bg-purple-50"
                   >
                     <span>
-                      {showAllProjects 
-                        ? 'Collapse' 
+                      {showAllProjects
+                        ? 'Collapse'
                         : 'View more community projects'
                       }
                     </span>
@@ -111,11 +112,18 @@ export default function HomePage() {
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Main content area */}
-          <div className="flex items-center justify-center flex-1 p-8">
+            {/* Featured Projects */}
+            <div className="flex flex-col rounded-3xl px-8">
+              <div className="flex flex-row gap-x-4">
+                
+              </div>
+            </div>
 
+            {/* Main content area */}
+            <div className="flex items-center justify-center flex-1 p-8">
+
+            </div>
           </div>
         </div>
       </main>
