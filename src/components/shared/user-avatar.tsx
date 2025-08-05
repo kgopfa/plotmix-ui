@@ -220,7 +220,7 @@ export function UserAvatar({ className = '', showDropdown = true }: UserAvatarPr
       {isOpen && typeof window !== 'undefined' && createPortal(
         <div 
           ref={dropdownRef}
-          className="fixed z-50 w-56 border border-gray-300 rounded-xl bg-white px-4 py-6 text-sm font-semibold text-gray-700 shadow-lg ring-1 ring-gray-900/5" 
+          className="fixed z-50 w-64 border border-gray-300 rounded-xl bg-white px-4 py-6 text-sm font-semibold text-gray-700 shadow-lg ring-1 ring-gray-900/5" 
           style={{
             top: `${dropdownPosition.top}px`,
             left: `${dropdownPosition.left}px`,

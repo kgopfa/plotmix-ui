@@ -153,8 +153,8 @@ export default function HomePage() {
                       </Link>
                     </>
                   ) : (
-                    <Link href="/login" className="flex flex-row items-center gap-x-1 bg-gradient-to-r from-purple-700 to-indigo-700 text-white px-4 py-2 rounded-3xl text-xs font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-lg shadow-indigo-500/25">
-                      <LogIn className="size-4" />
+                    <Link href="/login" className="flex flex-row items-center justify-center gap-x-2 bg-gradient-to-r from-purple-700 to-indigo-700 text-white w-24 py-2 rounded-lg text-xs font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-lg shadow-indigo-500/25">
+                      <LogIn className="size-4 -ml-1" />
                       Login
                     </Link>
                   )}
