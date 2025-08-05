@@ -8,7 +8,8 @@ async function authenticateUser(email: string, password: string) {
   try {
     // In production, this would be a database call
     // For now, we'll use a simple API call to the backend
-    const response = await fetch(`${process.env.NEXTAUTH_URL}/api/auth/login`, {
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+    const response = await fetch(`${backendUrl}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

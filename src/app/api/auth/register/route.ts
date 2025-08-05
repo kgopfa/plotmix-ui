@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { hash } from "bcryptjs"
 import { z } from "zod"
-
-import { users } from '@/lib/auth'
 
 // Password strength validation schema
 const passwordSchema = z
@@ -69,41 +66,47 @@ export async function POST(request: NextRequest) {
 
     const { email, password, firstName, lastName } = validationResult.data
 
-    // Check if user already exists
-    const existingUser = users.find(user => user.email === email)
-    if (existingUser) {
+    // Forward registration to backend API
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+      const response = await fetch(`${backendUrl}/api/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          name: `${firstName} ${lastName}`,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        return NextResponse.json(
+          { error: data.message || "Registration failed" },
+          { status: response.status }
+        )
+      }
+
+      // Log successful registration (in production, use proper logging service)
+      console.log(`New user registered: ${email} at ${new Date().toISOString()}`)
+
       return NextResponse.json(
-        { error: "An account with this email already exists" },
-        { status: 409 }
+        { 
+          message: "Account created successfully",
+          user: data.data.user 
+        },
+        { status: 201 }
+      )
+    } catch (backendError) {
+      console.error("Backend registration error:", backendError)
+      return NextResponse.json(
+        { error: "Registration service unavailable. Please try again later." },
+        { status: 503 }
       )
     }
-
-    // Hash password with higher cost factor for production
-    const hashedPassword = await hash(password, 14) // Increased from 12 to 14
-
-    // Create new user
-    const newUser = {
-      id: (users.length + 1).toString(),
-      email,
-      password: hashedPassword,
-      name: `${firstName} ${lastName}`,
-      createdAt: new Date().toISOString(),
-    }
-
-    users.push(newUser)
-
-    // Log successful registration (in production, use proper logging service)
-    console.log(`New user registered: ${email} at ${new Date().toISOString()}`)
-
-    // Return success (don't return the password)
-    const { password: _, ...userWithoutPassword } = newUser
-    return NextResponse.json(
-      { 
-        message: "Account created successfully",
-        user: userWithoutPassword 
-      },
-      { status: 201 }
-    )
   } catch (error) {
     // Log error (in production, use proper error logging service)
     console.error("Registration error:", error)
