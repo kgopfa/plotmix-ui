@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { NavigationSidebar } from '@/components/shared/navigation-sidebar';
 import { SearchBar } from '@/components/shared/search-bar';
 import { navigation } from '@/data/shared-navigation';
-  import { SparklesIcon } from '@/components/shared/sparkles-icon';
 import { Palette, Sparkles } from 'lucide-react';
 
 export default function HomePage() {
