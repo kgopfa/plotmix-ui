@@ -36,7 +36,7 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
       </div>
       
       {/* Project Content */}
-      <div className="p-4">
+      <div className="px-4 py-6">
         <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-purple-700 transition-colors">
           {project.title}
         </h3>

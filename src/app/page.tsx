@@ -5,13 +5,17 @@ import Link from 'next/link';
 import { NavigationSidebar } from '@/components/shared/navigation-sidebar';
 import { SearchBar } from '@/components/shared/search-bar';
 import { ProjectCard } from '@/components/shared/project-card';
+import { FeaturedProjectsTabs } from '@/components/shared/featured-projects-tabs';
 import { navigation } from '@/data/shared-navigation';
 import { communityProjects } from '@/data/community-projects';
+import { recentlyViewedProjects, sharedProjects, FeaturedProject } from '@/data/featured-projects';
 import { Palette, Sparkles, Share2, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAllProjects, setShowAllProjects] = useState(false);
+  const [activeTab, setActiveTab] = useState('Recently viewed');
+  const [selectedSort, setSelectedSort] = useState('lastViewed');
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -32,10 +36,65 @@ export default function HomePage() {
     setShowAllProjects(false);
   };
 
+  const handleTabChange = (tabName: string) => {
+    setActiveTab(tabName);
+    // Reset sort to appropriate default for the tab
+    if (tabName === 'Recently viewed') {
+      setSelectedSort('lastViewed');
+    } else {
+      setSelectedSort('alphabetical');
+    }
+  };
+
+  const handleSortChange = (sortValue: string) => {
+    setSelectedSort(sortValue);
+  };
+
   // Show only first 8 projects initially, or all if showAllProjects is true
   const displayedProjects = showAllProjects
     ? communityProjects
     : communityProjects.slice(0, 8);
+
+  // Get current featured projects based on active tab
+  const getCurrentFeaturedProjects = (): FeaturedProject[] => {
+    if (activeTab === 'Recently viewed') {
+      return recentlyViewedProjects;
+    } else {
+      return sharedProjects;
+    }
+  };
+
+  // Sort featured projects based on selected sort option
+  const getSortedFeaturedProjects = (): FeaturedProject[] => {
+    const projects = getCurrentFeaturedProjects();
+    
+    switch (selectedSort) {
+      case 'alphabetical':
+        return [...projects].sort((a, b) => a.title.localeCompare(b.title));
+      case 'dateCreated':
+        return [...projects].sort((a, b) => b.id - a.id); // Using ID as proxy for creation date
+      case 'lastViewed':
+        return [...projects].sort((a, b) => {
+          if (!a.lastViewed || !b.lastViewed) return 0;
+          return new Date(b.lastViewed).getTime() - new Date(a.lastViewed).getTime();
+        });
+      default:
+        return projects;
+    }
+  };
+
+  const tabs = [
+    { name: 'Recently viewed', current: activeTab === 'Recently viewed' },
+    { name: 'Shared projects', current: activeTab === 'Shared projects' },
+  ];
+
+  const sortOptions = [
+    { name: 'Alphabetical', value: 'alphabetical' },
+    { name: 'Date created', value: 'dateCreated' },
+    { name: 'Last viewed', value: 'lastViewed' },
+  ];
+
+  const sortedFeaturedProjects = getSortedFeaturedProjects();
 
   return (
     <>
@@ -114,9 +173,30 @@ export default function HomePage() {
             </div>
 
             {/* Featured Projects */}
-            <div className="flex flex-col rounded-3xl px-8">
-              <div className="flex flex-row gap-x-4">
-                
+            <div className="flex flex-col px-8 py-7 mt-8">
+              <div className="mb-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">Featured Projects</h2>
+                <p className="text-gray-600 text-sm">Your recently viewed and shared projects</p>
+              </div>
+
+              {/* Tabs and Sort */}
+              <FeaturedProjectsTabs
+                tabs={tabs}
+                onTabChange={handleTabChange}
+                sortOptions={sortOptions}
+                selectedSort={selectedSort}
+                onSortChange={handleSortChange}
+              />
+
+              {/* Featured Projects Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+                {sortedFeaturedProjects.map((project) => (
+                  <ProjectCard
+                    key={project.id}
+                    project={project}
+                    onClick={() => handleProjectClick(project.id)}
+                  />
+                ))}
               </div>
             </div>
 
