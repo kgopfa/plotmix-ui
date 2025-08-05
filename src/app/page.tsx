@@ -4,17 +4,38 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { NavigationSidebar } from '@/components/shared/navigation-sidebar';
 import { SearchBar } from '@/components/shared/search-bar';
+import { ProjectCard } from '@/components/shared/project-card';
 import { navigation } from '@/data/shared-navigation';
-import { Palette, Sparkles } from 'lucide-react';
+import { communityProjects } from '@/data/community-projects';
+import { Palette, Sparkles, Share2, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAllProjects, setShowAllProjects] = useState(false);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     // Add your search logic here
     console.log('Searching for:', query);
   };
+
+  const handleProjectClick = (projectId: number) => {
+    // Handle project click - could navigate to project detail page
+    console.log('Project clicked:', projectId);
+  };
+
+  const handleViewMore = () => {
+    setShowAllProjects(true);
+  };
+
+  const handleViewLess = () => {
+    setShowAllProjects(false);
+  };
+
+  // Show only first 8 projects initially, or all if showAllProjects is true
+  const displayedProjects = showAllProjects 
+    ? communityProjects 
+    : communityProjects.slice(0, 8);
 
   return (
     <>
@@ -43,13 +64,58 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="flex flex-col p-12">
-            <h1 className="text-4xl font-bold text-gray-800">Welcome to PlotMix</h1>
+          {/* Hero section */}
+          <div className='p-8'>
+            <div className="flex flex-col border border-gray-200 rounded-3xl p-8">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+                <div>
+                  <h1 className="text-xl font-semibold text-gray-900 mb-2">See what you can do</h1>
+                  <p className="text-gray-600 text-sm">Explore community projects and get inspired</p>
+                </div>
+                <Link href="/editor" className="mt-4 sm:mt-0 inline-flex items-center gap-x-2 bg-gradient-to-r from-purple-700 to-indigo-700 text-white px-6 py-3 rounded-2xl text-sm font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-lg shadow-indigo-500/25">
+                  <Sparkles className="size-4" />
+                  Create Your Own
+                </Link>
+              </div>
+              
+              {/* Community Projects Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-8 gap-6 max-w-none">
+                {displayedProjects.map((project) => (
+                  <ProjectCard
+                    key={project.id}
+                    project={project}
+                    onClick={() => handleProjectClick(project.id)}
+                  />
+                ))}
+              </div>
+              
+              {/* View More/Less Button */}
+              {communityProjects.length > 8 && (
+                <div className="flex justify-center mt-8">
+                  <button 
+                    onClick={showAllProjects ? handleViewLess : handleViewMore}
+                    className="flex items-center gap-x-2 text-purple-700 hover:text-purple-800 font-medium text-sm transition-colors px-4 py-2 rounded-lg hover:bg-purple-50"
+                  >
+                    <span>
+                      {showAllProjects 
+                        ? 'Collapse' 
+                        : 'View more community projects'
+                      }
+                    </span>
+                    {showAllProjects ? (
+                      <ChevronUp className="size-4" />
+                    ) : (
+                      <ChevronDown className="size-4" />
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Main content area */}
           <div className="flex items-center justify-center flex-1 p-8">
-            
+
           </div>
         </div>
       </main>
