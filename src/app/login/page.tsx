@@ -44,14 +44,22 @@ export default function Login() {
     setLoading(true);
 
     try {
+      console.log('Submitting login form for:', email);
       const result = await signIn({ email, password });
+      console.log('Login result:', result);
       
       if (result?.error) {
         setError('Invalid email or password');
       } else {
-        router.push('/'); // Redirect to home page
+        // Wait a bit for the session to be updated
+        console.log('Login successful, waiting for session update...');
+        setTimeout(() => {
+          console.log('Redirecting to homepage...');
+          router.push('/');
+        }, 1000);
       }
-    } catch {
+    } catch (error) {
+      console.error('Login error:', error);
       setError('An error occurred. Please try again.');
     } finally {
       setLoading(false);
@@ -250,6 +258,7 @@ export default function Login() {
             className="absolute inset-0 size-full object-cover"
             width={1920}
             height={1080}
+            priority
           />
         </div>
       </div>

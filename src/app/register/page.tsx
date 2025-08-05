@@ -344,6 +344,7 @@ export default function Register() {
             className="absolute inset-0 size-full object-cover"
             width={1920}
             height={1080}
+            priority
           />
         </div>
       </div>

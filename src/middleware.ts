@@ -14,10 +14,11 @@ export function middleware(request: NextRequest) {
     'Content-Security-Policy': [
       "default-src 'self'",
       "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
-      "style-src 'self' 'unsafe-inline'",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "img-src 'self' data: https:",
-      "font-src 'self'",
-      "connect-src 'self'",
+      "font-src 'self' https://fonts.gstatic.com",
+      "connect-src 'self' ws: wss:",
       "frame-ancestors 'none'"
     ].join('; '),
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
