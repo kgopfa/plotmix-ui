@@ -1,6 +1,7 @@
 'use client'
 
-import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
+import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { User, CreditCard, LogOut } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { signOut } from 'next-auth/react'
@@ -12,6 +13,8 @@ interface UserAvatarProps {
 
 export function UserAvatar({ className = '', showDropdown = true }: UserAvatarProps) {
   const { isAuthenticated, session } = useAuth()
+  const [isOpen, setIsOpen] = useState(false)
+  const avatarRef = useRef<HTMLDivElement>(null)
 
   // Helper function to get user initials from name
   const getUserInitials = (name?: string): string => {
@@ -52,8 +55,28 @@ export function UserAvatar({ className = '', showDropdown = true }: UserAvatarPr
     },
   ]
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (avatarRef.current && !avatarRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
+
   const AvatarButton = () => (
-    <div className="h-10 w-10 rounded-full bg-purple-200 flex items-center justify-center border border-indigo-300 hover:bg-purple-300 transition-colors duration-200 cursor-pointer">
+    <div 
+      ref={avatarRef}
+      className="h-10 w-10 rounded-full bg-purple-200 flex items-center justify-center border border-indigo-300 hover:bg-purple-300 transition-colors duration-200 cursor-pointer"
+      onClick={() => {
+        setIsOpen(!isOpen)
+      }}
+    >
       <span className="text-indigo-800 text-sm font-semibold">{userInitials}</span>
     </div>
   )
@@ -63,20 +86,15 @@ export function UserAvatar({ className = '', showDropdown = true }: UserAvatarPr
   }
 
   return (
-    <Popover className="relative">
-      <PopoverButton className="inline-flex items-center text-sm font-semibold text-gray-900 hover:bg-gray-50 rounded-lg p-1 transition-colors duration-200">
-        <AvatarButton />
-      </PopoverButton>
-
-      <PopoverPanel
-        transition
-        className="absolute right-0 z-10 mt-2 flex w-screen max-w-min bg-transparent px-4 transition data-closed:translate-y-1 data-closed:opacity-0 data-enter:duration-200 data-enter:ease-out data-leave:duration-150 data-leave:ease-in"
-      >
-        <div className="w-56 shrink rounded-xl bg-white p-4 text-sm font-semibold text-gray-900 shadow-lg ring-1 ring-gray-900/5">
+    <>
+      <AvatarButton />
+      
+      {isOpen && typeof window !== 'undefined' && createPortal(
+        <div className="fixed z-50 w-56 border border-gray-300 rounded-xl bg-white p-4 text-sm font-semibold text-gray-900 shadow-lg ring-1 ring-gray-900/5" >
           {/* User info header */}
           <div className="border-b border-gray-200 pb-3 mb-3">
             <div className="flex items-center gap-x-3">
-              <div className="h-8 w-8 rounded-full bg-purple-200 flex items-center justify-center border border-indigo-300">
+              <div className="h-8 w-8 rounded-full bg-purple-200 flex items-center justify-center">
                 <span className="text-indigo-800 text-xs font-semibold">{userInitials}</span>
               </div>
               <div>
@@ -93,16 +111,24 @@ export function UserAvatar({ className = '', showDropdown = true }: UserAvatarPr
               <a
                 key={item.name}
                 href={item.href}
-                onClick={item.onClick}
+                onClick={(e) => {
+                  if (item.onClick) {
+                    e.preventDefault()
+                    item.onClick()
+                  }
+                  setIsOpen(false)
+                }}
                 className="flex items-center gap-x-3 p-2 hover:bg-gray-50 hover:text-indigo-600 rounded-lg transition-colors duration-200"
+                style={{border: '1px solid blue'}}
               >
                 <Icon className="size-4 text-gray-500" />
                 {item.name}
               </a>
             )
           })}
-        </div>
-      </PopoverPanel>
-    </Popover>
+        </div>,
+        document.body
+      )}
+    </>
   )
 } 
