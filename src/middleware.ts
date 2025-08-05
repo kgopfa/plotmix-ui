@@ -17,8 +17,8 @@ export function middleware(request: NextRequest) {
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "img-src 'self' data: https:",
-      "font-src 'self' https://fonts.gstatic.com",
-      "connect-src 'self' ws: wss:",
+      "font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com",
+      "connect-src 'self' ws: wss: http://localhost:8000 https://localhost:8000",
       "frame-ancestors 'none'"
     ].join('; '),
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',

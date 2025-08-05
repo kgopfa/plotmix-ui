@@ -60,17 +60,6 @@ export function UserAvatar({ className = '', showDropdown = true }: UserAvatarPr
     setIsOpen(false);
     
     try {
-      // Test basic connectivity first
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      console.log('Testing connectivity to:', apiUrl);
-      
-      try {
-        const healthResponse = await fetch(`${apiUrl}/api/health`);
-        console.log('Health check response:', healthResponse.status, healthResponse.ok);
-      } catch (healthError) {
-        console.error('Health check failed:', healthError);
-      }
-      
       // Step 1: Backend logout (token blacklisting) via Next.js API route
       console.log('Calling Next.js API route for logout...');
       
