@@ -143,8 +143,22 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string;
         session.user.email = token.email as string;
         session.user.name = token.name as string;
-        // Include the JWT token as accessToken for API calls
-        session.accessToken = token as any;
+        // Include the JWT token string as accessToken for API calls
+        // We need to create a new JWT token string from the token object
+        try {
+          const jwtToken = await createJWT({
+            id: token.id,
+            email: token.email,
+            name: token.name,
+            iat: token.iat,
+            exp: token.exp,
+          });
+          session.accessToken = jwtToken;
+        } catch (error) {
+          console.error('Failed to create JWT token for session:', error);
+          // Fallback: include token object for debugging
+          session.accessToken = token as any;
+        }
       }
       return session;
     },

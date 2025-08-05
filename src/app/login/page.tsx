@@ -48,15 +48,10 @@ export default function Login() {
       
       if (result?.error) {
         setError('Invalid email or password');
-      } else if (result?.ok) {
-        // Login successful - NextAuth will handle session establishment
-        // The useEffect will automatically redirect when isAuthenticated becomes true
-        console.log('Login successful, session will be established automatically');
       } else {
         setError('An unexpected error occurred. Please try again.');
       }
     } catch (error) {
-      console.error('Login error:', error);
       setError('An error occurred. Please try again.');
     } finally {
       setLoading(false);
@@ -176,7 +171,7 @@ export default function Login() {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="flex w-full justify-center rounded-md px-3 py-1.5 text-sm/6 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 transform disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex w-full justify-center h-9 rounded-md px-3 py-1.5 text-sm/6 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 transform disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {loading ? (
                         <div className="flex items-center space-x-2">

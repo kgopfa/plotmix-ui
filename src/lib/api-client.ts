@@ -7,7 +7,7 @@ import { getSession } from 'next-auth/react';
 class ApiClient {
   private baseUrl: string;
 
-  constructor(baseUrl: string = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000') {
+  constructor(baseUrl: string = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000') {
     this.baseUrl = baseUrl;
   }
 

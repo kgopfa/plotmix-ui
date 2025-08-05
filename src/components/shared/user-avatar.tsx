@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import { User, CreditCard, LogOut } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { signOut } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 
 interface UserAvatarProps {
   className?: string
@@ -21,7 +22,10 @@ export function UserAvatar({ className = '', showDropdown = true }: UserAvatarPr
   const { isAuthenticated, session } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const [dropdownPosition, setDropdownPosition] = useState<DropdownPosition>({ top: 0, left: 0, transform: '' })
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const avatarRef = useRef<HTMLDivElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
 
   // Helper function to get user initials from name
   const getUserInitials = (name?: string): string => {
@@ -43,6 +47,78 @@ export function UserAvatar({ className = '', showDropdown = true }: UserAvatarPr
     return null
   }
 
+  // Secure logout function that implements dual logout
+  const handleSecureLogout = async () => {
+    console.log('=== LOGOUT FUNCTION CALLED ===');
+    
+    if (isLoggingOut) return; // Prevent multiple logout attempts
+    
+    console.log('Starting secure logout...');
+    console.log('Session:', session);
+    
+    setIsLoggingOut(true);
+    setIsOpen(false);
+    
+    try {
+      // Test basic connectivity first
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      console.log('Testing connectivity to:', apiUrl);
+      
+      try {
+        const healthResponse = await fetch(`${apiUrl}/api/health`);
+        console.log('Health check response:', healthResponse.status, healthResponse.ok);
+      } catch (healthError) {
+        console.error('Health check failed:', healthError);
+      }
+      
+      // Step 1: Backend logout (token blacklisting) via Next.js API route
+      console.log('Calling Next.js API route for logout...');
+      
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      console.log('Logout response status:', response.status);
+      console.log('Logout response ok:', response.ok);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.warn('Backend logout failed with status:', response.status);
+        console.warn('Backend logout error response:', errorText);
+      } else {
+        const responseData = await response.json();
+        console.log('Backend logout successful:', responseData);
+      }
+      
+      // Step 2: Frontend logout (NextAuth session clearing)
+      console.log('Starting frontend logout...');
+      await signOut({ 
+        callbackUrl: '/login',
+        redirect: false 
+      });
+      console.log('Frontend logout completed');
+      
+      // Step 3: Manual redirect to ensure proper cleanup
+      console.log('Redirecting to login...');
+      router.push('/login');
+      
+    } catch (error) {
+      console.error('Logout failed:', error);
+      console.error('Error details:', {
+        name: (error as Error).name,
+        message: (error as Error).message,
+        stack: (error as Error).stack
+      });
+      // Fallback: force redirect to login
+      router.push('/login');
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
   const menuItems = [
     {
       name: 'Account Settings',
@@ -55,10 +131,11 @@ export function UserAvatar({ className = '', showDropdown = true }: UserAvatarPr
       icon: CreditCard,
     },
     {
-      name: 'Logout',
+      name: isLoggingOut ? 'Logging out...' : 'Logout',
       href: '#',
       icon: LogOut,
-      onClick: () => signOut({ callbackUrl: '/login' }),
+      onClick: handleSecureLogout,
+      disabled: isLoggingOut,
     },
   ]
 
@@ -95,8 +172,15 @@ export function UserAvatar({ className = '', showDropdown = true }: UserAvatarPr
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (avatarRef.current && !avatarRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
+      const target = event.target as Node;
+      
+      // Check if click is on avatar or dropdown
+      const isClickOnAvatar = avatarRef.current?.contains(target);
+      const isClickOnDropdown = dropdownRef.current?.contains(target);
+      
+      // Only close if click is outside both avatar and dropdown
+      if (!isClickOnAvatar && !isClickOnDropdown) {
+        setIsOpen(false);
       }
     }
 
@@ -135,6 +219,7 @@ export function UserAvatar({ className = '', showDropdown = true }: UserAvatarPr
       
       {isOpen && typeof window !== 'undefined' && createPortal(
         <div 
+          ref={dropdownRef}
           className="fixed z-50 w-56 border border-gray-300 rounded-xl bg-white px-4 py-6 text-sm font-semibold text-gray-700 shadow-lg ring-1 ring-gray-900/5" 
           style={{
             top: `${dropdownPosition.top}px`,
@@ -169,9 +254,13 @@ export function UserAvatar({ className = '', showDropdown = true }: UserAvatarPr
                   }
                   setIsOpen(false)
                 }}
-                className="flex items-center gap-x-3 p-2 hover:bg-gray-50 hover:text-indigo-600 rounded-lg transition-colors duration-200"
+                className={`flex items-center gap-x-3 p-2 rounded-lg transition-colors duration-200 ${
+                  item.disabled 
+                    ? 'text-gray-400 cursor-not-allowed' 
+                    : 'hover:bg-gray-50 hover:text-indigo-600'
+                }`}
               >
-                <Icon className="size-4 text-gray-500" />
+                <Icon className={`size-4 ${item.disabled ? 'text-gray-400' : 'text-gray-500'}`} />
                 {item.name}
               </a>
             )

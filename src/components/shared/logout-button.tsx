@@ -20,24 +20,16 @@ export default function LogoutButton({ className = '', children }: LogoutButtonP
     setIsLoggingOut(true);
     
     try {
-      // First, call backend logout to blacklist the token
-      if (session?.accessToken) {
-        // Extract the actual token string from the accessToken object
-        const tokenString = typeof session.accessToken === 'string' 
-          ? session.accessToken 
-          : JSON.stringify(session.accessToken);
-        
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/logout`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${tokenString}`,
-            'Content-Type': 'application/json',
-          },
-        });
+      // First, call backend logout to blacklist the token via Next.js API route
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
-        if (!response.ok) {
-          console.warn('Backend logout failed, but continuing with frontend logout');
-        }
+      if (!response.ok) {
+        console.warn('Backend logout failed, but continuing with frontend logout');
       }
 
       // Then, call NextAuth signOut to clear frontend session
