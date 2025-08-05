@@ -139,11 +139,12 @@ export default function HomePage() {
               </div>
 
               {/* Community Projects Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-8 gap-6 max-w-none">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-8 gap-4 max-w-none">
                 {displayedProjects.map((project) => (
                   <ProjectCard
                     key={project.id}
                     project={project}
+                    variant="compact"
                     onClick={() => handleProjectClick(project.id)}
                   />
                 ))}
@@ -173,7 +174,7 @@ export default function HomePage() {
             </div>
 
             {/* Featured Projects */}
-            <div className="flex flex-col px-8 py-7 mt-8">
+            <div className="flex flex-col px-4 py-7 mt-4">
               <div className="mb-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-2">Featured Projects</h2>
                 <p className="text-gray-600 text-sm">Your recently viewed and shared projects</p>
@@ -189,20 +190,16 @@ export default function HomePage() {
               />
 
               {/* Featured Projects Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-8 gap-6 mt-6">
                 {sortedFeaturedProjects.map((project) => (
                   <ProjectCard
                     key={project.id}
                     project={project}
+                    variant="default"
                     onClick={() => handleProjectClick(project.id)}
                   />
                 ))}
               </div>
-            </div>
-
-            {/* Main content area */}
-            <div className="flex items-center justify-center flex-1 p-8">
-
             </div>
           </div>
         </div>
