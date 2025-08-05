@@ -20,22 +20,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setLoading(status === "loading")
-    console.log('Auth status changed:', { status, session: !!session, user: session?.user?.name })
   }, [status, session])
 
   const handleSignIn = async (credentials: { email: string; password: string }) => {
-    console.log('Attempting sign in for:', credentials.email)
-    const result = await signIn("credentials", {
+    return signIn("credentials", {
       email: credentials.email,
       password: credentials.password,
       redirect: false,
     })
-    console.log('Sign in result:', result)
-    return result
   }
 
   const handleSignOut = async () => {
-    console.log('Signing out...')
     return signOut({ redirect: false })
   }
 

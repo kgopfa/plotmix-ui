@@ -21,15 +21,6 @@ export default function HomePage() {
   
   const { isAuthenticated, session, loading } = useAuth();
 
-  // Debug logging
-  console.log('HomePage auth state:', { 
-    isAuthenticated, 
-    loading, 
-    hasSession: !!session, 
-    userName: session?.user?.name,
-    userEmail: session?.user?.email 
-  });
-
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     // Add your search logic here

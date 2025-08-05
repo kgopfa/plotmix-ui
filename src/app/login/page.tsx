@@ -44,19 +44,16 @@ export default function Login() {
     setLoading(true);
 
     try {
-      console.log('Submitting login form for:', email);
       const result = await signIn({ email, password });
-      console.log('Login result:', result);
       
       if (result?.error) {
         setError('Invalid email or password');
+      } else if (result?.ok) {
+        // Login successful - NextAuth will handle session establishment
+        // The useEffect will automatically redirect when isAuthenticated becomes true
+        console.log('Login successful, session will be established automatically');
       } else {
-        // Wait a bit for the session to be updated
-        console.log('Login successful, waiting for session update...');
-        setTimeout(() => {
-          console.log('Redirecting to homepage...');
-          router.push('/');
-        }, 1000);
+        setError('An unexpected error occurred. Please try again.');
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -226,7 +223,7 @@ export default function Login() {
                         fill="#FBBC05"
                       />
                       <path
-                        d="M12.0004 24.0001C15.2404 24.0001 17.9654 22.935 19.9454 21.095L16.0804 18.095C15.0054 18.82 13.6204 19.245 12.0004 19.245C8.8704 19.245 6.21537 17.135 5.2654 14.29L1.27539 17.385C3.25539 21.31 7.3104 24.0001 12.0004 24.0001Z"
+                        d="M12.0004 24.0001C15.2404 24.0001 17.9654 22.935 19.9454 21.095L16.0804 18.095C15.0054 18.82 13.6204 19.245 12.0004 19.245C8.8704 19.245 6.21537 17.135 5.26540 14.29L1.27539 17.385C3.25539 21.31 7.31040 24.0001 12.0004 24.0001Z"
                         fill="#34A853"
                       />
                     </svg>

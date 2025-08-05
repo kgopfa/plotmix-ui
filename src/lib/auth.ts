@@ -3,20 +3,30 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import { compare } from "bcryptjs"
 import { SignJWT, jwtVerify } from "jose"
 
-// In a real app, you'd use a database
-// This is just for demonstration - replace with your actual user storage
-// Note: This should be replaced with a proper database in production
-let users = [
-  {
-    id: "1",
-    email: "admin@example.com",
-    password: "$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4J/HS.i8K2", // "password123"
-    name: "Admin User",
-  },
-]
+// Production-grade user authentication
+async function authenticateUser(email: string, password: string) {
+  try {
+    // In production, this would be a database call
+    // For now, we'll use a simple API call to the backend
+    const response = await fetch(`${process.env.NEXTAUTH_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
 
-// Export for registration API to use
-export { users }
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = await response.json();
+    return data.success ? data.data.user : null;
+  } catch (error) {
+    console.error('Authentication error:', error);
+    return null;
+  }
+}
 
 // Validate environment variables
 const requiredEnvVars = {
@@ -44,29 +54,30 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
-        // Rate limiting check (in production, use Redis or similar)
-        // This is a basic implementation - consider using a proper rate limiting library
-        
-        const user = users.find(user => user.email === credentials.email.toLowerCase().trim())
-        
-        if (!user) {
-          // Use consistent timing to prevent timing attacks
-          await new Promise(resolve => setTimeout(resolve, 100))
-          return null
-        }
+        try {
+          // Production-grade authentication with proper error handling
+          const user = await authenticateUser(
+            credentials.email.toLowerCase().trim(),
+            credentials.password
+          );
 
-        const isPasswordValid = await compare(credentials.password, user.password)
-        
-        if (!isPasswordValid) {
-          // Use consistent timing to prevent timing attacks
-          await new Promise(resolve => setTimeout(resolve, 100))
-          return null
-        }
+          if (!user) {
+            // Use consistent timing to prevent timing attacks
+            await new Promise(resolve => setTimeout(resolve, 100));
+            return null;
+          }
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
+          console.log('User authenticated successfully:', user.email);
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+          };
+        } catch (error) {
+          console.error('Authentication error:', error);
+          // Use consistent timing to prevent timing attacks
+          await new Promise(resolve => setTimeout(resolve, 100));
+          return null;
         }
       }
     })
@@ -81,7 +92,7 @@ export const authOptions: NextAuthOptions = {
   },
   cookies: {
     sessionToken: {
-      name: `__Secure-next-auth.session-token`,
+      name: `next-auth.session-token`,
       options: {
         httpOnly: true,
         sameSite: "lax",
@@ -91,7 +102,7 @@ export const authOptions: NextAuthOptions = {
       },
     },
     callbackUrl: {
-      name: `__Secure-next-auth.callback-url`,
+      name: `next-auth.callback-url`,
       options: {
         sameSite: "lax",
         path: "/",
@@ -100,7 +111,7 @@ export const authOptions: NextAuthOptions = {
       },
     },
     csrfToken: {
-      name: `__Host-next-auth.csrf-token`,
+      name: `next-auth.csrf-token`,
       options: {
         httpOnly: true,
         sameSite: "lax",
@@ -113,40 +124,39 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user, account }) {
       if (user) {
-        token.id = user.id
-        token.email = user.email
-        token.name = user.name
-        token.iat = Math.floor(Date.now() / 1000)
+        token.id = user.id;
+        token.email = user.email;
+        token.name = user.name;
+        token.iat = Math.floor(Date.now() / 1000);
       }
       
       // Refresh token if it's about to expire
-      if (token.exp && token.exp < Math.floor(Date.now() / 1000) + 60 * 60) {
-        token.exp = Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60
+      if (token.exp && typeof token.exp === 'number' && token.exp < Math.floor(Date.now() / 1000) + 60 * 60) {
+        token.exp = Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60;
       }
       
-      return token
+      return token;
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.id as string
-        session.user.email = token.email as string
-        session.user.name = token.name as string
+        session.user.id = token.id as string;
+        session.user.email = token.email as string;
+        session.user.name = token.name as string;
         // Include the JWT token as accessToken for API calls
-        session.accessToken = token as any
+        session.accessToken = token as any;
       }
-      return session
+      return session;
     },
     async redirect({ url, baseUrl }) {
       // Allows relative callback URLs
-      if (url.startsWith("/")) return `${baseUrl}${url}`
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
       // Allows callback URLs on the same origin
-      else if (new URL(url).origin === baseUrl) return url
-      return baseUrl
+      else if (new URL(url).origin === baseUrl) return url;
+      return baseUrl;
     },
   },
   pages: {
     signIn: "/login",
-    signUp: "/register",
     error: "/auth/error",
   },
   secret: process.env.NEXTAUTH_SECRET,
