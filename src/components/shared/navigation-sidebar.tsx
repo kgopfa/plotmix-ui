@@ -8,6 +8,7 @@ import {
   User,
 } from 'lucide-react';
 import { Dialog, DialogBackdrop, DialogPanel, TransitionChild } from '@headlessui/react';
+import { useAuth } from '@/lib/auth-context';
 
 interface NavigationItem {
   name: string;
@@ -26,8 +27,23 @@ function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ')
 }
 
+// Helper function to get user initials from name
+function getUserInitials(name?: string): string {
+  if (!name) return '';
+  
+  const names = name.trim().split(' ');
+  if (names.length === 1) {
+    return names[0].charAt(0).toUpperCase();
+  }
+  
+  return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
+}
+
 export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({ navigation }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { session, isAuthenticated } = useAuth();
+  
+  const userInitials = getUserInitials(session?.user?.name);
 
   return (
     <>
@@ -79,13 +95,15 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({ navigation
                 </ul>
               </nav>
               
-              {/* User avatar at bottom */}
-              <div className="flex items-center gap-x-3 px-2 py-3">
-                <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
-                  <User className="h-4 w-4 text-gray-600" />
+              {/* User avatar at bottom - only show if authenticated */}
+              {isAuthenticated && userInitials && (
+                <div className="flex items-center gap-x-3 px-2 py-3">
+                  <div className="h-8 w-8 rounded-full bg-purple-200 flex items-center justify-center border border-indigo-300">
+                    <span className="text-indigo-800 text-sm font-semibold">{userInitials}</span>
+                  </div>
+                  <span className="text-sm font-medium text-gray-600">{session?.user?.name || 'User'}</span>
                 </div>
-                <span className="text-sm font-medium text-gray-600">User</span>
-              </div>
+              )}
             </div>
           </DialogPanel>
         </div>
@@ -123,12 +141,14 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({ navigation
             </ul>
           </nav>
           
-          {/* User avatar at bottom */}
-          <div className="mb-6">
-            <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
-              <User className="h-5 w-5 text-gray-600" />
+          {/* User avatar at bottom - only show if authenticated */}
+          {isAuthenticated && userInitials && (
+            <div className="mb-6">
+              <div className="h-10 w-10 rounded-full bg-purple-200 flex items-center justify-center border border-indigo-300">
+                <span className="text-indigo-800 text-sm font-semibold">{userInitials}</span>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -138,9 +158,12 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({ navigation
           <Menu aria-hidden="true" className="size-6" />
         </button>
         <div className="flex-1 text-sm/6 font-semibold text-gray-900">PlotMix AI</div>
-        <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
-          <User className="h-4 w-4 text-gray-600" />
-        </div>
+        {/* User avatar in mobile header - only show if authenticated */}
+        {isAuthenticated && userInitials && (
+          <div className="h-8 w-8 rounded-full bg-purple-200 flex items-center justify-center border border-indigo-300">
+            <span className="text-indigo-800 text-xs font-semibold">{userInitials}</span>
+          </div>
+        )}
       </div>
     </>
   );
