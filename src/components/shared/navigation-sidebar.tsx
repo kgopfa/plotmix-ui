@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { Dialog, DialogBackdrop, DialogPanel, TransitionChild } from '@headlessui/react';
 import { useAuth } from '@/lib/auth-context';
+import { UserAvatar } from './user-avatar';
 
 interface NavigationItem {
   name: string;
@@ -97,11 +98,8 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({ navigation
               
               {/* User avatar at bottom - only show if authenticated */}
               {isAuthenticated && userInitials && (
-                <div className="flex items-center gap-x-3 px-2 py-3">
-                  <div className="h-8 w-8 rounded-full bg-purple-200 flex items-center justify-center border border-indigo-300">
-                    <span className="text-indigo-800 text-sm font-semibold">{userInitials}</span>
-                  </div>
-                  <span className="text-sm font-medium text-gray-600">{session?.user?.name || 'User'}</span>
+                <div className="px-2 py-3">
+                  <UserAvatar showDropdown={true} />
                 </div>
               )}
             </div>
@@ -144,9 +142,7 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({ navigation
           {/* User avatar at bottom - only show if authenticated */}
           {isAuthenticated && userInitials && (
             <div className="mb-6">
-              <div className="h-10 w-10 rounded-full bg-purple-200 flex items-center justify-center border border-indigo-300">
-                <span className="text-indigo-800 text-sm font-semibold">{userInitials}</span>
-              </div>
+              <UserAvatar showDropdown={true} />
             </div>
           )}
         </div>
@@ -160,9 +156,7 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({ navigation
         <div className="flex-1 text-sm/6 font-semibold text-gray-900">PlotMix AI</div>
         {/* User avatar in mobile header - only show if authenticated */}
         {isAuthenticated && userInitials && (
-          <div className="h-8 w-8 rounded-full bg-purple-200 flex items-center justify-center border border-indigo-300">
-            <span className="text-indigo-800 text-xs font-semibold">{userInitials}</span>
-          </div>
+          <UserAvatar showDropdown={true} />
         )}
       </div>
     </>

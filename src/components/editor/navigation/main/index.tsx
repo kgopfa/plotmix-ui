@@ -24,6 +24,7 @@ import { PanelToggleButtons } from './panel-toggle-buttons';
 import { SnappingControls } from './settings/snapping/snapping-controls';
 import { SelectionIndicator } from './selection-indicator';
 import { SettingsDropdown } from './settings';
+import { UserAvatar } from '@/components/shared/user-avatar';
 
 // Simplified interface - only for props that can't be accessed via stores
 interface MainNavBarProps {
@@ -95,46 +96,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
             {/* Desktop user menu */}
             <div className="hidden lg:flex lg:items-center gap-4">
               {/* Profile dropdown */}
-              <Menu as="div" className="relative shrink-0">
-                <div>
-                  <MenuButton className="group relative flex rounded-full bg-white/95 backdrop-blur-sm text-sm focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 border border-gray-200/50 shadow-sm">
-                    <span className="absolute -inset-1.5" />
-                    <span className="sr-only">Open user menu</span>
-                    <div className="size-8 rounded-full bg-amber-500 flex items-center justify-center">
-                      <span className="text-white font-medium text-sm">U</span>
-                    </div>
-                  </MenuButton>
-                </div>
-                <MenuItems
-                  transition
-                  className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-xl bg-white/95 backdrop-blur-sm py-1 shadow-xl shadow-gray-200/50 ring-1 ring-gray-200/50 transition focus:outline-hidden data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
-                >
-                  <MenuItem>
-                    <a
-                      href="#"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 hover:text-indigo-700 data-focus:bg-indigo-50 data-focus:outline-hidden transition-all duration-200 ease-out transform hover:scale-105 rounded-lg mx-1"
-                    >
-                      Your Profile
-                    </a>
-                  </MenuItem>
-                  <MenuItem>
-                    <a
-                      href="#"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 hover:text-indigo-700 data-focus:bg-indigo-50 data-focus:outline-hidden transition-all duration-200 ease-out transform hover:scale-105 rounded-lg mx-1"
-                    >
-                      Settings
-                    </a>
-                  </MenuItem>
-                  <MenuItem>
-                    <a
-                      href="#"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 hover:text-red-700 data-focus:bg-red-50 data-focus:outline-hidden transition-all duration-200 ease-out transform hover:scale-105 rounded-lg mx-1"
-                    >
-                      Sign out
-                    </a>
-                  </MenuItem>
-                </MenuItems>
-              </Menu>
+              <UserAvatar showDropdown={true} />
 
               <button
                 type="button"
@@ -220,47 +182,8 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
 
         {/* Mobile user section */}
         <div className="border-t border-gray-200 pt-4 pb-3">
-          <div className="flex items-center px-4">
-            <div className="shrink-0">
-              <div className="size-10 rounded-full bg-gray-300 flex items-center justify-center">
-                <span className="text-gray-600 font-medium">U</span>
-              </div>
-            </div>
-            <div className="ml-3">
-              <div className="text-base font-medium text-gray-800">Animation Creator</div>
-              <div className="text-sm font-medium text-gray-500">creator@example.com</div>
-            </div>
-            <button
-              type="button"
-              className="relative ml-auto shrink-0 rounded-full bg-white p-1 text-gray-400 hover:text-gray-500 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-hidden"
-            >
-              <span className="absolute -inset-1.5" />
-              <span className="sr-only">View notifications</span>
-              <Bell aria-hidden="true" className="size-6" />
-            </button>
-          </div>
-          <div className="mt-3 space-y-1">
-            <DisclosureButton
-              as="a"
-              href="#"
-              className="block px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800"
-            >
-              Your Profile
-            </DisclosureButton>
-            <DisclosureButton
-              as="a"
-              href="#"
-              className="block px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800"
-            >
-              Settings
-            </DisclosureButton>
-            <DisclosureButton
-              as="a"
-              href="#"
-              className="block px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800"
-            >
-              Sign out
-            </DisclosureButton>
+          <div className="px-4">
+            <UserAvatar showDropdown={true} />
           </div>
         </div>
       </DisclosurePanel>
