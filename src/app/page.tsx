@@ -16,6 +16,7 @@ export default function HomePage() {
   const [showAllProjects, setShowAllProjects] = useState(false);
   const [activeTab, setActiveTab] = useState('Recently viewed');
   const [selectedSort, setSelectedSort] = useState('lastViewed');
+  const [showAllFeaturedProjects, setShowAllFeaturedProjects] = useState(false);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -34,6 +35,14 @@ export default function HomePage() {
 
   const handleViewLess = () => {
     setShowAllProjects(false);
+  };
+
+  const handleFeaturedViewMore = () => {
+    setShowAllFeaturedProjects(true);
+  };
+
+  const handleFeaturedViewLess = () => {
+    setShowAllFeaturedProjects(false);
   };
 
   const handleTabChange = (tabName: string) => {
@@ -95,6 +104,8 @@ export default function HomePage() {
   ];
 
   const sortedFeaturedProjects = getSortedFeaturedProjects();
+  const hasMoreCommunityProjects = communityProjects.length > 8;
+  const hasMoreFeaturedProjects = sortedFeaturedProjects.length > 8;
 
   return (
     <>
@@ -125,56 +136,58 @@ export default function HomePage() {
 
           {/* Hero section */}
           <div className='p-8'>
-            {/* Community Projects */}
-            <div className="flex flex-col border border-gray-200 rounded-3xl px-8 py-7">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-5">
-                <div>
-                  <h1 className="text-xl font-semibold text-gray-900 mb-2">See what you can do</h1>
-                  <p className="text-gray-600 text-sm">Explore community projects and get inspired</p>
+            {/* Community Projects - Hidden when showing all featured projects */}
+            {!showAllFeaturedProjects && (
+              <div className="flex flex-col border border-gray-200 rounded-3xl px-8 py-7">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-5">
+                  <div>
+                    <h1 className="text-xl font-semibold text-gray-900 mb-2">See what you can do</h1>
+                    <p className="text-gray-600 text-sm">Explore community projects and get inspired</p>
+                  </div>
+                  <Link href="/editor" className="mt-4 sm:mt-0 inline-flex items-center gap-x-2 bg-gradient-to-r from-purple-700 to-indigo-700 text-white px-6 py-3 rounded-2xl text-sm font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-lg shadow-indigo-500/25">
+                    <Sparkles className="size-4" />
+                    Create Your Own
+                  </Link>
                 </div>
-                <Link href="/editor" className="mt-4 sm:mt-0 inline-flex items-center gap-x-2 bg-gradient-to-r from-purple-700 to-indigo-700 text-white px-6 py-3 rounded-2xl text-sm font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-lg shadow-indigo-500/25">
-                  <Sparkles className="size-4" />
-                  Create Your Own
-                </Link>
-              </div>
 
-              {/* Community Projects Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-8 gap-4 max-w-none">
-                {displayedProjects.map((project) => (
-                  <ProjectCard
-                    key={project.id}
-                    project={project}
-                    variant="compact"
-                    onClick={() => handleProjectClick(project.id)}
-                  />
-                ))}
-              </div>
-
-              {/* View More/Less Button */}
-              {communityProjects.length > 8 && (
-                <div className="flex justify-center mt-6">
-                  <button
-                    onClick={showAllProjects ? handleViewLess : handleViewMore}
-                    className="flex items-center gap-x-2 text-purple-700 hover:text-purple-800 font-medium text-sm transition-colors px-4 py-2 rounded-lg hover:bg-purple-50"
-                  >
-                    <span>
-                      {showAllProjects
-                        ? 'Collapse'
-                        : 'View more community projects'
-                      }
-                    </span>
-                    {showAllProjects ? (
-                      <ChevronUp className="size-4" />
-                    ) : (
-                      <ChevronDown className="size-4" />
-                    )}
-                  </button>
+                {/* Community Projects Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-8 gap-4 max-w-none">
+                  {displayedProjects.map((project) => (
+                    <ProjectCard
+                      key={project.id}
+                      project={project}
+                      variant="compact"
+                      onClick={() => handleProjectClick(project.id)}
+                    />
+                  ))}
                 </div>
-              )}
-            </div>
+
+                {/* View More/Less Button - Only show if there are more projects */}
+                {hasMoreCommunityProjects && (
+                  <div className="flex justify-center mt-6">
+                    <button
+                      onClick={showAllProjects ? handleViewLess : handleViewMore}
+                      className="flex items-center gap-x-2 text-purple-700 hover:text-purple-800 font-medium text-sm transition-colors px-4 py-2 rounded-lg hover:bg-purple-50"
+                    >
+                      <span>
+                        {showAllProjects
+                          ? 'Collapse'
+                          : 'View more community projects'
+                        }
+                      </span>
+                      {showAllProjects ? (
+                        <ChevronUp className="size-4" />
+                      ) : (
+                        <ChevronDown className="size-4" />
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Featured Projects */}
-            <div className="flex flex-col px-4 py-7 mt-4">
+            <div className={`flex flex-col ${showAllFeaturedProjects ? 'border border-gray-200 rounded-3xl px-8 py-7' : 'px-4 py-7 mt-4'}`}>
               <div className="mb-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-2">Featured Projects</h2>
                 <p className="text-gray-600 text-sm">Your recently viewed and shared projects</p>
@@ -190,16 +203,40 @@ export default function HomePage() {
               />
 
               {/* Featured Projects Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-8 gap-6 mt-6">
+              <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-8 gap-6 mt-6 ${
+                showAllFeaturedProjects ? 'max-h-96 overflow-y-auto' : ''
+              }`}>
                 {sortedFeaturedProjects.map((project) => (
                   <ProjectCard
                     key={project.id}
                     project={project}
-                    variant="default"
+                    variant={showAllFeaturedProjects ? "compact" : "default"}
                     onClick={() => handleProjectClick(project.id)}
                   />
                 ))}
               </div>
+
+              {/* Featured Projects View More/Less Button - Only show if there are more projects */}
+              {hasMoreFeaturedProjects && (
+                <div className="flex justify-center mt-6">
+                  <button
+                    onClick={showAllFeaturedProjects ? handleFeaturedViewLess : handleFeaturedViewMore}
+                    className="flex items-center gap-x-2 text-purple-700 hover:text-purple-800 font-medium text-sm transition-colors px-4 py-2 rounded-lg hover:bg-purple-50"
+                  >
+                    <span>
+                      {showAllFeaturedProjects
+                        ? 'Show community projects'
+                        : 'View all featured projects'
+                      }
+                    </span>
+                    {showAllFeaturedProjects ? (
+                      <ChevronUp className="size-4" />
+                    ) : (
+                      <ChevronDown className="size-4" />
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
