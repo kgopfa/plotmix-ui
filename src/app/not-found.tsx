@@ -59,10 +59,10 @@ export default function NotFound() {
               Content
             </Link>
             <Link
-              href="/learn"
+              href="/chat"
               className="text-indigo-600 hover:text-indigo-700 font-medium text-sm hover:underline"
             >
-              Learn
+              Chat
             </Link>
           </div>
         </div>

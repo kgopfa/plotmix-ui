@@ -8,7 +8,7 @@ PlotMix AI uses Next.js App Router for client-side navigation with a structured 
 
 ```mermaid
 graph TD
-    A[Home /] --> B[Learn /learn]
+    A[Home /] --> B[Chat /chat]
     B --> C[Content Generated /content/[contentId]]
     C --> D[Editor /editor/[contentId]]
     C --> E[Continue Chat in Sidebar]
@@ -31,14 +31,14 @@ graph TD
 | Route | Component | Purpose | Navigation Access |
 |-------|-----------|---------|-------------------|
 | `/` | `page.tsx` | Landing page with feature overview | Direct URL, navigation cards |
-| `/learn` | `learn/page.tsx` | Chat creation and AI learning hub | Navigation sidebar, home page |
+| `/chat` | `chat/page.tsx` | Chat creation and AI learning hub | Navigation sidebar, home page |
 | `/content` | `content/page.tsx` | Content library overview | Navigation sidebar |
 
 ### Dynamic Routes
 
 | Route Pattern | Component | Purpose | Navigation Access |
 |---------------|-----------|---------|-------------------|
-| `/content/[contentId]` | `content/[contentId]/page.tsx` | Generated content view with chat sidebar | Generated from `/learn` |
+| `/content/[contentId]` | `content/[contentId]/page.tsx` | Generated content view with chat sidebar | Generated from `/chat` |
 | `/editor/[contentId]` | `editor/[contentId]/page.tsx` | Canvas editor (source of content) | "Open in Editor" button |
 
 ### Special Routes
@@ -57,11 +57,11 @@ graph TD
 - Call-to-action buttons
 
 **Navigation Options**:
-- "Start Creating" → `/learn`
-- "Learn More" → `/learn`
+- "Start Creating" → `/chat`
+- "Learn More" → `/chat`
 - Feature cards → Direct to respective sections
 
-### 2. Learn Hub (`/learn`)
+### 2. Chat Hub (`/chat`)
 **Purpose**: Chat creation and content generation
 **Components**:
 - AI suggestions section
@@ -121,8 +121,8 @@ interface NavigationItem {
 ```
 
 **Current Items**:
-- **New Chat** → `/learn` (green hover)
-- **Chats** → `/learn` (blue hover)
+- **New Chat** → `/chat` (green hover)
+- **Chats** → `/chat` (blue hover)
 - **Content** → `/content` (fuchsia hover)
 
 ### Navigation Data
@@ -150,7 +150,7 @@ window.location.href = `/content/${contentId}`;
 
 ### Dynamic Route Generation
 ```typescript
-// Content generation from learn page
+// Content generation from chat page
 const contentId = `content-${Date.now()}`;
 ```
 
@@ -180,7 +180,7 @@ const contentId = `content-${Date.now()}`;
 ### Potential Routes
 ```
 /content/[contentId]/share - Content sharing page
-/learn/[chatId]/history - Chat history view
+/chat/[chatId]/history - Chat history view
 /editor/[contentId]/preview - Content preview mode
 ```
 

@@ -12,7 +12,7 @@ export interface NavigationItem {
 export const navigation: NavigationItem[] = [
   {
     name: 'New Chat',
-    href: '/learn',
+    href: '/chat',
     icon: CirclePlus,
     color: 'text-gray-500',
     hoverColor: 'hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 hover:text-green-700',
@@ -20,7 +20,7 @@ export const navigation: NavigationItem[] = [
   },
   {
     name: 'Chats',
-    href: '/learn',
+    href: '/chat',
     icon: MessagesSquare,
     color: 'text-gray-500',
     hoverColor: 'hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 hover:text-blue-700',

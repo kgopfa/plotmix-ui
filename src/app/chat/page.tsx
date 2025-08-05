@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import { NavigationSidebar } from '@/components/shared/navigation-sidebar';
-import { SuggestionsSection } from '@/components/learn/suggestions-section';
-import { PromptInput } from '@/components/learn/prompt-input';
+import { SuggestionsSection } from '@/components/chat/suggestions-section';
+import { PromptInput } from '@/components/chat/prompt-input';
 import { navigation } from '@/data/shared-navigation';
-import { suggestions, type Suggestion } from '@/data/learn-suggestions';
+import { suggestions, type Suggestion } from '@/data/chat-suggestions';
 
 interface Attachment {
   id: string;
@@ -14,7 +14,7 @@ interface Attachment {
   size: string;
 }
 
-export default function LearnPage() {
+export default function ChatPage() {
   const [prompt, setPrompt] = useState('');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
 
@@ -24,7 +24,7 @@ export default function LearnPage() {
     
     // Create a new chat session and navigate to it
     const chatId = `chat-${Date.now()}`;
-    window.location.href = `/learn/${chatId}`;
+    window.location.href = `/chat/${chatId}`;
   };
 
   const handleSuggestionClick = (suggestion: Suggestion) => {
