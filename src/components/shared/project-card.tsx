@@ -58,36 +58,26 @@ export function ProjectCard({ project, onClick, variant = 'default' }: ProjectCa
         {/* Project Meta */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-x-2">
-            <div className={`bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full flex items-center justify-center ${
-              isCompact ? 'w-5 h-5' : 'w-6 h-6'
-            }`}>
+            <div className={`bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full flex items-center justify-center w-8 h-8`}>
               <span className={`font-semibold text-white ${
                 isCompact ? 'text-xs' : 'text-xs'
               }`}>
                 {project.author.split(' ').map(n => n[0]).join('')}
               </span>
             </div>
-            <span className={`text-gray-600 ${
-              isCompact ? 'text-xs' : 'text-xs'
-            }`}>
+            <span className={`text-gray-600 text-xs`}>
               {project.author}
             </span>
           </div>
           
           {/* Stats */}
-          <div className={`flex items-center gap-x-3 text-gray-500 ${
-            isCompact ? 'gap-x-2' : 'gap-x-3'
-          }`}>
-            <div className={`flex items-center gap-x-1 ${
-              isCompact ? 'text-xs' : 'text-xs'
-            }`}>
-              <Eye className={isCompact ? 'size-3' : 'size-3'} />
+          <div className={`flex items-center gap-x-3 text-gray-500`}>
+            <div className={`flex items-center gap-x-1 text-xs font-semibold`}>
+              <Eye strokeWidth={2.5} className='size-3' />
               <span>{project.views}</span>
             </div>
-            <div className={`flex items-center gap-x-1 ${
-              isCompact ? 'text-xs' : 'text-xs'
-            }`}>
-              <Heart className={isCompact ? 'size-3' : 'size-3'} />
+            <div className={`flex items-center gap-x-1 text-xs font-semibold`}>
+              <Heart strokeWidth={2.5} className='size-3' />
               <span>{project.likes}</span>
             </div>
           </div>
