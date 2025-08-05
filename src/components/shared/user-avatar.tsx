@@ -11,9 +11,16 @@ interface UserAvatarProps {
   showDropdown?: boolean
 }
 
+interface DropdownPosition {
+  top: number
+  left: number
+  transform: string
+}
+
 export function UserAvatar({ className = '', showDropdown = true }: UserAvatarProps) {
   const { isAuthenticated, session } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
+  const [dropdownPosition, setDropdownPosition] = useState<DropdownPosition>({ top: 0, left: 0, transform: '' })
   const avatarRef = useRef<HTMLDivElement>(null)
 
   // Helper function to get user initials from name
@@ -55,6 +62,36 @@ export function UserAvatar({ className = '', showDropdown = true }: UserAvatarPr
     },
   ]
 
+  // Calculate dropdown position
+  const calculateDropdownPosition = () => {
+    if (!avatarRef.current) return;
+
+    const avatarRect = avatarRef.current.getBoundingClientRect();
+    const dropdownHeight = 200; // Approximate height of dropdown
+    const dropdownWidth = 224; // w-56 = 14rem = 224px
+    
+    let top = avatarRect.bottom + 8; // 8px gap below avatar
+    let left = avatarRect.left;
+    let transform = '';
+
+    // Check if dropdown would go below viewport
+    if (top + dropdownHeight > window.innerHeight) {
+      top = avatarRect.top - dropdownHeight - 8; // Position above avatar
+    }
+
+    // Check if dropdown would go outside right edge
+    if (left + dropdownWidth > window.innerWidth) {
+      left = window.innerWidth - dropdownWidth - 16; // 16px margin from edge
+    }
+
+    // Check if dropdown would go outside left edge
+    if (left < 16) {
+      left = 16;
+    }
+
+    setDropdownPosition({ top, left, transform });
+  };
+
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -68,6 +105,13 @@ export function UserAvatar({ className = '', showDropdown = true }: UserAvatarPr
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [])
+
+  // Recalculate position when dropdown opens
+  useEffect(() => {
+    if (isOpen) {
+      calculateDropdownPosition();
+    }
+  }, [isOpen]);
 
   const AvatarButton = () => (
     <div 
@@ -90,7 +134,14 @@ export function UserAvatar({ className = '', showDropdown = true }: UserAvatarPr
       <AvatarButton />
       
       {isOpen && typeof window !== 'undefined' && createPortal(
-        <div className="fixed z-50 w-56 border border-gray-300 rounded-xl bg-white p-4 text-sm font-semibold text-gray-900 shadow-lg ring-1 ring-gray-900/5" >
+        <div 
+          className="fixed z-50 w-56 border border-gray-300 rounded-xl bg-white px-4 py-6 text-sm font-semibold text-gray-700 shadow-lg ring-1 ring-gray-900/5" 
+          style={{
+            top: `${dropdownPosition.top}px`,
+            left: `${dropdownPosition.left}px`,
+            transform: dropdownPosition.transform
+          }}
+        >
           {/* User info header */}
           <div className="border-b border-gray-200 pb-3 mb-3">
             <div className="flex items-center gap-x-3">
@@ -119,7 +170,6 @@ export function UserAvatar({ className = '', showDropdown = true }: UserAvatarPr
                   setIsOpen(false)
                 }}
                 className="flex items-center gap-x-3 p-2 hover:bg-gray-50 hover:text-indigo-600 rounded-lg transition-colors duration-200"
-                style={{border: '1px solid blue'}}
               >
                 <Icon className="size-4 text-gray-500" />
                 {item.name}
