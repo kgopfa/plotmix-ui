@@ -11,15 +11,15 @@ import { navigation } from '@/data/shared-navigation';
 import { suggestions, type Suggestion } from '@/data/chat-suggestions';
 import { Palette, Sparkles, LogIn } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
-import { useChat } from '@/hooks/use-chat';
-import { ChatAttachment, ChatOptions } from '@/types/chat';
+import { useProjectGeneration } from '@/hooks/use-project-generation';
+import { ChatAttachment, ChatOptions } from '@/types/project-generation';
 
 export default function ChatPage() {
   const [prompt, setPrompt] = useState('');
   const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
   const [options, setOptions] = useState<ChatOptions>({});
   const { isAuthenticated } = useAuth();
-  const { submitChat, isLoading, error } = useChat();
+  const { submitChat, isLoading, error } = useProjectGeneration();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {

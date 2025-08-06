@@ -15,7 +15,7 @@ This document outlines the implementation of the chat flow in PlotMix AI, which 
 
 **Flow:**
 1. User enters a prompt (with optional attachments and configuration options)
-2. Frontend calls `/api/chat` endpoint with the request
+2. Frontend calls `/api/projects/generate` endpoint with the request
 3. Backend processes the request and returns content data
 4. Frontend navigates to `/content/[contentId]` with the generated content
 
@@ -46,7 +46,7 @@ This document outlines the implementation of the chat flow in PlotMix AI, which 
 
 ## API Endpoints
 
-### POST `/api/chat`
+### POST `/api/projects/generate`
 Handles initial chat requests and content generation.
 
 **Request:**
@@ -173,13 +173,13 @@ Manages content data fetching and state.
 - 🔄 Implement file upload for attachments
 - 🔄 Add authentication checks for content access
 
-### Mock Data
-Currently using mock data for development. Replace with actual backend integration:
+### Backend Integration
+The frontend is now configured to send requests to the correct backend endpoints:
 
-1. Update `/api/chat` to call AI service
-2. Update `/api/chat/followup` to call AI service
-3. Update `/api/content/[contentId]` to fetch from database
-4. Implement proper error handling for AI service failures
+1. ✅ `/api/projects/generate` - Initial chat requests (configured)
+2. 🔄 `/api/chat/followup` - Follow-up messages (needs backend endpoint)
+3. 🔄 `/api/content/[contentId]` - Content fetching (needs backend endpoint)
+4. 🔄 Implement proper error handling for AI service failures
 
 ## Testing
 

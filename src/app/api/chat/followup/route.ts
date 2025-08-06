@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { FollowUpChatRequest, FollowUpChatResponse, ChatMessage } from '@/types/chat';
+import { FollowUpChatRequest, FollowUpChatResponse, ChatMessage } from '@/types/project-generation';
 
 export async function POST(request: NextRequest) {
   try {

@@ -5,6 +5,6 @@ export { useContainerEmptyAreaClick } from './use-container-empty-area-click';
 // Element bounds cache hook
 export { useElementBoundsCache } from './use-element-bounds-cache';
 
-// Chat and content hooks
-export { useChat } from './use-chat';
+// Project generation and content hooks
+export { useProjectGeneration } from './use-project-generation';
 export { useContent } from './use-content'; 

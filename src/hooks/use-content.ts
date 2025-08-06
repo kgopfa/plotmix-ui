@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api-client';
-import { ChatResponse } from '@/types/chat';
+import { ChatResponse } from '@/types/project-generation';
 
 interface UseContentReturn {
   content: ChatResponse | null;
@@ -21,7 +21,7 @@ export function useContent(contentId: string): UseContentReturn {
     setError(null);
 
     try {
-            const response = await apiClient.get<ChatResponse>(`/api/content/${contentId}`);
+      const response = await apiClient.get<ChatResponse>(`/api/content/${contentId}`);
       setContent(response);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch content';

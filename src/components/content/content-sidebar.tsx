@@ -7,8 +7,8 @@ import { LLMMessage } from '@/components/content/llm-message';
 import { TranscriptSegment } from '@/components/content/transcript-segment';
 import { CircleFadingPlus } from 'lucide-react';
 import { useContent } from '@/hooks/use-content';
-import { useChat } from '@/hooks/use-chat';
-import { ChatMessage } from '@/types/chat';
+import { useProjectGeneration } from '@/hooks/use-project-generation';
+import { ChatMessage } from '@/types/project-generation';
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ')
@@ -18,7 +18,7 @@ export function ContentSidebar() {
   const params = useParams();
   const contentId = params.contentId as string;
   const { content } = useContent(contentId);
-  const { submitFollowUp, isLoading: isSubmitting } = useChat();
+  const { submitFollowUp, isLoading: isSubmitting } = useProjectGeneration();
   
   const [activeTab, setActiveTab] = useState('Chat');
   const [message, setMessage] = useState('');

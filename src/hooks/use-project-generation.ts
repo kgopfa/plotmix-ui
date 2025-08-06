@@ -8,9 +8,9 @@ import {
   ChatMessage,
   ChatAttachment,
   ChatOptions 
-} from '@/types/chat';
+} from '@/types/project-generation';
 
-interface UseChatReturn {
+interface UseProjectGenerationReturn {
   // State
   isLoading: boolean;
   error: string | null;
@@ -23,7 +23,7 @@ interface UseChatReturn {
   clearError: () => void;
 }
 
-export function useChat(): UseChatReturn {
+export function useProjectGeneration(): UseProjectGenerationReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,7 +42,7 @@ export function useChat(): UseChatReturn {
         options
       };
 
-      const response = await apiClient.post<ChatResponse>('/api/chat', request);
+      const response = await apiClient.post<ChatResponse>('/api/projects/generate', request);
       return response;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to submit chat';
