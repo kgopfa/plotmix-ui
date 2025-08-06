@@ -32,15 +32,13 @@ export interface ChatRequest {
 }
 
 export interface ChatResponse {
-  contentId: string;
-  title: string;
-  description: string;
-  videoUrl?: string;
-  transcript?: TranscriptSegment[];
-  chatHistory: ChatMessage[];
-  projectData?: any; // ProjectData type from project.ts
-  createdAt: string;
-  author: string;
+  version: string;
+  projectId: string;
+  conversationId: string;
+  userId: string;
+  messageCount: number;
+  canvasGenerated: boolean;
+  totalSteps: number;
 }
 
 export interface FollowUpChatRequest {

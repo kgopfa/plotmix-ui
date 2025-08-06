@@ -33,9 +33,9 @@ export default function ContentDetailPage() {
               </div>
             ) : content ? (
               <>
-                <h2 className="text-3xl font-bold text-gray-900">{content.title}</h2>
+                <h2 className="text-3xl font-bold text-gray-900">{content.name}</h2>
                 <div className="flex flex-row items-center gap-x-2">
-                  <p className="text-gray-500 text-sm font-medium">{content.author}</p>
+                  <p className="text-gray-500 text-sm font-medium">{content.author || 'Unknown'}</p>
                   <div className="w-1 h-1 bg-gray-400 rounded-full" />
                   <p className="text-gray-500 text-sm font-medium">
                     {new Date(content.createdAt).toLocaleDateString()}
