@@ -1,29 +1,60 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import { UserMessage } from '@/components/content/user-message';
 import { LLMMessage } from '@/components/content/llm-message';
 import { TranscriptSegment } from '@/components/content/transcript-segment';
 import { CircleFadingPlus } from 'lucide-react';
-import { shardedCounterChat, betterStackMonitoringTranscript } from '@/data/chat-messages';
+import { useContent } from '@/hooks/use-content';
+import { useChat } from '@/hooks/use-chat';
+import { ChatMessage } from '@/types/chat';
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ')
 }
 
 export function ContentSidebar() {
+  const params = useParams();
+  const contentId = params.contentId as string;
+  const { content } = useContent(contentId);
+  const { submitFollowUp, isLoading: isSubmitting } = useChat();
+  
   const [activeTab, setActiveTab] = useState('Chat');
   const [message, setMessage] = useState('');
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Update chat history when content changes
+  useEffect(() => {
+    if (content?.chatHistory) {
+      setChatHistory(content.chatHistory);
+    }
+  }, [content]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim()) return;
+    if (!message.trim() || isSubmitting) return;
 
-    // Handle message submission here
-    console.log('Submitting message:', { message });
+    try {
+      const userMessage: ChatMessage = {
+        id: Date.now().toString(),
+        message: message.trim(),
+        isUser: true,
+        timestamp: new Date().toISOString()
+      };
 
-    // For now, just clear the message
-    setMessage('');
+      // Add user message to chat history immediately
+      setChatHistory(prev => [...prev, userMessage]);
+      setMessage('');
+
+      // Submit follow-up message
+      const aiResponse = await submitFollowUp(contentId, message.trim());
+      if (aiResponse) {
+        setChatHistory(prev => [...prev, aiResponse]);
+      }
+    } catch (err) {
+      console.error('Failed to submit follow-up message:', err);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -72,7 +103,7 @@ export function ContentSidebar() {
                   {/* Scrollable messages area */}
                   <div className="flex-1 overflow-y-auto">
                     <div className="space-y-4">
-                      {shardedCounterChat.map((message) => (
+                      {chatHistory.map((message: ChatMessage) => (
                         message.isUser ? (
                           <UserMessage
                             key={message.id}
@@ -122,12 +153,16 @@ export function ContentSidebar() {
                         <button
                           type="button"
                           onClick={handleSubmit}
-                          disabled={!message.trim()}
+                          disabled={!message.trim() || isSubmitting}
                           className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30 text-white hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.0" stroke="currentColor" className="w-4 h-4 text-white">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
-                          </svg>
+                          {isSubmitting ? (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.0" stroke="currentColor" className="w-4 h-4 text-white">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
+                            </svg>
+                          )}
                         </button>
                       </div>
                     </div>
@@ -141,7 +176,7 @@ export function ContentSidebar() {
               <div className="space-y-2">
                 <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Transcript</div>
                 <div className="space-y-2">
-                  {betterStackMonitoringTranscript.map((segment) => (
+                  {content?.transcript?.map((segment) => (
                     <TranscriptSegment
                       key={segment.id}
                       timestamp={segment.timestamp}
@@ -151,7 +186,11 @@ export function ContentSidebar() {
                         console.log('Clicked segment at:', segment.timestamp);
                       }}
                     />
-                  ))}
+                  )) || (
+                    <div className="text-gray-500 text-sm py-4 text-center">
+                      No transcript available
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

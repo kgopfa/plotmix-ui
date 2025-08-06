@@ -25,6 +25,7 @@ interface PromptInputProps {
   onAttachmentsChange: (attachments: Attachment[]) => void;
   onSubmit: (e: React.FormEvent) => void;
   onKeyDown: (e: React.KeyboardEvent) => void;
+  isLoading?: boolean;
 }
 
 export const PromptInput: React.FC<PromptInputProps> = ({
@@ -33,7 +34,8 @@ export const PromptInput: React.FC<PromptInputProps> = ({
   onPromptChange,
   onAttachmentsChange,
   onSubmit,
-  onKeyDown
+  onKeyDown,
+  isLoading = false
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -182,13 +184,17 @@ export const PromptInput: React.FC<PromptInputProps> = ({
           {/* Right side - Submit Button */}
           <button
             type="submit"
-            disabled={!prompt.trim()}
-            className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30"
+            disabled={!prompt.trim() || isLoading}
+            className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
             title="Generate content (⌘+Enter)"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.0" stroke="currentColor" className="w-4 h-4 text-white">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
-            </svg>
+            {isLoading ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.0" stroke="currentColor" className="w-4 h-4 text-white">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
+              </svg>
+            )}
           </button>
 
           {/* Hidden file inputs */}

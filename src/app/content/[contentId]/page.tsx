@@ -6,10 +6,12 @@ import { NavigationSidebar } from '@/components/shared/navigation-sidebar';
 import { ContentSidebar } from '@/components/content/content-sidebar';
 import { Link2, Pencil, UserPlus } from 'lucide-react';
 import { navigation } from '@/data/shared-navigation';
+import { useContent } from '@/hooks/use-content';
 
 export default function ContentDetailPage() {
   const params = useParams();
   const contentId = params.contentId as string;
+  const { content, isLoading, error } = useContent(contentId);
 
   return (
     <>
@@ -19,13 +21,32 @@ export default function ContentDetailPage() {
       <main className="relative min-h-screen bg-white pt-16 lg:pt-0 lg:pl-20 lg:pr-[calc(100vw/7)]">
         <div className="flex flex-row items-center px-10 h-36">
           <div className="flex flex-col gap-y-2">
-            <h2 className="text-3xl font-bold text-gray-900">Sharded counter design guide</h2>
-
-            <div className="flex flex-row items-center gap-x-2">
-              <p className="text-gray-500 text-sm font-medium">John Doe</p>
-              <div className="w-1 h-1 bg-gray-400 rounded-full" />
-              <p className="text-gray-500 text-sm font-medium">2 hours ago</p>
-            </div>
+            {isLoading ? (
+              <div className="animate-pulse">
+                <div className="h-8 bg-gray-200 rounded w-96 mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-48"></div>
+              </div>
+            ) : error ? (
+              <div className="text-red-600">
+                <h2 className="text-3xl font-bold">Error loading content</h2>
+                <p className="text-sm">{error}</p>
+              </div>
+            ) : content ? (
+              <>
+                <h2 className="text-3xl font-bold text-gray-900">{content.title}</h2>
+                <div className="flex flex-row items-center gap-x-2">
+                  <p className="text-gray-500 text-sm font-medium">{content.author}</p>
+                  <div className="w-1 h-1 bg-gray-400 rounded-full" />
+                  <p className="text-gray-500 text-sm font-medium">
+                    {new Date(content.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              </>
+            ) : (
+              <div className="text-gray-600">
+                <h2 className="text-3xl font-bold">Content not found</h2>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-row h-10 rounded-lg border border-gray-200 ml-auto">

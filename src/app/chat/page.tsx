@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { NavigationSidebar } from '@/components/shared/navigation-sidebar';
 import { SearchBar } from '@/components/shared/search-bar';
 import { SuggestionsSection } from '@/components/chat/suggestions-section';
@@ -10,26 +11,30 @@ import { navigation } from '@/data/shared-navigation';
 import { suggestions, type Suggestion } from '@/data/chat-suggestions';
 import { Palette, Sparkles, LogIn } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
-
-interface Attachment {
-  id: string;
-  name: string;
-  type: 'file' | 'image';
-  size: string;
-}
+import { useChat } from '@/hooks/use-chat';
+import { ChatAttachment, ChatOptions } from '@/types/chat';
 
 export default function ChatPage() {
   const [prompt, setPrompt] = useState('');
-  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
+  const [options, setOptions] = useState<ChatOptions>({});
   const { isAuthenticated } = useAuth();
+  const { submitChat, isLoading, error } = useChat();
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!prompt.trim()) return;
+    if (!prompt.trim() || isLoading) return;
     
-    // Create a new chat session and navigate to it
-    const chatId = `chat-${Date.now()}`;
-    window.location.href = `/chat/${chatId}`;
+    try {
+      const response = await submitChat(prompt, attachments, options);
+      if (response) {
+        // Navigate to the content page with the generated content
+        router.push(`/content/${response.contentId}`);
+      }
+    } catch (err) {
+      console.error('Failed to submit chat:', err);
+    }
   };
 
   const handleSuggestionClick = (suggestion: Suggestion) => {
@@ -98,7 +103,15 @@ export default function ChatPage() {
               onAttachmentsChange={setAttachments}
               onSubmit={handleSubmit}
               onKeyDown={handleKeyDown}
+              isLoading={isLoading}
             />
+
+            {/* Error Display */}
+            {error && (
+              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl">
+                <p className="text-sm text-red-600">{error}</p>
+              </div>
+            )}
 
             {/* Footer */}
             <div className="mt-6 text-center">
