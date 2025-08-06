@@ -66,34 +66,44 @@ export function useContent(contentId: string): UseContentReturn {
   const fetchContent = async () => {
     if (!contentId) return;
 
+    console.log('🔍 Fetching content for contentId:', contentId);
     setIsLoading(true);
     setError(null);
 
     try {
       // Fetch project data
+      console.log('📡 Fetching project data from:', `/api/projects/${contentId}`);
       const projectResponse = await apiClient.get<ProjectDataResponse>(`/api/projects/${contentId}`);
+      console.log('✅ Project data received:', projectResponse);
       
       // Fetch conversation for this project
+      console.log('📡 Fetching conversations from:', `/api/conversations?projectId=${contentId}`);
       const conversationsResponse = await apiClient.get<{ data: ConversationData[] }>(`/api/conversations?projectId=${contentId}`);
+      console.log('✅ Conversations data received:', conversationsResponse);
       
       if (!conversationsResponse.data || conversationsResponse.data.length === 0) {
         throw new Error('No conversation found for this project');
       }
 
       const conversation = conversationsResponse.data[0]; // Use the first conversation
+      console.log('✅ Using conversation:', conversation);
 
       // Get user info for author (we'll need to fetch this separately or get it from the project)
       // For now, we'll use the userId as author, but ideally we'd fetch user details
       const author = projectResponse.userId; // TODO: Fetch actual user name
 
-      setContent({
+      const contentData = {
         title: projectResponse.name,
         author,
         createdAt: projectResponse.createdAt,
         conversation,
         transcript: [] // Empty for now, will be implemented later
-      });
+      };
+      
+      console.log('✅ Setting content data:', contentData);
+      setContent(contentData);
     } catch (err) {
+      console.error('❌ Error fetching content:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch content';
       setError(errorMessage);
     } finally {
