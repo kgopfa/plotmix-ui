@@ -26,8 +26,17 @@ export function ContentSidebar() {
 
   // Update chat history when content changes
   useEffect(() => {
-    if (content?.chatHistory) {
-      setChatHistory(content.chatHistory);
+    if (content?.conversation?.messages) {
+      // Convert conversation messages to chat history format
+      const messages = content.conversation.messages
+        .filter(msg => msg.messageType === 'USER' || msg.messageType === 'LLM')
+        .map(msg => ({
+          id: msg.id,
+          message: msg.content,
+          isUser: msg.messageType === 'USER',
+          timestamp: msg.createdAt
+        }));
+      setChatHistory(messages);
     }
   }, [content]);
 
@@ -47,8 +56,13 @@ export function ContentSidebar() {
       setChatHistory(prev => [...prev, userMessage]);
       setMessage('');
 
-      // Submit follow-up message
-      const aiResponse = await submitFollowUp(contentId, message.trim());
+      // Submit follow-up message using conversation ID
+      const conversationId = content?.conversation?.id;
+      if (!conversationId) {
+        console.error('No conversation ID available');
+        return;
+      }
+      const aiResponse = await submitFollowUp(conversationId, message.trim());
       if (aiResponse) {
         setChatHistory(prev => [...prev, aiResponse]);
       }
