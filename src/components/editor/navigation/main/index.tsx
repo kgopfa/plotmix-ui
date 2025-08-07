@@ -3,14 +3,9 @@ import {
   Disclosure,
   DisclosureButton,
   DisclosurePanel,
-  Menu,
-  MenuButton,
-  MenuItem,
-  MenuItems
 } from '@headlessui/react'
 import {
   Menu as MenuIcon,
-  Bell,
   X,
   Upload,
   Redo2,
@@ -24,7 +19,7 @@ import { PanelToggleButtons } from './panel-toggle-buttons';
 import { SnappingControls } from './settings/snapping/snapping-controls';
 import { SelectionIndicator } from './selection-indicator';
 import { SettingsDropdown } from './settings';
-import { UserAvatar } from '@/components/shared/user-avatar';
+import { UserAvatar } from './user-avatar';
 
 // Simplified interface - only for props that can't be accessed via stores
 interface MainNavBarProps {

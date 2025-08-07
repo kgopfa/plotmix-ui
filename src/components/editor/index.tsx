@@ -1083,7 +1083,7 @@ export default function EditorCanvas() {
         })() && (
           <>
             <div
-              className={`absolute h-5/6 right-20 top-2 bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-xl shadow-gray-200/50 rounded-2xl overflow-y-auto z-30 mb-2 transform transition-all duration-300 ease-out translate-x-0 opacity-100`}
+              className={`absolute h-2/3 right-20 top-2 bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-xl shadow-gray-200/50 rounded-2xl overflow-y-auto z-30 mb-2 transform transition-all duration-300 ease-out translate-x-0 opacity-100`}
               style={{ 
                 width: `${panelState.rightPanelWidth / 16}rem`,
                 bottom: `${panelState.timelineHeight + 8}px`,
