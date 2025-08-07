@@ -4,22 +4,28 @@ import { apiClient } from '@/lib/api-client';
 interface ConversationMessage {
   id: string;
   content: string;
-  messageType: 'USER' | 'LLM';
-  conversationId: string;
+  messageType: 'user' | 'llm';
+  metadata: any;
+  attachments: any[] | null;
+  options: any;
   createdAt: string;
-  attachments?: any;
-  options?: any;
-  metadata?: any;
+  conversationId: string;
+  userId: string;
 }
 
 interface ConversationData {
   id: string;
-  title: string;
-  userId: string;
-  projectId: string;
   createdAt: string;
   updatedAt: string;
+  userId: string;
+  projectId: string;
   messages: ConversationMessage[];
+}
+
+interface ConversationResponse {
+  success: boolean;
+  message: string;
+  data: ConversationData;
 }
 
 interface UseConversationReturn {
@@ -42,9 +48,9 @@ export function useConversation(conversationId: string): UseConversationReturn {
 
     try {
       console.log('📡 Fetching conversation:', conversationId);
-      const response = await apiClient.get<ConversationData>(`/api/conversations/${conversationId}`);
+      const response = await apiClient.get<ConversationResponse>(`/api/conversations/${conversationId}`);
       console.log('✅ Conversation data received:', response);
-      setConversation(response);
+      setConversation(response.data);
     } catch (err) {
       console.error('❌ Error fetching conversation:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch conversation';

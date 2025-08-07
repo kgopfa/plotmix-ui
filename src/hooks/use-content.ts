@@ -66,7 +66,7 @@ interface ContentData {
   author: string;
   createdAt: string;
   // Conversation data
-  conversation: ConversationData;
+  conversationId: string;
   // Transcript data (for future implementation)
   transcript?: TranscriptSegment[];
 }
@@ -103,7 +103,7 @@ export function useContent(contentId: string): UseContentReturn {
         title: project.title || project.name,
         author: project.owner.name,
         createdAt: project.createdAt,
-        conversation: project.conversation,
+        conversationId: project.conversation.id,
         transcript: [] // Initialize empty transcript for future implementation
       };
       

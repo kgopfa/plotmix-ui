@@ -12,7 +12,6 @@ export default function ContentDetailPage() {
   const params = useParams();
   const contentId = params.contentId as string;
   const { content, isLoading, error } = useContent(contentId);
-  console.log("Content: ", content);
 
   return (
     <>
@@ -108,7 +107,7 @@ export default function ContentDetailPage() {
         </div>
       </main>
 
-      <ContentSidebar />
+      <ContentSidebar conversationId={content?.conversationId || ''} />
     </>
   );
 } 

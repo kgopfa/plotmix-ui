@@ -1,44 +1,39 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
 import { UserMessage } from '@/components/content/user-message';
 import { LLMMessage } from '@/components/content/llm-message';
 import { TranscriptSegment } from '@/components/content/transcript-segment';
 import { CircleFadingPlus } from 'lucide-react';
-import { useContent } from '@/hooks/use-content';
 import { useProjectGeneration } from '@/hooks/use-project-generation';
 import { useConversation } from '@/hooks/use-conversation';
 import { ChatMessage } from '@/types/project-generation';
+import { betterStackMonitoringTranscript } from '@/data/chat-messages';
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ')
 }
 
-export function ContentSidebar() {
-  const params = useParams();
-  const contentId = params.contentId as string;
-  const { content } = useContent(contentId);
+export function ContentSidebar({ conversationId }: { conversationId: string }) {
   const { submitFollowUp, isLoading: isSubmitting } = useProjectGeneration();
-  
+
   // Get conversation ID from content and fetch conversation
-  const conversationId = content?.conversation?.id;
   const { conversation, isLoading: isConversationLoading } = useConversation(conversationId || '');
-  
+
   const [activeTab, setActiveTab] = useState('Chat');
   const [message, setMessage] = useState('');
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
 
   // Update chat history when conversation changes
   useEffect(() => {
-    if (conversation?.messages) {
+    if (conversation) {
       // Convert conversation messages to chat history format
       const messages = conversation.messages
-        .filter(msg => msg.messageType === 'USER' || msg.messageType === 'LLM')
+        .filter(msg => msg.messageType === 'user' || msg.messageType === 'llm')
         .map(msg => ({
           id: msg.id,
           message: msg.content,
-          isUser: msg.messageType === 'USER',
+          isUser: msg.messageType === 'user',
           timestamp: msg.createdAt
         }));
       setChatHistory(messages);
@@ -126,7 +121,7 @@ export function ContentSidebar() {
                           <div className="text-gray-500 text-sm">Loading conversation...</div>
                         </div>
                       ) : (
-                                                chatHistory.map((message: ChatMessage) => (
+                        chatHistory.map((message: ChatMessage) => (
                           message.isUser ? (
                             <UserMessage
                               key={message.id}
@@ -150,7 +145,7 @@ export function ContentSidebar() {
               {/* Sticky input area at bottom */}
               <div className="sticky bottom-0 bg-transparent">
                 <div className="max-w-md mx-auto">
-                  <div className="mb-4 bg-white border border-gray-200 rounded-4xl shadow-xl">
+                  <div className="mb-4 bg-white border border-gray-200 rounded-xl shadow-md">
                     <div className="p-4">
                       <div className="relative">
                         <textarea
@@ -200,7 +195,7 @@ export function ContentSidebar() {
               <div className="space-y-2">
                 <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Transcript</div>
                 <div className="space-y-2">
-                  {content?.transcript?.map((segment) => (
+                  {betterStackMonitoringTranscript.map((segment) => (
                     <TranscriptSegment
                       key={segment.id}
                       timestamp={segment.timestamp}
@@ -211,10 +206,10 @@ export function ContentSidebar() {
                       }}
                     />
                   )) || (
-                    <div className="text-gray-500 text-sm py-4 text-center">
-                      No transcript available
-                    </div>
-                  )}
+                      <div className="text-gray-500 text-sm py-4 text-center">
+                        No transcript available
+                      </div>
+                    )}
                 </div>
               </div>
             </div>
