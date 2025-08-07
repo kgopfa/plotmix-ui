@@ -24,14 +24,34 @@ interface MessageData {
 }
 
 interface ProjectDataResponse {
-  id: string;
-  name: string;
-  description?: string;
-  userId: string;
-  mainState: ProjectData;
-  features: any;
-  createdAt: string;
-  updatedAt: string;
+  data: {
+    conversationId: string;
+    user: any;
+    project: {
+      id: string;
+      name: string;
+      title: string;
+      description?: string;
+      source: string;
+      mainState: ProjectData;
+      version: string;
+      features: any;
+      createdAt: string;
+      updatedAt: string;
+      userId: string;
+      owner: {
+        id: string;
+        name: string;
+        email: string;
+        createdAt: string;
+        updatedAt: string;
+      };
+      changes: any[];
+      snapshots: any[];
+      collaborators: any[];
+      conversation: ConversationData;
+    };
+  };
 }
 
 interface TranscriptSegment {
@@ -74,34 +94,20 @@ export function useContent(contentId: string): UseContentReturn {
       // Fetch project data
       console.log('📡 Fetching project data from:', `/api/projects/${contentId}`);
       const projectResponse = await apiClient.get<ProjectDataResponse>(`/api/projects/${contentId}`);
-      console.log('✅ Project data received:', projectResponse);
       
-      // Fetch conversation for this project
-      console.log('📡 Fetching conversations from:', `/api/conversations?projectId=${contentId}`);
-      const conversationsResponse = await apiClient.get<{ data: ConversationData[] }>(`/api/conversations?projectId=${contentId}`);
-      console.log('✅ Conversations data received:', conversationsResponse);
+      // Transform the response to match ContentData interface
+      const responseData = projectResponse.data;
+      const project = responseData.project;
       
-      if (!conversationsResponse.data || conversationsResponse.data.length === 0) {
-        throw new Error('No conversation found for this project');
-      }
-
-      const conversation = conversationsResponse.data[0]; // Use the first conversation
-      console.log('✅ Using conversation:', conversation);
-
-      // Get user info for author (we'll need to fetch this separately or get it from the project)
-      // For now, we'll use the userId as author, but ideally we'd fetch user details
-      const author = projectResponse.userId; // TODO: Fetch actual user name
-
-      const contentData = {
-        title: projectResponse.name,
-        author,
-        createdAt: projectResponse.createdAt,
-        conversation,
-        transcript: [] // Empty for now, will be implemented later
+      const transformedContent: ContentData = {
+        title: project.title || project.name,
+        author: project.owner.name,
+        createdAt: project.createdAt,
+        conversation: project.conversation,
+        transcript: [] // Initialize empty transcript for future implementation
       };
       
-      console.log('✅ Setting content data:', contentData);
-      setContent(contentData);
+      setContent(transformedContent);
     } catch (err) {
       console.error('❌ Error fetching content:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch content';

@@ -12,6 +12,7 @@ export default function ContentDetailPage() {
   const params = useParams();
   const contentId = params.contentId as string;
   const { content, isLoading, error } = useContent(contentId);
+  console.log("Content: ", content);
 
   return (
     <>
