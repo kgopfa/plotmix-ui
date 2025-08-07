@@ -4,7 +4,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { NavigationSidebar } from '@/components/shared/navigation-sidebar';
-import { SearchBar } from '@/components/shared/search-bar';
 import { SuggestionsSection } from '@/components/chat/suggestions-section';
 import { PromptInput } from '@/components/chat/prompt-input';
 import { navigation } from '@/data/shared-navigation';
@@ -59,12 +58,7 @@ export default function ChatPage() {
       <main className="lg:pl-20">
         {/* Header with search bar */}
         <div className="sticky top-0 z-40 flex flex-row h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 sm:gap-x-6 sm:px-6 lg:px-8">
-          <SearchBar
-            placeholder="Search"
-            onSearch={handleSearch}
-            className="max-w-2xl"
-          />
-
+        
           <div className="flex flex-row items-center gap-x-4 ml-auto">
             {isAuthenticated ? (
               <>
