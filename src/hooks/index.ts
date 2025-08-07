@@ -8,4 +8,5 @@ export { useElementBoundsCache } from './use-element-bounds-cache';
 // Project generation and content hooks
 export { useProjectGeneration } from './use-project-generation';
 export { useContent } from './use-content';
-export { useConversation } from './use-conversation'; 
+export { useConversation } from './use-conversation';
+export { useSessionValidation } from './use-session-validation'; 

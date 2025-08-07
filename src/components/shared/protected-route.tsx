@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -10,8 +10,9 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children, fallback }: ProtectedRouteProps) {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, validateSession } = useAuth();
   const router = useRouter();
+  const [isValidating, setIsValidating] = useState(false);
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -19,7 +20,22 @@ export default function ProtectedRoute({ children, fallback }: ProtectedRoutePro
     }
   }, [isAuthenticated, loading, router]);
 
-  if (loading) {
+  // Validate session when component mounts
+  useEffect(() => {
+    if (isAuthenticated && !loading) {
+      setIsValidating(true);
+      validateSession().then((isValid) => {
+        if (!isValid) {
+          // Session is invalid, redirect to login
+          router.push('/login');
+        }
+      }).finally(() => {
+        setIsValidating(false);
+      });
+    }
+  }, [isAuthenticated, loading, validateSession, router]);
+
+  if (loading || isValidating) {
     return fallback || (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>

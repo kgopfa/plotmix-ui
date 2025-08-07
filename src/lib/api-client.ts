@@ -1,14 +1,53 @@
-import { getSession } from 'next-auth/react';
+import { getSession, signOut } from 'next-auth/react';
 
 /**
  * API Client for making authenticated requests to the backend
  * Automatically includes NextAuth JWT tokens in requests
+ * Validates session against backend and handles invalid sessions
  */
 class ApiClient {
   private baseUrl: string;
+  private isLoggingOut: boolean = false;
 
   constructor(baseUrl: string = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000') {
     this.baseUrl = baseUrl;
+  }
+
+  /**
+   * Validate session against backend
+   */
+  private async validateSession(): Promise<boolean> {
+    try {
+      const session = await getSession();
+      if (!session?.accessToken) {
+        return false;
+      }
+
+      // Make a lightweight request to validate the session
+      const response = await fetch(`${this.baseUrl}/api/auth/validate-session`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.status === 401 || response.status === 403) {
+        // Session is invalid, logout the user
+        if (!this.isLoggingOut) {
+          this.isLoggingOut = true;
+          await signOut({ redirect: false });
+          console.warn('Session invalidated by backend, user logged out');
+        }
+        return false;
+      }
+
+      return response.ok;
+    } catch (error) {
+      console.error('Session validation error:', error);
+      // On network errors, we'll still try the request but log the issue
+      return true;
+    }
   }
 
   /**
@@ -33,15 +72,38 @@ class ApiClient {
   }
 
   /**
+   * Handle API response and check for authentication errors
+   */
+  private async handleResponse(response: Response): Promise<Response> {
+    if (response.status === 401 || response.status === 403) {
+      // Session is invalid, logout the user
+      if (!this.isLoggingOut) {
+        this.isLoggingOut = true;
+        await signOut({ redirect: false });
+        console.warn('Session invalidated by backend, user logged out');
+      }
+    }
+    return response;
+  }
+
+  /**
    * Make an authenticated GET request
    */
   async get<T>(endpoint: string): Promise<T> {
+    // Validate session before making request
+    const isValidSession = await this.validateSession();
+    if (!isValidSession) {
+      throw new Error('Invalid session');
+    }
+
     const headers = await this.getAuthHeaders();
     
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: 'GET',
       headers,
     });
+
+    await this.handleResponse(response);
 
     if (!response.ok) {
       throw new Error(`API Error: ${response.status} ${response.statusText}`);
@@ -54,6 +116,12 @@ class ApiClient {
    * Make an authenticated POST request
    */
   async post<T>(endpoint: string, data?: any): Promise<T> {
+    // Validate session before making request
+    const isValidSession = await this.validateSession();
+    if (!isValidSession) {
+      throw new Error('Invalid session');
+    }
+
     const headers = await this.getAuthHeaders();
     
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
@@ -61,6 +129,8 @@ class ApiClient {
       headers,
       body: data ? JSON.stringify(data) : undefined,
     });
+
+    await this.handleResponse(response);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -74,6 +144,12 @@ class ApiClient {
    * Make an authenticated PUT request
    */
   async put<T>(endpoint: string, data?: any): Promise<T> {
+    // Validate session before making request
+    const isValidSession = await this.validateSession();
+    if (!isValidSession) {
+      throw new Error('Invalid session');
+    }
+
     const headers = await this.getAuthHeaders();
     
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
@@ -81,6 +157,8 @@ class ApiClient {
       headers,
       body: data ? JSON.stringify(data) : undefined,
     });
+
+    await this.handleResponse(response);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -94,12 +172,20 @@ class ApiClient {
    * Make an authenticated DELETE request
    */
   async delete<T>(endpoint: string): Promise<T> {
+    // Validate session before making request
+    const isValidSession = await this.validateSession();
+    if (!isValidSession) {
+      throw new Error('Invalid session');
+    }
+
     const headers = await this.getAuthHeaders();
     
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: 'DELETE',
       headers,
     });
+
+    await this.handleResponse(response);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -113,6 +199,12 @@ class ApiClient {
    * Make an authenticated PATCH request
    */
   async patch<T>(endpoint: string, data?: any): Promise<T> {
+    // Validate session before making request
+    const isValidSession = await this.validateSession();
+    if (!isValidSession) {
+      throw new Error('Invalid session');
+    }
+
     const headers = await this.getAuthHeaders();
     
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
@@ -120,6 +212,8 @@ class ApiClient {
       headers,
       body: data ? JSON.stringify(data) : undefined,
     });
+
+    await this.handleResponse(response);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
