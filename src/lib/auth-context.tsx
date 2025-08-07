@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setIsValidating(true)
     try {
-      // Use the API client's validation method
+      // Call the backend's validate-session endpoint
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/validate-session`, {
         method: 'GET',
         headers: {
