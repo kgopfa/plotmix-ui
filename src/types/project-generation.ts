@@ -31,18 +31,34 @@ export interface ChatRequest {
   options?: ChatOptions;
 }
 
-export interface ChatResponse {
-  version: string;
-  projectId: string;
-  conversationId: string;
-  userId: string;
-  messageCount: number;
-  canvasGenerated: boolean;
-  totalSteps: number;
+export interface ProjectGenerationResponse {
+  success: boolean;
+  message: string;
+  data: {
+    project: {
+      id: string;
+      name: string;
+      createdAt: string;
+      updatedAt: string;
+      userId: string;
+      title: string | null;
+      description: string | null;
+      source: string | null;
+      mainState: any;
+      version: string;
+      features: any;
+    };
+    conversationId: string;
+    user: {
+      id: string;
+      name: string;
+      email: string;
+    };
+  };
 }
 
 export interface FollowUpChatRequest {
-  contentId: string;
+  conversationId: string;
   message: string;
 }
 

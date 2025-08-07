@@ -8,6 +8,7 @@ import { TranscriptSegment } from '@/components/content/transcript-segment';
 import { CircleFadingPlus } from 'lucide-react';
 import { useContent } from '@/hooks/use-content';
 import { useProjectGeneration } from '@/hooks/use-project-generation';
+import { useConversation } from '@/hooks/use-conversation';
 import { ChatMessage } from '@/types/project-generation';
 
 function classNames(...classes: string[]) {
@@ -20,15 +21,19 @@ export function ContentSidebar() {
   const { content } = useContent(contentId);
   const { submitFollowUp, isLoading: isSubmitting } = useProjectGeneration();
   
+  // Get conversation ID from content and fetch conversation
+  const conversationId = content?.conversation?.id;
+  const { conversation, isLoading: isConversationLoading } = useConversation(conversationId || '');
+  
   const [activeTab, setActiveTab] = useState('Chat');
   const [message, setMessage] = useState('');
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
 
-  // Update chat history when content changes
+  // Update chat history when conversation changes
   useEffect(() => {
-    if (content?.conversation?.messages) {
+    if (conversation?.messages) {
       // Convert conversation messages to chat history format
-      const messages = content.conversation.messages
+      const messages = conversation.messages
         .filter(msg => msg.messageType === 'USER' || msg.messageType === 'LLM')
         .map(msg => ({
           id: msg.id,
@@ -38,7 +43,7 @@ export function ContentSidebar() {
         }));
       setChatHistory(messages);
     }
-  }, [content]);
+  }, [conversation]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,7 +62,6 @@ export function ContentSidebar() {
       setMessage('');
 
       // Submit follow-up message using conversation ID
-      const conversationId = content?.conversation?.id;
       if (!conversationId) {
         console.error('No conversation ID available');
         return;
@@ -117,21 +121,27 @@ export function ContentSidebar() {
                   {/* Scrollable messages area */}
                   <div className="flex-1 overflow-y-auto">
                     <div className="space-y-4">
-                      {chatHistory.map((message: ChatMessage) => (
-                        message.isUser ? (
-                          <UserMessage
-                            key={message.id}
-                            message={message.message}
-                            timestamp={message.timestamp}
-                          />
-                        ) : (
-                          <LLMMessage
-                            key={message.id}
-                            message={message.message}
-                            timestamp={message.timestamp}
-                          />
-                        )
-                      ))}
+                      {isConversationLoading ? (
+                        <div className="text-center py-4">
+                          <div className="text-gray-500 text-sm">Loading conversation...</div>
+                        </div>
+                      ) : (
+                                                chatHistory.map((message: ChatMessage) => (
+                          message.isUser ? (
+                            <UserMessage
+                              key={message.id}
+                              message={message.message}
+                              timestamp={message.timestamp}
+                            />
+                          ) : (
+                            <LLMMessage
+                              key={message.id}
+                              message={message.message}
+                              timestamp={message.timestamp}
+                            />
+                          )
+                        ))
+                      )}
                     </div>
                   </div>
                 </div>

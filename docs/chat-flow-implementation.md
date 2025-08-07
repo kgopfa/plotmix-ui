@@ -47,7 +47,7 @@ This document outlines the implementation of the chat flow in PlotMix AI, which 
 ## API Endpoints
 
 ### POST `/api/projects/generate`
-Handles initial chat requests and content generation.
+Handles initial project generation requests.
 
 **Request:**
 ```typescript
@@ -61,15 +61,29 @@ Handles initial chat requests and content generation.
 **Response:**
 ```typescript
 {
-  contentId: string;
-  title: string;
-  description: string;
-  videoUrl?: string;
-  transcript?: TranscriptSegment[];
-  chatHistory: ChatMessage[];
-  projectData?: ProjectData;
-  createdAt: string;
-  author: string;
+  success: boolean;
+  message: string;
+  data: {
+    project: {
+      id: string;
+      name: string;
+      createdAt: string;
+      updatedAt: string;
+      userId: string;
+      title: string | null;
+      description: string | null;
+      source: string | null;
+      mainState: any;
+      version: string;
+      features: any;
+    };
+    conversationId: string;
+    user: {
+      id: string;
+      name: string;
+      email: string;
+    };
+  };
 }
 ```
 
@@ -92,12 +106,47 @@ Handles follow-up chat messages in content sidebar.
 }
 ```
 
-### GET `/api/content/[contentId]`
-Fetches content data by ID.
+### GET `/api/projects/[projectId]`
+Fetches project data by ID.
 
 **Response:**
 ```typescript
-ChatResponse // Same as chat endpoint response
+{
+  id: string;
+  name: string;
+  description?: string;
+  userId: string;
+  mainState: ProjectData;
+  features: any;
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+### GET `/api/conversations?projectId=[projectId]`
+Fetches conversations for a project.
+
+**Response:**
+```typescript
+{
+  data: ConversationData[]
+}
+```
+
+### GET `/api/conversations/[conversationId]`
+Fetches conversation messages by ID.
+
+**Response:**
+```typescript
+{
+  id: string;
+  title: string;
+  userId: string;
+  projectId: string;
+  createdAt: string;
+  updatedAt: string;
+  messages: ConversationMessage[];
+}
 ```
 
 ## Data Types

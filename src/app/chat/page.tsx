@@ -28,9 +28,9 @@ export default function ChatPage() {
     
     try {
       const response = await submitChat(prompt, attachments, options);
-      if (response) {
+      if (response && response.success) {
         // Navigate to the content page with the generated project
-        router.push(`/content/${response.projectId}`);
+        router.push(`/content/${response.data.project.id}`);
       }
     } catch (err) {
       console.error('Failed to submit chat:', err);

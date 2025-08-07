@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { 
   ChatRequest, 
-  ChatResponse, 
+  ProjectGenerationResponse, 
   FollowUpChatRequest, 
   FollowUpChatResponse,
   ChatMessage,
@@ -16,8 +16,8 @@ interface UseProjectGenerationReturn {
   error: string | null;
   
   // Actions
-  submitChat: (prompt: string, attachments?: ChatAttachment[], options?: ChatOptions) => Promise<ChatResponse | null>;
-  submitFollowUp: (contentId: string, message: string) => Promise<ChatMessage | null>;
+  submitChat: (prompt: string, attachments?: ChatAttachment[], options?: ChatOptions) => Promise<ProjectGenerationResponse | null>;
+  submitFollowUp: (conversationId: string, message: string) => Promise<ChatMessage | null>;
   
   // Utilities
   clearError: () => void;
@@ -31,7 +31,7 @@ export function useProjectGeneration(): UseProjectGenerationReturn {
     prompt: string, 
     attachments?: ChatAttachment[], 
     options?: ChatOptions
-  ): Promise<ChatResponse | null> => {
+  ): Promise<ProjectGenerationResponse | null> => {
     setIsLoading(true);
     setError(null);
 
@@ -42,7 +42,7 @@ export function useProjectGeneration(): UseProjectGenerationReturn {
         options
       };
 
-      const response = await apiClient.post<ChatResponse>('/api/projects/generate', request);
+      const response = await apiClient.post<ProjectGenerationResponse>('/api/projects/generate', request);
       return response;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to submit chat';
@@ -54,7 +54,7 @@ export function useProjectGeneration(): UseProjectGenerationReturn {
   };
 
   const submitFollowUp = async (
-    contentId: string, 
+    conversationId: string, 
     message: string
   ): Promise<ChatMessage | null> => {
     setIsLoading(true);
@@ -62,7 +62,7 @@ export function useProjectGeneration(): UseProjectGenerationReturn {
 
     try {
       const request: FollowUpChatRequest = {
-        contentId,
+        conversationId,
         message
       };
 
