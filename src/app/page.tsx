@@ -144,12 +144,12 @@ export default function HomePage() {
                     <>
                       <button className="flex flex-row items-center gap-x-1 bg-transparent border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-xs font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-200">
                         <Palette strokeWidth={2.25} className="size-4 text-blue-500" />
-                        Design
+                        Designer
                       </button>
 
                       <Link href="/chat" className="flex flex-row items-center gap-x-1 bg-transparent border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-xs font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-200">
                         <Sparkles className="size-4 text-purple-500" />
-                        Generate
+                        New Chat
                       </Link>
                     </>
                   ) : (
