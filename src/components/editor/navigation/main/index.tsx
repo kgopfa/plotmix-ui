@@ -22,6 +22,8 @@ import { SettingsDropdown } from './settings';
 import { UserAvatar } from './user-avatar';
 import { useProjectStore } from '@/stores/use-project-store';
 import { apiClient } from '@/lib/api-client';
+import { useCanvasStore } from '@/stores/use-canvas-store';
+import { useTimelineStore } from '@/stores/use-timeline-store';
 
 // Simplified interface - only for props that can't be accessed via stores
 interface MainNavBarProps {
@@ -87,6 +89,36 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
       const refreshed = await apiClient.get<any>(`/api/projects/${projectId}`);
       const project = refreshed.data.project;
       setProjectInfo({ version: project.version, name: project.name, title: project.title });
+      // Hydrate canvas and timeline from returned mainState
+      const mainState = (project.mainState as any) || {};
+      const canvasStore = useCanvasStore.getState();
+      const timelineStore = useTimelineStore.getState();
+      const rawElements = Array.isArray(mainState.elements) ? mainState.elements : [];
+      const rawGroups = Array.isArray(mainState.groups) ? mainState.groups : [];
+      const sanitizedElements = rawElements.map((el: any) => ({
+        animations: Array.isArray(el?.animations) ? el.animations : [],
+        fill: typeof el?.fill === 'string' && el.fill ? el.fill : '#000000',
+        ...el,
+      }));
+      const elements = Array.from(new Map(sanitizedElements.map((e: any) => [e.id as string, e])).values());
+      const sanitizedGroups = rawGroups.map((g: any) => ({
+        animations: Array.isArray(g?.animations) ? g.animations : [],
+        elementIds: Array.isArray(g?.elementIds) ? g.elementIds : [],
+        ...g,
+      }));
+      const groups = Array.from(new Map(sanitizedGroups.map((g: any) => [g.id as string, g])).values());
+      canvasStore.setElements(elements as any);
+      canvasStore.setGroups(groups as any);
+      const timeline = mainState.timeline || {};
+      timelineStore.loadProjectData({
+        elements: elements as any,
+        groups: groups as any,
+        animationStates: timeline.animationStates || {},
+        scale: typeof timeline.scale === 'number' ? timeline.scale : 1,
+        duration: typeof timeline.duration === 'number' ? timeline.duration : 10,
+        currentTime: typeof timeline.currentTime === 'number' ? timeline.currentTime : 0,
+      });
+      // Update baseline
       captureBaseline();
     } catch (e) {
       console.error('Undo failed', e);
@@ -100,6 +132,36 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
       const refreshed = await apiClient.get<any>(`/api/projects/${projectId}`);
       const project = refreshed.data.project;
       setProjectInfo({ version: project.version, name: project.name, title: project.title });
+      // Hydrate canvas and timeline from returned mainState
+      const mainState = (project.mainState as any) || {};
+      const canvasStore = useCanvasStore.getState();
+      const timelineStore = useTimelineStore.getState();
+      const rawElements = Array.isArray(mainState.elements) ? mainState.elements : [];
+      const rawGroups = Array.isArray(mainState.groups) ? mainState.groups : [];
+      const sanitizedElements = rawElements.map((el: any) => ({
+        animations: Array.isArray(el?.animations) ? el.animations : [],
+        fill: typeof el?.fill === 'string' && el.fill ? el.fill : '#000000',
+        ...el,
+      }));
+      const elements = Array.from(new Map(sanitizedElements.map((e: any) => [e.id as string, e])).values());
+      const sanitizedGroups = rawGroups.map((g: any) => ({
+        animations: Array.isArray(g?.animations) ? g.animations : [],
+        elementIds: Array.isArray(g?.elementIds) ? g.elementIds : [],
+        ...g,
+      }));
+      const groups = Array.from(new Map(sanitizedGroups.map((g: any) => [g.id as string, g])).values());
+      canvasStore.setElements(elements as any);
+      canvasStore.setGroups(groups as any);
+      const timeline = mainState.timeline || {};
+      timelineStore.loadProjectData({
+        elements: elements as any,
+        groups: groups as any,
+        animationStates: timeline.animationStates || {},
+        scale: typeof timeline.scale === 'number' ? timeline.scale : 1,
+        duration: typeof timeline.duration === 'number' ? timeline.duration : 10,
+        currentTime: typeof timeline.currentTime === 'number' ? timeline.currentTime : 0,
+      });
+      // Update baseline
       captureBaseline();
     } catch (e) {
       console.error('Redo failed', e);
