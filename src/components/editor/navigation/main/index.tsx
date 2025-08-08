@@ -60,11 +60,11 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
         return;
       }
 
-      if (diff) {
+      if (diff || hasMetaChange) {
         // Send diff-based change
         const response = await apiClient.post<any>(`/api/projects/${projectId}/changes`, {
-          diff,
-          actionDescription: 'User edits',
+          diff: diff ?? {},
+          actionDescription: hasMetaChange && !diff ? 'Metadata update' : 'User edits',
         });
         // Update baseline to current
         captureBaseline();
@@ -125,7 +125,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                 <span className="text-white font-bold text-sm">R</span>
               </div>
               <div className="flex items-center ml-8">
-                <button onClick={handleSave} className="group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 hover:text-green-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95">
+                <button onClick={handleSave} className="group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95">
                   <CloudCheck className={`size-5 transition-all duration-200 group-hover:scale-110 ${saveStatus === 'success' ? 'text-green-600' : ''}`} />
                 </button>
                 <button onClick={handleUndo} className="ml-4 group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 hover:text-blue-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95">

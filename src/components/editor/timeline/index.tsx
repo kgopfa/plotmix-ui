@@ -144,6 +144,7 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
       parentGroupId?: string;
       depth: number;
     }> = [];
+    const emitted = new Set<string>();
 
     // Add typed groups (text, custom, polygon) - exclude animation path groups
     groups
@@ -151,34 +152,42 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
       .forEach(group => {
         const groupIsSelected = isGroupSelected(group);
 
-        tracks.push({
-          id: group.id,
-          type: 'group',
-          name: group.name,
-          item: group,
-          animations: group.animations,
-          isSelected: groupIsSelected,
-          isGroup: true,
-          isExpanded: expandedElements.has(group.id),
-          depth: 0
-        });
+        const groupKey = `group:${group.id}`;
+        if (!emitted.has(groupKey)) {
+          tracks.push({
+            id: group.id,
+            type: 'group',
+            name: group.name,
+            item: group,
+            animations: group.animations,
+            isSelected: groupIsSelected,
+            isGroup: true,
+            isExpanded: expandedElements.has(group.id),
+            depth: 0
+          });
+          emitted.add(groupKey);
+        }
         
         // For custom groups, add element children if group is expanded (polygon groups are not expandable)
         if (group.type === 'custom' && expandedElements.has(group.id)) {
           const groupElements = elements.filter(el => group.elementIds.includes(el.id));
 
           groupElements.forEach(element => {
-            tracks.push({
-              id: element.id,
-              type: 'element',
-              name: element.name,
-              item: element,
-              animations: element.animations,
-              isSelected: isSelected(element),
-              isChild: true,
-              parentGroupId: group.id,
-              depth: 1
-            });
+            const elementKey = `element:${element.id}:child:${group.id}`;
+            if (!emitted.has(elementKey)) {
+              tracks.push({
+                id: element.id,
+                type: 'element',
+                name: element.name,
+                item: element,
+                animations: element.animations,
+                isSelected: isSelected(element),
+                isChild: true,
+                parentGroupId: group.id,
+                depth: 1
+              });
+              emitted.add(elementKey);
+            }
           });
         }
       });
@@ -191,15 +200,19 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
         return !group || group.isDefaultGroup;
       })
       .forEach(element => {
-        tracks.push({
-          id: element.id,
-          type: 'element',
-          name: element.name,
-          item: element,
-          animations: element.animations,
-          isSelected: isSelected(element),
-          depth: 0
-        });
+        const elementKey = `element:${element.id}:root`;
+        if (!emitted.has(elementKey)) {
+          tracks.push({
+            id: element.id,
+            type: 'element',
+            name: element.name,
+            item: element,
+            animations: element.animations,
+            isSelected: isSelected(element),
+            depth: 0
+          });
+          emitted.add(elementKey);
+        }
       });
 
     return tracks;
@@ -340,7 +353,7 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
             {/* Hierarchical Tracks */}
             {hierarchicalTracks.map((track) => (
               <TimelineTrack
-                key={track.id}
+                key={`${track.type}-${track.id}-${track.parentGroupId ?? 'root'}`}
                 element={track.item}
                 trackType={track.type}
                 scale={timelineUI.scale}

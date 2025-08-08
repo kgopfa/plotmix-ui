@@ -53,15 +53,17 @@ export const useProjectStore = create<ProjectStore>()(
 
     captureBaseline: () => {
       const current = get().getCurrentMainState();
+      const deepCopy = JSON.parse(JSON.stringify(current));
       set(produce((state: ProjectStore) => {
-        state.baselineMainState = current;
+        state.baselineMainState = deepCopy;
         state.lastSavedAt = new Date().toISOString();
       }));
     },
 
     setBaseline: (stateObj) => {
+      const deepCopy = stateObj ? JSON.parse(JSON.stringify(stateObj)) : null;
       set(produce((state: ProjectStore) => {
-        state.baselineMainState = stateObj;
+        state.baselineMainState = deepCopy;
       }));
     },
 
