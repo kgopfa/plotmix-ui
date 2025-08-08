@@ -1,11 +1,36 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import EditorCanvas from '@/components/editor';
+import { apiClient } from '@/lib/api-client';
+import { useProjectStore } from '@/stores/use-project-store';
 
 export default function EditorPage() {
   const params = useParams();
   const contentId = params.contentId as string;
+  const { setProjectInfo, setBaseline, captureBaseline } = useProjectStore();
+
+  useEffect(() => {
+    const init = async () => {
+      if (!contentId) return;
+      try {
+        const res = await apiClient.get<any>(`/api/projects/${contentId}`);
+        const project = res.data.project;
+        setProjectInfo({
+          projectId: project.id,
+          name: project.name,
+          title: project.title,
+          version: project.version,
+        });
+        setBaseline(project.mainState as any);
+        captureBaseline();
+      } catch (e) {
+        console.error('Failed to initialize editor project', e);
+      }
+    };
+    init();
+  }, [contentId, setProjectInfo, setBaseline, captureBaseline]);
 
   return (
     <div>
