@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import {
   Disclosure,
   DisclosureButton,
@@ -11,7 +12,11 @@ import {
   Redo2,
   Search,
   Undo2,
-  CloudCheck
+  CloudCheck,
+  Home,
+  Sparkles,
+  FileText,
+  ListVideo
 } from 'lucide-react'
 import { ProjectControls } from './project-controls';
 import { PathModeIndicator } from './path-mode-indicator';
@@ -174,13 +179,41 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
         <div className="flex h-16 justify-between">
           <div className="flex lg:pl-0 lg:pr-0">
             {/* Options menu button */}
-            <div className="flex items-center mx-6">
+            <div className="relative flex items-center mx-6">
               <DisclosureButton className="group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-200 hover:text-gray-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden focus:ring-inset">
                 <span className="absolute -inset-0.5" />
                 <span className="sr-only">Open options menu</span>
                 <MenuIcon aria-hidden="true" className="block size-5 group-data-open:hidden transition-all duration-200 group-hover:scale-110" />
                 <X aria-hidden="true" className="hidden size-5 group-data-open:block transition-all duration-200 group-hover:scale-110" />
               </DisclosureButton>
+              {/* Desktop options menu */}
+              <DisclosurePanel className="absolute left-0 top-12 z-50 hidden lg:block">
+                <div className="w-56 rounded-xl bg-white shadow-lg ring-1 ring-black/5 p-4">
+                  <Link
+                    href="/"
+                    className="flex items-center gap-3 p-3 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    <Home className="size-4 text-gray-500" />
+                    <span>Home</span>
+                  </Link>
+                  <Link
+                    href="/chat"
+                    className="flex items-center gap-3 p-3 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    <Sparkles className="size-4 text-purple-500" />
+                    <span>Generate</span>
+                  </Link>
+                  {projectId && (
+                    <Link
+                      href={`/content/${projectId}`}
+                      className="flex items-center gap-3 p-3 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      <ListVideo className="size-4 text-indigo-500" />
+                      <span>Content</span>
+                    </Link>
+                  )}
+                </div>
+              </DisclosurePanel>
             </div>
             <div className="flex shrink-0 items-center">
               <div className="h-8 w-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/30">
@@ -241,32 +274,27 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
         <div className="space-y-1 pt-2 pb-3">
           <DisclosureButton
             as="a"
-            href="/editor"
+            href="/"
             className="block border-l-4 border-indigo-500 bg-indigo-50 py-2 pr-4 pl-3 text-base font-medium text-indigo-700"
           >
-            Editor
+            Home
           </DisclosureButton>
           <DisclosureButton
             as="a"
-            href="#"
+            href="/chat"
             className="block border-l-4 border-transparent py-2 pr-4 pl-3 text-base font-medium text-gray-600 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800"
           >
-            Projects
+            Generate
           </DisclosureButton>
-          <DisclosureButton
-            as="a"
-            href="#"
-            className="block border-l-4 border-transparent py-2 pr-4 pl-3 text-base font-medium text-gray-600 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800"
-          >
-            Templates
-          </DisclosureButton>
-          <DisclosureButton
-            as="a"
-            href="#"
-            className="block border-l-4 border-transparent py-2 pr-4 pl-3 text-base font-medium text-gray-600 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800"
-          >
-            Help
-          </DisclosureButton>
+          {projectId && (
+            <DisclosureButton
+              as="a"
+              href={`/content/${projectId}`}
+              className="block border-l-4 border-transparent py-2 pr-4 pl-3 text-base font-medium text-gray-600 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800"
+            >
+              Project
+            </DisclosureButton>
+          )}
         </div>
 
         {/* Mobile editor controls */}
