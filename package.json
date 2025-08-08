@@ -20,6 +20,7 @@
     "bcryptjs": "^3.0.2",
     "gsap": "^3.13.0",
     "immer": "^10.1.1",
+    "jsondiffpatch": "^0.6.0",
     "jose": "^6.0.12",
     "lodash": "^4.17.21",
     "lucide-react": "^0.525.0",

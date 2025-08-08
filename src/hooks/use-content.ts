@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api-client';
+import { useProjectStore } from '@/stores/use-project-store';
 import { ProjectData } from '@/types/project';
 
 interface ConversationData {
@@ -98,6 +99,16 @@ export function useContent(contentId: string): UseContentReturn {
       // Transform the response to match ContentData interface
       const responseData = projectResponse.data;
       const project = responseData.project;
+
+      // Initialize project store with server data and capture baseline mainState
+      const projectStore = useProjectStore.getState();
+      projectStore.setProjectInfo({
+        projectId: project.id,
+        name: project.name,
+        title: project.title,
+        version: project.version
+      });
+      projectStore.setBaseline(project.mainState as any);
       
       const transformedContent: ContentData = {
         title: project.title || project.name,

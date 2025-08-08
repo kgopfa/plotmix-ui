@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Disclosure,
   DisclosureButton,
@@ -20,6 +20,8 @@ import { SnappingControls } from './settings/snapping/snapping-controls';
 import { SelectionIndicator } from './selection-indicator';
 import { SettingsDropdown } from './settings';
 import { UserAvatar } from './user-avatar';
+import { useProjectStore } from '@/stores/use-project-store';
+import { apiClient } from '@/lib/api-client';
 
 // Simplified interface - only for props that can't be accessed via stores
 interface MainNavBarProps {
@@ -36,6 +38,47 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
   onUngroupElements
 }) => {
   const [projectName, setProjectName] = useState('Project Name');
+  const { projectId, name, title, saveStatus, getDiffFromBaseline, captureBaseline, setProjectInfo, setSaveStatus } = useProjectStore();
+
+  useEffect(() => {
+    if (name) setProjectName(name);
+  }, [name]);
+
+  const handleSave = async () => {
+    if (!projectId) return;
+    try {
+      setSaveStatus('saving');
+      const diff = getDiffFromBaseline();
+      const hasMetaChange = projectName !== name; // include title change similarly if needed
+
+      if (hasMetaChange && !diff) {
+        // Only name/title change: bump version via updateProject
+        const res = await apiClient.put<any>(`/api/projects/${projectId}`, { name: projectName, title });
+        setProjectInfo({ name: res.data.project.name, version: res.data.project.version });
+        setSaveStatus('success');
+        setTimeout(() => setSaveStatus('idle'), 2000);
+        return;
+      }
+
+      if (diff) {
+        // Send diff-based change
+        const response = await apiClient.post<any>(`/api/projects/${projectId}/changes`, {
+          diff,
+          actionDescription: 'User edits',
+        });
+        // Update baseline to current
+        captureBaseline();
+        setProjectInfo({ version: response.data.project.version });
+      }
+
+      setSaveStatus('success');
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    } catch (e) {
+      console.error('Save failed', e);
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    }
+  };
 
   return (
     <Disclosure as="nav" className="bg-gradient-to-r from-slate-50 to-gray-50 backdrop-blur-sm border-b border-gray-200/50 shadow-sm shadow-gray-200/50">
@@ -56,8 +99,8 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                 <span className="text-white font-bold text-sm">R</span>
               </div>
               <div className="flex items-center ml-8">
-                <button className="group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 hover:text-green-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95">
-                  <CloudCheck className="size-5 transition-all duration-200 group-hover:scale-110" />
+                <button onClick={handleSave} className="group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 hover:text-green-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95">
+                  <CloudCheck className={`size-5 transition-all duration-200 group-hover:scale-110 ${saveStatus === 'success' ? 'text-green-600' : ''}`} />
                 </button>
                 <button className="ml-4 group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 hover:text-blue-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95">
                   <Undo2 className="size-5 transition-all duration-200 group-hover:scale-110" />
