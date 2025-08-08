@@ -8,6 +8,9 @@ export interface ChatCardProps {
   onClick?: () => void;
   onDelete?: () => void;
   isDeleting?: boolean;
+  selectable?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (checked: boolean) => void;
 }
 
 function formatRelativeTime(date: Date | null) {
@@ -26,7 +29,7 @@ function formatRelativeTime(date: Date | null) {
   return `${weeks}w ago`;
 }
 
-export function ChatCard({ title, lastMessageAt, messageCount, onClick, onDelete, isDeleting }: ChatCardProps) {
+export function ChatCard({ title, lastMessageAt, messageCount, onClick, onDelete, isDeleting, selectable = false, selected = false, onToggleSelect }: ChatCardProps) {
   const lastDate = lastMessageAt ? new Date(lastMessageAt) : null;
   return (
     <div
@@ -52,20 +55,35 @@ export function ChatCard({ title, lastMessageAt, messageCount, onClick, onDelete
             )}
           </div>
         </div>
-        {onDelete && (
-          <div className="ml-auto">
-            <button
-              type="button"
-              aria-label="Delete conversation"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (!isDeleting) onDelete();
-              }}
-              className={`p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors ${isDeleting ? 'opacity-60 cursor-not-allowed' : ''}`}
-              disabled={isDeleting}
-            >
-              <Trash2 className="size-4" />
-            </button>
+        {(selectable || onDelete) && (
+          <div className="ml-auto flex items-center gap-x-2">
+            {selectable && (
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-gray-200 text-blue-600 accent-blue-600 focus:ring-0 focus:outline-none"
+                checked={selected}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  onToggleSelect?.(e.target.checked);
+                }}
+                aria-label="Select conversation"
+              />
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                aria-label="Delete conversation"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!isDeleting) onDelete();
+                }}
+                className={`p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors ${isDeleting ? 'opacity-60 cursor-not-allowed' : ''}`}
+                disabled={isDeleting}
+              >
+                <Trash2 className="size-4" />
+              </button>
+            )}
           </div>
         )}
       </div>

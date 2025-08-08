@@ -17,6 +17,9 @@ export default function ChatsPage() {
   const { conversations, isLoading, error, refetch, loadNext, hasMore } = useConversations(20);
   const { isAuthenticated, loading } = useAuth();
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
+  const [selected, setSelected] = React.useState<Record<string, boolean>>({});
+  const selectedIds = React.useMemo(() => Object.keys(selected).filter((id) => selected[id]), [selected]);
+  const anySelected = selectedIds.length > 0;
 
   const handleDelete = async (conversationId: string, projectId: string | null) => {
     const confirmed = window.confirm('Delete this conversation and its associated project? This cannot be undone.');
@@ -55,6 +58,24 @@ export default function ChatsPage() {
         <div className="sticky top-0 z-40 flex h-16 items-center gap-x-4 border-b border-gray-200 bg-white px-4 sm:gap-x-6 sm:px-6 lg:px-8">
           <SearchBar placeholder="Search your chats..." />
           <div className="ml-auto flex items-center gap-x-4">
+            {anySelected && (
+              <button
+                type="button"
+                onClick={async () => {
+                  const confirmed = window.confirm(`Delete ${selectedIds.length} selected chats and associated projects? This cannot be undone.`);
+                  if (!confirmed) return;
+                  for (const id of selectedIds) {
+                    const conv = conversations.find((c) => c.id === id);
+                    const projId = conv?.project?.id || conv?.projectId || null;
+                    await handleDelete(id, projId);
+                  }
+                  setSelected({});
+                }}
+                className="inline-flex items-center gap-x-2 px-3 py-2 text-xs font-semibold rounded-lg border border-red-200 text-red-700 hover:bg-red-50"
+              >
+                Delete selected ({selectedIds.length})
+              </button>
+            )}
             {isAuthenticated ? (
               <>
                 <button className="flex items-center gap-x-1 bg-transparent border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-xs font-semibold">
@@ -126,6 +147,9 @@ export default function ChatsPage() {
                             onClick={open}
                             onDelete={() => handleDelete(c.id, projectId)}
                             isDeleting={deletingId === c.id}
+                            selectable
+                            selected={!!selected[c.id]}
+                            onToggleSelect={(checked) => setSelected((prev) => ({ ...prev, [c.id]: checked }))}
                           />
                         );
                       })}
