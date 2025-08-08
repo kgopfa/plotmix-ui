@@ -177,7 +177,6 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({ navigation
                         `${item.color} ${item.hoverColor} hover:shadow-md`,
                         'relative flex flex-col items-center justify-center w-10 h-10 rounded-lg font-medium transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 focus:outline-none',
                       )}
-                      title={item.name}
                     >
                       <item.icon
                         aria-hidden="true"
