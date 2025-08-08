@@ -80,6 +80,32 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
     }
   };
 
+  const handleUndo = async () => {
+    if (!projectId) return;
+    try {
+      await apiClient.post<any>(`/api/projects/${projectId}/undo`);
+      const refreshed = await apiClient.get<any>(`/api/projects/${projectId}`);
+      const project = refreshed.data.project;
+      setProjectInfo({ version: project.version, name: project.name, title: project.title });
+      captureBaseline();
+    } catch (e) {
+      console.error('Undo failed', e);
+    }
+  };
+
+  const handleRedo = async () => {
+    if (!projectId) return;
+    try {
+      await apiClient.post<any>(`/api/projects/${projectId}/redo`);
+      const refreshed = await apiClient.get<any>(`/api/projects/${projectId}`);
+      const project = refreshed.data.project;
+      setProjectInfo({ version: project.version, name: project.name, title: project.title });
+      captureBaseline();
+    } catch (e) {
+      console.error('Redo failed', e);
+    }
+  };
+
   return (
     <Disclosure as="nav" className="bg-gradient-to-r from-slate-50 to-gray-50 backdrop-blur-sm border-b border-gray-200/50 shadow-sm shadow-gray-200/50">
       <div className="mx-auto max-w-full px-2 sm:px-4 lg:px-0">
@@ -102,10 +128,10 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                 <button onClick={handleSave} className="group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 hover:text-green-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95">
                   <CloudCheck className={`size-5 transition-all duration-200 group-hover:scale-110 ${saveStatus === 'success' ? 'text-green-600' : ''}`} />
                 </button>
-                <button className="ml-4 group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 hover:text-blue-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95">
+                <button onClick={handleUndo} className="ml-4 group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 hover:text-blue-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95">
                   <Undo2 className="size-5 transition-all duration-200 group-hover:scale-110" />
                 </button>
-                <button className="ml-4 group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 hover:text-blue-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95">
+                <button onClick={handleRedo} className="ml-4 group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 hover:text-blue-700 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95">
                   <Redo2 className="size-5 transition-all duration-200 group-hover:scale-110" />
                 </button>
 
