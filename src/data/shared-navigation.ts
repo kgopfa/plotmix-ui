@@ -20,7 +20,7 @@ export const navigation: NavigationItem[] = [
   },
   {
     name: 'Chats',
-    href: '/chat',
+    href: '/chats',
     icon: MessagesSquare,
     color: 'text-gray-500',
     hoverColor: 'hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 hover:text-blue-700',
