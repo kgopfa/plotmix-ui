@@ -54,13 +54,14 @@ export const AnimationsPanel: React.FC<AnimationsPanelProps> = ({
 
   // Ensure GSAP timeline is built when the animations panel opens
   useEffect(() => {
-    try {
-      const { updateTracks, buildGSAPTimeline } = require('@/stores/use-timeline-store');
-      const store = (require('@/stores/use-timeline-store') as typeof import('@/stores/use-timeline-store'));
-      const state = store.useTimelineStore.getState();
-      state.updateTracks();
-      state.buildGSAPTimeline();
-    } catch {}
+    (async () => {
+      try {
+        const store = await import('@/stores/use-timeline-store');
+        const state = store.useTimelineStore.getState();
+        state.updateTracks();
+        state.buildGSAPTimeline();
+      } catch {}
+    })();
   }, []);
 
   if (!hasSelection) {
