@@ -39,6 +39,13 @@ function getUserInitials(name?: string): string {
   return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
 }
 
+function getFirstName(name?: string): string {
+  if (!name) return '';
+  const trimmed = name.trim();
+  if (trimmed.length === 0) return '';
+  return trimmed.split(' ')[0];
+}
+
 // Tooltip removed in favor of expanding sidebar with inline labels
 
 export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({ navigation }) => {
@@ -125,8 +132,8 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({ navigation
                   <Link
                     href={item.href}
                     className={classNames(
-                      `${item.color} ${item.hoverColor} hover:shadow-md`,
-                      'grid grid-cols-[80px_1fr] items-center h-10 rounded-lg font-medium transition-colors duration-200 ease-out focus:outline-none w-full'
+                      `${item.color} ${item.hoverColor} hover:shadow-xs`,
+                      'grid grid-cols-[80px_1fr] items-center h-10 font-medium transition-colors duration-200 ease-out focus:outline-none w-full'
                     )}
                   >
                     <div className="col-start-1 flex justify-center">
@@ -145,8 +152,17 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({ navigation
           {/* User avatar at bottom - only show if authenticated */}
           {isAuthenticated && userInitials && (
             <div className="mb-6">
-              <div className="w-20 flex justify-center">
-                <UserAvatar showDropdown={true} />
+              <div className="grid grid-cols-[80px_1fr] items-center h-10">
+                <div className="col-start-1 flex justify-center">
+                  <UserAvatar showDropdown={true} />
+                </div>
+                {session?.user?.name && (
+                  <div className="col-start-2 overflow-hidden">
+                    <span className="block whitespace-nowrap opacity-0 w-0 mt-0.5 text-sm font-semibold text-gray-500 group-hover:opacity-100 group-hover:w-44 transition-all duration-200 ml-0 group-hover:ml-1">
+                      {session.user.name}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           )}
