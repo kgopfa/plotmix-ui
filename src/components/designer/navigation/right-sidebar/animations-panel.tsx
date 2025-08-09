@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AnimatedCanvasObject, ElementAnimation } from '@/types/canvas';
 import { AnimationsTab } from './tabs/animations';
 import { useSelectionStore } from '@/stores/use-selection-store';
@@ -51,6 +51,17 @@ export const AnimationsPanel: React.FC<AnimationsPanelProps> = ({
   const {
     localGroupAnimations,
   } = useGroupAnimationHandlers(selectedGroup, onGroupInspectorChange);
+
+  // Ensure GSAP timeline is built when the animations panel opens
+  useEffect(() => {
+    try {
+      const { updateTracks, buildGSAPTimeline } = require('@/stores/use-timeline-store');
+      const store = (require('@/stores/use-timeline-store') as typeof import('@/stores/use-timeline-store'));
+      const state = store.useTimelineStore.getState();
+      state.updateTracks();
+      state.buildGSAPTimeline();
+    } catch {}
+  }, []);
 
   if (!hasSelection) {
     return null;

@@ -211,6 +211,10 @@ export const useTimelineStore = create<TimelineStore>()(
       // Playback controls
       play: () => {
         const { timeManager, gsapManager } = get();
+        // Ensure timeline is freshly built before starting playback
+        try {
+          get().buildGSAPTimeline();
+        } catch {}
         set(produce((state) => {
           state.playback.isPlaying = true;
           state.playback.isPaused = false;
@@ -652,9 +656,11 @@ export const useTimelineStore = create<TimelineStore>()(
       },
 
       syncWithGSAP: () => {
-        // This can be called on each animation frame to sync GSAP state
-        // Currently, GSAP updates are handled through TimeManager
-        // Additional GSAP-specific synchronization can be added here if needed
+        // Called on each tick. Keep GSAP timeline time in sync with store state.
+        try {
+          const { playback, gsapManager } = get();
+          gsapManager.updateTime(playback.currentTime);
+        } catch {}
       },
 
       buildGSAPTimeline: () => {
