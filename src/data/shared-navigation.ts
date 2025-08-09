@@ -7,6 +7,7 @@ export interface NavigationItem {
   color: string;
   hoverColor: string;
   activeColor: string;
+  strokeWidth?: number;
 }
 
 export const navigation: NavigationItem[] = [
@@ -32,7 +33,8 @@ export const navigation: NavigationItem[] = [
     icon: Boxes,
     color: 'text-gray-500',
     hoverColor: 'hover:bg-gradient-to-r hover:from-violet-50 hover:to-purple-50 hover:text-violet-700',
-    activeColor: 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/30'
+    activeColor: 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/30',
+    strokeWidth: 1.75,
   },
   {
     name: 'Content',

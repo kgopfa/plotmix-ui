@@ -17,6 +17,7 @@ interface NavigationItem {
   color: string;
   hoverColor: string;
   activeColor: string;
+  strokeWidth?: number;
 }
 
 interface NavigationSidebarProps {
@@ -96,6 +97,7 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({ navigation
                         <item.icon
                           aria-hidden="true"
                           className="w-5 h-5 transition-all duration-200 group-hover:scale-110"
+                          strokeWidth={item.strokeWidth}
                         />
                         {item.name}
                       </Link>
@@ -137,7 +139,7 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({ navigation
                     )}
                   >
                     <div className="col-start-1 flex justify-center">
-                      <item.icon aria-hidden="true" className="w-5 h-5 shrink-0" />
+                      <item.icon aria-hidden="true" className="w-5 h-5 shrink-0" strokeWidth={item.strokeWidth} />
                     </div>
                     <div className="col-start-2 overflow-hidden">
                       <span className="block whitespace-nowrap opacity-0 w-0 mt-0.5 text-sm font-semibold group-hover:opacity-100 group-hover:w-44 transition-all duration-200 ml-0 group-hover:ml-1">
