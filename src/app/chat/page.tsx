@@ -9,6 +9,7 @@ import { PromptInput } from '@/components/chat/prompt-input';
 import { navigation } from '@/data/shared-navigation';
 import { suggestions, type Suggestion } from '@/data/chat-suggestions';
 import { Palette, Sparkles, LogIn } from 'lucide-react';
+import QuickActionButtons from '@/components/shared/quick-action-buttons';
 import { useAuth } from '@/lib/auth-context';
 import { useProjectGeneration } from '@/hooks/use-project-generation';
 import { ChatAttachment, ChatOptions } from '@/types/project-generation';
@@ -61,17 +62,7 @@ export default function ChatPage() {
         
           <div className="flex flex-row items-center gap-x-4 ml-auto">
             {isAuthenticated ? (
-              <>
-                <Link href="/designer" className="flex flex-row items-center gap-x-1 bg-transparent border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-xs font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-200">
-                  <Palette strokeWidth={2.25} className="size-4 text-blue-500" />
-                  Designer
-                </Link>
-
-                <Link href="/chat" onClick={(e) => e.preventDefault()} className="flex flex-row items-center gap-x-1 bg-transparent border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-xs font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-200">
-                  <Sparkles className="size-4 text-purple-500" />
-                  New Chat
-                </Link>
-              </>
+              <QuickActionButtons secondary="chat" />
             ) : (
               <Link href="/login" className="flex flex-row items-center justify-center gap-x-2 bg-gradient-to-r from-purple-700 to-indigo-700 text-white w-24 py-2 rounded-lg text-xs font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-lg shadow-indigo-500/25">
                 <LogIn className="size-4 -ml-1" />

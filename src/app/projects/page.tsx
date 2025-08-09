@@ -8,6 +8,7 @@ import { navigation } from '@/data/shared-navigation';
 import { useProjects } from '@/hooks/use-projects';
 import { ProjectCard } from '@/components/projects/project-card';
 import { LogIn, Palette, Sparkles } from 'lucide-react';
+import QuickActionButtons from '@/components/shared/quick-action-buttons';
 import { useAuth } from '@/lib/auth-context';
 import { SearchBar } from '@/components/shared/search-bar';
 import { apiClient } from '@/lib/api-client';
@@ -20,6 +21,17 @@ export default function ProjectsPage() {
   const selectedIds = React.useMemo(() => Object.keys(selected).filter((id) => selected[id]), [selected]);
   const anySelected = selectedIds.length > 0;
   const { isAuthenticated, loading } = useAuth();
+  const createAndOpenDesigner = React.useCallback(async () => {
+    try {
+      const res = await apiClient.post<{ success: boolean; data?: { project?: { id: string } } }>(`/api/projects`);
+      const projectId = res?.data?.project?.id;
+      if (projectId) {
+        router.push(`/designer/${projectId}`);
+      }
+    } catch (e) {
+      console.error('Failed to create project', e);
+    }
+  }, [router]);
 
   return (
     <>
@@ -46,16 +58,7 @@ export default function ProjectsPage() {
               </button>
             )}
             {isAuthenticated ? (
-              <>
-                <button className="flex items-center gap-x-1 bg-transparent border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-xs font-semibold">
-                  <Palette strokeWidth={2.25} className="size-4 text-blue-500" />
-                  Designer
-                </button>
-                <Link href="/editor" className="flex items-center gap-x-1 bg-transparent border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-xs font-semibold">
-                  <Sparkles className="size-4 text-purple-500" />
-                  New Project
-                </Link>
-              </>
+              <QuickActionButtons secondary="project" />
             ) : (
               <Link href="/login" className="flex items-center justify-center gap-x-2 bg-gradient-to-r from-purple-700 to-indigo-700 text-white w-24 py-2 rounded-lg text-xs font-semibold">
                 <LogIn className="size-4 -ml-1" />
@@ -106,9 +109,9 @@ export default function ProjectsPage() {
                   {projects.length === 0 ? (
                     <div className="flex flex-col items-center justify-center gap-y-4 border border-dashed border-gray-300 rounded-2xl p-10">
                       <p className="text-gray-600 text-sm">No projects yet.</p>
-                      <Link href="/editor" className="inline-flex items-center gap-x-2 bg-gradient-to-r from-purple-700 to-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold">
+                      <button onClick={createAndOpenDesigner} className="inline-flex items-center gap-x-2 bg-gradient-to-r from-purple-700 to-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold">
                         <Sparkles className="size-4" /> Create a project
-                      </Link>
+                      </button>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 gap-3 max-h-[calc(100vh-11rem)] overflow-y-auto pr-2 mb-20">
@@ -118,7 +121,7 @@ export default function ProjectsPage() {
                           title={p.title || p.name}
                           lastUpdatedAt={p.updatedAt}
                           version={p.version}
-                          onClick={() => router.push(`/editor/${p.id}`)}
+                          onClick={() => router.push(`/designer/${p.id}`)}
                           showConversationWarning={!!p.conversation}
                           onDelete={async () => {
                             const confirmed = window.confirm('Delete this project? This cannot be undone.');

@@ -47,10 +47,10 @@ export default function NotFound() {
           <p className="text-sm text-gray-500 mb-4">Or try one of these pages:</p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link
-              href="/editor"
+              href="/designer"
               className="text-indigo-600 hover:text-indigo-700 font-medium text-sm hover:underline"
             >
-              Editor
+              Designer
             </Link>
             <Link
               href="/content"

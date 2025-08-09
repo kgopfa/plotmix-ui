@@ -2,13 +2,13 @@
 
 import { useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import EditorCanvas from '@/components/editor';
+import Designer from '@/components/designer';
 import { apiClient } from '@/lib/api-client';
 import { useProjectStore } from '@/stores/use-project-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useTimelineStore } from '@/stores/use-timeline-store';
 
-export default function EditorPage() {
+export default function DesignerPage() {
   const params = useParams();
   const contentId = params.contentId as string;
   const { setProjectInfo, setBaseline, captureBaseline } = useProjectStore();
@@ -80,7 +80,7 @@ export default function EditorPage() {
       <div className="absolute top-4 left-4 z-50 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 text-sm text-gray-600">
         Editing: {contentId}
       </div>
-      <EditorCanvas />
+      <Designer />
     </div>
   );
 } 

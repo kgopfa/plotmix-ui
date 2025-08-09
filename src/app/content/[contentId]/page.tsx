@@ -4,7 +4,8 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { NavigationSidebar } from '@/components/shared/navigation-sidebar';
 import { ContentSidebar } from '@/components/content/content-sidebar';
-import { Link2, Pencil, UserPlus } from 'lucide-react';
+import { Link2, Pencil, Sparkles, UserPlus } from 'lucide-react';
+import QuickActionButtons from '@/components/shared/quick-action-buttons';
 import React from 'react';
 import { apiClient } from '@/lib/api-client';
 import { ConfirmModal } from '@/components/shared/confirm-modal';
@@ -54,24 +55,27 @@ export default function ContentDetailPage() {
             )}
           </div>
 
-          <div className="flex flex-row h-10 rounded-lg border border-gray-200 ml-auto">
-            <button
-              type="button"
-              className="inline-flex items-center gap-x-2 px-5 py-2.5 text-sm font-semibold text-gray-700  hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-            >
-              <UserPlus strokeWidth={2.5} aria-hidden="true" className="-ml-0.5 size-5" />
-              Share
-            </button>
-            <div className="w-px bg-gray-200" />
-            <button
-              type="button"
-              className="inline-flex items-center gap-x-2 px-5 py-2.5 text-sm font-semibold text-gray-700  hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-            >
-              <Link2 strokeWidth={2.5} aria-hidden="true" className="-ml-0.5 size-5" />
-            </button>
+          <div className="flex flex-row items-center gap-x-4 ml-auto">
+            <QuickActionButtons secondary="chat" heightClass="h-10" />
+            <div className="flex flex-row h-10 rounded-lg border border-gray-200">
+              <button
+                type="button"
+                className="inline-flex items-center gap-x-2 px-5 py-2.5 text-sm font-semibold text-gray-700  hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              >
+                <UserPlus strokeWidth={2.5} aria-hidden="true" className="-ml-0.5 size-5" />
+                Share
+              </button>
+              <div className="w-px bg-gray-200" />
+              <button
+                type="button"
+                className="inline-flex items-center gap-x-2 px-5 py-2.5 text-sm font-semibold text-gray-700  hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              >
+                <Link2 strokeWidth={2.5} aria-hidden="true" className="-ml-0.5 size-5" />
+              </button>
+            </div>
           </div>
         </div>
-        
+
         <div className="flex justify-center mt-14 min-h-screen">
           <div className="w-full max-w-7xl mx-auto">
 
@@ -99,7 +103,7 @@ export default function ContentDetailPage() {
             </div>
           </div>
         </div>
-        
+
         {/* Edit Button - Bottom Right of Main */}
         <div className="fixed bottom-8 right-[calc(100vw/7+2rem)] z-50">
           <button
@@ -107,20 +111,20 @@ export default function ContentDetailPage() {
             className="inline-flex items-center gap-x-2 p-5 rounded-2xl text-white bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all duration-200 transform hover:scale-105"
           >
             <Pencil strokeWidth={2.5} aria-hidden="true" className="-ml-0.5 size-5" />
-            <span className="hidden sm:block font-bold">Open in Editor</span>
+            <span className="hidden sm:block font-bold">Open in Designer</span>
           </button>
         </div>
 
         <ConfirmModal
           open={showConfirm}
-          title="Open in Editor"
+          title="Open in Designer"
           description={(
             <div className="space-y-2">
               <p>This project was created from a chat. Opening it in the editor separates the editing workflow from the chat conversation.</p>
               <p className="text-gray-700">Changes made in the editor won’t be reflected back on the conversation page.</p>
             </div>
           )}
-          confirmLabel="Continue to Editor"
+          confirmLabel="Continue to Designer"
           cancelLabel="Cancel"
           align="content"
           onCancel={() => setShowConfirm(false)}
@@ -131,7 +135,7 @@ export default function ContentDetailPage() {
             } catch (e) {
               // non-blocking
             } finally {
-              window.location.href = `/editor/${contentId}`;
+              window.location.href = `/designer/${contentId}`;
             }
           }}
         />

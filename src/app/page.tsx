@@ -9,7 +9,8 @@ import { FeaturedProjectsTabs } from '@/components/shared/featured-projects-tabs
 import { navigation } from '@/data/shared-navigation';
 import { communityProjects } from '@/data/community-projects';
 import { recentlyViewedProjects, sharedProjects, FeaturedProject } from '@/data/featured-projects';
-import { Palette, Sparkles, Share2, ChevronDown, ChevronUp, LogIn } from 'lucide-react';
+import { Sparkles, ChevronDown, ChevronUp, LogIn } from 'lucide-react';
+import QuickActionButtons from '@/components/shared/quick-action-buttons';
 import { useAuth } from '@/lib/auth-context';
 
 export default function HomePage() {
@@ -141,17 +142,7 @@ export default function HomePage() {
 
                 <div className="flex flex-row items-center gap-x-4 ml-auto">
                   {isAuthenticated ? (
-                    <>
-                      <Link href="/designer" className="flex flex-row items-center gap-x-1 bg-transparent border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-xs font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-200">
-                        <Palette strokeWidth={2.25} className="size-4 text-blue-500" />
-                        Designer
-                      </Link>
-
-                      <Link href="/chat" className="flex flex-row items-center gap-x-1 bg-transparent border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-xs font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-200">
-                        <Sparkles className="size-4 text-purple-500" />
-                        New Chat
-                      </Link>
-                    </>
+                    <QuickActionButtons secondary="chat" />
                   ) : (
                     <Link href="/login" className="flex flex-row items-center justify-center gap-x-2 bg-gradient-to-r from-purple-700 to-indigo-700 text-white w-24 py-2 rounded-lg text-xs font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-lg shadow-indigo-500/25">
                       <LogIn className="size-4 -ml-1" />
@@ -178,7 +169,7 @@ export default function HomePage() {
                       </p>
                     </div>
                     {isAuthenticated ? (
-                      <Link href="/editor" className="mt-4 sm:mt-0 inline-flex items-center gap-x-2 bg-gradient-to-r from-purple-700 to-indigo-700 text-white px-6 py-3 rounded-2xl text-sm font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-lg shadow-indigo-500/25">
+                      <Link href="/designer" className="mt-4 sm:mt-0 inline-flex items-center gap-x-2 bg-gradient-to-r from-purple-700 to-indigo-700 text-white px-6 py-3 rounded-lg text-sm font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-lg shadow-indigo-500/25">
                         <Sparkles className="size-4" />
                         Create Your Own
                       </Link>

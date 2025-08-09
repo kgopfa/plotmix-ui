@@ -7,6 +7,7 @@ import { navigation } from '@/data/shared-navigation';
 import { useConversations } from '@/hooks/use-conversations';
 import { ChatCard } from '@/components/chat/chat-card';
 import { LogIn, Palette, Sparkles } from 'lucide-react';
+import QuickActionButtons from '@/components/shared/quick-action-buttons';
 import { useAuth } from '@/lib/auth-context';
 import { SearchBar } from '@/components/shared/search-bar';
 import React from 'react';
@@ -75,16 +76,7 @@ export default function ChatsPage() {
               </button>
             )}
             {isAuthenticated ? (
-              <>
-                <button className="flex items-center gap-x-1 bg-transparent border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-xs font-semibold">
-                  <Palette strokeWidth={2.25} className="size-4 text-blue-500" />
-                  Designer
-                </button>
-                <Link href="/chat" className="flex items-center gap-x-1 bg-transparent border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-xs font-semibold">
-                  <Sparkles className="size-4 text-purple-500" />
-                  New Chat
-                </Link>
-              </>
+              <QuickActionButtons secondary="chat" />
             ) : (
               <Link href="/login" className="flex items-center justify-center gap-x-2 bg-gradient-to-r from-purple-700 to-indigo-700 text-white w-24 py-2 rounded-lg text-xs font-semibold">
                 <LogIn className="size-4 -ml-1" />
