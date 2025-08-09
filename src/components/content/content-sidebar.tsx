@@ -145,7 +145,7 @@ export function ContentSidebar({ conversationId }: { conversationId: string }) {
               {/* Sticky input area at bottom */}
               <div className="sticky bottom-0 bg-transparent">
                 <div className="max-w-md mx-auto">
-                  <div className="mb-4 bg-white border border-gray-200 rounded-xl shadow-md">
+                  <div className="mb-4 bg-white border border-gray-200 rounded-xl shadow-sm">
                     <div className="p-4">
                       <div className="relative">
                         <textarea
