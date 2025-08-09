@@ -11,6 +11,7 @@ import { useAuth } from '@/lib/auth-context';
 import { SearchBar } from '@/components/shared/search-bar';
 import React from 'react';
 import { getSession } from 'next-auth/react';
+import { apiClient } from '@/lib/api-client';
 
 export default function ChatsPage() {
   const router = useRouter();
@@ -62,18 +63,15 @@ export default function ChatsPage() {
               <button
                 type="button"
                 onClick={async () => {
-                  const confirmed = window.confirm(`Delete ${selectedIds.length} selected chats and associated projects? This cannot be undone.`);
+                  const confirmed = window.confirm(`Delete ${selectedIds.length} selected chats? This cannot be undone.`);
                   if (!confirmed) return;
-                  for (const id of selectedIds) {
-                    const conv = conversations.find((c) => c.id === id);
-                    const projId = conv?.project?.id || conv?.projectId || null;
-                    await handleDelete(id, projId);
-                  }
+                  await apiClient.post(`/api/conversations/batch/delete`, { ids: selectedIds });
                   setSelected({});
+                  await refetch();
                 }}
-                className="inline-flex items-center gap-x-2 px-3 py-2 text-xs font-semibold rounded-lg border border-red-200 text-red-700 hover:bg-red-50"
+                className="inline-flex items-center gap-x-2 px-3 py-2 text-xs font-bold rounded-lg border border-red-200 bg-red-600 text-white hover:bg-red-700"
               >
-                Delete selected ({selectedIds.length})
+                Delete Selected
               </button>
             )}
             {isAuthenticated ? (
@@ -111,9 +109,23 @@ export default function ChatsPage() {
             <div className="py-10">
               <div className="flex justify-center">
                 <div className="w-full max-w-7xl mx-auto">
-                  <div className="mb-6">
-                    <h1 className="text-xl font-semibold text-gray-900">Your chats</h1>
-                    <p className="text-sm text-gray-600">Browse your conversations. Click to open the related content.</p>
+                  <div className="mb-6 flex items-center justify-between">
+                    <div>
+                      <h1 className="text-xl font-semibold text-gray-900">Your chats</h1>
+                      <p className="text-sm text-gray-600">Browse your conversations. Click to open the related content.</p>
+                    </div>
+                    {anySelected && (
+                      <div className="flex flex-row items-center">
+                        <span className="text-sm font-medium text-indigo-500 border border-indigo-200 rounded-lg px-3 py-1.5 mr-4">{selectedIds.length} chats selected</span>
+                        <button
+                          type="button"
+                          onClick={() => setSelected({})}
+                          className="text-sm font-medium px-3 py-1.5 mr-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {error && (

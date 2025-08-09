@@ -10,6 +10,7 @@ import { ProjectCard } from '@/components/projects/project-card';
 import { LogIn, Palette, Sparkles } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { SearchBar } from '@/components/shared/search-bar';
+import { apiClient } from '@/lib/api-client';
 
 export default function ProjectsPage() {
   const router = useRouter();
@@ -34,18 +35,14 @@ export default function ProjectsPage() {
                 onClick={async () => {
                   const confirmed = window.confirm(`Delete ${selectedIds.length} selected projects? This cannot be undone.`);
                   if (!confirmed) return;
-                  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-                  for (const id of selectedIds) {
-                    setDeletingId(id);
-                    await fetch(`${baseUrl}/api/projects/${id}`, { method: 'DELETE' });
-                  }
+                  await apiClient.post(`/api/projects/batch/delete`, { ids: selectedIds });
                   setDeletingId(null);
                   setSelected({});
                   await refetch();
                 }}
-                className="inline-flex items-center gap-x-2 px-3 py-2 text-xs font-semibold rounded-lg border border-red-200 text-red-700 hover:bg-red-50"
+                className="inline-flex items-center gap-x-2 px-3 py-2 text-xs font-bold rounded-lg border border-red-200 bg-red-600 text-white hover:bg-red-700"
               >
-                Delete selected ({selectedIds.length})
+                Delete Selected
               </button>
             )}
             {isAuthenticated ? (
@@ -83,9 +80,23 @@ export default function ProjectsPage() {
             <div className="py-10">
               <div className="flex justify-center">
                 <div className="w-full max-w-7xl mx-auto">
-                  <div className="mb-6">
-                    <h1 className="text-xl font-semibold text-gray-900">Your projects</h1>
-                    <p className="text-sm text-gray-600">Click a project to open it in the editor.</p>
+                  <div className="mb-6 flex items-center justify-between">
+                    <div>
+                      <h1 className="text-xl font-semibold text-gray-900">Your projects</h1>
+                      <p className="text-sm text-gray-600">Click a project to open it in the editor.</p>
+                    </div>
+                    {anySelected && (
+                      <div className="flex flex-row items-center">
+                        <span className="text-sm font-medium text-indigo-500 border border-indigo-200 rounded-lg px-3 py-1.5 mr-4">{selectedIds.length} projects selected</span>
+                        <button
+                          type="button"
+                          onClick={() => setSelected({})}
+                          className="text-sm font-medium text-gray-600 hover:text-gray-800 px-3 py-1.5 mr-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {error && (
@@ -111,9 +122,8 @@ export default function ProjectsPage() {
                           onDelete={async () => {
                             const confirmed = window.confirm('Delete this project? This cannot be undone.');
                             if (!confirmed) return;
-                            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
                             setDeletingId(p.id);
-                            await fetch(`${baseUrl}/api/projects/${p.id}`, { method: 'DELETE' });
+                            await apiClient.delete(`/api/projects/${p.id}`);
                             setDeletingId(null);
                             await refetch();
                           }}
