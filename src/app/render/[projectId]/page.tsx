@@ -5,7 +5,6 @@ import { useParams, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import gsap from 'gsap';
 
-import { apiClient } from '@/lib/api-client';
 import { useProjectStore } from '@/stores/use-project-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useTimelineStore, useTimelineSync } from '@/stores/use-timeline-store';
@@ -65,11 +64,28 @@ export default function RenderPage() {
   useEffect(() => {
     (async () => {
       if (!projectId) return;
-      type ProjectDataShape = { id: string; name: string; title?: string; version?: string; mainState?: unknown };
-      type VariantA = { project: ProjectDataShape };
-      type VariantB = { data: { project: ProjectDataShape } };
-      const res = await apiClient.get<VariantA | VariantB>(`/api/projects/${projectId}`);
-      const project: ProjectDataShape = 'project' in res ? res.project : res.data.project;
+      try {
+        type ProjectDataShape = { id: string; name: string; title?: string; version?: string; mainState?: unknown };
+        let project: ProjectDataShape;
+
+        const token = search.get('token');
+        if (token) {
+          // Token-based render fetch (headless Puppeteer)
+          const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+          const resp = await fetch(`${apiBase}/api/render/project-data/${projectId}`, {
+            headers: { 'x-render-auth': token },
+          });
+          if (!resp.ok) throw new Error(`Render data fetch failed: ${resp.status}`);
+          const json = (await resp.json()) as { project: ProjectDataShape };
+          project = json.project;
+        } else {
+          // Fallback to session-based fetch for interactive browser debug
+          const { apiClient } = await import('@/lib/api-client');
+          type VariantA = { project: ProjectDataShape };
+          type VariantB = { data: { project: ProjectDataShape } };
+          const res = await apiClient.get<VariantA | VariantB>(`/api/projects/${projectId}`);
+          project = 'project' in res ? res.project : res.data.project;
+        }
 
       setProjectInfo({
         projectId: project.id,
@@ -136,6 +152,11 @@ export default function RenderPage() {
       };
       globalThis.__renderInfo__ = { width, height, fps, duration };
       globalThis.__renderReady__ = true;
+      } catch (e) {
+        console.error('Render init failed', e);
+        // @ts-expect-error - exposed for Puppeteer error checks
+        globalThis.__renderError__ = String(e instanceof Error ? e.message : e);
+      }
     })();
 
     return () => {
