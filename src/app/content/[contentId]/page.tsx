@@ -122,6 +122,7 @@ export default function ContentDetailPage() {
           )}
           confirmLabel="Continue to Editor"
           cancelLabel="Cancel"
+          align="content"
           onCancel={() => setShowConfirm(false)}
           onConfirm={async () => {
             try {

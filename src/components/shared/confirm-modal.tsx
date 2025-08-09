@@ -8,13 +8,14 @@ interface ConfirmModalProps {
   cancelLabel?: string;
   onConfirm: () => void;
   onCancel: () => void;
+  align?: 'viewport' | 'content';
 }
 
-export function ConfirmModal({ open, title, description, confirmLabel = 'Confirm', cancelLabel = 'Cancel', onConfirm, onCancel }: ConfirmModalProps) {
+export function ConfirmModal({ open, title, description, confirmLabel = 'Confirm', cancelLabel = 'Cancel', onConfirm, onCancel, align = 'viewport' }: ConfirmModalProps) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className={`fixed inset-0 z-50 flex items-center justify-center ${align === 'content' ? 'lg:pl-20 lg:pr-[calc(100vw/7)]' : ''}`}>
       <div className="absolute inset-0 bg-black/30" onClick={onCancel} />
       <div className="relative z-10 w-full max-w-md mx-auto bg-white rounded-2xl shadow-2xl border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
