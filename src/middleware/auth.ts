@@ -15,8 +15,8 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    // Protect all routes under /editor and /content
-    "/editor/:path*",
+    // Protect all routes under /designer and /content
+    "/designer/:path*",
     "/content/:path*",
     // Add other protected routes as needed
     // "/api/protected/:path*",

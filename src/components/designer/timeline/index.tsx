@@ -1,6 +1,6 @@
 import { useRef, useState, useMemo, useEffect } from 'react';
 import { Play, Pause, RotateCcw, Clock, Monitor, ChevronUp, ChevronDown } from 'lucide-react';
-import { TimelineTrack } from '@/components/editor/timeline/timeline-track';
+import { TimelineTrack } from '@/components/designer/timeline/timeline-track';
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { useCanvasElements, useCanvasGroups } from '@/stores/use-canvas-store';
 import { useTimelineStore } from '@/stores/use-timeline-store';

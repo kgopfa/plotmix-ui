@@ -16,7 +16,9 @@ import {
   Home,
   Sparkles,
   FileText,
-  ListVideo
+  ListVideo,
+  MessagesSquare,
+  Boxes
 } from 'lucide-react'
 import { ProjectControls } from './project-controls';
 import { PathModeIndicator } from './path-mode-indicator';
@@ -193,37 +195,37 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                     href="/"
                     className="flex items-center gap-3 p-3 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
                   >
-                    <Home className="size-4 text-gray-500" />
-                    <span>Home</span>
+                    <Home className="size-4 text-indigo-500" />
+                    <span className="font-medium text-gray-500">Home</span>
                   </Link>
                   <Link
                     href="/chat"
                     className="flex items-center gap-3 p-3 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
                   >
                     <Sparkles className="size-4 text-purple-500" />
-                    <span>New Chat</span>
+                    <span className="font-medium text-gray-500">New Chat</span>
                   </Link>
                   <Link
                     href="/chats"
                     className="flex items-center gap-3 p-3 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
                   >
-                    <ListVideo className="size-4 text-indigo-500" />
-                    <span>Chats</span>
+                    <MessagesSquare className="size-4 text-green-500" />
+                    <span className="font-medium text-gray-500">Chats</span>
                   </Link>
                   <Link
                     href="/projects"
                     className="flex items-center gap-3 p-3 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
                   >
-                    <FileText className="size-4 text-gray-500" />
-                    <span>Projects</span>
+                    <Boxes strokeWidth={1.5} className="size-4 text-blue-500" />
+                    <span className="font-medium text-gray-500">Projects</span>
                   </Link>
                   {projectId && (
                     <Link
                       href={`/content/${projectId}`}
                       className="flex items-center gap-3 p-3 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
                     >
-                      <ListVideo className="size-4 text-indigo-500" />
-                      <span>Content</span>
+                      <ListVideo className="size-4 text-fuchsia-500" />
+                      <span className="font-medium text-gray-500">Content</span>
                     </Link>
                   )}
                 </div>

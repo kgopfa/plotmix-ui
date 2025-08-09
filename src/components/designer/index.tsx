@@ -39,7 +39,7 @@ import { useElementDragging } from '@/hooks/use-element-dragging';
 
 const ApplicationCanvas = dynamic(() => import('./application-canvas').then(m => m.ApplicationCanvas), { ssr: false });
 
-export default function EditorCanvas() {
+export default function Designer() {
   // Use canvas store instead of local state
   const canvasObjects = useCanvasElements();
   const groups = useCanvasGroups();
