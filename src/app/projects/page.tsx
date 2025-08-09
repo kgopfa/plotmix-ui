@@ -14,7 +14,7 @@ import { apiClient } from '@/lib/api-client';
 
 export default function ProjectsPage() {
   const router = useRouter();
-  const { projects, isLoading, error, loadNext, hasMore, refetch } = useProjects(20);
+  const { projects, isLoading, error, loadNext, hasMore, refetch } = useProjects(20, 'NATIVE');
   const [selected, setSelected] = React.useState<Record<string, boolean>>({});
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
   const selectedIds = React.useMemo(() => Object.keys(selected).filter((id) => selected[id]), [selected]);
@@ -119,6 +119,7 @@ export default function ProjectsPage() {
                           lastUpdatedAt={p.updatedAt}
                           version={p.version}
                           onClick={() => router.push(`/editor/${p.id}`)}
+                          showConversationWarning={!!p.conversation}
                           onDelete={async () => {
                             const confirmed = window.confirm('Delete this project? This cannot be undone.');
                             if (!confirmed) return;

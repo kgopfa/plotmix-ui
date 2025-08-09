@@ -8,6 +8,8 @@ export interface ProjectListItem {
   version: string;
   createdAt: string;
   updatedAt: string;
+  source?: 'NATIVE' | 'GENERATED' | string;
+  conversation?: { id: string } | null;
 }
 
 interface ProjectsResponse {
@@ -16,7 +18,7 @@ interface ProjectsResponse {
   data: { projects: ProjectListItem[] };
 }
 
-export function useProjects(limit: number = 20) {
+export function useProjects(limit: number = 20, source?: string) {
   const [projects, setProjects] = useState<ProjectListItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +29,8 @@ export function useProjects(limit: number = 20) {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await apiClient.get<ProjectsResponse>(`/api/projects?page=${pageToFetch}&limit=${limit}`);
+      const src = source ? `&source=${encodeURIComponent(source)}` : '';
+      const res = await apiClient.get<ProjectsResponse>(`/api/projects?page=${pageToFetch}&limit=${limit}${src}`);
       const items = res.data?.projects ?? [];
       setProjects(prev => (pageToFetch === 1 ? items : [...prev, ...items]));
       setHasMore(items.length === limit);
@@ -37,7 +40,7 @@ export function useProjects(limit: number = 20) {
     } finally {
       setIsLoading(false);
     }
-  }, [limit]);
+  }, [limit, source]);
 
   const refetch = useCallback(async () => {
     setPage(1);

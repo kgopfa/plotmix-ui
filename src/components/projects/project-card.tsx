@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, AlertTriangle } from 'lucide-react';
 
 export interface ProjectCardProps {
   title: string;
@@ -11,6 +11,7 @@ export interface ProjectCardProps {
   selectable?: boolean;
   selected?: boolean;
   onToggleSelect?: (checked: boolean) => void;
+  showConversationWarning?: boolean;
 }
 
 function formatRelativeTime(date?: string | Date) {
@@ -42,6 +43,7 @@ export function ProjectCard({
   selectable = false,
   selected = false,
   onToggleSelect,
+  showConversationWarning = false,
 }: ProjectCardProps) {
   return (
     <div
@@ -53,7 +55,15 @@ export function ProjectCard({
     >
       <div className="flex items-start gap-x-3">
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-gray-900 truncate">{title}</h3>
+          <div className="flex items-center gap-x-2">
+            <h3 className="font-semibold text-gray-900 truncate">{title}</h3>
+            {showConversationWarning && (
+              <span className="inline-flex items-center gap-x-1 text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">
+                <AlertTriangle className="size-3" />
+                Has chat
+              </span>
+            )}
+          </div>
           <div className="mt-1 flex items-center gap-x-3 text-xs text-gray-500">
             <span>Last update {formatRelativeTime(lastUpdatedAt)}</span>
             {version && (

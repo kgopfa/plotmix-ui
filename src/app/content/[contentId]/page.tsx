@@ -5,6 +5,9 @@ import Link from 'next/link';
 import { NavigationSidebar } from '@/components/shared/navigation-sidebar';
 import { ContentSidebar } from '@/components/content/content-sidebar';
 import { Link2, Pencil, UserPlus } from 'lucide-react';
+import React from 'react';
+import { apiClient } from '@/lib/api-client';
+import { ConfirmModal } from '@/components/shared/confirm-modal';
 import { navigation } from '@/data/shared-navigation';
 import { useContent } from '@/hooks/use-content';
 
@@ -12,6 +15,8 @@ export default function ContentDetailPage() {
   const params = useParams();
   const contentId = params.contentId as string;
   const { content, isLoading, error } = useContent(contentId);
+  const [showConfirm, setShowConfirm] = React.useState(false);
+  const router = useParams();
 
   return (
     <>
@@ -97,14 +102,38 @@ export default function ContentDetailPage() {
         
         {/* Edit Button - Bottom Right of Main */}
         <div className="fixed bottom-8 right-[calc(100vw/7+2rem)] z-50">
-          <Link
-            href={`/editor/${contentId}`}
+          <button
+            onClick={() => setShowConfirm(true)}
             className="inline-flex items-center gap-x-2 p-5 rounded-2xl text-white bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all duration-200 transform hover:scale-105"
           >
             <Pencil strokeWidth={2.5} aria-hidden="true" className="-ml-0.5 size-5" />
             <span className="hidden sm:block font-bold">Open in Editor</span>
-          </Link>
+          </button>
         </div>
+
+        <ConfirmModal
+          open={showConfirm}
+          title="Open in Editor"
+          description={(
+            <div className="space-y-2">
+              <p>This project was created from a chat. Opening it in the editor separates the editing workflow from the chat conversation.</p>
+              <p className="text-gray-700">Changes made in the editor won’t be reflected back on the conversation page.</p>
+            </div>
+          )}
+          confirmLabel="Continue to Editor"
+          cancelLabel="Cancel"
+          onCancel={() => setShowConfirm(false)}
+          onConfirm={async () => {
+            try {
+              // Optionally, we could set source to NATIVE here without disassociating
+              await apiClient.post(`/api/projects/${contentId}/convert-to-native`);
+            } catch (e) {
+              // non-blocking
+            } finally {
+              window.location.href = `/editor/${contentId}`;
+            }
+          }}
+        />
       </main>
 
       <ContentSidebar conversationId={content?.conversationId || ''} />
