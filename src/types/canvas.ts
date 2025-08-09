@@ -10,6 +10,7 @@ export interface CanvasElement {
   fill: string; // Use 'none' to indicate transparent fill
   stroke?: string;
   strokeWidth?: number;
+  strokeOpacity?: number;
   radius?: number;
   cornerRadius?: number;
   opacity?: number;
@@ -111,6 +112,7 @@ export interface AnimatedCanvasObject {
   radius?: number;
   stroke?: string;
   strokeWidth?: number;
+  strokeOpacity?: number;
   cornerRadius?: number;
   rotation?: number;
   opacity?: number;

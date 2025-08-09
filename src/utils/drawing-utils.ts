@@ -261,9 +261,12 @@ export const drawLine = (
 ) => {
   if (shape.type !== 'line' || !shape.lineOptions?.points) return;
 
+  // If stroke is explicitly 'none', don't draw the line
+  if (shape.stroke === 'none') return;
+
   const color = parseColor(shape.stroke || shape.fill);
   const width = shape.strokeWidth || 2;
-  const alpha = shape.opacity ?? 1;
+  const alpha = (shape.strokeOpacity ?? shape.opacity ?? 1);
 
   const start = {
     x: smoothLinePosition(shape.lineOptions.points.start.x - shape.x),
@@ -494,14 +497,17 @@ export function createShapeGraphics(shape: AnimatedCanvasObject, color?: string 
 
   if (shape.type === 'line' || shape.type === 'path') {
     drawElement(graphics, shape);
-    graphics.stroke({
-      color: fillColor,
-      width: shape.strokeWidth || 2,
-      alpha: shape.opacity ?? 1,
-      alignment: 0.5, // Center the stroke on the path for consistent appearance
-      cap: 'round',    // Smooth rounded line caps
-      join: 'round'    // Smooth rounded line joins
-    });
+    // For path and line, use stroke if not 'none'
+    if (shape.stroke !== 'none') {
+      graphics.stroke({
+        color: fillColor,
+        width: shape.strokeWidth || 2,
+        alpha: (shape.strokeOpacity ?? shape.opacity ?? 1),
+        alignment: 0.5, // Center the stroke on the path for consistent appearance
+        cap: 'round',    // Smooth rounded line caps
+        join: 'round'    // Smooth rounded line joins
+      });
+    }
   } else {
     drawElement(graphics, shape);
     if (shape.fill !== 'none') {
@@ -682,14 +688,16 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasObject) {
         graphics.fill({ color: shape.fill, alpha: shape.opacity ?? 1 });
       }
 
-      graphics.stroke({
-        color: parseColor(shape.stroke || shape.fill),
-        width: shape.strokeWidth || width,
-        alpha: shape.opacity ?? 1,
-        alignment: 0.5, // Center the stroke on the path for consistent appearance
-        cap: 'round',    // Smooth rounded line caps
-        join: 'round'    // Smooth rounded line joins
-      });
+      if (shape.stroke !== 'none') {
+        graphics.stroke({
+          color: parseColor(shape.stroke || shape.fill),
+          width: shape.strokeWidth || width,
+          alpha: (shape.strokeOpacity ?? shape.opacity ?? 1),
+          alignment: 0.5, // Center the stroke on the path for consistent appearance
+          cap: 'round',    // Smooth rounded line caps
+          join: 'round'    // Smooth rounded line joins
+        });
+      }
     }
   }
 }

@@ -399,13 +399,21 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
               <div
                 ref={strokeColorTriggerRef}
                 className="w-4 h-4 rounded border border-gray-300 cursor-pointer hover:scale-110 transition-transform"
-                style={{ backgroundColor: localElement.stroke || '#000000' }}
+                style={
+                  (localElement.stroke === 'none')
+                    ? {
+                        backgroundImage: `linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)`,
+                        backgroundSize: '8px 8px',
+                        backgroundPosition: '0 0, 0 4px, 4px -4px, -4px 0px'
+                      }
+                    : { backgroundColor: localElement.stroke || '#000000' }
+                }
                 onClick={() => setShowStrokeColorPicker(!showStrokeColorPicker)}
               />
             </div>
             <input
               type="text"
-              value={(localElement.stroke || '#000000').replace('#', '').toUpperCase()}
+              value={(localElement.stroke && localElement.stroke !== 'none' ? localElement.stroke : '#000000').replace('#', '').toUpperCase()}
               onChange={e => updateLocalProperty('stroke', '#' + e.target.value.toUpperCase())}
               className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 uppercase"
               placeholder="000000"
@@ -416,6 +424,9 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
               isOpen={showStrokeColorPicker}
               onClose={() => setShowStrokeColorPicker(false)}
               triggerRef={strokeColorTriggerRef}
+              allowNone
+              onClear={() => updateLocalProperty('stroke', 'none')}
+              isNone={localElement.stroke === 'none'}
             />
           </div>
         </label>
@@ -453,6 +464,19 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
             </div>
           </label>
         </div>
+
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-semibold text-indigo-400">Stroke Opacity</span>
+          <input
+            type="number"
+            value={localElement.strokeOpacity ?? 1}
+            onChange={e => updateLocalProperty('strokeOpacity', Number(e.target.value))}
+            min={0}
+            max={1}
+            step={0.1}
+            className="block w-full grow rounded-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
+          />
+        </label>
       </div>
 
 
