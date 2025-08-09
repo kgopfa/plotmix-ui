@@ -14,7 +14,7 @@ export interface ProjectInfo {
 }
 
 interface ProjectStoreState extends ProjectInfo {
-  baselineMainState: Record<string, any> | null;
+  baselineMainState: Record<string, unknown> | null;
   lastSavedAt: string | null;
   saveStatus: SaveStatus;
 }
@@ -22,9 +22,9 @@ interface ProjectStoreState extends ProjectInfo {
 interface ProjectStoreActions {
   setProjectInfo: (info: Partial<ProjectInfo>) => void;
   captureBaseline: () => void;
-  setBaseline: (state: Record<string, any> | null) => void;
-  getCurrentMainState: () => Record<string, any>;
-  getDiffFromBaseline: () => Record<string, any> | null;
+  setBaseline: (state: Record<string, unknown> | null) => void;
+  getCurrentMainState: () => Record<string, unknown>;
+  getDiffFromBaseline: () => Record<string, unknown> | null;
   setVersion: (version: string) => void;
   setSaveStatus: (status: SaveStatus) => void;
 }
@@ -78,7 +78,7 @@ export const useProjectStore = create<ProjectStore>()(
           scale: timeline.ui.scale,
           duration: timeline.playback.totalDuration,
           currentTime: timeline.playback.currentTime,
-          animationStates: Object.fromEntries(timeline.animationStates),
+          animationStates: Object.fromEntries(timeline.animationStates as unknown as Iterable<readonly [PropertyKey, unknown]>),
         },
       };
     },

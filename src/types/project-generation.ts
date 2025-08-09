@@ -46,7 +46,7 @@ export interface ProjectGenerationResponse {
       source: string | null;
       mainState: any;
       version: string;
-      features: any;
+      features: Record<string, unknown>;
     };
     conversationId: string;
     user: {
