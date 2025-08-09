@@ -335,26 +335,41 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                 <div
                   ref={fillColorTriggerRef}
                   className="w-4 h-4 rounded border border-gray-300 cursor-pointer hover:scale-110 transition-transform"
-                  style={{ backgroundColor: localElement.fill || '#ffffff' }}
+                  style={
+                    (localElement.fill === 'none')
+                      ? {
+                          backgroundImage: `linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)`,
+                          backgroundSize: '8px 8px',
+                          backgroundPosition: '0 0, 0 4px, 4px -4px, -4px 0px'
+                        }
+                      : { backgroundColor: localElement.fill || '#ffffff' }
+                  }
                   onClick={() => setShowFillColorPicker(!showFillColorPicker)}
                 />
               </div>
               <input
                 type="text"
-                value={(localElement.fill || '#ffffff').replace('#', '').toUpperCase()}
+                value={(localElement.fill && localElement.fill !== 'none' ? localElement.fill : '#ffffff').replace('#', '').toUpperCase()}
                 onChange={e => updateLocalProperty('fill', '#' + e.target.value.toUpperCase())}
                 className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-purple-600 uppercase"
                 placeholder="FFFFFF"
               />
               <ColorPicker
                 value={localElement.fill || '#ffffff'}
-                onChange={(color) => updateLocalProperty('fill', color)}
+                onChange={(color) => {
+                  updateLocalProperty('fill', color);
+                }}
                 isOpen={showFillColorPicker}
                 onClose={() => setShowFillColorPicker(false)}
                 triggerRef={fillColorTriggerRef}
+                allowNone
+                onClear={() => updateLocalProperty('fill', 'none')}
+                isNone={localElement.fill === 'none'}
               />
             </div>
           </label>
+
+          {/* Removed Fill Opacity control; use single opacity and 'none' fill via picker */}
 
           <label className="flex flex-col gap-1">
             <span className="text-xs font-semibold text-purple-400">Opacity</span>

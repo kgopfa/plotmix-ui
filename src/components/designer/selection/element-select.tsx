@@ -57,7 +57,7 @@ const ElementSelect: React.FC<ElementSelectProps> = ({
       // Draw the actual line for visual reference (always curved)
       g.moveTo(startX, startY);
       g.quadraticCurveTo(controlX, controlY, endX, endY);
-      g.stroke({ width: 2, color: 0x74b9ff, alpha: 0.8 });
+      g.stroke({ width: 1, color: 0x74b9ff, alpha: 0.8 });
 
       // Draw endpoint markers (square handles like resize handles) - positioned to extend outside the selection rectangle
       // Start point - square handle
@@ -106,7 +106,7 @@ const ElementSelect: React.FC<ElementSelectProps> = ({
       const radius = element.height / 2;
       g.ellipse(0, 0, radius, radius);
       g.stroke({
-        width: 2,
+        width: 1,
         color: 0x74b9ff,
         alpha: 0.85,
       });
@@ -122,7 +122,7 @@ const ElementSelect: React.FC<ElementSelectProps> = ({
       ];
       g.poly(points);
       g.stroke({
-        width: 2,
+        width: 1,
         color: 0x74b9ff,
         alpha: 0.85,
       });
@@ -136,7 +136,7 @@ const ElementSelect: React.FC<ElementSelectProps> = ({
         element.cornerRadius
       );
       g.stroke({
-        width: 2,
+        width: 1,
         color: 0x74b9ff,
         alpha: 0.85,
       });

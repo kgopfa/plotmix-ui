@@ -504,7 +504,9 @@ export function createShapeGraphics(shape: AnimatedCanvasObject, color?: string 
     });
   } else {
     drawElement(graphics, shape);
-    graphics.fill({ color: fillColor, alpha: shape.opacity ?? 1 });
+    if (shape.fill !== 'none') {
+      graphics.fill({ color: fillColor, alpha: shape.opacity ?? 1 });
+    }
   }
 
   return graphics;
@@ -676,8 +678,8 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasObject) {
       const width = shape.type === 'path' ? 2 : 1;
       drawElement(graphics, shape);
 
-      if (shape.type !== 'path') {
-        graphics.fill({ color: shape.fill, alpha: shape.opacity });
+      if (shape.type !== 'path' && shape.fill !== 'none') {
+        graphics.fill({ color: shape.fill, alpha: shape.opacity ?? 1 });
       }
 
       graphics.stroke({

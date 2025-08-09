@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 interface ColorPickerProps {
-  value: string;
-  onChange: (color: string) => void;
+  value: string; // Use 'none' to represent transparent
+  onChange: (color: string) => void; // Pass 'none' for transparent
   isOpen: boolean;
   onClose: () => void;
   triggerRef: React.RefObject<HTMLElement | null>;
+  allowNone?: boolean;
+  onClear?: () => void;
+  isNone?: boolean;
 }
 
 const PRESET_COLORS = [
@@ -14,7 +17,7 @@ const PRESET_COLORS = [
   '#FF6347', '#32CD32', '#4169E1', '#FF1493', '#00CED1', '#FF4500', '#9370DB', '#3CB371'
 ];
 
-export function ColorPicker({ value, onChange, isOpen, onClose, triggerRef }: ColorPickerProps) {
+export function ColorPicker({ value, onChange, isOpen, onClose, triggerRef, allowNone = false, onClear, isNone = false }: ColorPickerProps) {
   const [hue, setHue] = useState(0);
   const [saturation, setSaturation] = useState(100);
   const [lightness, setLightness] = useState(50);
@@ -23,7 +26,7 @@ export function ColorPicker({ value, onChange, isOpen, onClose, triggerRef }: Co
 
   // Convert hex to HSL for the picker
   useEffect(() => {
-    if (value) {
+    if (value && value !== 'none') {
       const hex = value.replace('#', '');
       const r = parseInt(hex.substr(0, 2), 16) / 255;
       const g = parseInt(hex.substr(2, 2), 16) / 255;
@@ -48,6 +51,9 @@ export function ColorPicker({ value, onChange, isOpen, onClose, triggerRef }: Co
       setHue(Math.round(h * 360));
       setSaturation(Math.round(s * 100));
       setLightness(Math.round(l * 100));
+      setHexValue(value.replace('#', '').toUpperCase());
+    } else if (value === 'none') {
+      setHexValue('');
     }
   }, [value]);
 
@@ -153,14 +159,19 @@ export function ColorPicker({ value, onChange, isOpen, onClose, triggerRef }: Co
       <div className="space-y-4">
         {/* Current color preview */}
         <div className="flex items-center gap-3">
-          <div 
+          <div
             className="w-8 h-8 rounded border border-gray-300"
-            style={{ backgroundColor: value }}
+            style={isNone ? {
+              backgroundImage: `linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)`,
+              backgroundSize: '8px 8px',
+              backgroundPosition: '0 0, 0 4px, 4px -4px, -4px 0px'
+            } : { backgroundColor: value }}
+            title={isNone ? 'None' : value}
           />
           <div className="flex-1">
             <input
               type="text"
-              value={hexValue}
+              value={isNone ? '' : hexValue}
               onChange={handleHexChange}
               className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 uppercase text-gray-600"
               placeholder="FFFFFF"
@@ -233,6 +244,18 @@ export function ColorPicker({ value, onChange, isOpen, onClose, triggerRef }: Co
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-2">Presets</label>
           <div className="grid grid-cols-8 gap-1">
+            {allowNone && (
+              <button
+                className="w-6 h-6 rounded border border-gray-300 hover:scale-110 transition-transform relative"
+                onClick={() => { if (onClear) onClear(); onChange('none'); setHexValue(''); }}
+                title="None"
+                style={{
+                  backgroundImage: `linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)`,
+                  backgroundSize: '8px 8px',
+                  backgroundPosition: '0 0, 0 4px, 4px -4px, -4px 0px'
+                }}
+              />
+            )}
             {PRESET_COLORS.map((color) => (
               <button
                 key={color}
