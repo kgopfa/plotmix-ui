@@ -9,9 +9,9 @@ import { apiClient } from '@/lib/api-client';
 import { useProjectStore } from '@/stores/use-project-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useTimelineStore, useTimelineSync } from '@/stores/use-timeline-store';
-import type { ApplicationCanvasRef } from '@/components/editor/application-canvas';
+import type { ApplicationCanvasRef } from '../../../components/designer/application-canvas';
 import type { FederatedPointerEvent } from 'pixi.js';
-import type { AnimatedCanvasObject } from '@/types/canvas';
+import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 
 declare global {
   // Globals used by the render worker (Puppeteer)
@@ -24,7 +24,7 @@ declare global {
 }
 
 const ApplicationCanvas = dynamic(
-  () => import('@/components/editor/application-canvas').then(m => m.ApplicationCanvas),
+  () => import('../../../components/designer/application-canvas').then(m => m.ApplicationCanvas),
   { ssr: false }
 );
 
@@ -36,6 +36,7 @@ export default function RenderPage() {
   const fps = Number(search.get('fps') || 30);
   const width = Number(search.get('width') || 1280);
   const height = Number(search.get('height') || 720);
+  const debugPlay = search.get('debug') === '1' || search.get('play') === '1';
 
   const appRef = useRef<ApplicationCanvasRef>(null);
   const { setProjectInfo, setBaseline, captureBaseline } = useProjectStore();
@@ -46,26 +47,29 @@ export default function RenderPage() {
   const groups = useCanvasStore(s => s.groups);
 
   // Minimal required no-op handlers with correct types
-  const handleCanvasPointerDown = (_e: FederatedPointerEvent) => {};
-  const handleCanvasPointerMove = (_e: FederatedPointerEvent) => {};
+  const handleCanvasPointerDown = (e: FederatedPointerEvent) => { void e; };
+  const handleCanvasPointerMove = (e: FederatedPointerEvent) => { void e; };
   const handlePointerUp = () => {};
-  const handleSelectElement = (_id: string | null, _isMulti?: boolean) => {};
-  const handleCanvasClick = (_e: FederatedPointerEvent) => {};
-  const handlePointerDown = (_id: string, _x: number, _y: number) => (_e: FederatedPointerEvent) => {};
-  const handleElementMouseMove = (_id: string) => (_e: FederatedPointerEvent) => {};
-  const handleElementMouseLeave = (_id: string) => () => {};
+  const handleSelectElement = (id: string | null, isMulti?: boolean) => { void id; void isMulti; };
+  const handleCanvasClick = (e: FederatedPointerEvent) => { void e; };
+  const handlePointerDown = (id: string, x: number, y: number) => (e: FederatedPointerEvent) => { void id; void x; void y; void e; };
+  const handleElementMouseMove = (id: string) => (e: FederatedPointerEvent) => { void id; void e; };
+  const handleElementMouseLeave = (id: string) => () => { void id; };
   const handleGroupSelectionDragStart = (
-    _virtualElement: AnimatedCanvasObject,
-    _mouseX: number,
-    _mouseY: number,
-    _allElements?: AnimatedCanvasObject[]
-  ) => {};
+    virtualElement: AnimatedCanvasObject,
+    mouseX: number,
+    mouseY: number,
+    allElements?: AnimatedCanvasObject[]
+  ) => { void virtualElement; void mouseX; void mouseY; void allElements; };
 
   useEffect(() => {
     (async () => {
       if (!projectId) return;
-      const res = await apiClient.get<{ project: { id: string; name: string; title?: string; version?: string; mainState?: unknown } }>(`/api/projects/${projectId}`);
-      const project = res.data.project;
+      type ProjectDataShape = { id: string; name: string; title?: string; version?: string; mainState?: unknown };
+      type VariantA = { project: ProjectDataShape };
+      type VariantB = { data: { project: ProjectDataShape } };
+      const res = await apiClient.get<VariantA | VariantB>(`/api/projects/${projectId}`);
+      const project: ProjectDataShape = 'project' in res ? res.project : res.data.project;
 
       setProjectInfo({
         projectId: project.id,
@@ -79,22 +83,48 @@ export default function RenderPage() {
 
       // Hydrate canvas + timeline stores from mainState
       const canvasStore = useCanvasStore.getState();
-      const rawElements = Array.isArray(mainState.elements) ? mainState.elements : [];
-      const rawGroups = Array.isArray(mainState.groups) ? mainState.groups : [];
-      canvasStore.setElements(rawElements);
-      canvasStore.setGroups(rawGroups);
+      type MainStateLike = { elements?: AnimatedCanvasObject[]; groups?: CanvasGroup[] };
+      const ms = mainState as MainStateLike;
+      const rawElements = Array.isArray(ms.elements) ? ms.elements : [];
+      const rawGroups = Array.isArray(ms.groups) ? ms.groups : [];
+
+      // Sanitize and dedupe by id to avoid duplicate keys in React/Pixi trees
+      const sanitizedElements: AnimatedCanvasObject[] = rawElements.map((el) => ({
+        ...el,
+        animations: Array.isArray(el?.animations) ? el.animations : [],
+        fill: typeof el?.fill === 'string' && el.fill ? el.fill : '#000000',
+      }));
+      const elementsUnique: AnimatedCanvasObject[] = Array.from(
+        new Map(sanitizedElements.map((e) => [e.id as string, e])).values()
+      );
+
+      const groupsUnique: CanvasGroup[] = Array.from(
+        new Map(rawGroups.map((g) => [g.id as string, g])).values()
+      );
+
+      canvasStore.setElements(elementsUnique);
+      canvasStore.setGroups(groupsUnique);
 
       // Build GSAP timeline deterministically
       initializeSubscriptions();
       buildGSAPTimeline();
 
-      // Stop GSAP and Pixi tickers; render on demand
+      // @ts-expect-error - @pixi/react ApplicationRef provides app at runtime
+      const pixiApp = appRef.current?.getApplication()?.app;
+      // Configure tickers based on debugPlay
       gsap.ticker.lagSmoothing(0);
       gsap.ticker.fps(fps);
-      gsap.ticker.sleep();
-
-      const pixiApp = appRef.current?.getApplication()?.app;
-      pixiApp?.ticker?.stop();
+      if (debugPlay) {
+        // Live preview: wake GSAP, start Pixi ticker, and play timeline
+        gsap.ticker.wake();
+        pixiApp?.ticker?.start();
+        const { play } = useTimelineStore.getState();
+        try { play(); } catch {}
+      } else {
+        // Recording mode: sleep GSAP and stop Pixi ticker for manual seeking
+        gsap.ticker.sleep();
+        pixiApp?.ticker?.stop();
+      }
 
       const duration = useTimelineStore.getState().playback.totalDuration || 5;
       const tl = gsap.globalTimeline;
@@ -143,7 +173,7 @@ export default function RenderPage() {
         // Handlers
         handleCanvasPointerDown={handleCanvasPointerDown}
         handleCanvasPointerMove={handleCanvasPointerMove}
-        handlePointerUp={noop}
+        handlePointerUp={handlePointerUp}
         handleSelectElement={handleSelectElement}
         handleCanvasClick={handleCanvasClick}
         handlePointerDown={handlePointerDown}

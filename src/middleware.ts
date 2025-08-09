@@ -64,9 +64,6 @@ export async function middleware(request: NextRequest) {
     const clientIP = request.headers.get('x-forwarded-for') || 
                     request.headers.get('x-real-ip') || 
                     'unknown'
-    
-    // Simple rate limiting (use Redis in production)
-    const rateLimitKey = `rate_limit:${clientIP}`
     // This is a basic implementation - consider using a proper rate limiting library
     
     // For now, we'll just add a header to indicate rate limiting is active

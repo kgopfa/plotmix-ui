@@ -60,13 +60,13 @@ class ApiClient {
       'Content-Type': 'application/json',
     };
 
-    if ((session as any)?.accessToken) {
-      // NextAuth JWT token is already a string, so we can use it directly
-      const token = typeof (session as any).accessToken === 'string' 
-        ? (session as any).accessToken 
-        : JSON.stringify((session as any).accessToken);
-      headers.Authorization = `Bearer ${token}`;
-    }
+    const at = session?.accessToken as unknown;
+    let token: string | null = null;
+    if (typeof at === 'string') token = at;
+    else if (at && typeof (at as { token?: string }).token === 'string') token = (at as { token?: string }).token as string;
+    else if (at && typeof (at as { jwt?: string }).jwt === 'string') token = (at as { jwt?: string }).jwt as string;
+
+    if (token) headers.Authorization = `Bearer ${token}`;
 
     return headers;
   }
@@ -115,7 +115,7 @@ class ApiClient {
   /**
    * Make an authenticated POST request
    */
-  async post<T>(endpoint: string, data?: any): Promise<T> {
+  async post<T>(endpoint: string, data?: unknown): Promise<T> {
     // Validate session before making request
     const isValidSession = await this.validateSession();
     if (!isValidSession) {
@@ -143,7 +143,7 @@ class ApiClient {
   /**
    * Make an authenticated PUT request
    */
-  async put<T>(endpoint: string, data?: any): Promise<T> {
+  async put<T>(endpoint: string, data?: unknown): Promise<T> {
     // Validate session before making request
     const isValidSession = await this.validateSession();
     if (!isValidSession) {
@@ -198,7 +198,7 @@ class ApiClient {
   /**
    * Make an authenticated PATCH request
    */
-  async patch<T>(endpoint: string, data?: any): Promise<T> {
+  async patch<T>(endpoint: string, data?: unknown): Promise<T> {
     // Validate session before making request
     const isValidSession = await this.validateSession();
     if (!isValidSession) {
