@@ -30,8 +30,8 @@ importers:
         specifier: ^10.1.1
         version: 10.1.1
       jose:
-        specifier: ^6.0.12
-        version: 6.0.12
+        specifier: ^5.9.6
+        version: 5.10.0
       jsondiffpatch:
         specifier: ^0.6.0
         version: 0.6.2
@@ -1572,8 +1572,8 @@ packages:
   jose@4.15.9:
     resolution: {integrity: sha512-1vUQX+IdDMVPj4k8kOxgUqlcK518yluMuGZwqlr44FS1ppZB/5GWh4rZG89erpOBOJjU/OBsnCVFfapsRz6nEA==}
 
-  jose@6.0.12:
-    resolution: {integrity: sha512-T8xypXs8CpmiIi78k0E+Lk7T2zlK4zDyg+o1CZ4AkOHgDg98ogdP2BeZ61lTFKFyoEwJ9RgAgN+SdM3iPgNonQ==}
+  jose@5.10.0:
+    resolution: {integrity: sha512-s+3Al/p9g32Iq+oqXxkW//7jk2Vig6FF1CFqzVXoTUXt2qz89YWbL+OwS17NFYEvxC35n0FKeGO2LGYSxeM2Gg==}
 
   js-binary-schema-parser@2.0.3:
     resolution: {integrity: sha512-xezGJmOb4lk/M1ZZLTR/jaBHQ4gG/lqQnJqdIv4721DMggsa1bDVlHXNeHYogaIEHD9vCRv0fcL4hMA+Coarkg==}
@@ -4011,7 +4011,7 @@ snapshots:
 
   jose@4.15.9: {}
 
-  jose@6.0.12: {}
+  jose@5.10.0: {}
 
   js-binary-schema-parser@2.0.3: {}
 

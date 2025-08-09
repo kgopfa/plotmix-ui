@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { jwtVerify } from 'jose'
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const response = NextResponse.next()
 
   // Security Headers
@@ -28,6 +29,35 @@ export function middleware(request: NextRequest) {
   Object.entries(securityHeaders).forEach(([key, value]) => {
     response.headers.set(key, value)
   })
+
+  // Protect render-only pages with short-lived token
+  if (request.nextUrl.pathname.startsWith('/render/')) {
+    const headerToken = request.headers.get('x-render-auth')
+    const cookieToken = request.cookies.get('x-render-auth')?.value
+    const queryToken = process.env.NODE_ENV !== 'production' ? request.nextUrl.searchParams.get('token') : null
+    const token = headerToken || cookieToken || queryToken
+    const notFound = new NextResponse(null, { status: 404 })
+
+    // Fail closed if secret missing or token absent
+    const secret = process.env.RENDER_TOKEN_SECRET
+    if (!token || !secret) {
+      return notFound
+    }
+
+    try {
+      const { payload } = await jwtVerify(token, new TextEncoder().encode(secret))
+      const projectIdFromPath = request.nextUrl.pathname.split('/')[2]
+      const tokenProjectId = (payload as Record<string, unknown>)?.projectId as string | undefined
+
+      if (!tokenProjectId || tokenProjectId !== projectIdFromPath) {
+        return notFound
+      }
+
+      // Optional: enforce exp/nbf/aud/iss checks via jwtVerify options and payload assertions
+    } catch {
+      return notFound
+    }
+  }
 
   // Rate limiting for API routes
   if (request.nextUrl.pathname.startsWith('/api/')) {
