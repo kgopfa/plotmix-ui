@@ -3,15 +3,15 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import gsap from 'gsap';
 import { TimelineManager } from '@/lib/timeline-manager';
 import { useCanvasElements, useCanvasGroups, useCanvasStore } from '@/stores/use-canvas-store';
 import { useUIStore } from '@/stores/use-ui-store';
-import { useTimelineSync } from '@/stores/use-timeline-store';
+import { useTimelineSync, useTimelineStore } from '@/stores/use-timeline-store';
 import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
 import { Graphics, Container } from 'pixi.js';
 import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager';
-import { Timeline } from '@/components/designer/timeline';
-import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
+import { AnimatedCanvasObject } from '@/types/canvas';
 import dynamic from 'next/dynamic';
 import { useCanvasDimensions } from '@/hooks/use-canvas-dimensions';
 import { useTimelineIntegration } from '@/hooks/use-timeline-integration';
@@ -20,13 +20,12 @@ import type { ApplicationCanvasRef } from './canvas/application-canvas';
 
 const ApplicationCanvas = dynamic(() => import('./canvas/application-canvas').then(m => m.ApplicationCanvas), { ssr: false });
 
-export default function Designer() {
+type DesignerProps = { autoplayOnReady?: boolean };
+
+export default function Designer({ autoplayOnReady = false }: DesignerProps) {
   // Use canvas store instead of local state
   const canvasObjects = useCanvasElements();
   const groups = useCanvasGroups();
-
-  // Use UI store for tool state
-  const toolState = useUIStore((state) => state.tools);
 
   // Timeline integration is handled by useTimelineIntegration hook
   const { initializeSubscriptions, cleanupSubscriptions, buildGSAPTimeline } = useTimelineSync();
@@ -107,6 +106,57 @@ export default function Designer() {
     }
   }, [canvasObjects, groups, dimensions, buildGSAPTimeline, gsapManager]);
 
+  // Autoplay when PIXI shape refs for animated elements are mounted
+  useEffect(() => {
+    if (!autoplayOnReady) return;
+
+    let cancelled = false;
+    let rafId = 0 as number | 0;
+    let started = false;
+
+    const areTargetsReady = () => {
+      const refs = shapeRefs.current as Record<string, Container>;
+      const animatedIds = canvasObjects
+        .filter(el => !el.isAnimationPath && (el.animations?.length ?? 0) > 0)
+        .map(el => el.id);
+      if (animatedIds.length === 0) return false;
+      return animatedIds.every(id => {
+        const target = refs[id];
+        return !!(target && !target.destroyed && target.parent);
+      });
+    };
+
+    const tick = () => {
+      if (cancelled || started) return;
+      if (!areTargetsReady()) {
+        rafId = requestAnimationFrame(tick);
+        return;
+      }
+      started = true;
+      try { buildGSAPTimeline(); } catch {}
+      try {
+        gsap.ticker.lagSmoothing(0);
+        gsap.ticker.fps(30);
+        gsap.ticker.wake();
+      } catch {}
+      try {
+        // @ts-expect-error runtime app access
+        const pixiApp = fullscreenCanvasRef.current?.getApplication()?.app;
+        pixiApp?.ticker?.start();
+      } catch {}
+      try {
+        const { play, playback } = useTimelineStore.getState();
+        if (!playback.isPlaying) play();
+      } catch {}
+    };
+
+    rafId = requestAnimationFrame(tick);
+    return () => {
+      cancelled = true;
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, [autoplayOnReady, canvasObjects, buildGSAPTimeline]);
+
   // Update timeline track data when elements or groups change
   useEffect(() => {
     timelineManager.setTrackData(canvasObjects, groups);
@@ -138,12 +188,12 @@ export default function Designer() {
           selectedIds={[]}
           hoveredId={null}
           editingTextId={null}
-          tool={toolState.activeTool}
-          isPathMode={toolState.isPathMode}
-          animationTarget={toolState.animationTarget}
-          lineStartPoint={toolState.lineStartPoint}
-          isLineChaining={toolState.isLineChaining}
-          chainedLineIds={toolState.chainedLineIds}
+          tool={'select'}
+          isPathMode={false}
+          animationTarget={null}
+          lineStartPoint={null}
+          isLineChaining={false}
+          chainedLineIds={[]}
           mousePos={null}
           currentPath={[]}
           isDrawing={false}
@@ -161,27 +211,6 @@ export default function Designer() {
           onCanvasZoomChange={setCanvasZoom}
           shiftKey={false}
         />
-      </div>
-
-      {/* Floating Timeline - positioned fixed at bottom, starts after navigation sidebar */}
-      <div
-        className="fixed bottom-2 right-0 bg-transparent z-50 transition-all duration-600 ease-in-out"
-        style={{
-          left: `0px`, // Start after nav sidebar and any visible left panel
-          height: panelState.isTimelineCollapsed ? '72px' : `${panelState.timelineHeight}px`,
-          minHeight: '72px', // Allow collapsing to 72px to show controls
-          maxHeight: '80vh'
-        }}
-      >
-        {/* Timeline Resize Handle - Visual indicator - only show when not collapsed */}
-        {!panelState.isTimelineCollapsed && (
-          <div
-            className="absolute top-0 left-0 right-0 h-2 cursor-row-resize z-40"
-            onMouseDown={handleMouseDown('timeline')}
-          />
-        )}
-
-        <Timeline canvasZoom={canvasZoom} onCanvasZoom={setCanvasZoom} />
       </div>
     </div>
   );
