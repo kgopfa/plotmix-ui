@@ -3,13 +3,13 @@
 import React, { forwardRef, useImperativeHandle, useRef, useEffect, useState } from 'react';
 import { Application, extend, type ApplicationRef } from '@pixi/react';
 import { Container, Graphics } from 'pixi.js';
-import { DesignCanvas } from './canvas/design-canvas';
+import { DesignCanvas } from './design-canvas';
 import { Viewport, ViewportWrapper, centerOnDesign, zoomToFit, resetZoom } from '@/components/designer/viewport';
 import { useCanvasState } from '@/stores/use-ui-store';
 import { useViewportEmptyAreaClick, useContainerEmptyAreaClick } from '@/hooks';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager';
-import type { SnapGuide } from '../../utils/element-snapping';
+import type { SnapGuide } from '../../../utils/element-snapping';
 import type { FederatedPointerEvent } from 'pixi.js';
 
 extend({ Container, Graphics });
@@ -40,22 +40,10 @@ interface ApplicationCanvasProps {
   handleCanvasPointerDown: (e: FederatedPointerEvent) => void;
   handleCanvasPointerMove: (e: FederatedPointerEvent) => void;
   handlePointerUp: () => void;
-  handleSelectElement: (id: string | null, isMultiSelect?: boolean) => void;
   handleCanvasClick: (e: FederatedPointerEvent) => void;
-  handlePointerDown: (id: string, shapeX: number, shapeY: number) => (e: FederatedPointerEvent) => void;
-  handleElementMouseMove: (id: string) => (e: FederatedPointerEvent) => void;
-  handleElementMouseLeave: (id: string) => () => void;
-  onPathStartClick?: (elementId: string, x: number, y: number) => void;
-  handleGroupSelectionDragStart: (virtualElement: AnimatedCanvasObject, mouseX: number, mouseY: number, allElements?: AnimatedCanvasObject[]) => void;
   isElementInCustomOrPolygonGroup: (element: AnimatedCanvasObject) => boolean;
-  onZoomChange?: (zoom: number) => void;
   canvasZoom?: number;
   onCanvasZoomChange?: (zoom: number) => void;
-  // Snapping handlers
-  onSnapElement?: (element: AnimatedCanvasObject, allElements: AnimatedCanvasObject[]) => { x: number; y: number; guides: SnapGuide[] };
-  onSnapPoint?: (point: { x: number; y: number }, event?: { shiftKey?: boolean }) => { x: number; y: number };
-  onSetSnapGuides?: (guides: SnapGuide[]) => void;
-  onClearSnapGuides?: () => void;
   // Deselection handler for empty area clicks
   onEmptyAreaClick?: () => void;
   // Context menu handlers

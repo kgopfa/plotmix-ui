@@ -43,21 +43,8 @@ interface DesignCanvasProps {
   handleCanvasPointerDown: (e: FederatedPointerEvent) => void;
   handleCanvasPointerMove: (e: FederatedPointerEvent) => void;
   handlePointerUp: () => void;
-  handleSelectElement: (id: string | null, isMultiSelect?: boolean) => void;
   handleCanvasClick: (e: FederatedPointerEvent) => void;
-  handlePointerDown: (id: string, shapeX: number, shapeY: number) => (e: FederatedPointerEvent) => void;
-  handleElementMouseMove: (id: string) => (e: FederatedPointerEvent) => void;
-  handleElementMouseLeave: (id: string) => () => void;
-  onPathStartClick?: (elementId: string, x: number, y: number) => void;
-  handleGroupSelectionDragStart: (virtualElement: AnimatedCanvasObject, mouseX: number, mouseY: number, allElements?: AnimatedCanvasObject[]) => void;
-  isElementInCustomOrPolygonGroup: (element: AnimatedCanvasObject) => boolean;
   // Context menu handlers
-  onElementContextMenu?: (e: FederatedPointerEvent, elementId: string) => void;
-  onGroupContextMenu?: (e: FederatedPointerEvent, groupId: string) => void;
-  // Shift key state for constrained drawing
-  shiftKey?: boolean;
-  // Snapping state for alignment guides
-  isSnappingEnabled?: boolean;
   // Visual customization (optional)
   canvasBackgroundColor?: number; // default 0xFFFFFF
   canvasBorderColor?: number; // default 0xE2E8F0
@@ -76,19 +63,10 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
     groups,
     selectedIds,
     tool,
-    lineStartPoint,
-    isLineChaining,
-    chainedLineIds,
-    mousePos,
-    currentPath,
     shapeRefs,
     groupContainers,
     drawingRef,
     handlePointerUp,
-    handleElementMouseMove,
-    handleElementMouseLeave,
-    shiftKey = false,
-    isSnappingEnabled = true,
   } = props;
 
   // Get canvas size from UI store
@@ -242,48 +220,6 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
             interactive={tool === 'select'}
             eventMode={tool === 'select' ? 'dynamic' : 'none'}
             cursor={tool === 'select' ? 'move' : 'default'}
-            onPointerDown={tool === 'select' ? (e: FederatedPointerEvent) => {
-              e.stopPropagation();
-              
-              // Check if this is a right-click for context menu
-              if (e.button === 2) {
-                if (props.onGroupContextMenu) {
-                  props.onGroupContextMenu(e, group.id);
-                }
-                return;
-              }
-              
-              // Handle group selection - same approach as timeline
-              const isMultiSelect = (e.nativeEvent && 'metaKey' in e.nativeEvent) ?
-                (e.nativeEvent.metaKey || e.nativeEvent.ctrlKey) : false;
-              
-              // Select the group directly (same as timeline)
-              selectGroup(group, isMultiSelect);
-              
-              // Handle dragging if the group is already selected
-              if (isGroupSelected && props.handleGroupSelectionDragStart) {
-                // Create a virtual group element for dragging
-                const virtualGroupElement: AnimatedCanvasObject = {
-                  id: `group-${group.id}`,
-                  type: 'rectangle',
-                  name: group.name,
-                  x: group.x,
-                  y: group.y,
-                  width: 100, // Will be calculated properly in the handler
-                  height: 100,
-                  rotation: group.rotation || 0,
-                  fill: 'transparent',
-                  stroke: '#2196F3',
-                  strokeWidth: 2,
-                  opacity: 1,
-                  groupId: group.id,
-                  animations: [],
-                  zIndex: Math.max(...groupElements.map((el: AnimatedCanvasObject) => el.zIndex || 0))
-                };
-                
-                props.handleGroupSelectionDragStart(virtualGroupElement, e.global.x, e.global.y, elements);
-              }
-            } : undefined}
             ref={(node) => {
               if (node) groupContainers.current[group.id] = node;
             }}
@@ -338,48 +274,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                 interactive={true}
                 eventMode="static"
                 cursor="move"
-                onPointerDown={(e: FederatedPointerEvent) => {
-                  e.stopPropagation();
-                  
-                  // Check if this is a right-click for context menu
-                  if (e.button === 2) {
-                    if (props.onGroupContextMenu) {
-                      props.onGroupContextMenu(e, group.id);
-                    }
-                    return;
-                  }
-                  
-                  // Handle group selection
-                  const isMultiSelect = (e.nativeEvent && 'metaKey' in e.nativeEvent) ?
-                    (e.nativeEvent.metaKey || e.nativeEvent.ctrlKey) : false;
-                  
-                  // Select the group directly (same as timeline)
-                  selectGroup(group, isMultiSelect);
-                  
-                  // Handle dragging if the group is already selected
-                  if (isGroupSelected && props.handleGroupSelectionDragStart) {
-                    // Create a virtual group element for dragging
-                    const virtualGroupElement: AnimatedCanvasObject = {
-                      id: `group-${group.id}`,
-                      type: 'rectangle',
-                      name: group.name,
-                      x: group.x,
-                      y: group.y,
-                      width: 100, // Will be calculated properly in the handler
-                      height: 100,
-                      rotation: group.rotation || 0,
-                      fill: 'transparent',
-                      stroke: '#2196F3',
-                      strokeWidth: 2,
-                      opacity: 1,
-                      groupId: group.id,
-                      animations: [],
-                      zIndex: Math.max(...groupElements.map((el: AnimatedCanvasObject) => el.zIndex || 0))
-                    };
-                    
-                    props.handleGroupSelectionDragStart(virtualGroupElement, e.global.x, e.global.y, elements);
-                  }
-                }}
+                onPointerDown={() => {}}
               />
             )}
             
@@ -443,8 +338,6 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                   } : undefined}
                   onPointerUp={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
                   onPointerUpOutside={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
-                  onPointerOver={tool === 'select' || tool === 'draw' ? handleElementMouseMove(el.id) : undefined}
-                  onPointerOut={tool === 'select' || tool === 'draw' ? handleElementMouseLeave(el.id) : undefined}
 
                   ref={(node) => {
                     if (node) {
@@ -538,8 +431,6 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
               } : undefined}
               onPointerUp={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
               onPointerUpOutside={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
-              onPointerOver={tool === 'select' || tool === 'draw' ? handleElementMouseMove(el.id) : undefined}
-              onPointerOut={tool === 'select' || tool === 'draw' ? handleElementMouseLeave(el.id) : undefined}
 
               ref={(node) => {
                 if (node) {
@@ -568,9 +459,9 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           zIndex={1000}
           draw={(g) => {
             g.clear();
-            if (currentPath.length > 1) {
-              g.moveTo(currentPath[0].x, currentPath[0].y);
-              currentPath.slice(1).forEach(point => {
+            if (props.currentPath.length > 1) {
+              g.moveTo(props.currentPath[0].x, props.currentPath[0].y);
+              props.currentPath.slice(1).forEach(point => {
                 g.lineTo(point.x, point.y);
               });
               g.stroke({
