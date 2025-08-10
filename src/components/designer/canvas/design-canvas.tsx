@@ -79,6 +79,10 @@ interface DesignCanvasProps {
   shiftKey?: boolean;
   // Snapping state for alignment guides
   isSnappingEnabled?: boolean;
+  // Visual customization (optional)
+  canvasBackgroundColor?: number; // default 0xFFFFFF
+  canvasBorderColor?: number; // default 0xE2E8F0
+  canvasBorderWidth?: number; // default 1
 }
 
 export const DesignCanvas = (props: DesignCanvasProps) => {
@@ -362,9 +366,12 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         draw={(g) => {
           g.clear();
           g.roundRect(-canvasFrameWidth / 2, -canvasFrameHeight / 2, canvasFrameWidth, canvasFrameHeight, 14);
-          g.fill({ color: 0xFFFFFF, alpha: 1 });
-          // Always use the default border color
-          g.stroke({ color: 0xE2E8F0, width: 1 });
+          g.fill({ color: props.canvasBackgroundColor ?? 0xFFFFFF, alpha: 1 });
+          // Border customizable; draw only if width > 0
+          const bw = props.canvasBorderWidth ?? 1;
+          if (bw > 0) {
+            g.stroke({ color: props.canvasBorderColor ?? 0xE2E8F0, width: bw });
+          }
         }}
         interactive={false}
         eventMode="none"

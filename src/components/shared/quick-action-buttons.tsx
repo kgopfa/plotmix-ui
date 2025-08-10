@@ -12,6 +12,7 @@ interface QuickActionButtonsProps {
   secondary?: SecondaryAction; // 'chat' renders New Chat, 'project' renders New Project
   className?: string;
   heightClass?: string; // e.g., 'h-9' (default)
+  borderColorClass?: string; // tailwind color class e.g., 'border-blue-500'
 }
 
 interface CreateProjectResponse {
@@ -20,7 +21,7 @@ interface CreateProjectResponse {
   project?: { id: string }; // fallback in case API shape differs
 }
 
-export function QuickActionButtons({ className, heightClass = 'h-9' }: QuickActionButtonsProps) {
+export function QuickActionButtons({ className, heightClass = 'h-9', borderColorClass = 'border-gray-300' }: QuickActionButtonsProps) {
   const router = useRouter();
   const [isCreating, setIsCreating] = React.useState(false);
 
@@ -39,21 +40,25 @@ export function QuickActionButtons({ className, heightClass = 'h-9' }: QuickActi
     }
   };
 
-  const baseButtonClasses = `flex flex-row items-center cursor-pointer gap-x-1 bg-transparent border border-gray-300 text-gray-700 px-4 rounded-lg text-xs font-semibold disabled:opacity-60 ${heightClass}`;
+  const baseButtonClasses = `flex flex-row items-center cursor-pointer gap-x-1 bg-transparent border text-gray-700 px-4 rounded-lg text-xs font-semibold disabled:opacity-60 ${heightClass}`;
+  // Ensure borderColorClass wins over any border color in className by appending last
+  const buttonClasses = [baseButtonClasses, className, borderColorClass]
+    .filter(Boolean)
+    .join(' ');
 
   return (
-    <div className={['flex flex-row items-center gap-x-4', className].filter(Boolean).join(' ')}>
+    <div className="flex flex-row items-center gap-x-4">
       <button
         type="button"
         onClick={createAndOpenDesigner}
         disabled={isCreating}
-        className={baseButtonClasses}
+        className={buttonClasses}
       >
         <Palette strokeWidth={2.25} className="size-4 text-blue-500" />
         {isCreating ? 'Creating…' : 'New Project'}
       </button>
 
-      <Link href="/chat" className={baseButtonClasses}>
+      <Link href="/chat" className={buttonClasses}>
         <Sparkles className="size-4 text-purple-500" />
         New Chat
       </Link>

@@ -16,6 +16,9 @@ type Props = {
   groups: CanvasGroup[];
   clipToCanvas?: boolean;
   clipCornerRadius?: number;
+  backgroundColor?: number; // default 0xFFFFFF
+  borderColor?: number; // default 0xE2E8F0
+  borderWidth?: number; // default 1
 };
 
 export function DesignCanvasView({
@@ -25,6 +28,9 @@ export function DesignCanvasView({
   groups,
   clipToCanvas = true,
   clipCornerRadius = 14,
+  backgroundColor = 0xffffff,
+  borderColor = 0xE2E8F0,
+  borderWidth = 1,
 }: Props) {
   const mainContainerRef = useRef<Container | null>(null);
   const maskRef = useRef<Graphics | null>(null);
@@ -66,8 +72,10 @@ export function DesignCanvasView({
         draw={(g) => {
           g.clear();
           g.roundRect(-designWidth / 2, -designHeight / 2, designWidth, designHeight, clipCornerRadius);
-          g.fill({ color: 0xffffff, alpha: 1 });
-          g.stroke({ color: 0xE2E8F0, width: 1 });
+          g.fill({ color: backgroundColor, alpha: 1 });
+          if (borderWidth > 0) {
+            g.stroke({ color: borderColor, width: borderWidth });
+          }
         }}
         interactive={false}
         eventMode="none"

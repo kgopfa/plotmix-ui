@@ -68,6 +68,10 @@ interface ApplicationCanvasProps {
   shiftKey?: boolean;
   // Snapping state for alignment guides
   isSnappingEnabled?: boolean;
+  // Visual customization
+  appBackgroundColor?: number; // default 0xF1F5F9
+  designCanvasBackgroundColor?: number; // default 0xFFFFFF
+  designCanvasBorderColor?: number; // default 0xE2E8F0
 }
 
 export interface ApplicationCanvasRef extends TimelineCanvasRef {
@@ -367,7 +371,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
           ref={appRef}
           width={dimensions.width}
           height={dimensions.height}
-          backgroundColor={0xF1F5F9}
+          backgroundColor={props.appBackgroundColor ?? 0xF1F5F9}
           antialias={true}
           resolution={typeof window !== 'undefined' ? window.devicePixelRatio || 2 : 2}
           autoDensity={true}
@@ -381,7 +385,9 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
             ref={viewportRef}
           >
             <DesignCanvas 
-              {...props} 
+              {...props}
+              canvasBackgroundColor={props.designCanvasBackgroundColor}
+              canvasBorderColor={props.designCanvasBorderColor}
               dimensions={dimensions}
               onElementContextMenu={handleElementContextMenu}
               onGroupContextMenu={handleGroupContextMenu}

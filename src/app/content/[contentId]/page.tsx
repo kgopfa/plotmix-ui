@@ -25,7 +25,7 @@ export default function ContentDetailPage() {
       <NavigationSidebar navigation={navigation} />
 
       {/* Main content area - responsive layout */}
-      <main className="relative min-h-screen bg-white pt-16 lg:pt-0 lg:pl-20 lg:pr-[calc(100vw/7)]">
+      <main className="relative min-h-screen bg-zinc-100 pt-16 lg:pt-0 lg:pl-20 lg:pr-[calc(100vw/7)]">
         <div className="flex flex-row items-center px-10 h-36">
           <div className="flex flex-col gap-y-2">
             {isLoading ? (
@@ -57,8 +57,8 @@ export default function ContentDetailPage() {
           </div>
 
           <div className="flex flex-row items-center gap-x-4 ml-auto">
-            <QuickActionButtons secondary="chat" heightClass="h-10" />
-            <div className="flex flex-row h-10 rounded-lg border border-gray-200">
+            <QuickActionButtons heightClass="h-10" className="bg-white border-2 border-indigo-200" />
+            <div className="flex flex-row h-10 rounded-lg border-2 border-indigo-200 bg-white">
               <button
                 type="button"
                 className="inline-flex items-center gap-x-2 px-5 py-2.5 text-sm font-semibold text-gray-700  hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
@@ -66,7 +66,7 @@ export default function ContentDetailPage() {
                 <UserPlus strokeWidth={2.5} aria-hidden="true" className="-ml-0.5 size-5" />
                 Share
               </button>
-              <div className="w-px bg-gray-200" />
+              <div className="w-0.5 bg-indigo-200" />
               <button
                 type="button"
                 className="inline-flex items-center gap-x-2 px-5 py-2.5 text-sm font-semibold text-gray-700  hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
@@ -79,8 +79,8 @@ export default function ContentDetailPage() {
 
         <div className="flex justify-center mt-14 min-h-screen">
           <div className="w-full max-w-7xl mx-auto">
-            {/* Canvas Player Container (fit full to this box) */}
-            <div className="relative w-full aspect-video bg-transparent rounded-lg overflow-hidden shadow-sm border-2 border-blue-900">
+            {/* Canvas Player Container (fit full to this box). We match app + design canvas colors to white */}
+            <div className="relative w-full aspect-video bg-white rounded-xl overflow-hidden shadow-sm border-2 border-indigo-600">
               <ProjectCanvasPreview projectId={contentId} />
             </div>
           </div>
