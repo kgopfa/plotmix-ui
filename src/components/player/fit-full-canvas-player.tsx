@@ -3,6 +3,7 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { ApplicationCanvasPlayer, type ApplicationCanvasPlayerRef } from './application-canvas-player';
+import { PlaybackControls } from './playback-controls';
 
 type Props = {
   designWidth: number;
@@ -55,6 +56,11 @@ export function FitFullCanvasPlayer({ designWidth, designHeight, elements, group
         designCanvasBackgroundColor={0xFFFFFF}
         designCanvasBorderColor={0xFFFFFF}
       />
+
+      {/* Sticky playback controls */}
+      <div className="pointer-events-auto absolute bottom-0 left-0 right-0 flex items-center gap-3 bg-white/80 backdrop-blur-sm px-3 py-2">
+        <PlaybackControls />
+      </div>
     </div>
   );
 }
