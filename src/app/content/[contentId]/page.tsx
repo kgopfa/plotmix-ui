@@ -79,9 +79,11 @@ export default function ContentDetailPage() {
 
         <div className="flex justify-center mt-14 min-h-screen">
           <div className="w-full max-w-7xl mx-auto">
-            {/* Canvas Player Container (fit full to this box). We match app + design canvas colors to white */}
-            <div className="relative w-full aspect-video bg-white rounded-xl overflow-hidden shadow-sm border-2 border-indigo-600">
-              <ProjectCanvasPreview projectId={contentId} />
+            {/* Canvas Player Container (fit full to this box) with gradient border matching "Open in Designer" */}
+            <div className="rounded-xl p-0.5 bg-gradient-to-r from-indigo-500 to-purple-600 shadow-sm">
+              <div className="relative w-full aspect-video rounded-xl bg-white overflow-hidden">
+                <ProjectCanvasPreview projectId={contentId} />
+              </div>
             </div>
           </div>
         </div>
