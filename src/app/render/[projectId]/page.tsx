@@ -8,6 +8,8 @@ import gsap from 'gsap';
 import { useProjectStore } from '@/stores/use-project-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useTimelineStore, useTimelineSync } from '@/stores/use-timeline-store';
+import { useTimelineIntegration } from '@/hooks/use-timeline-integration';
+import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager';
 import type { ApplicationCanvasRef } from '../../../components/designer/application-canvas';
 import type { FederatedPointerEvent } from 'pixi.js';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
@@ -38,8 +40,14 @@ export default function RenderPage() {
   const debugPlay = search.get('debug') === '1' || search.get('play') === '1';
 
   const appRef = useRef<ApplicationCanvasRef>(null);
+  const shapeRefs = useRef<Record<string, unknown>>({});
+  const groupContainers = useRef<Record<string, unknown>>({});
+  const mainCanvasContainerRef = useRef<any>(null);
+  const drawingRef = useRef<any>(null);
+  const canvasScaleFactor = useRef<number>(1);
   const { setProjectInfo, setBaseline, captureBaseline } = useProjectStore();
   const { initializeSubscriptions, cleanupSubscriptions, buildGSAPTimeline } = useTimelineSync();
+  const { setCanvasRef } = useTimelineIntegration();
 
   // Subscribe to canvas store for re-renders
   const elements = useCanvasStore(s => s.elements);
@@ -60,6 +68,18 @@ export default function RenderPage() {
     mouseY: number,
     allElements?: AnimatedCanvasObject[]
   ) => { void virtualElement; void mouseX; void mouseY; void allElements; };
+
+  useEffect(() => {
+    // Link the PIXI canvas to the GSAP timeline manager so it can find targets
+    setCanvasRef(appRef as React.RefObject<TimelineCanvasRef | null>);
+  }, [setCanvasRef]);
+
+  // Rebuild GSAP timeline once PIXI refs are likely mounted
+  useEffect(() => {
+    const raf = () => buildGSAPTimeline();
+    const raf2 = () => requestAnimationFrame(raf);
+    requestAnimationFrame(raf2);
+  }, [elements, groups, buildGSAPTimeline]);
 
   useEffect(() => {
     (async () => {
@@ -121,7 +141,7 @@ export default function RenderPage() {
       canvasStore.setElements(elementsUnique);
       canvasStore.setGroups(groupsUnique);
 
-      // Build GSAP timeline deterministically
+      // Build GSAP timeline deterministically (after canvas ref is wired)
       initializeSubscriptions();
       buildGSAPTimeline();
 
@@ -147,9 +167,35 @@ export default function RenderPage() {
 
       // Expose hooks for Puppeteer (typed via globalThis)
       globalThis.__seekAndRender__ = (t: number) => {
-        tl.pause(t, false);
+        try {
+          const { gsapManager } = useTimelineStore.getState();
+          if (gsapManager) {
+            gsapManager.updateTime(t);
+          } else {
+            tl.pause(t, false);
+          }
+        } catch {}
         pixiApp?.render?.();
       };
+      // Ensure containers are mounted and refs are populated before declaring readiness
+      const refKeys = Object.keys(shapeRefs.current || {});
+      if ((elements.length > 0 && refKeys.length === 0) || !pixiApp) {
+        // Defer readiness slightly to allow refs to populate
+        await new Promise(res => setTimeout(res, 50));
+        buildGSAPTimeline();
+      }
+
+      // Prime initial frame at t=0 to apply starting values
+      try {
+        const { gsapManager } = useTimelineStore.getState();
+        if (gsapManager) {
+          gsapManager.updateTime(0);
+        } else {
+          tl.pause(0, false);
+        }
+      } catch {}
+      pixiApp?.render?.();
+
       globalThis.__renderInfo__ = { width, height, fps, duration };
       globalThis.__renderReady__ = true;
       } catch (e) {
@@ -186,11 +232,11 @@ export default function RenderPage() {
         currentPath={[]}
         isDrawing={false}
         // Refs
-        shapeRefs={{ current: {} }}
-        groupContainers={{ current: {} }}
-        mainCanvasContainerRef={{ current: null }}
-        drawingRef={{ current: null }}
-        canvasScaleFactor={{ current: 1 }}
+        shapeRefs={shapeRefs}
+        groupContainers={groupContainers}
+        mainCanvasContainerRef={mainCanvasContainerRef}
+        drawingRef={drawingRef}
+        canvasScaleFactor={canvasScaleFactor}
         // Handlers
         handleCanvasPointerDown={handleCanvasPointerDown}
         handleCanvasPointerMove={handleCanvasPointerMove}
