@@ -7,7 +7,7 @@ export interface CanvasElement {
   y: number;
   width: number;
   height: number;
-  fill: string; // Use 'none' to indicate transparent fill
+  fill: string;
   stroke?: string;
   strokeWidth?: number;
   strokeOpacity?: number;

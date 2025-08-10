@@ -20,7 +20,7 @@ interface CreateProjectResponse {
   project?: { id: string }; // fallback in case API shape differs
 }
 
-export function QuickActionButtons({ secondary = 'chat', className, heightClass = 'h-9' }: QuickActionButtonsProps) {
+export function QuickActionButtons({ className, heightClass = 'h-9' }: QuickActionButtonsProps) {
   const router = useRouter();
   const [isCreating, setIsCreating] = React.useState(false);
 
@@ -53,22 +53,10 @@ export function QuickActionButtons({ secondary = 'chat', className, heightClass 
         {isCreating ? 'Creating…' : 'New Project'}
       </button>
 
-      {secondary === 'chat' ? (
-        <Link href="/chat" className={baseButtonClasses}>
-          <Sparkles className="size-4 text-purple-500" />
-          New Chat
-        </Link>
-      ) : (
-        <button
-          type="button"
-          onClick={createAndOpenDesigner}
-          disabled={isCreating}
-          className={baseButtonClasses}
-        >
-          <Sparkles className="size-4 text-purple-500" />
-          {isCreating ? 'Creating…' : 'New Project'}
-        </button>
-      )}
+      <Link href="/chat" className={baseButtonClasses}>
+        <Sparkles className="size-4 text-purple-500" />
+        New Chat
+      </Link>
     </div>
   );
 }

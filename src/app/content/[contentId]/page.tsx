@@ -8,6 +8,7 @@ import { Link2, Pencil, Sparkles, UserPlus } from 'lucide-react';
 import QuickActionButtons from '@/components/shared/quick-action-buttons';
 import React from 'react';
 import { apiClient } from '@/lib/api-client';
+import { ProjectCanvasPreview } from '@/components/player/project-canvas-preview';
 import { ConfirmModal } from '@/components/shared/confirm-modal';
 import { navigation } from '@/data/shared-navigation';
 import { useContent } from '@/hooks/use-content';
@@ -78,28 +79,9 @@ export default function ContentDetailPage() {
 
         <div className="flex justify-center mt-14 min-h-screen">
           <div className="w-full max-w-7xl mx-auto">
-
-            {/* Video Player Container */}
-            <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden shadow-lg">
-              <video
-                className="w-full h-full object-cover"
-                controls
-                preload="metadata"
-                poster="/placeholder-video.jpg"
-              >
-                <source src="/sample-video.mp4" type="video/mp4" />
-                <source src="/sample-video.webm" type="video/webm" />
-                <track
-                  kind="subtitles"
-                  src="/sample-video.vtt"
-                  srcLang="en"
-                  label="English"
-                />
-                Your browser does not support the video tag.
-              </video>
-
-              {/* Video Player Overlay for better UX */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+            {/* Canvas Player Container (fit full to this box) */}
+            <div className="relative w-full aspect-video bg-transparent rounded-lg overflow-hidden shadow-sm border-2 border-blue-900">
+              <ProjectCanvasPreview projectId={contentId} />
             </div>
           </div>
         </div>
