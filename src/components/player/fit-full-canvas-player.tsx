@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { ApplicationCanvasPlayer, type ApplicationCanvasPlayerRef } from './application-canvas-player';
 import { PlaybackControls } from './playback-controls';
+import { Maximize2, Minimize2 } from 'lucide-react';
 
 type Props = {
   designWidth: number;
@@ -13,9 +14,11 @@ type Props = {
 };
 
 export function FitFullCanvasPlayer({ designWidth, designHeight, elements, groups }: Props) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<ApplicationCanvasPlayerRef>(null);
   const [size, setSize] = useState({ width: 1280, height: 720 });
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useLayoutEffect(() => {
     if (!containerRef.current) return;
@@ -39,8 +42,32 @@ export function FitFullCanvasPlayer({ designWidth, designHeight, elements, group
     });
   }, [elements, groups, designWidth, designHeight]);
 
+  // Track fullscreen changes and refit
+  useEffect(() => {
+    const onChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+      requestAnimationFrame(() => {
+        appRef.current?.centerOnDesign();
+        appRef.current?.zoomToFit();
+      });
+    };
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
+
+  const toggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await wrapperRef.current?.requestFullscreen?.();
+      } else {
+        await document.exitFullscreen?.();
+      }
+    } catch {}
+  };
+
   return (
-    <div ref={containerRef} className="relative w-full h-full">
+    <div ref={wrapperRef} className="relative w-full h-full">
+      <div ref={containerRef} className="relative w-full h-full">
       <ApplicationCanvasPlayer
         ref={appRef}
         dimensions={size}
@@ -57,9 +84,18 @@ export function FitFullCanvasPlayer({ designWidth, designHeight, elements, group
         designCanvasBorderColor={0xFFFFFF}
       />
 
-      {/* Sticky playback controls */}
-      <div className="pointer-events-auto absolute bottom-0 left-0 right-0 flex items-center gap-3 bg-white/80 backdrop-blur-sm px-3 py-2">
-        <PlaybackControls />
+        {/* Sticky playback controls */}
+        <div className="pointer-events-auto absolute bottom-0 left-0 right-0 flex items-center gap-3 bg-transparent backdrop-blur-sm px-3 py-2">
+          <PlaybackControls />
+          <button
+            type="button"
+            aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+            onClick={toggleFullscreen}
+            className="ml-auto p-1.5 rounded bg-gray-900 text-white hover:bg-gray-800"
+          >
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </button>
+        </div>
       </div>
     </div>
   );
