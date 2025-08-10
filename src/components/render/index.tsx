@@ -117,16 +117,6 @@ export default function Designer() {
     return !!(group && !group.isDefaultGroup && (group.type === 'custom' || group.type === 'polygon'));
   }, [groups]);
 
-  const onPathStartClick = useCallback((_elementId: string, _x: number, _y: number) => {
-    // Handle path start click
-  }, []);
-
-  // Timeline should shift when any tab with content panels is active (not toggle buttons or compact tabs)
-  // Include: scenes, uploads, ai, video, text, animations, layers, components
-  // Exclude: tools (compact), audio (toggle), timeline (toggle)
-  const tabsWithPanels = ['scenes', 'uploads', 'ai', 'video', 'text', 'animations', 'layers', 'components'];
-  const timelineLeftOffset = 80 + (panelState.leftPanelVisible && tabsWithPanels.includes('timeline') ? panelState.leftPanelWidth + 8 : 0);
-
   return (
     <div className="h-screen w-screen flex flex-col">
 
@@ -135,7 +125,6 @@ export default function Designer() {
         ref={canvasContainerRef}
         className="flex-1 relative overflow-hidden"
         onContextMenu={(e) => {
-          // Prevent browser's default context menu from appearing
           e.preventDefault();
           e.stopPropagation();
         }}
@@ -167,7 +156,6 @@ export default function Designer() {
           handleCanvasPointerMove={() => {}}
           handlePointerUp={() => {}}
           handleCanvasClick={() => {}}
-          
           isElementInCustomOrPolygonGroup={isElementInCustomOrPolygonGroup}
           canvasZoom={canvasZoom}
           onCanvasZoomChange={setCanvasZoom}
@@ -179,7 +167,7 @@ export default function Designer() {
       <div
         className="fixed bottom-2 right-0 bg-transparent z-50 transition-all duration-600 ease-in-out"
         style={{
-          left: `${timelineLeftOffset}px`, // Start after nav sidebar and any visible left panel
+          left: `0px`, // Start after nav sidebar and any visible left panel
           height: panelState.isTimelineCollapsed ? '72px' : `${panelState.timelineHeight}px`,
           minHeight: '72px', // Allow collapsing to 72px to show controls
           maxHeight: '80vh'
