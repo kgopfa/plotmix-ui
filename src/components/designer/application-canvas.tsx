@@ -98,10 +98,10 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
 
     // Get current canvas size from UI store
     const canvasState = useCanvasState();
-    const currentSize = canvasState.currentSizeId === 'custom' 
-      ? canvasState.customSize 
+    const currentSize = canvasState.currentSizeId === 'custom'
+      ? canvasState.customSize
       : canvasState.availableSizes.find(size => size.id === canvasState.currentSizeId);
-    
+
     // Use current canvas size or fallback to default
     const canvasWidth = currentSize?.width || 1280;
     const canvasHeight = currentSize?.height || 720;
@@ -168,7 +168,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
     useEffect(() => {
       if (viewportRef.current && canvasZoom !== undefined) {
         const currentZoom = viewportRef.current.scale.x;
-        
+
         // Only update if the zoom values are significantly different to prevent infinite loops
         if (Math.abs(currentZoom - canvasZoom) > 0.001) {
           viewportRef.current.setZoom(canvasZoom, false);
@@ -183,7 +183,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       if (viewportRef.current) {
         // Use responsive centering based on screen dimensions
         centerOnDesign(viewportRef.current, dimensions.width, dimensions.height, canvasWidth, canvasHeight);
-      } 
+      }
     }, [canvasWidth, canvasHeight, dimensions.width, dimensions.height]);
 
     // Listen for viewport zoom changes and sync back to timeline
@@ -219,7 +219,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       if (!contextMenu) return;
 
       const { targetId, targetType } = contextMenu;
-      
+
       switch (action) {
         case 'animate':
           if (targetType === 'element') {
@@ -227,7 +227,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
             const element = props.elements.find(el => el.id === targetId);
             if (element) {
               props.handleSelectElement(element.id);
-              
+
               // Show the animations tab
               const { setShowAnimationsTab } = useUIStore.getState();
               setShowAnimationsTab(true);
@@ -292,7 +292,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
           }
           break;
       }
-      
+
       setContextMenu(null);
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [contextMenu, props.elements, props.handleSelectElement]);
@@ -325,11 +325,11 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
     const handleElementContextMenu = useCallback((e: FederatedPointerEvent, elementId: string) => {
       e.stopPropagation();
       e.preventDefault();
-      
+
       // Use context menu manager to ensure only one menu is shown
       const menuId = 'canvas-element-context-menu';
       contextMenuManager.openContextMenu(menuId);
-      
+
       setContextMenu({
         x: e.global.x,
         y: e.global.y,
@@ -341,11 +341,11 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
     const handleGroupContextMenu = useCallback((e: FederatedPointerEvent, groupId: string) => {
       e.stopPropagation();
       e.preventDefault();
-      
+
       // Use context menu manager to ensure only one menu is shown
       const menuId = 'canvas-group-context-menu';
       contextMenuManager.openContextMenu(menuId);
-      
+
       setContextMenu({
         x: e.global.x,
         y: e.global.y,
@@ -384,7 +384,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
             stopPropagation={false}
             ref={viewportRef}
           >
-            <DesignCanvas 
+            <DesignCanvas
               {...props}
               canvasBackgroundColor={props.designCanvasBackgroundColor}
               canvasBorderColor={props.designCanvasBorderColor}
@@ -404,6 +404,6 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       </div>
     );
   }
-  );
-  
+);
+
 ApplicationCanvas.displayName = 'ApplicationCanvas'; 
