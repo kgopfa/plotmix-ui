@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { FitFullCanvasPlayer } from './fit-full-canvas-player';
 import { apiClient } from '@/lib/api-client';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
+import { useTimelineTracks, useTimelineSync } from '@/stores/use-timeline-store';
 
 type Props = { projectId: string; fallbackSize?: { width: number; height: number } };
 
@@ -11,6 +12,8 @@ export function ProjectCanvasPreview({ projectId, fallbackSize = { width: 1280, 
   const [elements, setElements] = useState<AnimatedCanvasObject[]>([]);
   const [groups, setGroups] = useState<CanvasGroup[]>([]);
   const [designSize, setDesignSize] = useState(fallbackSize);
+  const { setElements: setTimelineElements, setGroups: setTimelineGroups, updateTracks } = useTimelineTracks();
+  const { buildGSAPTimeline } = useTimelineSync();
 
   useEffect(() => {
     (async () => {
@@ -31,6 +34,12 @@ export function ProjectCanvasPreview({ projectId, fallbackSize = { width: 1280, 
         setElements(uniqElements);
         setGroups(uniqGroups);
 
+        // Also hydrate the timeline store for playback controls
+        setTimelineElements(uniqElements);
+        setTimelineGroups(uniqGroups);
+        updateTracks();
+        buildGSAPTimeline();
+
         const w = mainState?.canvas?.width || mainState?.width || fallbackSize.width;
         const h = mainState?.canvas?.height || mainState?.height || fallbackSize.height;
         setDesignSize({ width: w, height: h });
@@ -40,7 +49,7 @@ export function ProjectCanvasPreview({ projectId, fallbackSize = { width: 1280, 
         console.warn('ProjectCanvasPreview: failed to load project', e);
       }
     })();
-  }, [projectId, fallbackSize.width, fallbackSize.height]);
+  }, [projectId, fallbackSize.width, fallbackSize.height, setTimelineElements, setTimelineGroups, updateTracks, buildGSAPTimeline]);
 
   return (
     <FitFullCanvasPlayer
@@ -48,6 +57,7 @@ export function ProjectCanvasPreview({ projectId, fallbackSize = { width: 1280, 
       designHeight={designSize.height}
       elements={elements}
       groups={groups}
+      hideInlineControls
     />
   );
 }

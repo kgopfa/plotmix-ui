@@ -11,6 +11,8 @@ import { ProjectCanvasPreview } from '@/components/player/project-canvas-preview
 import { ConfirmModal } from '@/components/shared/confirm-modal';
 import { navigation } from '@/data/shared-navigation';
 import { useContent } from '@/hooks/use-content';
+import { VerticalPlaybackControls } from '@/components/player/vertical-playback-controls';
+import PlaybackControls from '@/components/player/playback-controls';
 
 export default function ContentDetailPage() {
   const params = useParams();
@@ -75,25 +77,26 @@ export default function ContentDetailPage() {
           </div>
         </div>
 
+        {/* Canvas Player Container (fit full to this box) with gradient border matching "Open in Designer" */}
         <div className="flex justify-center xl:mt-0 2xl:mt-20 min-h-screen">
-          <div className="w-full max-w-2xl xl:max-w-3xl 2xl:max-w-7xl mx-auto">
-            {/* Canvas Player Container (fit full to this box) with gradient border matching "Open in Designer" */}
+          <div className="w-full flex flex-col max-w-2xl xl:max-w-3xl 2xl:max-w-7xl mx-auto">
             <div className="rounded-xl p-0.5 bg-gradient-to-r from-indigo-500 to-purple-600 shadow-sm">
               <div className="relative w-full aspect-video rounded-xl bg-white overflow-hidden">
                 <ProjectCanvasPreview projectId={contentId} />
               </div>
             </div>
+            <PlaybackControls />
           </div>
         </div>
 
-        {/* Edit Button - Bottom Right of Main */}
-        <div className="fixed bottom-8 right-10 xl:right-[calc(100vw/4+2.5rem)] 2xl:right-[calc(100vw/7+2.5rem)] z-50">
+        {/* Vertical playback controls - outside the canvas container, aligned to the left of the sidebar */}
+        <div className="fixed top-1/2 -translate-y-1/2 right-4 xl:right-[calc(100vw/4+0.75rem)] 2xl:right-[calc(100vw/7+0.75rem)] z-40">
           <button
             onClick={() => setShowConfirm(true)}
-            className="inline-flex items-center gap-x-2 xl:py-3 xl:px-5 2xl:px-5 2xl:py-5 rounded-2xl text-white bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all duration-200 transform hover:scale-105"
+            className="inline-flex items-center gap-x-2 p-5 xl:rounded-xl 2xl:rounded-2xl text-white bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all duration-200 transform hover:scale-105"
           >
             <Pencil strokeWidth={2.5} aria-hidden="true" className="-ml-0.5 xl:size-4 2xl:size-5" />
-            <span className="hidden sm:block font-bold xl:text-sm 2xl:text-base">Open in Designer</span>
+            {/* <span className="hidden sm:block font-bold xl:text-sm 2xl:text-base">Open in Designer</span> */}
           </button>
         </div>
 
