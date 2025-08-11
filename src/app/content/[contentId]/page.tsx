@@ -23,7 +23,7 @@ export default function ContentDetailPage() {
       <NavigationSidebar navigation={navigation} />
 
       {/* Main content area - responsive layout */}
-      <main className="relative min-h-screen bg-zinc-100 2xl:pt-16 xl:pt-0 xl:pl-20 xl:pr-[calc(100vw/4)] 2xl:pr-[calc(100vw/7)]">
+      <main className="relative min-h-screen bg-zinc-100 2xl:pt-10 xl:pt-0 xl:pl-20 xl:pr-[calc(100vw/4)] 2xl:pr-[calc(100vw/7)]">
         <div className="flex flex-row items-center px-10 xl:h-30 2xl:h-36">
           <div className="flex flex-col gap-y-2">
             {isLoading ? (
@@ -39,7 +39,7 @@ export default function ContentDetailPage() {
             ) : content ? (
               <>
                 <h2 className="text-3xl font-bold text-gray-900 xl:text-2xl 2xl:text-3xl">{content.title}</h2>
-                <div className="flex flex-row items-center gap-x-2">
+                <div className="flex flex-row items-center gap-x-2 2xl:mt-2">
                   <p className="text-gray-500 text-sm font-medium">{content.author}</p>
                   <div className="w-1 h-1 bg-gray-400 rounded-full" />
                   <p className="text-gray-500 text-sm font-medium">
@@ -75,7 +75,7 @@ export default function ContentDetailPage() {
           </div>
         </div>
 
-        <div className="flex justify-center xl:mt-0 2xl:mt-14 min-h-screen">
+        <div className="flex justify-center xl:mt-0 2xl:mt-20 min-h-screen">
           <div className="w-full max-w-2xl xl:max-w-3xl 2xl:max-w-7xl mx-auto">
             {/* Canvas Player Container (fit full to this box) with gradient border matching "Open in Designer" */}
             <div className="rounded-xl p-0.5 bg-gradient-to-r from-indigo-500 to-purple-600 shadow-sm">

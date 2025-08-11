@@ -19,7 +19,7 @@ import {
   useUIStore
 } from '@/stores/use-ui-store';
 import { useCanvasOperations } from '@/stores/use-canvas-store';
-
+import { useTimelineOperations } from '@/stores/use-timeline-store';
 import { ToolbarTab } from './tabs/toolbar-tab';
 import { UploadsTab } from './tabs/uploads-tab';
 import { TextTab } from './tabs/text-tab';
@@ -131,6 +131,7 @@ export const LeftSidebar: React.FC = () => {
   const setHoverNav = useSetHoverNav();
   const setInteractedNav = useSetInteractedNav();
   const { clearCanvas } = useCanvasOperations();
+  const { resetTimeline } = useTimelineOperations();
   const [showClearDialog, setShowClearDialog] = useState(false);
 
   const showAnimationsTab = useUIStore(state => state.showAnimationsTab);
@@ -195,6 +196,7 @@ export const LeftSidebar: React.FC = () => {
   // Handle canvas clear confirmation
   const handleClearCanvas = () => {
     clearCanvas();
+    resetTimeline();
     setActiveNav(null);
     setInteractedNav(null);
   };

@@ -694,6 +694,8 @@ export const useTimelineStore = create<TimelineStore>()(
           state.playback = { ...initialPlaybackState };
           state.ui = { ...initialUIState };
           state.error = null;
+          // Ensure all cached animation state is cleared when resetting timeline
+          state.animationStates.clear();
         }));
         
         // Clear selection state when timeline is reset
