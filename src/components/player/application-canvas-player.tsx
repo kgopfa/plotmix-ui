@@ -28,6 +28,8 @@ type Props = {
   appBackgroundColor?: number; // default 0xF1F5F9
   designCanvasBackgroundColor?: number; // default 0xFFFFFF
   designCanvasBorderColor?: number; // default 0xE2E8F0
+  // Interaction control
+  readonlyViewport?: boolean;
 };
 
 export const ApplicationCanvasPlayer = forwardRef<ApplicationCanvasPlayerRef, Props>(
@@ -45,6 +47,7 @@ export const ApplicationCanvasPlayer = forwardRef<ApplicationCanvasPlayerRef, Pr
       appBackgroundColor,
       designCanvasBackgroundColor,
       designCanvasBorderColor,
+      readonlyViewport,
     },
     ref
   ) => {
@@ -100,6 +103,7 @@ export const ApplicationCanvasPlayer = forwardRef<ApplicationCanvasPlayerRef, Pr
           worldWidth={designWidth * 3}
           worldHeight={designHeight * 3}
           stopPropagation={false}
+          readonly={!!readonlyViewport}
           ref={viewportRef}
         >
           <DesignCanvasView

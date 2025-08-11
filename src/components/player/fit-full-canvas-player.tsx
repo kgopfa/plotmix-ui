@@ -82,6 +82,7 @@ export function FitFullCanvasPlayer({ designWidth, designHeight, elements, group
         appBackgroundColor={0xFFFFFF}
         designCanvasBackgroundColor={0xFFFFFF}
         designCanvasBorderColor={0xFFFFFF}
+        readonlyViewport
       />
 
         {/* Sticky playback controls */}

@@ -37,13 +37,18 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({ element, isE
     return undefined;
   };
 
+  // Determine fill input for text (color or gradient)
+  const fillInput = element.textGradient
+    ? (createGradientFill() ?? new Color(element.fill || '#000000').toNumber())
+    : new Color(element.fill || '#000000').toNumber();
+
   // Create rich text style using element properties
   const richStyle = new TextStyle({
     fontFamily: element.fontFamily || 'Arial',
     fontSize: element.fontSize || 36,
     fontStyle: (element.fontStyle as 'normal' | 'italic' | 'oblique') || 'italic',
     fontWeight: (element.fontWeight as 'normal' | 'bold' | 'bolder' | 'lighter' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900') || 'bold',
-    fill: element.textGradient ? { fill: createGradientFill() } : { color: new Color(element.fill || '#000000').toNumber() },
+    fill: fillInput,
     stroke: element.textStroke && element.textStrokeWidth ? {
       color: new Color(element.textStroke).toNumber(),
       width: element.textStrokeWidth,
