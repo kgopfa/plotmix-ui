@@ -18,6 +18,7 @@ export default function ProjectsPage() {
   const { projects, isLoading, error, loadNext, hasMore, refetch } = useProjects(20, 'NATIVE');
   const [selected, setSelected] = React.useState<Record<string, boolean>>({});
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
+  const [openingId, setOpeningId] = React.useState<string | null>(null);
   const selectedIds = React.useMemo(() => Object.keys(selected).filter((id) => selected[id]), [selected]);
   const anySelected = selectedIds.length > 0;
   const { isAuthenticated, loading } = useAuth();
@@ -52,7 +53,8 @@ export default function ProjectsPage() {
                   setSelected({});
                   await refetch();
                 }}
-                className="inline-flex items-center gap-x-2 px-3 py-2 text-xs font-bold rounded-lg border border-red-200 bg-red-600 text-white hover:bg-red-700"
+                className={`inline-flex items-center gap-x-2 px-3 py-2 text-xs font-bold rounded-lg border border-red-200 bg-red-600 text-white ${openingId ? 'opacity-60 cursor-not-allowed' : 'hover:bg-red-700'}`}
+                disabled={!!openingId}
               >
                 Delete Selected
               </button>
@@ -121,7 +123,11 @@ export default function ProjectsPage() {
                           title={p.title || p.name}
                           lastUpdatedAt={p.updatedAt}
                           version={p.version}
-                          onClick={() => router.push(`/designer/${p.id}`)}
+                          onClick={() => {
+                            if (openingId) return;
+                            setOpeningId(p.id);
+                            router.push(`/designer/${p.id}`);
+                          }}
                           showConversationWarning={!!p.conversation}
                           onDelete={async () => {
                             const confirmed = window.confirm('Delete this project? This cannot be undone.');
@@ -135,14 +141,20 @@ export default function ProjectsPage() {
                           selectable
                           selected={!!selected[p.id]}
                           onToggleSelect={(checked) => setSelected((prev) => ({ ...prev, [p.id]: checked }))}
+                          disabled={!!openingId}
+                          isOpening={openingId === p.id}
                         />
                       ))}
                       {hasMore && (
                         <div className="flex justify-center py-2">
                           <button
                             type="button"
-                            onClick={() => loadNext()}
-                            className="text-sm font-medium text-purple-700 hover:text-purple-800 px-3 py-1.5 border border-purple-200 rounded-lg hover:bg-purple-50"
+                            onClick={() => {
+                              if (openingId) return;
+                              loadNext();
+                            }}
+                            className={`text-sm font-medium px-3 py-1.5 border border-purple-200 rounded-lg ${openingId ? 'text-gray-400 cursor-not-allowed' : 'text-purple-700 hover:text-purple-800 hover:bg-purple-50'}`}
+                            disabled={!!openingId}
                           >
                             View more
                           </button>

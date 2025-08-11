@@ -12,6 +12,8 @@ export interface ProjectCardProps {
   selected?: boolean;
   onToggleSelect?: (checked: boolean) => void;
   showConversationWarning?: boolean;
+  disabled?: boolean;
+  isOpening?: boolean;
 }
 
 function formatRelativeTime(date?: string | Date) {
@@ -44,14 +46,23 @@ export function ProjectCard({
   selected = false,
   onToggleSelect,
   showConversationWarning = false,
+  disabled = false,
+  isOpening = false,
 }: ProjectCardProps) {
   return (
     <div
       role="button"
       tabIndex={0}
-      onClick={onClick}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick?.(); }}
-      className="text-left bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-md hover:border-indigo-300 transition-all duration-200 cursor-pointer"
+      onClick={() => {
+        if (disabled || isDeleting) return;
+        onClick?.();
+      }}
+      onKeyDown={(e) => {
+        if (disabled || isDeleting) return;
+        if (e.key === 'Enter' || e.key === ' ') onClick?.();
+      }}
+      aria-busy={isOpening}
+      className={`relative text-left bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-md hover:border-indigo-300 transition-all duration-200 ${disabled || isDeleting ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
     >
       <div className="flex items-start gap-x-3">
         <div className="flex-1 min-w-0">
@@ -84,9 +95,11 @@ export function ProjectCard({
                 onClick={(e) => e.stopPropagation()}
                 onChange={(e) => {
                   e.stopPropagation();
+                  if (disabled) return;
                   onToggleSelect?.(e.target.checked);
                 }}
                 aria-label="Select project"
+                disabled={disabled}
               />
             )}
             {onDelete && (
@@ -97,8 +110,8 @@ export function ProjectCard({
                   e.stopPropagation();
                   if (!isDeleting) onDelete();
                 }}
-                className={`p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors ${isDeleting ? 'opacity-60 cursor-not-allowed' : ''}`}
-                disabled={isDeleting}
+                className={`p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors ${(isDeleting || disabled) ? 'opacity-60 cursor-not-allowed' : ''}`}
+                disabled={isDeleting || disabled}
               >
                 <Trash2 className="size-4" />
               </button>
@@ -106,6 +119,11 @@ export function ProjectCard({
           </div>
         )}
       </div>
+      {isOpening && (
+        <div className="absolute inset-0 z-10 bg-white/60 backdrop-blur-[1px] flex items-center justify-center rounded-2xl">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" aria-label="Opening project" />
+        </div>
+      )}
     </div>
   );
 }
