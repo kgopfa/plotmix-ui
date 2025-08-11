@@ -77,7 +77,7 @@ export function ContentSidebar({ conversationId }: { conversationId: string }) {
   };
 
   return (
-    <div className="hidden xl:fixed xl:inset-y-0 xl:right-0 xl:z-50 xl:flex xl:w-80 2xl:w-1/7 xl:flex-col">
+    <div className="hidden xl:fixed xl:inset-y-0 xl:right-0 xl:z-50 xl:flex xl:w-1/4 2xl:w-1/7 xl:flex-col">
       <div className="flex grow flex-col gap-y-5 overflow-y-auto border-l border-gray-200 bg-white px-6">
         {/* Horizontal tabs */}
         <div className="sticky top-0 bg-white flex mt-2 space-x-6 p-2">
@@ -112,7 +112,6 @@ export function ContentSidebar({ conversationId }: { conversationId: string }) {
               {/* Chat heading */}
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Chat</div>
                   {/* Scrollable messages area */}
                   <div className="flex-1 overflow-y-auto">
                     <div className="space-y-4">

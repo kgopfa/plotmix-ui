@@ -23,7 +23,7 @@ export default function ContentDetailPage() {
       <NavigationSidebar navigation={navigation} />
 
       {/* Main content area - responsive layout */}
-      <main className="relative min-h-screen bg-zinc-100 2xl:pt-16 xl:pt-0 xl:pl-20 xl:pr-80 2xl:pr-[calc(100vw/7)]">
+      <main className="relative min-h-screen bg-zinc-100 2xl:pt-16 xl:pt-0 xl:pl-20 xl:pr-[calc(100vw/4)] 2xl:pr-[calc(100vw/7)]">
         <div className="flex flex-row items-center px-10 xl:h-30 2xl:h-36">
           <div className="flex flex-col gap-y-2">
             {isLoading ? (
@@ -87,7 +87,7 @@ export default function ContentDetailPage() {
         </div>
 
         {/* Edit Button - Bottom Right of Main */}
-        <div className="fixed bottom-8 right-10 xl:right-[calc(20rem+2.5rem)] 2xl:right-[calc(100vw/7+2.5rem)] z-50">
+        <div className="fixed bottom-8 right-10 xl:right-[calc(100vw/4+2.5rem)] 2xl:right-[calc(100vw/7+2.5rem)] z-50">
           <button
             onClick={() => setShowConfirm(true)}
             className="inline-flex items-center gap-x-2 xl:py-3 xl:px-5 2xl:px-5 2xl:py-5 rounded-2xl text-white bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all duration-200 transform hover:scale-105"
