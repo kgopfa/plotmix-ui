@@ -26,7 +26,7 @@ export function ProjectCard({ project, onClick, variant = 'default' }: ProjectCa
       onClick={handleClick}
     >
       {/* Project Image */}
-      <div className={`relative overflow-hidden ${isCompact ? 'h-32' : 'h-48'}`}>
+      <div className={`relative overflow-hidden ${isCompact ? 'h-32' : '2xl:h-48 xl:h-40 h-32'}`}>
         <Image
           src={project.image}
           alt={project.title}

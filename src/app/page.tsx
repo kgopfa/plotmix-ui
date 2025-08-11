@@ -153,7 +153,7 @@ export default function HomePage() {
               </div>
 
               {/* Hero section */}
-              <div className='p-8'>
+              <div className='p-8 h-[calc(100vh-4rem)] overflow-y-auto'>
                 {/* Community Projects */}
                 <div className="flex flex-col border border-gray-200 rounded-3xl px-8 py-7">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-5">
@@ -182,7 +182,7 @@ export default function HomePage() {
                   </div>
 
                   {/* Community Projects Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-8 gap-4 max-w-none">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8 gap-4 max-w-none">
                     {displayedProjects.map((project) => (
                       <ProjectCard
                         key={project.id}
@@ -219,7 +219,7 @@ export default function HomePage() {
                 {/* Featured Projects - Only show for authenticated users */}
                 {isAuthenticated && (
                   <div className={`flex flex-col ${showAllFeaturedProjects ? 'border border-gray-200 rounded-3xl px-8 py-7' : 'px-4 py-7 mt-4'}`}>
-                    <div className="mb-6">
+                    <div className="2xl:mb-6 xl:mb-4">
                       <h2 className="text-xl font-semibold text-gray-900 mb-2">Featured Projects</h2>
                       <p className="text-gray-600 text-sm">Your recently viewed and shared projects</p>
                     </div>
@@ -234,7 +234,7 @@ export default function HomePage() {
                     />
 
                     {/* Featured Projects Grid */}
-                    <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-8 gap-6 mt-6 ${
+                    <div className={`grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8 gap-6 mt-6 ${
                       showAllFeaturedProjects ? 'max-h-96 overflow-y-auto' : ''
                     }`}>
                       {sortedFeaturedProjects.map((project) => (
