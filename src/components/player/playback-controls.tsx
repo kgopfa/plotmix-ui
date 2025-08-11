@@ -5,7 +5,7 @@ export default function PlaybackControls() {
     <div>
       <div aria-hidden="true" className="xl:mt-3 2xl:mt-6 xl:py-3 2xl:py-6 rounded-xl">
         <div className="overflow-hidden bg-gray-200 dark:bg-white/10">
-          <div style={{ width: '37.5%' }} className="h-2 bg-gradient-to-r from-purple-600 to-purple-700" />
+          <div style={{ width: '37.5%' }} className="h-2 bg-gradient-to-r from-purple-500 to-purple-700" />
         </div>
         <div className="xl:mt-3 2xl:mt-6 hidden grid-cols-1 sm:grid">
           <div className="flex items-center gap-x-2 w-full">
