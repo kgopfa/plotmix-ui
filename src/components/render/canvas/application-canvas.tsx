@@ -6,7 +6,7 @@ import { Container, Graphics } from 'pixi.js';
 import { DesignCanvas } from './design-canvas';
 import { Viewport, ViewportWrapper, centerOnDesign, zoomToFit, resetZoom } from '@/components/designer/viewport';
 import { useCanvasState } from '@/stores/use-ui-store';
-import { useViewportEmptyAreaClick, useContainerEmptyAreaClick } from '@/hooks';
+import { useViewportEmptyAreaClick } from '@/hooks';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager';
 import type { SnapGuide } from '../../../utils/element-snapping';
@@ -35,7 +35,6 @@ interface ApplicationCanvasProps {
   shapeRefs: React.MutableRefObject<Record<string, unknown>>;
   groupContainers: React.MutableRefObject<Record<string, unknown>>;
   mainCanvasContainerRef: React.MutableRefObject<Container | null>;
-  drawingRef: React.MutableRefObject<Graphics | null>;
   canvasScaleFactor: React.MutableRefObject<number>;
   handleCanvasPointerDown: (e: FederatedPointerEvent) => void;
   handleCanvasPointerMove: (e: FederatedPointerEvent) => void;
@@ -79,7 +78,6 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       width: typeof window !== 'undefined' ? window.innerWidth : 0,
       height: typeof window !== 'undefined' ? window.innerHeight : 0
     });
-    const [contextMenu, setContextMenu] = useState<{ x: number; y: number; targetId: string; targetType?: 'element' | 'group' } | null>(null);
 
     // Get current canvas size from UI store
     const canvasState = useCanvasState();
@@ -218,22 +216,10 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       }
     }));
 
-    // Use custom hook for container empty area click handling
-    const handleApplicationCanvasClick = useContainerEmptyAreaClick({
-      tool: props.tool,
-      onEmptyAreaClick: props.onEmptyAreaClick,
-    });
-
     return (
       <div
         ref={canvasContainerRef}
         className="absolute inset-0 bg-slate-100 canvas-area"
-        onClick={handleApplicationCanvasClick}
-        onContextMenu={(e) => {
-          // Prevent browser's default context menu from appearing
-          e.preventDefault();
-          e.stopPropagation();
-        }}
       >
         <Application
           ref={appRef}

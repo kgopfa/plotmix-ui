@@ -9,7 +9,7 @@ import { useCanvasElements, useCanvasGroups, useCanvasStore } from '@/stores/use
 import { useUIStore } from '@/stores/use-ui-store';
 import { useTimelineSync, useTimelineStore } from '@/stores/use-timeline-store';
 import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
-import { Graphics, Container } from 'pixi.js';
+import { Container } from 'pixi.js';
 import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager';
 import { AnimatedCanvasObject } from '@/types/canvas';
 import dynamic from 'next/dynamic';
@@ -49,7 +49,6 @@ export default function Designer({ autoplayOnReady = false }: DesignerProps) {
   const shapeRefs = useRef<Record<string, unknown>>({});
   const groupContainers = useRef<Record<string, unknown>>({});
   const mainCanvasContainerRef = useRef<Container | null>(null);
-  const drawingRef = useRef<Graphics | null>(null);
   const canvasScaleFactor = useRef<number>(1);
 
   // Create a canvas ref that provides the shape refs to the timeline manager
@@ -200,7 +199,6 @@ export default function Designer({ autoplayOnReady = false }: DesignerProps) {
           shapeRefs={shapeRefs}
           groupContainers={groupContainers}
           mainCanvasContainerRef={mainCanvasContainerRef}
-          drawingRef={drawingRef}
           canvasScaleFactor={canvasScaleFactor}
           handleCanvasPointerDown={() => {}}
           handleCanvasPointerMove={() => {}}
