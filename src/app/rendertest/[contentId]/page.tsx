@@ -75,5 +75,5 @@ export default function RenderPage() {
     fetchProjectData();
   }, [contentId, setProjectInfo, setBaseline, captureBaseline]);
 
-  return <ScreenCapture autoplayOnReady />;
+  return <ScreenCapture autoplayOnReady recordDurationSec={5} />;
 } 

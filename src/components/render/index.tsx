@@ -19,9 +19,9 @@ import type { ApplicationCanvasRef } from './canvas/application-canvas';
 
 const ApplicationCanvas = dynamic(() => import('./canvas/application-canvas').then(m => m.ApplicationCanvas), { ssr: false });
 
-type DesignerProps = { autoplayOnReady?: boolean };
+type DesignerProps = { autoplayOnReady?: boolean; recordDurationSec?: number };
 
-export default function ScreenCapture({ autoplayOnReady = false }: DesignerProps) {
+export default function ScreenCapture({ autoplayOnReady = false, recordDurationSec }: DesignerProps) {
   // Use canvas store instead of local state
   const canvasObjects = useCanvasElements();
   const groups = useCanvasGroups();
@@ -108,6 +108,12 @@ export default function ScreenCapture({ autoplayOnReady = false }: DesignerProps
     let cancelled = false;
     let rafId = 0 as number | 0;
     let started = false;
+    let mediaRecorder: MediaRecorder | null = null;
+    const chunks: BlobPart[] = [];
+    let stopTimer: number | null = null;
+    let retryTimer: number | null = null;
+    let recordRetryCount = 0;
+    console.log('[capture] autoplay effect enabled', { recordDurationSec });
 
     const areTargetsReady = () => {
       const refs = shapeRefs.current as Record<string, Container>;
@@ -121,11 +127,91 @@ export default function ScreenCapture({ autoplayOnReady = false }: DesignerProps
       });
     };
 
+    const startRecordingIfRequested = () => {
+      if (!recordDurationSec || recordDurationSec <= 0) return;
+      try {
+        // Try to get canvas from PIXI, then fall back to DOM query within our container
+        // @ts-expect-error runtime app access
+        const pixiApp = fullscreenCanvasRef.current?.getApplication()?.app;
+        let canvas = pixiApp?.view as HTMLCanvasElement | undefined;
+        if (!canvas) {
+          const node = canvasContainerRef.current;
+          const domCanvas = node?.querySelector('canvas') as HTMLCanvasElement | null;
+          if (domCanvas) canvas = domCanvas;
+        }
+        if (!canvas) {
+          if (recordRetryCount < 20) {
+            recordRetryCount += 1;
+            console.warn('[capture] canvas not available; retrying...', { attempt: recordRetryCount });
+            retryTimer = window.setTimeout(startRecordingIfRequested, 100);
+          } else {
+            console.warn('[capture] pixi canvas not available; giving up on recording');
+          }
+          return;
+        }
+        if (typeof canvas.captureStream !== 'function') {
+          console.warn('[capture] canvas.captureStream is not supported in this browser');
+          return;
+        }
+        const fps = 30;
+        const stream = canvas.captureStream(fps);
+        const mimeTypeCandidates = [
+          'video/webm;codecs=vp9',
+          'video/webm;codecs=vp8',
+          'video/webm',
+        ];
+        if (!(window as any).MediaRecorder) {
+          console.warn('[capture] MediaRecorder is not supported in this browser');
+          return;
+        }
+        const mimeType = mimeTypeCandidates.find((m) => (window as any).MediaRecorder?.isTypeSupported?.(m)) || '';
+        mediaRecorder = new MediaRecorder(stream, {
+          mimeType: mimeType || undefined,
+          videoBitsPerSecond: 8_000_000,
+        });
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) chunks.push(e.data);
+        };
+        mediaRecorder.onstop = async () => {
+          try {
+            const type = mediaRecorder?.mimeType || 'video/webm';
+            const blob = new Blob(chunks, { type });
+            console.log('[capture] recording stopped, size bytes:', blob.size);
+            // Upload to server to persist and get a URL
+            const form = new FormData();
+            const filename = `recording-${Date.now()}.webm`;
+            form.append('file', blob, filename);
+            form.append('filename', filename);
+            console.log('[capture] uploading recording...');
+            const res = await fetch('/api/recordings', { method: 'POST', body: form });
+            if (res.ok) {
+              const data = await res.json();
+              console.log('[capture] saved at URL:', data.url);
+            } else {
+              console.warn('[capture] upload failed with status', res.status);
+            }
+          } catch (err) {
+            console.warn('[capture] failed to persist recording', err);
+          }
+        };
+        mediaRecorder.start();
+        console.log('[capture] started MediaRecorder', { fps, mimeType: mediaRecorder.mimeType, recordDurationSec });
+        stopTimer = window.setTimeout(() => {
+          try { mediaRecorder?.stop(); } catch {}
+        }, Math.floor(recordDurationSec * 1000));
+      } catch {}
+    };
+
+    const waitStart = (typeof performance !== 'undefined' ? performance.now() : Date.now());
     const tick = () => {
       if (cancelled || started) return;
       if (!areTargetsReady()) {
-        rafId = requestAnimationFrame(tick);
-        return;
+        const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+        if (now - waitStart <= 1500) {
+          rafId = requestAnimationFrame(tick);
+          return;
+        }
+        console.warn('[capture] proceeding without animated targets being fully ready');
       }
       started = true;
       try { buildGSAPTimeline(); } catch {}
@@ -143,14 +229,23 @@ export default function ScreenCapture({ autoplayOnReady = false }: DesignerProps
         const { play, playback } = useTimelineStore.getState();
         if (!playback.isPlaying) play();
       } catch {}
+      // Start recording after playback begins
+      startRecordingIfRequested();
     };
 
     rafId = requestAnimationFrame(tick);
     return () => {
       cancelled = true;
       if (rafId) cancelAnimationFrame(rafId);
+      if (stopTimer) clearTimeout(stopTimer);
+      if (retryTimer) clearTimeout(retryTimer);
+      try {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+          mediaRecorder.stop();
+        }
+      } catch {}
     };
-  }, [autoplayOnReady, canvasObjects, buildGSAPTimeline]);
+  }, [autoplayOnReady, recordDurationSec, canvasObjects, buildGSAPTimeline]);
 
   // Update timeline track data when elements or groups change
   useEffect(() => {
