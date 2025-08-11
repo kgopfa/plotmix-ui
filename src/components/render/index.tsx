@@ -13,6 +13,7 @@ import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager';
 import { AnimatedCanvasObject } from '@/types/canvas';
 import dynamic from 'next/dynamic';
 import { useCanvasDimensions } from '@/hooks/use-canvas-dimensions';
+import { useCanvasState } from '@/stores/use-ui-store';
 import { useTimelineIntegration } from '@/hooks/use-timeline-integration';
 import { usePanelResize } from '@/hooks/use-panel-resize';
 import type { ApplicationCanvasRef } from './canvas/application-canvas';
@@ -74,6 +75,13 @@ export default function ScreenCapture({ autoplayOnReady = false, recordDurationS
 
   // Use the canvas dimensions hook
   const { dimensions } = useCanvasDimensions();
+  // Determine the logical design canvas size
+  const uiCanvasState = useCanvasState();
+  const uiCurrentSize = uiCanvasState.currentSizeId === 'custom'
+    ? uiCanvasState.customSize
+    : uiCanvasState.availableSizes.find(size => size.id === uiCanvasState.currentSizeId);
+  const designWidth = uiCurrentSize?.width || 1280;
+  const designHeight = uiCurrentSize?.height || 720;
 
   // Initialize timeline subscriptions on mount
   useEffect(() => {
@@ -153,8 +161,71 @@ export default function ScreenCapture({ autoplayOnReady = false, recordDurationS
           console.warn('[capture] canvas.captureStream is not supported in this browser');
           return;
         }
-        const fps = 30;
-        const stream = canvas.captureStream(fps);
+        // Attempt to crop to the design canvas only via viewport + main container
+        const viewport = fullscreenCanvasRef.current?.getViewport();
+        const mainContainer = fullscreenCanvasRef.current?.getMainContainer();
+        // @ts-expect-error runtime app access
+        const appAny = fullscreenCanvasRef.current?.getApplication()?.app;
+        const resolution = (appAny?.renderer?.resolution as number | undefined) ?? (window.devicePixelRatio || 1);
+
+        let recordingCanvas: HTMLCanvasElement | null = null;
+        let recordingStream: MediaStream | null = null;
+        let copyRaf: number | null = null;
+
+        if (viewport && mainContainer && typeof (viewport as any).toScreen === 'function') {
+          try {
+            const topLeftWorld = {
+              x: mainContainer.x - designWidth / 2,
+              y: mainContainer.y - designHeight / 2,
+            };
+            const bottomRightWorld = {
+              x: mainContainer.x + designWidth / 2,
+              y: mainContainer.y + designHeight / 2,
+            };
+            const tl = (viewport as any).toScreen(topLeftWorld.x, topLeftWorld.y);
+            const br = (viewport as any).toScreen(bottomRightWorld.x, bottomRightWorld.y);
+            let sx = Math.round(Math.min(tl.x, br.x) * resolution);
+            let sy = Math.round(Math.min(tl.y, br.y) * resolution);
+            let sw = Math.round(Math.abs(br.x - tl.x) * resolution);
+            let sh = Math.round(Math.abs(br.y - tl.y) * resolution);
+
+            // Clamp to source canvas bounds
+            const maxSw = canvas.width - sx;
+            const maxSh = canvas.height - sy;
+            if (sw > 0 && sh > 0 && maxSw > 0 && maxSh > 0) {
+              sw = Math.min(sw, maxSw);
+              sh = Math.min(sh, maxSh);
+
+              const off = document.createElement('canvas');
+              off.width = Math.round(designWidth);
+              off.height = Math.round(designHeight);
+              const ctx = off.getContext('2d');
+              if (ctx) ctx.imageSmoothingEnabled = false;
+
+              const copyFrame = () => {
+                if (!ctx) return;
+                ctx.clearRect(0, 0, off.width, off.height);
+                ctx.drawImage(canvas, sx, sy, sw, sh, 0, 0, off.width, off.height);
+                copyRaf = requestAnimationFrame(copyFrame);
+              };
+              copyRaf = requestAnimationFrame(copyFrame);
+
+              recordingCanvas = off;
+              recordingStream = off.captureStream(30);
+            } else {
+              console.warn('[capture] invalid crop rect; falling back to full canvas', { sx, sy, sw, sh, cw: canvas.width, ch: canvas.height });
+            }
+          } catch (err) {
+            console.warn('[capture] crop calculation failed; falling back to full canvas', err);
+          }
+        }
+
+        // Fallback to full canvas capture
+        if (!recordingStream) {
+          const fps = 30;
+          recordingCanvas = canvas;
+          recordingStream = canvas.captureStream(fps);
+        }
         const mimeTypeCandidates = [
           'video/webm;codecs=vp9',
           'video/webm;codecs=vp8',
@@ -165,7 +236,7 @@ export default function ScreenCapture({ autoplayOnReady = false, recordDurationS
           return;
         }
         const mimeType = mimeTypeCandidates.find((m) => (window as any).MediaRecorder?.isTypeSupported?.(m)) || '';
-        mediaRecorder = new MediaRecorder(stream, {
+        mediaRecorder = new MediaRecorder(recordingStream!, {
           mimeType: mimeType || undefined,
           videoBitsPerSecond: 8_000_000,
         });
@@ -195,7 +266,7 @@ export default function ScreenCapture({ autoplayOnReady = false, recordDurationS
           }
         };
         mediaRecorder.start();
-        console.log('[capture] started MediaRecorder', { fps, mimeType: mediaRecorder.mimeType, recordDurationSec });
+        console.log('[capture] started MediaRecorder', { mimeType: mediaRecorder.mimeType, recordDurationSec, cropToDesign: recordingCanvas !== canvas });
         stopTimer = window.setTimeout(() => {
           try { mediaRecorder?.stop(); } catch {}
         }, Math.floor(recordDurationSec * 1000));
