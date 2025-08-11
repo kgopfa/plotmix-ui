@@ -1,10 +1,9 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import Link from 'next/link';
 import { NavigationSidebar } from '@/components/shared/navigation-sidebar';
 import { ContentSidebar } from '@/components/content/content-sidebar';
-import { Link2, Pencil, Sparkles, UserPlus } from 'lucide-react';
+import { Link2, Pencil, UserPlus } from 'lucide-react';
 import QuickActionButtons from '@/components/shared/quick-action-buttons';
 import React from 'react';
 import { apiClient } from '@/lib/api-client';
@@ -18,15 +17,14 @@ export default function ContentDetailPage() {
   const contentId = params.contentId as string;
   const { content, isLoading, error } = useContent(contentId);
   const [showConfirm, setShowConfirm] = React.useState(false);
-  const router = useParams();
 
   return (
     <>
       <NavigationSidebar navigation={navigation} />
 
       {/* Main content area - responsive layout */}
-      <main className="relative min-h-screen bg-zinc-100 pt-16 lg:pt-0 lg:pl-20 lg:pr-[calc(100vw/7)]">
-        <div className="flex flex-row items-center px-10 h-36">
+      <main className="relative min-h-screen bg-zinc-100 2xl:pt-16 xl:pt-0 xl:pl-20 xl:pr-80 2xl:pr-[calc(100vw/7)]">
+        <div className="flex flex-row items-center px-10 xl:h-30 2xl:h-36">
           <div className="flex flex-col gap-y-2">
             {isLoading ? (
               <div className="animate-pulse">
@@ -40,7 +38,7 @@ export default function ContentDetailPage() {
               </div>
             ) : content ? (
               <>
-                <h2 className="text-3xl font-bold text-gray-900">{content.title}</h2>
+                <h2 className="text-3xl font-bold text-gray-900 xl:text-2xl 2xl:text-3xl">{content.title}</h2>
                 <div className="flex flex-row items-center gap-x-2">
                   <p className="text-gray-500 text-sm font-medium">{content.author}</p>
                   <div className="w-1 h-1 bg-gray-400 rounded-full" />
@@ -77,8 +75,8 @@ export default function ContentDetailPage() {
           </div>
         </div>
 
-        <div className="flex justify-center mt-14 min-h-screen">
-          <div className="w-full max-w-7xl mx-auto">
+        <div className="flex justify-center xl:mt-0 2xl:mt-14 min-h-screen">
+          <div className="w-full max-w-2xl xl:max-w-3xl 2xl:max-w-7xl mx-auto">
             {/* Canvas Player Container (fit full to this box) with gradient border matching "Open in Designer" */}
             <div className="rounded-xl p-0.5 bg-gradient-to-r from-indigo-500 to-purple-600 shadow-sm">
               <div className="relative w-full aspect-video rounded-xl bg-white overflow-hidden">
@@ -89,13 +87,13 @@ export default function ContentDetailPage() {
         </div>
 
         {/* Edit Button - Bottom Right of Main */}
-        <div className="fixed bottom-8 right-[calc(100vw/7+2rem)] z-50">
+        <div className="fixed bottom-8 right-10 xl:right-[calc(20rem+2.5rem)] 2xl:right-[calc(100vw/7+2.5rem)] z-50">
           <button
             onClick={() => setShowConfirm(true)}
-            className="inline-flex items-center gap-x-2 p-5 rounded-2xl text-white bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all duration-200 transform hover:scale-105"
+            className="inline-flex items-center gap-x-2 xl:py-3 xl:px-5 2xl:px-5 2xl:py-5 rounded-2xl text-white bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all duration-200 transform hover:scale-105"
           >
-            <Pencil strokeWidth={2.5} aria-hidden="true" className="-ml-0.5 size-5" />
-            <span className="hidden sm:block font-bold">Open in Designer</span>
+            <Pencil strokeWidth={2.5} aria-hidden="true" className="-ml-0.5 xl:size-4 2xl:size-5" />
+            <span className="hidden sm:block font-bold xl:text-sm 2xl:text-base">Open in Designer</span>
           </button>
         </div>
 

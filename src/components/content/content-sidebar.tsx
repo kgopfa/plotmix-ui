@@ -77,7 +77,7 @@ export function ContentSidebar({ conversationId }: { conversationId: string }) {
   };
 
   return (
-    <div className="hidden lg:fixed lg:inset-y-0 lg:right-0 lg:z-50 lg:flex lg:w-1/7 lg:flex-col">
+    <div className="hidden xl:fixed xl:inset-y-0 xl:right-0 xl:z-50 xl:flex xl:w-80 2xl:w-1/7 xl:flex-col">
       <div className="flex grow flex-col gap-y-5 overflow-y-auto border-l border-gray-200 bg-white px-6">
         {/* Horizontal tabs */}
         <div className="sticky top-0 bg-white flex mt-2 space-x-6 p-2">
