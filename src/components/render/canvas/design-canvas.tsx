@@ -49,9 +49,6 @@ interface DesignCanvasProps {
 }
 
 export const DesignCanvas = (props: DesignCanvasProps) => {
-  // Get isPlaying state directly from timeline store
-  const isPlaying = useTimelineStore(state => state.playback.isPlaying);
-
   const {
     elements,
     groups,
@@ -104,7 +101,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         zIndex={-1}
         draw={(g) => {
           g.clear();
-          g.roundRect(-canvasFrameWidth / 2, -canvasFrameHeight / 2, canvasFrameWidth, canvasFrameHeight, 14);
+          g.rect(-canvasFrameWidth / 2, -canvasFrameHeight / 2, canvasFrameWidth, canvasFrameHeight);
           g.fill({ color: props.canvasBackgroundColor ?? 0xFFFFFF, alpha: 1 });
           // Border customizable; draw only if width > 0
           const bw = props.canvasBorderWidth ?? 1;

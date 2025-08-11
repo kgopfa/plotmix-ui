@@ -2,32 +2,16 @@
 
 import { useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import Designer from '@/components/render';
+import ScreenCapture from '@/components/render';
 import { apiClient } from '@/lib/api-client';
 import { useProjectStore } from '@/stores/use-project-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useTimelineStore } from '@/stores/use-timeline-store';
-import { useShallow } from 'zustand/react/shallow';
 
 export default function RenderPage() {
   const params = useParams();
   const contentId = params.contentId as string;
   const { setProjectInfo, setBaseline, captureBaseline } = useProjectStore();
-  // Get timeline state and actions
-  const { playback } = useTimelineStore(
-    useShallow((state) => ({
-      playback: state.playback,
-    }))
-  );
-
-  const { play, pause } = useTimelineStore(
-    useShallow((state) => ({
-      play: state.play,
-      pause: state.pause,
-      stop: state.stop,
-      updateAnimation: state.updateAnimation
-    }))
-  );
 
   useEffect(() => {
     const fetchProjectData = async () => {
@@ -91,5 +75,5 @@ export default function RenderPage() {
     fetchProjectData();
   }, [contentId, setProjectInfo, setBaseline, captureBaseline]);
 
-  return <Designer autoplayOnReady />;
+  return <ScreenCapture autoplayOnReady />;
 } 

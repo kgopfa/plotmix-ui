@@ -6,7 +6,6 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import gsap from 'gsap';
 import { TimelineManager } from '@/lib/timeline-manager';
 import { useCanvasElements, useCanvasGroups, useCanvasStore } from '@/stores/use-canvas-store';
-import { useUIStore } from '@/stores/use-ui-store';
 import { useTimelineSync, useTimelineStore } from '@/stores/use-timeline-store';
 import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
 import { Container } from 'pixi.js';
@@ -22,16 +21,13 @@ const ApplicationCanvas = dynamic(() => import('./canvas/application-canvas').th
 
 type DesignerProps = { autoplayOnReady?: boolean };
 
-export default function Designer({ autoplayOnReady = false }: DesignerProps) {
+export default function ScreenCapture({ autoplayOnReady = false }: DesignerProps) {
   // Use canvas store instead of local state
   const canvasObjects = useCanvasElements();
   const groups = useCanvasGroups();
 
   // Timeline integration is handled by useTimelineIntegration hook
   const { initializeSubscriptions, cleanupSubscriptions, buildGSAPTimeline } = useTimelineSync();
-
-  // Use UI store for panel state
-  const panelState = useUIStore((state) => state.panels);
 
   const fullscreenCanvasRef = useRef<ApplicationCanvasRef | null>(null);
 
