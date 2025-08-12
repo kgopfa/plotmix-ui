@@ -80,8 +80,8 @@ export default function ScreenCapture({ autoplayOnReady = false, recordDurationS
   const uiCurrentSize = uiCanvasState.currentSizeId === 'custom'
     ? uiCanvasState.customSize
     : uiCanvasState.availableSizes.find(size => size.id === uiCanvasState.currentSizeId);
-  const designWidth = uiCurrentSize?.width || 1280;
-  const designHeight = uiCurrentSize?.height || 720;
+  const designWidth = uiCurrentSize?.width || 1920;
+  const designHeight = uiCurrentSize?.height || 1080;
 
   // Initialize timeline subscriptions on mount
   useEffect(() => {
