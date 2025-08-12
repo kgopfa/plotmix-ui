@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic';
 import gsap from 'gsap';
 
 import { useProjectStore } from '@/stores/use-project-store';
+import { useUIStore } from '@/stores/use-ui-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useTimelineStore, useTimelineSync } from '@/stores/use-timeline-store';
 import { useTimelineIntegration } from '@/hooks/use-timeline-integration';
@@ -63,6 +64,12 @@ export default function RenderXPage() {
   
 
   useEffect(() => {
+    // Align the logical design-canvas size to requested render dimensions
+    try {
+      const ui = useUIStore.getState();
+      ui.setCustomCanvasSize(width, height);
+    } catch {}
+
     // Link the PIXI canvas to the GSAP timeline manager so it can find targets
     setCanvasRef(appRef as React.RefObject<TimelineCanvasRef | null>);
   }, [setCanvasRef]);
@@ -238,6 +245,72 @@ export default function RenderXPage() {
           }
         } catch {}
         pixiApp?.render?.();
+
+        // Ensure viewport centers on the actual design container and fits it
+        try {
+          const viewport: any = appRef.current?.getViewport();
+          const main: any = mainCanvasContainerRef.current;
+          if (viewport && main) {
+            const screenW = typeof window !== 'undefined' ? window.innerWidth : width;
+            const screenH = typeof window !== 'undefined' ? window.innerHeight : height;
+            const { canvas: cs } = useUIStore.getState();
+            const currentSize = cs.currentSizeId === 'custom'
+              ? cs.customSize
+              : cs.availableSizes.find((s: any) => s.id === cs.currentSizeId);
+            const dWidth = Number(currentSize?.width || 1280);
+            const dHeight = Number(currentSize?.height || 720);
+            // No padding: make design canvas fill the entire viewport
+            const zoom = Math.min(screenW / dWidth, screenH / dHeight);
+            // Apply instantly to avoid animation timing issues for crop calculation
+            viewport.setZoom(zoom, false);
+            viewport.moveCenter(main.x, main.y);
+          }
+          pixiApp?.render?.();
+        } catch {}
+
+        // Expose a global crop rect calculator for server-side screenshot clipping
+        try {
+          const compute = () => {
+            const viewport: any = appRef.current?.getViewport();
+            const main: any = mainCanvasContainerRef.current;
+            if (!viewport || !main || typeof viewport.toScreen !== 'function') return null;
+
+            const { canvas: cs } = useUIStore.getState();
+            const currentSize = cs.currentSizeId === 'custom'
+              ? cs.customSize
+              : cs.availableSizes.find((s: any) => s.id === cs.currentSizeId);
+            const dWidth = Number(currentSize?.width || 1280);
+            const dHeight = Number(currentSize?.height || 720);
+
+            const topLeft = viewport.toScreen(main.x - dWidth / 2, main.y - dHeight / 2);
+            const bottomRight = viewport.toScreen(main.x + dWidth / 2, main.y + dHeight / 2);
+
+            const xRaw = Math.min(topLeft.x, bottomRight.x);
+            const yRaw = Math.min(topLeft.y, bottomRight.y);
+            const wRaw = Math.abs(bottomRight.x - topLeft.x);
+            const hRaw = Math.abs(bottomRight.y - topLeft.y);
+
+            // Clamp within current window viewport to avoid negative or overflow clipping
+            const vw = typeof window !== 'undefined' ? window.innerWidth : width;
+            const vh = typeof window !== 'undefined' ? window.innerHeight : height;
+            const x = Math.max(0, Math.round(xRaw));
+            const y = Math.max(0, Math.round(yRaw));
+            const maxW = vw - x;
+            const maxH = vh - y;
+            const widthPx = Math.max(0, Math.min(Math.round(wRaw), maxW));
+            const heightPx = Math.max(0, Math.min(Math.round(hRaw), maxH));
+
+            if (widthPx < 2 || heightPx < 2) return null;
+            return { x, y, width: widthPx, height: heightPx };
+          };
+          // eslint-disable-next-line no-console
+          console.log('[renderx] installing __computeCropRect__');
+          // @ts-expect-error - attach to global for puppeteer
+          globalThis.__computeCropRect__ = compute;
+          // Back-compat alias if needed
+          // @ts-expect-error - attach to global for puppeteer
+          globalThis.__getDesignClip__ = compute;
+        } catch {}
 
         globalThis.__renderInfo__ = { width, height, fps, duration };
         globalThis.__renderReady__ = true;
