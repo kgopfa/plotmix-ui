@@ -40,6 +40,8 @@ interface ProjectDataResponse {
       createdAt: string;
       updatedAt: string;
       userId: string;
+      contentVideoUrl?: string | null;
+      contentVideoStatus?: 'pending' | 'ready' | 'failed' | null;
       owner: {
         id: string;
         name: string;
@@ -68,6 +70,9 @@ interface ContentData {
   createdAt: string;
   // Conversation data
   conversationId: string;
+  // Video info
+  contentVideoUrl: string | null;
+  contentVideoStatus: 'pending' | 'ready' | 'failed' | null;
   // Transcript data (for future implementation)
   transcript?: TranscriptSegment[];
 }
@@ -115,6 +120,8 @@ export function useContent(contentId: string): UseContentReturn {
         author: project.owner.name,
         createdAt: project.createdAt,
         conversationId: project.conversation.id,
+        contentVideoUrl: project.contentVideoUrl ?? null,
+        contentVideoStatus: (project.contentVideoStatus as any) ?? null,
         transcript: [] // Initialize empty transcript for future implementation
       };
       
