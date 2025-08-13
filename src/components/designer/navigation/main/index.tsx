@@ -31,6 +31,7 @@ import { useProjectStore } from '@/stores/use-project-store';
 import { apiClient } from '@/lib/api-client';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useTimelineStore } from '@/stores/use-timeline-store';
+import { useUIStore } from '@/stores/use-ui-store';
 
 // Simplified interface - only for props that can't be accessed via stores
 interface MainNavBarProps {
@@ -60,20 +61,25 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
       const diff = getDiffFromBaseline();
       const hasMetaChange = projectName !== name; // include title change similarly if needed
 
-      if (hasMetaChange && !diff) {
-        // Only name/title change: bump version via updateProject
-        const res = await apiClient.put<any>(`/api/projects/${projectId}`, { name: projectName, title });
-        setProjectInfo({ name: res.data.project.name, version: res.data.project.version });
-        setSaveStatus('success');
-        setTimeout(() => setSaveStatus('idle'), 2000);
-        return;
+      // Collect UI configuration (e.g., canvas resolution) to persist
+      const ui = useUIStore.getState();
+      const configuration = {
+        canvas: ui.canvas,
+      };
+
+      // Persist configuration and optional metadata
+      if (hasMetaChange) {
+        const res = await apiClient.put<any>(`/api/projects/${projectId}`, { name: projectName, title, configuration });
+        setProjectInfo({ name: res.data.project.name, version: res.data.project.version, title: res.data.project.title });
+      } else {
+        await apiClient.put<any>(`/api/projects/${projectId}`, { configuration });
       }
 
-      if (diff || hasMetaChange) {
-        // Send diff-based change
+      // Persist mainState diff into history if present
+      if (diff) {
         const response = await apiClient.post<any>(`/api/projects/${projectId}/changes`, {
-          diff: diff ?? {},
-          actionDescription: hasMetaChange && !diff ? 'Metadata update' : 'User edits',
+          diff,
+          actionDescription: 'User edits',
         });
         // Update baseline to current
         captureBaseline();
