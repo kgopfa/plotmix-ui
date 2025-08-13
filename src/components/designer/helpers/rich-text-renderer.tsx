@@ -23,13 +23,20 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({ element, isE
     elementWidth: element.width
   });
 
+  const isValidHex = (v: unknown): v is string => typeof v === 'string' && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v.trim());
+  const toSafeColorNumber = (v: unknown, fallback: string = '#000000') => {
+    const c = typeof v === 'string' ? v.trim() : '';
+    const hex = isValidHex(c) ? c : fallback;
+    return new Color(hex).toNumber();
+  };
+
   // Create gradient fill for rich text using element properties
   const createGradientFill = () => {
     if (element.textGradient) {
       const fill = new FillGradient(0, 0, 0, element.height || 50);
       
       element.textGradient.colors.forEach(({ color, offset }) => {
-        fill.addColorStop(offset, new Color(color).toNumber());
+        fill.addColorStop(offset, toSafeColorNumber(color));
       });
       
       return fill;
@@ -38,9 +45,10 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({ element, isE
   };
 
   // Determine fill input for text (color or gradient)
+  const baseFill = !element.fill || element.fill.trim().toLowerCase() === 'none' ? '#000000' : element.fill;
   const fillInput = element.textGradient
-    ? (createGradientFill() ?? new Color(element.fill || '#000000').toNumber())
-    : new Color(element.fill || '#000000').toNumber();
+    ? (createGradientFill() ?? toSafeColorNumber(baseFill))
+    : toSafeColorNumber(baseFill);
 
   // Create rich text style using element properties
   const richStyle = new TextStyle({
@@ -49,13 +57,13 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({ element, isE
     fontStyle: (element.fontStyle as 'normal' | 'italic' | 'oblique') || 'italic',
     fontWeight: (element.fontWeight as 'normal' | 'bold' | 'bolder' | 'lighter' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900') || 'bold',
     fill: fillInput,
-    stroke: element.textStroke && element.textStrokeWidth ? {
-      color: new Color(element.textStroke).toNumber(),
+    stroke: element.textStroke && element.textStrokeWidth && isValidHex(element.textStroke) ? {
+      color: toSafeColorNumber(element.textStroke),
       width: element.textStrokeWidth,
       join: element.textStrokeJoin || 'round'
     } : undefined,
     dropShadow: element.textDropShadow ? {
-      color: new Color(element.textDropShadow.color).toNumber(),
+      color: toSafeColorNumber(element.textDropShadow.color),
       blur: element.textDropShadow.blur,
       angle: element.textDropShadow.angle,
       distance: element.textDropShadow.distance,

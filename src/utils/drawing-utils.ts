@@ -27,10 +27,16 @@ export function clearImageTextureCache() {
 export const parseColor = (color: string | number | undefined): number => {
   if (!color) return 0x000000;
   if (typeof color === 'number') return color;
-  if (color.startsWith('#')) {
-    return parseInt(color.slice(1), 16);
+  const trimmed = color.trim().toLowerCase();
+  if (trimmed === 'none') return 0x000000;
+  if (trimmed.startsWith('#')) {
+    const hex = trimmed.slice(1);
+    const num = parseInt(hex, 16);
+    return Number.isNaN(num) ? 0x000000 : num;
   }
-  return parseInt(color, 16);
+  // Fallback: accept plain hex without '#', else default to black
+  const num = parseInt(trimmed, 16);
+  return Number.isNaN(num) ? 0x000000 : num;
 };
 
 // Helper function to round coordinates to nearest pixel for crisp rendering
@@ -278,16 +284,33 @@ export const drawLine = (
     y: smoothLinePosition(shape.lineOptions.points.end.y - shape.y)
   };
 
-  // Lines are always curved by default
-  const controlPoint = {
-    x: smoothLinePosition(shape.lineOptions.controlPoint!.x - shape.x),
-    y: smoothLinePosition(shape.lineOptions.controlPoint!.y - shape.y)
-  };
+  // Use provided control point when valid, otherwise fall back to midpoint for straight line
+  const hasControl = !!shape.lineOptions.controlPoint &&
+    typeof shape.lineOptions.controlPoint.x === 'number' &&
+    typeof shape.lineOptions.controlPoint.y === 'number';
+  const controlPoint = hasControl
+    ? {
+        x: smoothLinePosition(shape.lineOptions.controlPoint!.x - shape.x),
+        y: smoothLinePosition(shape.lineOptions.controlPoint!.y - shape.y)
+      }
+    : {
+        x: smoothLinePosition((start.x + end.x) / 2),
+        y: smoothLinePosition((start.y + end.y) / 2)
+      };
 
-  if (shape.lineOptions.dotted) {
-    drawDottedCurve(graphics, start, controlPoint, end, color, width, alpha);
+  if (shape.lineOptions.isCurved && hasControl) {
+    if (shape.lineOptions.dotted) {
+      drawDottedCurve(graphics, start, controlPoint, end, color, width, alpha);
+    } else {
+      drawSmoothCurve(graphics, start, controlPoint, end, color, width, alpha);
+    }
   } else {
-    drawSmoothCurve(graphics, start, controlPoint, end, color, width, alpha);
+    // Straight line fallback when no valid controlPoint
+    graphics
+      .clear()
+      .moveTo(start.x, start.y)
+      .lineTo(end.x, end.y)
+      .stroke({ color, width, alpha });
   }
 
   if (shape.lineOptions.arrow) {
@@ -497,8 +520,8 @@ export function createShapeGraphics(shape: AnimatedCanvasObject, color?: string 
 
   if (shape.type === 'line' || shape.type === 'path') {
     drawElement(graphics, shape);
-    // For path and line, use stroke if not 'none'
-    if (shape.stroke !== 'none') {
+    // For path and line, use stroke if a valid stroke is provided
+    if (shape.stroke && shape.stroke !== 'none') {
       graphics.stroke({
         color: fillColor,
         width: shape.strokeWidth || 2,
