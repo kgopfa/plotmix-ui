@@ -25,7 +25,7 @@ type Props = {
 
 export function SimpleRenderEmbed({ projectId, autoplay = true }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState<{ width: number; height: number }>({ width: 1280, height: 720 });
+  const [size, setSize] = useState<{ width: number; height: number }>({ width: 1920, height: 1080 });
 
   const appRef = useRef<ApplicationCanvasRef>(null);
   const shapeRefs = useRef<Record<string, unknown>>({});

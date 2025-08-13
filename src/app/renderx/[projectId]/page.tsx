@@ -38,8 +38,8 @@ export default function RenderXPage() {
   const projectId = params.projectId;
 
   const fps = Number(search.get('fps') || 30);
-  const width = Number(search.get('width') || 1280);
-  const height = Number(search.get('height') || 720);
+  const width = Number(search.get('width') || 1920);
+  const height = Number(search.get('height') || 1080);
   const debugPlay = search.get('debug') === '1' || search.get('play') === '1';
 
   const appRef = useRef<ApplicationCanvasRef>(null);
@@ -257,8 +257,8 @@ export default function RenderXPage() {
             const currentSize = cs.currentSizeId === 'custom'
               ? cs.customSize
               : cs.availableSizes.find((s: any) => s.id === cs.currentSizeId);
-            const dWidth = Number(currentSize?.width || 1280);
-            const dHeight = Number(currentSize?.height || 720);
+            const dWidth = Number(currentSize?.width || 1920);
+            const dHeight = Number(currentSize?.height || 1080);
             // No padding: make design canvas fill the entire viewport
             const zoom = Math.min(screenW / dWidth, screenH / dHeight);
             // Apply instantly to avoid animation timing issues for crop calculation
@@ -279,8 +279,8 @@ export default function RenderXPage() {
             const currentSize = cs.currentSizeId === 'custom'
               ? cs.customSize
               : cs.availableSizes.find((s: any) => s.id === cs.currentSizeId);
-            const dWidth = Number(currentSize?.width || 1280);
-            const dHeight = Number(currentSize?.height || 720);
+            const dWidth = Number(currentSize?.width || 1920);
+            const dHeight = Number(currentSize?.height || 1080);
 
             const topLeft = viewport.toScreen(main.x - dWidth / 2, main.y - dHeight / 2);
             const bottomRight = viewport.toScreen(main.x + dWidth / 2, main.y + dHeight / 2);

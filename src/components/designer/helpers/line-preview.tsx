@@ -27,8 +27,8 @@ export const LinePreview: React.FC<LinePreviewProps> = ({
   elements,
   canvasContainerRef,
   shiftKey = false,
-  canvasWidth = 1280,
-  canvasHeight = 720,
+  canvasWidth = 1920,
+  canvasHeight = 1080,
   isSnappingEnabled = true,
 }) => {
   // Only render when we have the necessary data for line preview

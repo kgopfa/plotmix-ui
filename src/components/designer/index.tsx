@@ -145,8 +145,8 @@ export default function Designer() {
     ? canvasState.customSize
     : canvasState.availableSizes.find((size) => size.id === canvasState.currentSizeId);
 
-  const canvasWidth = currentSize?.width || 1280;
-  const canvasHeight = currentSize?.height || 720;
+  const canvasWidth = currentSize?.width || 1920;
+  const canvasHeight = currentSize?.height || 1080;
 
   // Element snapping functionality
   // Element bounds cache for performance optimization

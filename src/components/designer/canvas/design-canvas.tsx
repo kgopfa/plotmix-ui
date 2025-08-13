@@ -134,14 +134,14 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
     : canvasState.availableSizes.find(size => size.id === canvasState.currentSizeId);
 
   // Use current canvas size or fallback to default
-  const canvasFrameWidth = currentSize?.width || 1280;
-  const canvasFrameHeight = currentSize?.height || 720;
+  const canvasFrameWidth = currentSize?.width || 1920;
+  const canvasFrameHeight = currentSize?.height || 1080;
 
   // Use responsive canvas positioning hook
   const { x: centerX, y: centerY } = useResponsiveCanvasPosition(props.dimensions);
   // Align design canvas to world center so it stays in view when viewport recenters
-  const worldCenterX = canvasFrameWidth * 1.5;
-  const worldCenterY = canvasFrameHeight * 1.5;
+  const worldCenterX = canvasFrameWidth;
+  const worldCenterY = canvasFrameHeight;
 
   // Canvas dragging state refs
   const containerRef = useRef<Container | null>(null);

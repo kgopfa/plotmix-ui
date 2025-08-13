@@ -86,8 +86,8 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       : canvasState.availableSizes.find(size => size.id === canvasState.currentSizeId);
 
     // Use current canvas size or fallback to default
-    const canvasWidth = currentSize?.width || 1280;
-    const canvasHeight = currentSize?.height || 720;
+    const canvasWidth = currentSize?.width || 1920;
+    const canvasHeight = currentSize?.height || 1080;
 
     // Update dimensions when window resizes
     useEffect(() => {

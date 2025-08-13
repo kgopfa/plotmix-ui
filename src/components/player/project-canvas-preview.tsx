@@ -8,7 +8,7 @@ import { useTimelineTracks, useTimelineSync } from '@/stores/use-timeline-store'
 
 type Props = { projectId: string; fallbackSize?: { width: number; height: number } };
 
-export function ProjectCanvasPreview({ projectId, fallbackSize = { width: 1280, height: 720 } }: Props) {
+export function ProjectCanvasPreview({ projectId, fallbackSize = { width: 1920, height: 1080 } }: Props) {
   const [elements, setElements] = useState<AnimatedCanvasObject[]>([]);
   const [groups, setGroups] = useState<CanvasGroup[]>([]);
   const [designSize, setDesignSize] = useState(fallbackSize);

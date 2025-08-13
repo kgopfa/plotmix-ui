@@ -37,8 +37,8 @@ export const centerOnDesign = (
       viewport.moveCenter(position.x, position.y);
     } else {
       // Fallback to default centering - center on world
-      const worldWidth = (canvasWidth || 1280) * 3;
-      const worldHeight = (canvasHeight || 720) * 3;
+      const worldWidth = (canvasWidth || 1920) * 3;
+      const worldHeight = (canvasHeight || 1080) * 3;
       viewport.moveCenter(worldWidth / 2, worldHeight / 2);
     }
   }
@@ -87,8 +87,8 @@ export const resetZoom = (
       viewport.moveCenter(position.x, position.y);
     } else {
       // Fallback to default centering - center on world
-      const worldWidth = (canvasWidth || 1280) * 3;
-      const worldHeight = (canvasHeight || 720) * 3;
+      const worldWidth = (canvasWidth || 1920) * 3;
+      const worldHeight = (canvasHeight || 1080) * 3;
       viewport.moveCenter(worldWidth / 2, worldHeight / 2);
     }
   }

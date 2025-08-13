@@ -18,7 +18,7 @@ export function FitFullCanvasPlayer({ designWidth, designHeight, elements, group
   const wrapperRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<ApplicationCanvasPlayerRef>(null);
-  const [size, setSize] = useState({ width: 1280, height: 720 });
+  const [size, setSize] = useState({ width: 1920, height: 1080 });
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   useLayoutEffect(() => {
