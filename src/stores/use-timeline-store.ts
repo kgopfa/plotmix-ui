@@ -923,17 +923,7 @@ export const useTimelineStore = create<TimelineStore>()(
           const animation = element.animations.find(anim => anim.id === animationId);
           if (animation) {
             const effectiveDuration = calculateEffectiveDuration(animation);
-            
-            // Cache the result for future calls
-            get().animationStates.set(animationId, {
-              baseDuration: animation.duration,
-              repeat: animation.repeat,
-              repeatDelay: animation.repeatDelay,
-              yoyo: animation.yoyo,
-              effectiveDuration,
-              effectiveEndTime: animation.startTime + effectiveDuration
-            });
-            
+            // Do not mutate store state during render; return computed value only
             return effectiveDuration;
           }
         }
@@ -943,17 +933,7 @@ export const useTimelineStore = create<TimelineStore>()(
           const animation = group.animations.find(anim => anim.id === animationId);
           if (animation) {
             const effectiveDuration = calculateEffectiveDuration(animation);
-            
-            // Cache the result for future calls
-            get().animationStates.set(animationId, {
-              baseDuration: animation.duration,
-              repeat: animation.repeat,
-              repeatDelay: animation.repeatDelay,
-              yoyo: animation.yoyo,
-              effectiveDuration,
-              effectiveEndTime: animation.startTime + effectiveDuration
-            });
-            
+            // Do not mutate store state during render; return computed value only
             return effectiveDuration;
           }
         }

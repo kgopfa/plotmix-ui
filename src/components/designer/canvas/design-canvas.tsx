@@ -139,6 +139,9 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
 
   // Use responsive canvas positioning hook
   const { x: centerX, y: centerY } = useResponsiveCanvasPosition(props.dimensions);
+  // Align design canvas to world center so it stays in view when viewport recenters
+  const worldCenterX = canvasFrameWidth * 1.5;
+  const worldCenterY = canvasFrameHeight * 1.5;
 
   // Canvas dragging state refs
   const containerRef = useRef<Container | null>(null);
@@ -186,8 +189,8 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
 
   return (
     <pixiContainer
-      x={centerX}
-      y={centerY}
+      x={worldCenterX + centerX}
+      y={worldCenterY + centerY}
       interactive={true}
       eventMode="static"
       sortableChildren={true}
