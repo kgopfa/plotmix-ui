@@ -9,6 +9,7 @@ import { TimelineTrackData } from '@/types/timeline';
 import { calculateEffectiveEndTime, calculateEffectiveDuration } from '@/utils/animation-utils';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
+import { useProjectStore } from '@/stores/use-project-store';
 
 // Enable Immer MapSet plugin for Map support
 enableMapSet();
@@ -295,6 +296,8 @@ export const useTimelineStore = create<TimelineStore>()(
           });
         }));
         get().updateTracks();
+        // Autosave on timeline-affecting element updates
+        try { useProjectStore.getState().scheduleAutosave(); } catch {}
       },
 
       setGroups: (groups: CanvasGroup[]) => {
@@ -319,6 +322,7 @@ export const useTimelineStore = create<TimelineStore>()(
           });
         }));
         get().updateTracks();
+        try { useProjectStore.getState().scheduleAutosave(); } catch {}
       },
 
       updateTracks: () => {
@@ -373,6 +377,7 @@ export const useTimelineStore = create<TimelineStore>()(
           });
         }));
         get().updateTracks();
+        try { useProjectStore.getState().scheduleAutosave(); } catch {}
       },
 
       updateAnimation: (trackId: string, animationId: string, updates: Partial<ElementAnimation>, trackType: 'element' | 'group') => {
@@ -426,6 +431,7 @@ export const useTimelineStore = create<TimelineStore>()(
           }
         }));
         get().updateTracks();
+        try { useProjectStore.getState().scheduleAutosave(); } catch {}
       },
 
       removeAnimation: (trackId: string, animationId: string, trackType: 'element' | 'group') => {
@@ -447,6 +453,7 @@ export const useTimelineStore = create<TimelineStore>()(
           state.animationStates.delete(animationId);
         }));
         get().updateTracks();
+        try { useProjectStore.getState().scheduleAutosave(); } catch {}
       },
 
       duplicateAnimation: (trackId: string, animationId: string, trackType: 'element' | 'group') => {
@@ -493,6 +500,7 @@ export const useTimelineStore = create<TimelineStore>()(
           }
         }));
         get().updateTracks();
+        try { useProjectStore.getState().scheduleAutosave(); } catch {}
       },
 
       // UI controls

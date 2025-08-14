@@ -28,6 +28,7 @@ import { SelectionIndicator } from './selection-indicator';
 import { SettingsDropdown } from './settings';
 import { UserAvatar } from './user-avatar';
 import { useProjectStore } from '@/stores/use-project-store';
+import { DiffPatcher } from 'jsondiffpatch';
 import { apiClient } from '@/lib/api-client';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useTimelineStore } from '@/stores/use-timeline-store';
@@ -58,16 +59,11 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
     if (!projectId) return;
     try {
       setSaveStatus('saving');
-      const diff = getDiffFromBaseline();
-      const hasMetaChange = projectName !== name; // include title change similarly if needed
 
-      // Collect UI configuration (e.g., canvas resolution) to persist
+      // Persist configuration and optional metadata (name/title)
+      const hasMetaChange = projectName !== name;
       const ui = useUIStore.getState();
-      const configuration = {
-        canvas: ui.canvas,
-      };
-
-      // Persist configuration and optional metadata
+      const configuration = { canvas: ui.canvas };
       if (hasMetaChange) {
         const res = await apiClient.put<any>(`/api/projects/${projectId}`, { name: projectName, title, configuration });
         setProjectInfo({ name: res.data.project.name, version: res.data.project.version, title: res.data.project.title });
@@ -75,16 +71,8 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
         await apiClient.put<any>(`/api/projects/${projectId}`, { configuration });
       }
 
-      // Persist mainState diff into history if present
-      if (diff) {
-        const response = await apiClient.post<any>(`/api/projects/${projectId}/changes`, {
-          diff,
-          actionDescription: 'User edits',
-        });
-        // Update baseline to current
-        captureBaseline();
-        setProjectInfo({ version: response.data.project.version });
-      }
+      // Delegate persistence of mainState to store's robust method
+      await useProjectStore.getState().persistIfDirty('User edits');
 
       setSaveStatus('success');
       setTimeout(() => setSaveStatus('idle'), 2000);

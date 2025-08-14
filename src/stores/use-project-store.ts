@@ -3,6 +3,7 @@ import { produce } from 'immer';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useTimelineStore } from '@/stores/use-timeline-store';
 import { DiffPatcher } from 'jsondiffpatch';
+import { apiClient } from '@/lib/api-client';
 
 type SaveStatus = 'idle' | 'saving' | 'success' | 'error';
 
@@ -17,6 +18,8 @@ interface ProjectStoreState extends ProjectInfo {
   baselineMainState: Record<string, unknown> | null;
   lastSavedAt: string | null;
   saveStatus: SaveStatus;
+  autosaveTimer: number | null;
+  autosaveDelayMs: number;
 }
 
 interface ProjectStoreActions {
@@ -27,6 +30,9 @@ interface ProjectStoreActions {
   getDiffFromBaseline: () => Record<string, unknown> | null;
   setVersion: (version: string) => void;
   setSaveStatus: (status: SaveStatus) => void;
+  persistIfDirty: (actionDescription?: string) => Promise<boolean>;
+  scheduleAutosave: () => void;
+  setAutosaveDelay: (ms: number) => void;
 }
 
 type ProjectStore = ProjectStoreState & ProjectStoreActions;
@@ -40,7 +46,9 @@ export const useProjectStore = create<ProjectStore>()(
     version: '1.0.0',
     baselineMainState: null,
     lastSavedAt: null,
-    saveStatus: 'idle',
+      saveStatus: 'idle',
+      autosaveTimer: null,
+      autosaveDelayMs: 1200,
 
     setProjectInfo: (info) => {
       set(produce((state: ProjectStore) => {
@@ -87,8 +95,23 @@ export const useProjectStore = create<ProjectStore>()(
       const baseline = get().baselineMainState;
       const current = get().getCurrentMainState();
       if (!baseline) return null;
-      const diffPatcher = new DiffPatcher();
-      const delta = diffPatcher.diff(baseline, current);
+      // Fast equality check
+      const baselineStr = JSON.stringify(baseline ?? {});
+      const currentStr = JSON.stringify(current ?? {});
+      if (baselineStr === currentStr) return null;
+
+      // Robust diff with objectHash and move detection
+      const robustPatcher = new DiffPatcher({
+        objectHash: (obj: any) => obj?.id ?? JSON.stringify(obj),
+        arrays: { detectMove: true, includeValueOnMove: false }
+      } as any);
+      let delta = robustPatcher.diff(baseline ?? {}, current);
+
+      // Last resort: snapshot diff to force persistence
+      if (!delta) {
+        const snapshotPatcher = new DiffPatcher();
+        delta = snapshotPatcher.diff({}, current);
+      }
       return delta || null;
     },
 
@@ -101,6 +124,76 @@ export const useProjectStore = create<ProjectStore>()(
     setSaveStatus: (status: SaveStatus) => {
       set(produce((state: ProjectStore) => {
         state.saveStatus = status;
+      }));
+    },
+
+    // Persist if there are changes compared to baseline
+    persistIfDirty: async (actionDescription = 'Autosave edits') => {
+      const { projectId } = get();
+      if (!projectId) return false;
+      try {
+        const diff = get().getDiffFromBaseline();
+        const baseline = get().baselineMainState;
+        const current = get().getCurrentMainState();
+        const hasChanges = JSON.stringify(baseline ?? {}) !== JSON.stringify(current ?? {});
+        if (!diff && !hasChanges) {
+          return false;
+        }
+
+        set(produce((state: ProjectStore) => { state.saveStatus = 'saving'; }));
+
+        if (diff) {
+          const response = await apiClient.post<any>(`/api/projects/${projectId}/changes`, {
+            diff,
+            actionDescription,
+          });
+          // Update baseline and version
+          get().captureBaseline();
+          set(produce((state: ProjectStore) => {
+            state.version = response.data.project.version;
+            state.saveStatus = 'success';
+          }));
+        } else if (hasChanges) {
+          // Fallback: PUT full mainState if no diff object could be generated
+          const response = await apiClient.put<any>(`/api/projects/${projectId}`, { mainState: current });
+          get().captureBaseline();
+          set(produce((state: ProjectStore) => {
+            state.version = response.data.project.version;
+            state.saveStatus = 'success';
+          }));
+        }
+
+        // Reset save status back to idle shortly
+        setTimeout(() => {
+          set(produce((state: ProjectStore) => { state.saveStatus = 'idle'; }));
+        }, 1500);
+        return true;
+      } catch (e) {
+        console.error('Persist failed', e);
+        set(produce((state: ProjectStore) => { state.saveStatus = 'error'; }));
+        setTimeout(() => {
+          set(produce((state: ProjectStore) => { state.saveStatus = 'idle'; }));
+        }, 2000);
+        return false;
+      }
+    },
+
+    scheduleAutosave: () => {
+      const { autosaveTimer, autosaveDelayMs } = get();
+      if (autosaveTimer) {
+        clearTimeout(autosaveTimer as unknown as number);
+      }
+      const timerId = setTimeout(() => {
+        get().persistIfDirty('Autosave edits');
+      }, autosaveDelayMs) as unknown as number;
+      set(produce((state: ProjectStore) => {
+        state.autosaveTimer = timerId;
+      }));
+    },
+
+    setAutosaveDelay: (ms: number) => {
+      set(produce((state: ProjectStore) => {
+        state.autosaveDelayMs = Math.max(300, Math.min(ms, 10000));
       }));
     },
   })

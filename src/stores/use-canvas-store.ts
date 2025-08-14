@@ -3,6 +3,7 @@ import { produce } from 'immer';
 import { useShallow } from 'zustand/react/shallow';
 import { AnimatedCanvasObject, CanvasGroup, ElementAnimation } from '@/types/canvas';
 import { useSelectionStore } from './use-selection-store';
+import { useProjectStore } from './use-project-store';
 
 interface CanvasState {
   // Core state
@@ -123,6 +124,10 @@ const notifySubscribers = (state: { elements: AnimatedCanvasObject[]; groups: Ca
       console.warn('Canvas store subscriber error:', error);
     }
   });
+  // Debounced autosave after canvas mutations
+  try {
+    useProjectStore.getState().scheduleAutosave();
+  } catch {}
 };
 
 export const useCanvasStore = create<CanvasStore>()(
