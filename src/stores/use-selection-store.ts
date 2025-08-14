@@ -51,11 +51,16 @@ export const useSelectionStore = create<SelectionStore>((set, get) => ({
     if (element === null) {
       set({ selectedElements: [], selectedGroups: [] });
     } else if (Array.isArray(element)) {
+      // Determine if selection is actually changing
+      const prevIds = new Set(state.selectedElements.map(el => el.id));
+      const nextIds = new Set(element.map(el => el.id));
+      const isSameSelection = prevIds.size === nextIds.size && [...prevIds].every(id => nextIds.has(id));
+
       set({ selectedElements: [...element] });
       state.updateSelectedGroupsInternal(state.currentGroups);
       
-      // Auto-activate properties panel when elements are selected
-      if (element.length > 0) {
+      // Auto-activate properties panel only when the selection actually changes
+      if (!isSameSelection && element.length > 0) {
         const uiStore = useUIStore.getState();
         if (!uiStore.activeRightPanel) {
           uiStore.setActiveRightPanel('properties');
@@ -64,6 +69,7 @@ export const useSelectionStore = create<SelectionStore>((set, get) => ({
     } else {
       let newSelectedElements: AnimatedCanvasObject[];
       
+      const prevIds = new Set(state.selectedElements.map(el => el.id));
       if (addToSelection && !state.isSelected(element)) {
         newSelectedElements = [...state.selectedElements, element];
       } else if (addToSelection && state.isSelected(element)) {
@@ -76,8 +82,10 @@ export const useSelectionStore = create<SelectionStore>((set, get) => ({
       set({ selectedElements: newSelectedElements });
       state.updateSelectedGroupsInternal(state.currentGroups);
       
-      // Auto-activate properties panel when an element is selected
-      if (newSelectedElements.length > 0) {
+      // Auto-activate properties panel only when the selection actually changes
+      const nextIds = new Set(newSelectedElements.map(el => el.id));
+      const isSameSelection = prevIds.size === nextIds.size && [...prevIds].every(id => nextIds.has(id));
+      if (!isSameSelection && newSelectedElements.length > 0) {
         const uiStore = useUIStore.getState();
         if (!uiStore.activeRightPanel) {
           uiStore.setActiveRightPanel('properties');
@@ -91,6 +99,10 @@ export const useSelectionStore = create<SelectionStore>((set, get) => ({
     // Get all elements from the canvas store to find the group elements
     const canvasElements = useCanvasStore.getState().elements;
     const elementsInGroup = canvasElements.filter((el: AnimatedCanvasObject) => el.groupId === group.id);
+
+    const prevIds = new Set(state.selectedElements.map(el => el.id));
+    const nextIdsPreview = new Set((addToSelection ? [...state.selectedElements, ...elementsInGroup] : elementsInGroup).map(el => el.id));
+    const isSameSelection = prevIds.size === nextIdsPreview.size && [...prevIds].every(id => nextIdsPreview.has(id));
 
     if (addToSelection) {
       const newSelectedElements = [...state.selectedElements, ...elementsInGroup];
@@ -106,8 +118,8 @@ export const useSelectionStore = create<SelectionStore>((set, get) => ({
       });
     }
     
-    // Auto-activate properties panel when a group is selected
-    if (elementsInGroup.length > 0) {
+    // Auto-activate properties panel only when the selection actually changes
+    if (!isSameSelection && elementsInGroup.length > 0) {
       const uiStore = useUIStore.getState();
       if (!uiStore.activeRightPanel) {
         uiStore.setActiveRightPanel('properties');
@@ -116,11 +128,16 @@ export const useSelectionStore = create<SelectionStore>((set, get) => ({
   },
 
   selectAll: (elements) => {
+    const state = get();
+    const prevIds = new Set(state.selectedElements.map(el => el.id));
+    const nextIds = new Set(elements.map(el => el.id));
+    const isSameSelection = prevIds.size === nextIds.size && [...prevIds].every(id => nextIds.has(id));
+
     set({ selectedElements: [...elements] });
     get().updateSelectedGroupsInternal(get().currentGroups);
     
-    // Auto-activate properties panel when selecting all elements
-    if (elements.length > 0) {
+    // Auto-activate properties panel only when the selection actually changes
+    if (!isSameSelection && elements.length > 0) {
       const uiStore = useUIStore.getState();
       if (!uiStore.activeRightPanel) {
         uiStore.setActiveRightPanel('properties');
