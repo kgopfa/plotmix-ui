@@ -139,9 +139,9 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
 
   // Use responsive canvas positioning hook
   const { x: centerX, y: centerY } = useResponsiveCanvasPosition(props.dimensions);
-  // Align design canvas to world center so it stays in view when viewport recenters
-  const worldCenterX = canvasFrameWidth;
-  const worldCenterY = canvasFrameHeight;
+  // Align design canvas to actual world center (world is 3x canvas size)
+  const worldCenterX = canvasFrameWidth * 1.5;
+  const worldCenterY = canvasFrameHeight * 1.5;
 
   // Canvas dragging state refs
   const containerRef = useRef<Container | null>(null);

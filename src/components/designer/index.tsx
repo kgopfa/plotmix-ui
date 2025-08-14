@@ -218,6 +218,17 @@ export default function Designer() {
   const gridConfig = uiGridConfig;
   const snapGuides = currentGuides;
 
+  // Force a center on mount/size changes using the exposed ref method
+  useEffect(() => {
+    if (!fullscreenCanvasRef.current) return;
+    const run = () => fullscreenCanvasRef.current?.centerOnDesign();
+    const raf = requestAnimationFrame(() => {
+      run();
+      setTimeout(run, 50);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [dimensions.width, dimensions.height, canvasWidth, canvasHeight]);
+
   // Element dragging functionality
   const {
     startDragging,

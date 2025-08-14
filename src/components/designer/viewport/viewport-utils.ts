@@ -8,14 +8,24 @@ export const calculateCanvasPosition = (
   canvasWidth: number,
   canvasHeight: number
 ): { x: number; y: number } => {
-  // Center on the world's center (similar to the working example)
-  // The world dimensions are canvasWidth * 3 and canvasHeight * 3
+  // Center on the world's center with the same responsive vertical offset
+  // used by the design canvas container so both align.
   const worldWidth = canvasWidth * 3;
   const worldHeight = canvasHeight * 3;
-  
+
+  const screenAspectRatio = containerWidth / containerHeight;
+  let verticalOffset = 0;
+  if (screenAspectRatio > 2) {
+    verticalOffset = Math.min(150, containerHeight * 0.15);
+  } else if (screenAspectRatio > 1.5) {
+    verticalOffset = Math.min(200, containerHeight * 0.18);
+  } else {
+    verticalOffset = Math.min(250, containerHeight * 0.22);
+  }
+
   return {
     x: worldWidth / 2,
-    y: worldHeight / 2
+    y: worldHeight / 2 - verticalOffset,
   };
 };
 
@@ -28,9 +38,7 @@ export const centerOnDesign = (
   canvasHeight?: number
 ) => {
   if (viewport) {
-    // First fit the world to the viewport (similar to working example)
-    viewport.fit();
-    
+    // Only move center to our target; do not change zoom here
     if (containerWidth && containerHeight && canvasWidth && canvasHeight) {
       // Use calculated position for responsive centering
       const position = calculateCanvasPosition(containerWidth, containerHeight, canvasWidth, canvasHeight);

@@ -36,6 +36,14 @@ export class ViewportWrapper extends BaseViewport {
         });
     }
 
-    this.setZoom(1, true).moveCenter(0, 0);
+    // Initial zoom only; avoid animation to prevent race with later centering
+    this.setZoom(1, false);
+
+    // Center on world center by default so content isn't off-screen
+    const ww = (rest.worldWidth ?? 0) as number;
+    const wh = (rest.worldHeight ?? 0) as number;
+    if (ww > 0 && wh > 0) {
+      this.moveCenter(ww / 2, wh / 2);
+    }
   }
 }
