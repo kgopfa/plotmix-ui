@@ -62,10 +62,10 @@ export class ProjectManager {
           panelState: {
             leftPanelVisible: true,
             rightPanelVisible: true,
-            leftPanelWidth: 320,
-            rightPanelWidth: 320,
-            timelineHeight: 240,
-            isTimelineCollapsed: false,
+                      leftPanelWidth: 320,
+          rightPanelWidth: 320,
+          timelineHeight: 240,
+          isTimelineCollapsed: true,
           },
           toolState: {
             activeTool: 'select',
@@ -492,10 +492,10 @@ export class ProjectManager {
         panelState: {
           leftPanelVisible: true,
           rightPanelVisible: true,
-          leftPanelWidth: 320,
-          rightPanelWidth: 320,
-          timelineHeight: 240,
-          isTimelineCollapsed: false,
+                  leftPanelWidth: 320,
+        rightPanelWidth: 320,
+        timelineHeight: 240,
+        isTimelineCollapsed: true,
         },
         toolState: {
           activeTool: 'select',
@@ -752,7 +752,7 @@ export class ProjectManager {
               leftPanelWidth: 320,
               rightPanelWidth: 320,
               timelineHeight: 240,
-              isTimelineCollapsed: false,
+              isTimelineCollapsed: true,
             },
             toolState: {
               activeTool: 'select',

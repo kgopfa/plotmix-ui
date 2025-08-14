@@ -99,7 +99,7 @@ export async function GET(
                 leftPanelWidth: 280,
                 rightPanelWidth: 320,
                 timelineHeight: 200,
-                isTimelineCollapsed: false
+                isTimelineCollapsed: true
               },
               toolState: {
                 activeTool: 'select',

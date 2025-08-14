@@ -183,7 +183,7 @@ const initialUIState: TimelineUIState = {
   selectedTrackIds: new Set(),
   selectedAnimationIds: new Set(),
   expandedTrackIds: new Set(),
-  isTimelineCollapsed: false,
+        isTimelineCollapsed: true,
   showGrid: true,
   snapToGrid: true,
   gridSize: 1, // 1 second grid
