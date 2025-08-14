@@ -161,12 +161,6 @@ export const CanvasSizeSelector: React.FC = () => {
                     1920×1080
                   </button>
                   <button
-                    onClick={() => { setCustomWidth('1280'); setCustomHeight('720'); }}
-                    className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
-                  >
-                    1280×720
-                  </button>
-                  <button
                     onClick={() => { setCustomWidth('3840'); setCustomHeight('2160'); }}
                     className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
                   >

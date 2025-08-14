@@ -105,6 +105,18 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
     setIsDirty(prev => ({ ...prev, lineOptions: true }));
   };
 
+  // Helper to update shadow filters on the canvas
+  const updateShadowFilters = (elementId: string, shadowProperties: Partial<AnimatedCanvasObject>) => {
+    // Dispatch a custom event to update shadow filters on the canvas
+    const shadowUpdateEvent = new CustomEvent('element-shadow-update', {
+      detail: {
+        id: elementId,
+        shadowProperties
+      }
+    });
+    window.dispatchEvent(shadowUpdateEvent);
+  };
+
   // Helper for angle and length updates that affect multiple properties
   const updateLineGeometry = (
     width: number,
@@ -319,6 +331,24 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
             </div>
           </div>
         )}
+
+        {/* Rotation Property */}
+        <div className="grid grid-cols-1 gap-1">
+          <span className="text-xs font-semibold text-green-400">Rotation</span>
+          <div className="flex">
+            <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-green-500 outline-1 -outline-offset-1 outline-gray-300">
+              °
+            </div>
+            <input
+              type="number"
+              value={Math.round((localElement.rotation || 0) * (180 / Math.PI))}
+              onChange={e => updateLocalProperty('rotation', Number(e.target.value) * (Math.PI / 180))}
+              className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-green-600"
+              step="1"
+              placeholder="0"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Appearance Properties */}
@@ -477,6 +507,138 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
             className="block w-full grow rounded-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
           />
         </label>
+      </div>
+
+      {/* Shadow Properties - for all elements */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+          <h4 className="font-semibold text-amber-600 text-sm">Shadow</h4>
+        </div>
+
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={localElement.shadowEnabled || false}
+              onChange={e => {
+                updateLocalProperty('shadowEnabled', e.target.checked);
+                updateShadowFilters(localElement.id, { shadowEnabled: e.target.checked });
+              }}
+              className="rounded border-gray-300 focus:ring-2 focus:ring-amber-500"
+            />
+            <span className="text-sm font-medium text-gray-700">Enable Shadow</span>
+          </div>
+
+          {localElement.shadowEnabled && (
+            <div className="space-y-3 pl-6 border-l-2 border-amber-200">
+              <div className="grid grid-cols-2 gap-3">
+                <label className="flex flex-col gap-1">
+                  <span className="text-xs font-semibold text-amber-400">Blur</span>
+                  <input
+                    type="number"
+                    value={localElement.shadowBlur || 4}
+                    onChange={e => {
+                      const value = Number(e.target.value);
+                      updateLocalProperty('shadowBlur', value);
+                      updateShadowFilters(localElement.id, { shadowBlur: value });
+                    }}
+                    min={0}
+                    max={50}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors text-sm"
+                  />
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span className="text-xs font-semibold text-amber-400">Distance</span>
+                  <input
+                    type="number"
+                    value={localElement.shadowOffsetX || 6}
+                    onChange={e => {
+                      const value = Number(e.target.value);
+                      updateLocalProperty('shadowOffsetX', value);
+                      updateShadowFilters(localElement.id, { shadowOffsetX: value });
+                    }}
+                    min={0}
+                    max={50}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors text-sm"
+                  />
+                </label>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <label className="flex flex-col gap-1">
+                  <span className="text-xs font-semibold text-amber-400">Offset Y</span>
+                  <input
+                    type="number"
+                    value={localElement.shadowOffsetY || 6}
+                    onChange={e => {
+                      const value = Number(e.target.value);
+                      updateLocalProperty('shadowOffsetY', value);
+                      updateShadowFilters(localElement.id, { shadowOffsetY: value });
+                    }}
+                    min={0}
+                    max={50}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors text-sm"
+                  />
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span className="text-xs font-semibold text-amber-400">Angle (°)</span>
+                  <input
+                    type="number"
+                    value={Math.round(((localElement.shadowAngle || Math.PI / 6) * 180) / Math.PI)}
+                    onChange={e => {
+                      const value = (Number(e.target.value) * Math.PI) / 180;
+                      updateLocalProperty('shadowAngle', value);
+                      updateShadowFilters(localElement.id, { shadowAngle: value });
+                    }}
+                    min={0}
+                    max={360}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors text-sm"
+                  />
+                </label>
+              </div>
+
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-semibold text-amber-400">Opacity</span>
+                <input
+                  type="number"
+                  value={localElement.shadowOpacity || 1}
+                  onChange={e => {
+                    const value = Number(e.target.value);
+                    updateLocalProperty('shadowOpacity', value);
+                    updateShadowFilters(localElement.id, { shadowOpacity: value });
+                  }}
+                  min={0}
+                  max={1}
+                  step={0.1}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors text-sm"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-semibold text-amber-400">Shadow Color</span>
+                <div className="flex relative">
+                  <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-amber-500 outline-1 -outline-offset-1 outline-gray-300">
+                    <div
+                      className="w-4 h-4 rounded border border-gray-300 cursor-pointer hover:scale-110 transition-transform"
+                      style={{ backgroundColor: localElement.shadowColor || '#000000' }}
+                    />
+                  </div>
+                  <input
+                    type="text"
+                    value={(localElement.shadowColor || '#000000').replace('#', '').toUpperCase()}
+                    onChange={e => {
+                      const value = '#' + e.target.value.toUpperCase();
+                      updateLocalProperty('shadowColor', value);
+                      updateShadowFilters(localElement.id, { shadowColor: value });
+                    }}
+                    className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-amber-600 uppercase"
+                    placeholder="000000"
+                  />
+                </div>
+              </label>
+            </div>
+          )}
+        </div>
       </div>
 
 

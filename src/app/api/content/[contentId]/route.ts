@@ -81,7 +81,7 @@ export async function GET(
               elements: [],
               groups: [],
               dimensions: { width: 1920, height: 1080 },
-              canvasSize: { currentSizeId: 'hd' }
+              canvasSize: { currentSizeId: 'fhd' }
             },
             timeline: {
               scale: 1,

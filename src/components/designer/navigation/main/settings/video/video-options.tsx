@@ -25,10 +25,10 @@ export const VideoOptions: React.FC = () => {
 
   const frameRateOptions = [24, 30, 60];
   const qualityOptions = [
-    { value: 'low', label: 'Low (720p)', description: 'Smaller file size' },
-    { value: 'medium', label: 'Medium (1080p)', description: 'Balanced' },
-    { value: 'high', label: 'High (1440p)', description: 'Better quality' },
-    { value: 'ultra', label: 'Ultra (4K)', description: 'Best quality' }
+    { value: 'low', label: 'Low (1080p)', description: 'Smaller file size' },
+    { value: 'medium', label: 'Medium (1440p)', description: 'Balanced' },
+    { value: 'high', label: 'High (4K)', description: 'Better quality' },
+    { value: 'ultra', label: 'Ultra (4K+)', description: 'Best quality' }
   ];
 
   const handleSizeChange = (sizeId: string) => {

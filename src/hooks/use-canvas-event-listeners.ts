@@ -238,16 +238,40 @@ export const useCanvasEventListeners = ({
       }
     };
 
-    // Add event listeners for resize, border radius changes, and control point dragging
+    const handleElementRotationChange = (e: CustomEvent) => {
+      const { id, rotation } = e.detail;
+      
+      const element = elementsRef.current.find(el => el.id === id);
+      if (element) {
+        updateElement(id, { ...element, rotation });
+      }
+    };
+
+    const handleElementShadowUpdate = (e: CustomEvent) => {
+      const { id, shadowProperties } = e.detail;
+      
+      const element = elementsRef.current.find(el => el.id === id);
+      if (element) {
+        // Update the element with new shadow properties
+        const updatedElement = { ...element, ...shadowProperties };
+        updateElement(id, updatedElement);
+      }
+    };
+
+    // Add event listeners for resize, border radius changes, control point dragging, rotation changes, and shadow updates
     window.addEventListener('element-resize', handleElementResize as EventListener);
     window.addEventListener('element-border-radius-change', handleBorderRadiusChange as EventListener);
     window.addEventListener('line-control-point-drag', handleLineControlPointDrag as EventListener);
+    window.addEventListener('element-rotation-change', handleElementRotationChange as EventListener);
+    window.addEventListener('element-shadow-update', handleElementShadowUpdate as EventListener);
 
     // Clean up the event listeners when component unmounts
     return () => {
       window.removeEventListener('element-resize', handleElementResize as EventListener);
       window.removeEventListener('element-border-radius-change', handleBorderRadiusChange as EventListener);
       window.removeEventListener('line-control-point-drag', handleLineControlPointDrag as EventListener);
+      window.removeEventListener('element-rotation-change', handleElementRotationChange as EventListener);
+      window.removeEventListener('element-shadow-update', handleElementShadowUpdate as EventListener);
     };
   }, [gsapManager, updateAnimationsForPathElement, updateElement]);
 

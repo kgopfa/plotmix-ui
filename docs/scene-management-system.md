@@ -278,7 +278,7 @@ private saveCurrentSceneToCache(): void {
       elements: canvasState.elements,
       groups: canvasState.groups,
       dimensions: { width: 1920, height: 1080 },
-      canvasSize: { currentSizeId: "hd" }
+      canvasSize: { currentSizeId: "fhd" }
     },
     timeline: {
       scale: timelineState.ui.scale,

@@ -229,13 +229,11 @@ const defaultSnappingState: SnappingState = {
 };
 
 const defaultCanvasState: CanvasState = {
-  currentSizeId: 'hd',
+  currentSizeId: 'fhd',
   availableSizes: [
-    { id: 'hd', name: 'HD (720p)', width: 1280, height: 720, aspectRatio: '16:9' },
     { id: 'fhd', name: 'Full HD (1080p)', width: 1920, height: 1080, aspectRatio: '16:9' },
-    { id: '4k', name: '4K UHD', width: 3840, height: 2160, aspectRatio: '16:9' },
     { id: '2k', name: '2K (1440p)', width: 2560, height: 1440, aspectRatio: '16:9' },
-    { id: 'sd', name: 'SD (480p)', width: 854, height: 480, aspectRatio: '16:9' },
+    { id: '4k', name: '4K UHD', width: 3840, height: 2160, aspectRatio: '16:9' },
   ],
   customSize: null,
 };
