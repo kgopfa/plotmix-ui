@@ -14,8 +14,7 @@ import {
 } from 'lucide-react'
 import { SnappingOptions } from './snapping/snap-options';
 import { VideoOptions } from './video/video-options';
-import { useGridSnapping } from '@/hooks/use-grid-snapping';
-import { useElementSnapping } from '@/hooks/use-element-snapping';
+import { useSnappingState, useSnappingActions } from '@/stores/use-ui-store';
 
 // Settings navigation configuration
 const settingsNavigation = [
@@ -34,36 +33,14 @@ export const SettingsDropdown: React.FC = () => {
   const [hoveredSettingsItem, setHoveredSettingsItem] = useState<string | null>(null);
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
 
-  // Grid snapping hook
+  // Use UI store snapping state instead of local hooks
+  const snappingState = useSnappingState();
+  const { gridConfig, elementSnapConfig, isGridSnapTemporarilyDisabled, isElementSnapTemporarilyDisabled } = snappingState;
+  
   const {
-    gridConfig,
-    setGridConfig,
-    toggleGrid,
-    toggleSnapEnabled,
-    isSnapTemporarilyDisabled
-  } = useGridSnapping({
-    size: 10,
-    enabled: true,
-    visible: false,
-    snapThreshold: 8
-  });
-
-  // Element snapping hook
-  const {
-    config: elementSnapConfig,
-    setConfig: setElementSnapConfig,
-    toggleEnabled: toggleElementSnap,
-    toggleGuides: toggleElementSnapGuides,
-    toggleSpacing: toggleElementSpacing,
-    toggleDistribution: toggleElementDistribution,
-    isSnapTemporarilyDisabled: isElementSnapDisabled
-  } = useElementSnapping({
-    enabled: true,
-    snapThreshold: 10,
-    showGuides: true,
-    enableSpacing: true,
-    enableDistribution: true
-  });
+    updateGridConfig,
+    updateElementSnapConfig
+  } = useSnappingActions();
 
   const handleSettingsClick = (settingName: string) => {
     setCurrentSettingsItem(settingName);
@@ -170,17 +147,17 @@ export const SettingsDropdown: React.FC = () => {
           <div className="relative z-50">
             <SnappingOptions
               gridConfig={gridConfig}
-              onToggleGrid={toggleGrid}
-              onToggleGridSnap={toggleSnapEnabled}
-              onGridSizeChange={(size: number) => setGridConfig({ size })}
+              onToggleGrid={() => updateGridConfig({ visible: !gridConfig.visible })}
+              onToggleGridSnap={() => updateGridConfig({ enabled: !gridConfig.enabled })}
+              onGridSizeChange={(size: number) => updateGridConfig({ size })}
               elementSnapConfig={elementSnapConfig}
-              onToggleElementSnap={toggleElementSnap}
-              onToggleGuides={toggleElementSnapGuides}
-              onToggleSpacing={toggleElementSpacing}
-              onToggleDistribution={toggleElementDistribution}
-              onSnapThresholdChange={(threshold: number) => setElementSnapConfig({ snapThreshold: threshold })}
-              isGridSnapTemporarilyDisabled={isSnapTemporarilyDisabled}
-              isElementSnapTemporarilyDisabled={isElementSnapDisabled}
+              onToggleElementSnap={() => updateElementSnapConfig({ enabled: !elementSnapConfig.enabled })}
+              onToggleGuides={() => updateElementSnapConfig({ showGuides: !elementSnapConfig.showGuides })}
+              onToggleSpacing={() => updateElementSnapConfig({ enableSpacing: !elementSnapConfig.enableSpacing })}
+              onToggleDistribution={() => updateElementSnapConfig({ enableDistribution: !elementSnapConfig.enableDistribution })}
+              onSnapThresholdChange={(threshold: number) => updateElementSnapConfig({ snapThreshold: threshold })}
+              isGridSnapTemporarilyDisabled={isGridSnapTemporarilyDisabled}
+              isElementSnapTemporarilyDisabled={isElementSnapTemporarilyDisabled}
             />
           </div>
         </div>

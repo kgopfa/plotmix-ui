@@ -155,6 +155,7 @@ export default function Designer() {
     snapThreshold: elementSnapConfig.snapThreshold
   });
 
+  // Use UI store snapping state instead of local hooks
   const {
     snapElement,
     currentGuides,
@@ -175,13 +176,13 @@ export default function Designer() {
     }
   });
 
-  // Grid snapping functionality - DISABLED to prevent jittering
+  // Grid snapping functionality - use UI store state
   const {
     snapPoint,
     isSnapTemporarilyDisabled: isGridSnapDisabled
   } = useGridSnapping({
     size: uiGridConfig.size,
-    enabled: false, // Disabled to prevent jittering
+    enabled: uiGridConfig.enabled, // Use UI store state instead of hardcoded false
     visible: uiGridConfig.visible,
     snapThreshold: uiGridConfig.snapThreshold
   });
