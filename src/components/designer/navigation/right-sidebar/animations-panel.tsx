@@ -2,8 +2,8 @@ import React, { useEffect } from 'react';
 import { AnimatedCanvasObject, ElementAnimation } from '@/types/canvas';
 import { AnimationsTab } from './tabs/animations';
 import { useSelectionStore } from '@/stores/use-selection-store';
+import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useAnimationHandlers } from '@/hooks/use-animation-handlers';
-
 
 interface AnimationsPanelProps {
   onInspectorChange: (
@@ -32,6 +32,7 @@ export const AnimationsPanel: React.FC<AnimationsPanelProps> = ({
 }) => {
   const { selectedElements, selectedGroups, getFirstSelected } =
     useSelectionStore();
+  const canvasStore = useCanvasStore();
   const selectedElement = getFirstSelected();
   const selectedGroup = selectedGroups[0] || null;
   const selectedElementsCount = selectedElements.length;
@@ -47,6 +48,20 @@ export const AnimationsPanel: React.FC<AnimationsPanelProps> = ({
     selectedElement,
     onInspectorChange
   );
+
+  // Get the actual animations from the store (most current data)
+  const getCurrentAnimations = (): ElementAnimation[] => {
+    if (hasGroupSelection && selectedGroup) {
+      // Get the latest group data from the store
+      const storeGroup = canvasStore.getGroupById(selectedGroup.id);
+      return storeGroup?.animations || [];
+    } else if (hasIndividualElement && selectedElement) {
+      // Get the latest element data from the store
+      const storeElement = canvasStore.getElementById(selectedElement.id);
+      return storeElement?.animations || [];
+    }
+    return [];
+  };
 
   // Ensure GSAP timeline is built when the animations panel opens
   useEffect(() => {
@@ -70,14 +85,14 @@ export const AnimationsPanel: React.FC<AnimationsPanelProps> = ({
       {hasGroupSelection ? (
         <AnimationsTab
           selectedGroup={selectedGroup!}
-          localAnimations={[]} // Empty array since AnimationsTab gets data from store
+          localAnimations={getCurrentAnimations()}
           onEnterPathMode={handleEnterPathMode}
           onGroupInspectorChange={onGroupInspectorChange}
         />
       ) : hasIndividualElement ? (
         <AnimationsTab
           selectedElement={selectedElement!}
-          localAnimations={[]} // Empty array since AnimationsTab gets data from store
+          localAnimations={getCurrentAnimations()}
           onEnterPathMode={handleEnterPathMode}
         />
       ) : (
