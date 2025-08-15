@@ -43,8 +43,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
 
       if (!response.ok) {
-        // Session is invalid, logout the user
-        await signOut({ redirect: false })
+        // Session is invalid, logout the user and redirect to login
+        await signOut({ redirect: true, callbackUrl: '/login' })
         return false
       }
 
