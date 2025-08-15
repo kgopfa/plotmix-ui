@@ -86,6 +86,7 @@ interface TimelineStoreActions {
   pause: () => void;
   stop: () => void;
   seek: (time: number) => void;
+  seekToTime: (time: number) => void;
   setPlaybackSpeed: (speed: number) => void;
   
   // Timeline data management
@@ -261,11 +262,48 @@ export const useTimelineStore = create<TimelineStore>()(
 
       seek: (time: number) => {
         const { gsapManager } = get();
+        const clampedTime = Math.max(0, Math.min(time, get().playback.totalDuration));
+        
         set(produce((state) => {
-          state.playback.currentTime = Math.max(0, Math.min(time, state.playback.totalDuration));
+          state.playback.currentTime = clampedTime;
         }));
         
-        gsapManager.updateTime(time);
+        // Use the robust seek method for all time updates to ensure proper visual state
+        gsapManager.seekToTime(clampedTime);
+        
+        // If seeking to time 0, ensure we're in a stopped state
+        if (clampedTime === 0) {
+          set(produce((state) => {
+            state.playback.isPlaying = false;
+            state.playback.isPaused = false;
+            state.playback.isStopped = true;
+          }));
+        }
+      },
+
+      /**
+       * Seek to a specific time with proper visual state synchronization
+       * This method ensures that all animated elements are in their correct state for the given time
+       */
+      seekToTime: (time: number) => {
+        const { gsapManager } = get();
+        const clampedTime = Math.max(0, Math.min(time, get().playback.totalDuration));
+        
+        set(produce((state) => {
+          state.playback.currentTime = clampedTime;
+        }));
+        
+        // Use the robust seek method for all time updates to ensure proper visual state
+        gsapManager.seekToTime(clampedTime);
+        
+        // If seeking to time 0, ensure we're in a stopped state
+        if (clampedTime === 0) {
+          set(produce((state) => {
+            state.playback.isPlaying = false;
+            state.playback.isPaused = false;
+            state.playback.isStopped = true;
+          }));
+        }
       },
 
       setPlaybackSpeed: (speed: number) => {
@@ -1015,6 +1053,7 @@ export const useTimelinePlayback = () => {
     pause: state.pause,
     stop: state.stop,
     seek: state.seek,
+    seekToTime: state.seekToTime,
     setPlaybackSpeed: state.setPlaybackSpeed,
   })));
 };
@@ -1032,6 +1071,7 @@ export const useTimelineUI = () => {
     toggleSnapToGrid: state.toggleSnapToGrid,
     setGridSize: state.setGridSize,
     clearSelection: state.clearSelection,
+    seekToTime: state.seekToTime,
   })));
 };
 
@@ -1046,17 +1086,21 @@ export const useTimelineTracks = () => {
     getTrackById: state.getTrackById,
     getTrackDuration: state.getTrackDuration,
     getTotalDuration: state.getTotalDuration,
+    seekToTime: state.seekToTime,
   })));
 };
 
 export const useTimelineAnimations = () => {
-  return useTimelineStore(useShallow((state) => ({
-    addAnimation: state.addAnimation,
-    updateAnimation: state.updateAnimation,
-    removeAnimation: state.removeAnimation,
-    duplicateAnimation: state.duplicateAnimation,
-    getAnimationById: state.getAnimationById,
-  })));
+  return useTimelineStore(useShallow((state) => {
+    return {
+      addAnimation: state.addAnimation,
+      updateAnimation: state.updateAnimation,
+      removeAnimation: state.removeAnimation,
+      duplicateAnimation: state.duplicateAnimation,
+      getAnimationById: state.getAnimationById,
+      seekToTime: state.seekToTime,
+    };
+  }));
 };
 
 export const useTimelineSync = () => {
@@ -1065,6 +1109,7 @@ export const useTimelineSync = () => {
     cleanupSubscriptions: state.cleanupSubscriptions,
     buildGSAPTimeline: state.buildGSAPTimeline,
     syncWithTimeManager: state.syncWithTimeManager,
+    seekToTime: state.seekToTime,
     isLoading: state.isLoading,
     error: state.error,
   })));
@@ -1077,5 +1122,6 @@ export const useTimelineOperations = () => {
     resetTimeline: state.resetTimeline,
     getTimeAtPosition: state.getTimeAtPosition,
     getPositionAtTime: state.getPositionAtTime,
+    seekToTime: state.seekToTime,
   })));
 };
