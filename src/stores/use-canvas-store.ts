@@ -229,6 +229,17 @@ export const useCanvasStore = create<CanvasStore>()(
         clearSelections();
       }
       
+      // Force a full project save to ensure the deleted element is persisted
+      try {
+        const projectStore = useProjectStore.getState();
+        if (projectStore.projectId) {
+          // Trigger a full save instead of incremental autosave
+          projectStore.forceFullSave();
+        }
+      } catch (error) {
+        console.warn('Could not trigger full save after element deletion:', error);
+      }
+      
       // Notify subscribers
       notifySubscribers({ elements: get().elements, groups: get().groups });
     },
@@ -501,6 +512,17 @@ export const useCanvasStore = create<CanvasStore>()(
         // If the deleted group was selected, clear all selections
         // This ensures the properties panel is hidden when groups are deleted
         clearSelections();
+      }
+      
+      // Force a full project save to ensure the deleted group is persisted
+      try {
+        const projectStore = useProjectStore.getState();
+        if (projectStore.projectId) {
+          // Trigger a full save instead of incremental autosave
+          projectStore.forceFullSave();
+        }
+      } catch (error) {
+        console.warn('Could not trigger full save after group deletion:', error);
       }
       
       // Notify subscribers

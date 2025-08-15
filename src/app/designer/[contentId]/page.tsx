@@ -7,6 +7,7 @@ import { apiClient } from '@/lib/api-client';
 import { useProjectStore } from '@/stores/use-project-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useTimelineStore } from '@/stores/use-timeline-store';
+import type { AnimationState } from '@/types/project';
 
 export default function DesignerPage() {
   const params = useParams();
@@ -17,7 +18,7 @@ export default function DesignerPage() {
     const init = async () => {
       if (!contentId) return;
       try {
-        const res = await apiClient.get<any>(`/api/projects/${contentId}`);
+        const res = await apiClient.get<{ data: { project: { id: string; name: string; title?: string; version: string; mainState?: unknown } } }>(`/api/projects/${contentId}`);
         const project = res.data.project;
         setProjectInfo({
           projectId: project.id,
@@ -25,7 +26,8 @@ export default function DesignerPage() {
           title: project.title,
           version: project.version,
         });
-        const mainState = (project.mainState as any) || {};
+        
+        const mainState = (project.mainState as { elements?: unknown[]; groups?: unknown[]; timeline?: unknown }) || {};
         setBaseline(mainState);
         captureBaseline();
 
@@ -36,20 +38,20 @@ export default function DesignerPage() {
         const rawGroups = Array.isArray(mainState.groups) ? mainState.groups : [];
 
         // Sanitize to ensure required fields exist
-        const sanitizedElements = rawElements.map((el: any) => ({
-          animations: Array.isArray(el?.animations) ? el.animations : [],
-          fill: typeof el?.fill === 'string' && el.fill ? el.fill : '#000000',
-          ...el,
+        const sanitizedElements = rawElements.map((el: unknown) => ({
+          animations: Array.isArray((el as any)?.animations) ? (el as any).animations : [],
+          fill: typeof (el as any)?.fill === 'string' && (el as any).fill ? (el as any).fill : '#000000',
+          ...(el as any),
         }));
         // Dedupe by id
         const elements = Array.from(
           new Map(sanitizedElements.map((e: any) => [e.id as string, e])).values()
         ) as import('@/types/canvas').AnimatedCanvasObject[];
 
-        const sanitizedGroups = rawGroups.map((g: any) => ({
-          animations: Array.isArray(g?.animations) ? g.animations : [],
-          elementIds: Array.isArray(g?.elementIds) ? g.elementIds : [],
-          ...g,
+        const sanitizedGroups = rawGroups.map((g: unknown) => ({
+          animations: Array.isArray((g as any)?.animations) ? (g as any).animations : [],
+          elementIds: Array.isArray((g as any)?.elementIds) ? (g as any).elementIds : [],
+          ...(g as any),
         }));
         const groups = Array.from(
           new Map(sanitizedGroups.map((g: any) => [g.id as string, g])).values()
@@ -58,11 +60,11 @@ export default function DesignerPage() {
         canvasStore.setElements(elements);
         canvasStore.setGroups(groups);
 
-        const timeline = mainState.timeline || {};
+        const timeline = (mainState.timeline as { animationStates?: unknown; scale?: number; duration?: number; currentTime?: number }) || {};
         timelineStore.loadProjectData({
           elements,
           groups,
-          animationStates: timeline.animationStates || {},
+          animationStates: (timeline.animationStates as Record<string, AnimationState>) || {},
           scale: typeof timeline.scale === 'number' ? timeline.scale : 1,
           duration: typeof timeline.duration === 'number' ? timeline.duration : 10,
           currentTime: typeof timeline.currentTime === 'number' ? timeline.currentTime : 0,

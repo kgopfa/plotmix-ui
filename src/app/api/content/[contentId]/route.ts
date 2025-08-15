@@ -5,8 +5,9 @@ import { ChatResponse } from '@/types/project-generation';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { contentId: string } }
+  { params }: { params: Promise<{ contentId: string }> }
 ) {
+  const { contentId } = await params;
   try {
     // Check authentication
     const session = await getServerSession(authOptions);
@@ -14,7 +15,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { contentId } = params;
+
 
     if (!contentId) {
       return NextResponse.json({ error: 'Content ID is required' }, { status: 400 });

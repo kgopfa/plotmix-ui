@@ -33,6 +33,7 @@ interface ProjectStoreActions {
   persistIfDirty: (actionDescription?: string) => Promise<boolean>;
   scheduleAutosave: () => void;
   setAutosaveDelay: (ms: number) => void;
+  forceFullSave: () => Promise<boolean>;
 }
 
 type ProjectStore = ProjectStoreState & ProjectStoreActions;
@@ -195,6 +196,36 @@ export const useProjectStore = create<ProjectStore>()(
       set(produce((state: ProjectStore) => {
         state.autosaveDelayMs = Math.max(300, Math.min(ms, 10000));
       }));
+    },
+
+    // Force a full project save (bypasses incremental changes)
+    forceFullSave: async () => {
+      const { projectId } = get();
+      if (!projectId) return false;
+      
+      try {
+        set(produce((state: ProjectStore) => { state.saveStatus = 'saving'; }));
+        
+        const current = get().getCurrentMainState();
+        const response = await apiClient.put<any>(`/api/projects/${projectId}`, { mainState: current });
+        
+        // Update baseline and version
+        get().captureBaseline();
+        set(produce((state: ProjectStore) => {
+          state.version = response.data.project.version;
+          state.saveStatus = 'success';
+        }));
+        
+        console.log('Full project save completed after group deletion');
+        return true;
+      } catch (e) {
+        console.error('Full project save failed', e);
+        set(produce((state: ProjectStore) => { state.saveStatus = 'error'; }));
+        setTimeout(() => {
+          set(produce((state: ProjectStore) => { state.saveStatus = 'idle'; }));
+        }, 2000);
+        return false;
+      }
     },
   })
 );
