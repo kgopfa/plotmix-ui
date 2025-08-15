@@ -27,7 +27,7 @@ const ElementSelect: React.FC<ElementSelectProps> = ({
     // For line type, draw custom selection outline
     if (element.type === 'line' && element.lineOptions?.points) {
       const { start, end } = element.lineOptions.points;
-      const { controlPoint } = element.lineOptions;
+      const { controlPoint, isCurved } = element.lineOptions;
       const startX = start.x - element.x;
       const startY = start.y - element.y;
       const endX = end.x - element.x;
@@ -36,28 +36,38 @@ const ElementSelect: React.FC<ElementSelectProps> = ({
       const ENDPOINT_SIZE = 7;
       const halfSize = ENDPOINT_SIZE / 2;
       
-      // Calculate line bounding box (including control point - lines are always curved)
+      // Calculate line bounding box
       let minX = Math.min(startX, endX);
       let maxX = Math.max(startX, endX);
       let minY = Math.min(startY, endY);
       let maxY = Math.max(startY, endY);
       
-      // Always include control point in bounding box calculation
-      const controlX = controlPoint!.x - element.x;
-      const controlY = controlPoint!.y - element.y;
-      minX = Math.min(minX, controlX);
-      maxX = Math.max(maxX, controlX);
-      minY = Math.min(minY, controlY);
-      maxY = Math.max(maxY, controlY);
+      // Include control point in bounding box calculation if it exists
+      if (isCurved && controlPoint) {
+        const controlX = controlPoint.x - element.x;
+        const controlY = controlPoint.y - element.y;
+        minX = Math.min(minX, controlX);
+        maxX = Math.max(maxX, controlX);
+        minY = Math.min(minY, controlY);
+        maxY = Math.max(maxY, controlY);
+      }
 
-      // Draw selection rectangle around the line (without extending to handles)
+      // Draw selection rectangle around the line
       g.rect(minX, minY, maxX - minX, maxY - minY);
       g.stroke({ width: 1, color: 0x74b9ff, alpha: 0.8 });
 
-      // Draw the actual line for visual reference (always curved)
-      g.moveTo(startX, startY);
-      g.quadraticCurveTo(controlX, controlY, endX, endY);
-      g.stroke({ width: 1, color: 0x74b9ff, alpha: 0.8 });
+      // Draw the actual line for visual reference
+      if (isCurved && controlPoint) {
+        // Draw curved line
+        g.moveTo(startX, startY);
+        g.quadraticCurveTo(controlPoint.x - element.x, controlPoint.y - element.y, endX, endY);
+        g.stroke({ width: 1, color: 0x74b9ff, alpha: 0.8 });
+      } else {
+        // Draw straight line
+        g.moveTo(startX, startY);
+        g.lineTo(endX, endY);
+        g.stroke({ width: 1, color: 0x74b9ff, alpha: 0.8 });
+      }
 
       // Draw endpoint markers (square handles like resize handles) - positioned to extend outside the selection rectangle
       // Start point - square handle
@@ -70,18 +80,22 @@ const ElementSelect: React.FC<ElementSelectProps> = ({
       g.fill({ color: 0xFFFFFF, alpha: 1 });
       g.stroke({ color: 0x74b9ff, width: 1, alpha: 0.8 });
 
-      // Draw control point marker (lines are always curved)
-      const CONTROL_SIZE = 6;
-      const controlHalfSize = CONTROL_SIZE / 2;
-      
-      // Diamond shape for control point
-      g.moveTo(controlX, controlY - controlHalfSize);
-      g.lineTo(controlX + controlHalfSize, controlY);
-      g.lineTo(controlX, controlY + controlHalfSize);
-      g.lineTo(controlX - controlHalfSize, controlY);
-      g.closePath();
-      g.fill({ color: 0x4CAF50, alpha: 0.9 }); // Green fill
-      g.stroke({ color: 0x2E7D32, width: 1, alpha: 1 }); // Darker green border
+      // Draw control point marker only for curved lines
+      if (isCurved && controlPoint) {
+        const CONTROL_SIZE = 6;
+        const controlHalfSize = CONTROL_SIZE / 2;
+        const controlX = controlPoint.x - element.x;
+        const controlY = controlPoint.y - element.y;
+        
+        // Diamond shape for control point
+        g.moveTo(controlX, controlY - controlHalfSize);
+        g.lineTo(controlX + controlHalfSize, controlY);
+        g.lineTo(controlX, controlY + controlHalfSize);
+        g.lineTo(controlX - controlHalfSize, controlY);
+        g.closePath();
+        g.fill({ color: 0x4CAF50, alpha: 0.9 }); // Green fill
+        g.stroke({ color: 0x2E7D32, width: 1, alpha: 1 }); // Darker green border
+      }
 
       return; // Exit early for line elements
     }
