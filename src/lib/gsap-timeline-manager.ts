@@ -1309,39 +1309,11 @@ GSAP Timeline Manager Performance Report:
         return;
       }
 
-      // Pause the timeline first
-      this.timeline.pause();
-      
-      // For time 0 (stop), ensure we're completely reset
-      if (time === 0) {
-        // Force GSAP to recalculate and apply all animation states at time 0
-        this.timeline.invalidate().restart();
-        this.timeline.pause();
-        this.timeline.time(0);
-        
-        // Ensure all child tweens are at their initial state
-        this.timeline.getChildren().forEach(child => {
-          child.progress(0);
-        });
-      } else {
-        // For other times, set the timeline to the exact time
-        this.timeline.time(time);
-        
-        // Force GSAP to recalculate and apply all animation states at this time
-        // This is crucial for ensuring visual elements are properly positioned
-        this.timeline.invalidate().restart();
-        this.timeline.pause();
-        this.timeline.time(time);
-        
-        // Additional step: ensure all child tweens are properly updated
-        this.timeline.getChildren().forEach(child => {
-          if (child.time() > time) {
-            // For tweens that haven't started yet, ensure they're at their initial state
-            child.progress(0);
-          }
-        });
-      }
-      
+      // Use pause(time, false) so callbacks/onUpdate fire during the move.
+      // This is critical for proxy-driven animations (e.g., motionPath) to reflect the correct visual state.
+      const clamped = Math.max(0, Math.min(time, this.timeline.duration()));
+      this.timeline.pause(clamped, false);
+
     } catch (error) {
       console.warn('⚠️ Error seeking to time:', time, error);
       this.clearTimeline();
@@ -1364,14 +1336,6 @@ GSAP Timeline Manager Performance Report:
     // Use the robust seekToTime method to ensure proper reset to initial state
     this.seekToTime(0);
   }
-
-
-
-
-
-
-
-
 
   clearTimeline() {
     this.timeline.kill();
