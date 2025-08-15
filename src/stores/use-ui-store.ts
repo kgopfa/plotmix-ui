@@ -193,7 +193,7 @@ const defaultPanelState: PanelState = {
   leftPanelVisible: true,
   rightPanelVisible: true,
   leftPanelWidth: 384,
-  rightPanelWidth: 320,
+  rightPanelWidth: 384,
   timelineHeight: 240,
   isTimelineCollapsed: true,
   isResizing: null,

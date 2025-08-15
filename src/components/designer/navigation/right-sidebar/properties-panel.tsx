@@ -47,7 +47,8 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   }
 
   return (
-    <div className="h-full overflow-y-auto p-2 text-gray-800 pb-80">
+    <div className="h-full w-full bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
+      <div className="flex-1 overflow-y-auto p-4 text-gray-800">
       {hasGroupSelection ? (
         <GroupPropertiesTab
           selectedGroup={selectedGroup!}
@@ -66,6 +67,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }; 
