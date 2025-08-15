@@ -302,7 +302,7 @@ export const drawLine = (
       drawSmoothCurve(graphics, start, controlPoint, end, color, width, alpha);
     }
   } else {
-    // Straight line - clear and draw a simple line
+    // True straight line - clear and draw a simple line using lineTo
     graphics
       .clear()
       .moveTo(start.x, start.y)
@@ -389,14 +389,14 @@ function drawElement(graphics: Graphics, shape: AnimatedCanvasObject) {
         const endY = smoothLinePosition(end.y - shape.y);
         
         if (isCurved && controlPoint) {
-          // Draw curved line
+          // Draw curved line using bezier curves
           const controlX = smoothLinePosition(controlPoint.x - shape.x);
           const controlY = smoothLinePosition(controlPoint.y - shape.y);
           graphics
             .moveTo(startX, startY)
             .quadraticCurveTo(controlX, controlY, endX, endY);
         } else {
-          // Draw straight line
+          // Draw true straight line using lineTo
           graphics
             .moveTo(startX, startY)
             .lineTo(endX, endY);
@@ -435,7 +435,7 @@ function drawShapeAsPath(graphics: Graphics, shape: AnimatedCanvasObject) {
       const { controlPoint, isCurved } = shape.lineOptions;
       
       if (isCurved && controlPoint) {
-        // Draw curved line
+        // Draw curved line using bezier curves
         const controlX = controlPoint.x - shape.x;
         const controlY = controlPoint.y - shape.y;
         
@@ -450,7 +450,7 @@ function drawShapeAsPath(graphics: Graphics, shape: AnimatedCanvasObject) {
           dashLine.lineTo(x, y);
         }
       } else {
-        // Draw straight line
+        // Draw true straight line using lineTo
         dashLine.moveTo(start.x - shape.x, start.y - shape.y);
         dashLine.lineTo(end.x - shape.x, end.y - shape.y);
       }

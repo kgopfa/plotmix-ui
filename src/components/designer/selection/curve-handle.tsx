@@ -46,17 +46,18 @@ const CurveHandle: React.FC<CurveHandleProps> = ({ element, onControlPointDrag }
     document.addEventListener('pointerup', handlePointerUp);
   }, [element.lineOptions, onControlPointDrag]);
 
-  // Show for all line elements
-  if (element.type !== 'line' || !element.lineOptions?.points) {
+  // Show only for curved line elements
+  if (element.type !== 'line' || !element.lineOptions?.points || !element.lineOptions.isCurved) {
     return null;
   }
 
-  // Calculate midpoint as control point (either existing or default)
-  const { start, end } = element.lineOptions.points;
-  const controlPoint = element.lineOptions.controlPoint || {
-    x: (start.x + end.x) / 2,
-    y: (start.y + end.y) / 2
-  };
+  // For curved lines, we need a control point
+  const controlPoint = element.lineOptions.controlPoint;
+  
+  // If no control point exists for a curved line, don't show the handle
+  if (!controlPoint) {
+    return null;
+  }
   
   const controlX = controlPoint.x - element.x;
   const controlY = controlPoint.y - element.y;

@@ -58,12 +58,12 @@ const ElementSelect: React.FC<ElementSelectProps> = ({
 
       // Draw the actual line for visual reference
       if (isCurved && controlPoint) {
-        // Draw curved line
+        // Draw curved line using bezier curves
         g.moveTo(startX, startY);
         g.quadraticCurveTo(controlPoint.x - element.x, controlPoint.y - element.y, endX, endY);
         g.stroke({ width: 1, color: 0x74b9ff, alpha: 0.8 });
       } else {
-        // Draw straight line
+        // Draw true straight line using lineTo
         g.moveTo(startX, startY);
         g.lineTo(endX, endY);
         g.stroke({ width: 1, color: 0x74b9ff, alpha: 0.8 });

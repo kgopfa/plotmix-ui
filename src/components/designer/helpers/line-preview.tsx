@@ -160,7 +160,7 @@ export const LinePreview: React.FC<LinePreviewProps> = ({
             }
           }
         } else {
-          // Draw straight preview line
+          // Draw true straight preview line using lineTo
           const dx = snapToPoint.x - lineStartPoint.x;
           const dy = snapToPoint.y - lineStartPoint.y;
           const distance = Math.sqrt(dx * dx + dy * dy);

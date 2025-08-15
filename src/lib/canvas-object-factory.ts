@@ -193,8 +193,8 @@ function createLine(props: BaseObjectProps & { startPoint?: { x: number; y: numb
   // Determine if line should be curved based on props or default to curved
   const isCurved = props.lineType !== 'straight';
   
-  // Calculate control point for curved line (midpoint)
-  // For straight lines, we don't need a control point
+  // For straight lines, no control point is needed
+  // For curved lines, use the current bezier implementation
   const controlPoint = isCurved ? {
     x: (startPoint.x + endPoint.x) / 2,
     y: (startPoint.y + endPoint.y) / 2
