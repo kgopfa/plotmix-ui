@@ -76,7 +76,8 @@ export function AnimationsTab({
       return;
     }
 
-    const animationsChanged = animations.length > 0 || localAnimations.length !== animations.length;
+    // Only sync when local animations actually differ from incoming props
+    const animationsChanged = JSON.stringify(animations) !== JSON.stringify(localAnimations);
     
     if (animationsChanged) {
       isSyncingRef.current = true;
