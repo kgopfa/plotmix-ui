@@ -1,4 +1,5 @@
 import { ElementAnimation } from '@/types/canvas';
+import { MAX_SCENE_DURATION } from '@/types/project';
 
 /**
  * Calculate the effective total duration of an animation including repeats
@@ -111,4 +112,22 @@ export function updateAnimationDisplayNames(animations: ElementAnimation[]): Ele
       displayName: `${baseType}-${typeCounts[baseType]}`
     };
   });
+} 
+
+/**
+ * Validates and clamps scene duration to valid bounds
+ * @param duration - Duration in seconds
+ * @returns Clamped duration between 1 and MAX_SCENE_DURATION
+ */
+export function clampSceneDuration(duration: number): number {
+  return Math.max(1, Math.min(MAX_SCENE_DURATION, duration));
+}
+
+/**
+ * Checks if a duration is within valid scene bounds
+ * @param duration - Duration in seconds
+ * @returns True if duration is valid
+ */
+export function isValidSceneDuration(duration: number): boolean {
+  return duration >= 1 && duration <= MAX_SCENE_DURATION;
 } 

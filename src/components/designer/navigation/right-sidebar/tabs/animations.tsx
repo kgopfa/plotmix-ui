@@ -3,12 +3,13 @@ import {
   ElementAnimation,
   CanvasGroup
 } from '@/types/canvas';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
 import { useTimelineStore } from '@/stores/use-timeline-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
+import { useSelectionStore } from '@/stores/use-selection-store';
 import { AnimationCard } from './animation-card';
-import { generateAnimationDisplayName, updateAnimationDisplayNames } from '@/utils/animation-utils';
+import { generateAnimationDisplayName } from '@/utils/animation-utils';
 import { X } from 'lucide-react';
 import { useSetActiveRightPanel } from '@/stores/use-ui-store';
 
@@ -31,11 +32,19 @@ export function AnimationsTab({
   onEnterPathMode,
   onGroupInspectorChange
 }: AnimationsTabProps) {
-  // Local state is the single source of truth for this component
-  const [animations, setAnimations] = useState<ElementAnimation[]>(localAnimations);
+  // Remove local state entirely and use store selectors
+  const selectedElementFromStore = useSelectionStore(state => state.selectedElements[0]);
+  const selectedGroupFromStore = useSelectionStore(state => state.selectedGroups[0]);
+  
+  // Use the actual selected element/group from store, fallback to props if needed
+  const actualSelectedElement = selectedElementFromStore || selectedElement;
+  const actualSelectedGroup = selectedGroupFromStore || selectedGroup;
+  
+  // Get animations directly from store
+  const animations = actualSelectedGroup?.animations || actualSelectedElement?.animations || [];
+  
   const [selectedAnimationId, setSelectedAnimationId] = useState<string | null>(null);
   const animationSelectionManager = AnimationSelectionManager.getInstance();
-  const isSyncingRef = useRef(false);
   const setActiveRightPanel = useSetActiveRightPanel();
 
   // Get stores for direct updates
@@ -43,75 +52,20 @@ export function AnimationsTab({
   const { updateAnimationDuration, updateAnimationRepeat, updateTracks, buildGSAPTimeline } = useTimelineStore();
 
   // Determine the current selection type and ID
-  const currentSelection = selectedGroup || selectedElement;
+  const currentSelection = actualSelectedGroup || actualSelectedElement;
   const selectionId = currentSelection?.id;
 
-  // Sync local state when props change (initial load or element/group switch)
+  // Ensure GSAP timeline is built when the animations panel opens
   useEffect(() => {
-    // Migrate existing animations to include displayName if missing
-    const migratedAnimations = localAnimations.map(animation => {
-      if (!animation.displayName) {
-        return {
-          ...animation,
-          displayName: generateAnimationDisplayName(animation.type, localAnimations)
-        };
-      }
-      return animation;
-    });
-    
-    // Update display names to ensure proper sequential numbering
-    const updatedAnimations = updateAnimationDisplayNames(migratedAnimations);
-    
-    setAnimations(updatedAnimations);
-  }, [localAnimations, localAnimations.length, selectionId]); // Reset when element/group changes
-
-  // Auto-rebuild timeline when animations change
-  useEffect(() => {
-    // Prevent infinite loop by checking if we're already syncing
-    if (isSyncingRef.current) {
-      return;
-    }
-
-    const animationsChanged = animations.length > 0 || localAnimations.length !== animations.length;
-    
-    if (animationsChanged) {
-      isSyncingRef.current = true;
-
-      // Update Canvas Store first based on selection type
-      if (selectedGroup) {
-        // For groups, use the group inspector change handler
-        if (onGroupInspectorChange) {
-          onGroupInspectorChange(selectedGroup.id, 'animations', animations);
-        }
-      } else if (selectedElement) {
-        // For elements, update directly in canvas store
-        canvasStore.updateElement(selectedElement.id, { animations });
-      }
-
-      // Force Timeline Store to sync with Canvas Store
-      const canvasElements = canvasStore.getAllElements();
-      const canvasGroups = canvasStore.getAllGroups();
-      const timelineStore = useTimelineStore.getState();
-
-      // Update Timeline Store with latest data
-      timelineStore.setElements(canvasElements);
-      timelineStore.setGroups(canvasGroups);
-
-      // Force clear Enhanced Timeline Manager cache to ensure rebuild
-      timelineStore.gsapManager.forceClearCache();
-
-      // Rebuild timeline
-      setTimeout(() => {
-        updateTracks();
-        buildGSAPTimeline();
-        // Reset sync flag after a short delay to allow for any subsequent updates
-        setTimeout(() => {
-          isSyncingRef.current = false;
-        }, 100);
-      }, 0);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [animations, selectionId, selectedGroup, selectedElement, canvasStore, updateTracks, buildGSAPTimeline, onGroupInspectorChange]);
+    (async () => {
+      try {
+        const store = await import('@/stores/use-timeline-store');
+        const state = store.useTimelineStore.getState();
+        state.updateTracks();
+        state.buildGSAPTimeline();
+      } catch {}
+    })();
+  }, []);
 
   // Listen for animation selections
   useEffect(() => {
@@ -123,8 +77,6 @@ export function AnimationsTab({
       }
     });
   }, [animationSelectionManager, selectionId]);
-
-
 
   // Simplified sync to stores (Timeline rebuild handled by useEffect above)
   const syncToStores = (updatedAnimations: ElementAnimation[], changedField?: string, animationId?: string) => {
@@ -154,14 +106,16 @@ export function AnimationsTab({
     // Note: Canvas Store update and timeline rebuild handled by useEffect
   };
 
-
-
   // Handle deleting animations internally
   const handleDeleteAnimationInternal = (animationId: string) => {
     const updatedAnimations = animations.filter(anim => anim.id !== animationId);
 
-    // Update local state immediately
-    setAnimations(updatedAnimations);
+    // Update store immediately instead of local state
+    if (actualSelectedGroup) {
+      onGroupInspectorChange?.(actualSelectedGroup.id, 'animations', updatedAnimations);
+    } else if (actualSelectedElement) {
+      canvasStore.updateElement(actualSelectedElement.id, { animations: updatedAnimations });
+    }
 
     // Sync to stores
     syncToStores(updatedAnimations);
@@ -182,14 +136,18 @@ export function AnimationsTab({
 
     const updatedAnimations = [...animations, duplicatedAnimation];
 
-    // Update local state immediately
-    setAnimations(updatedAnimations);
+    // Update store immediately instead of local state
+    if (actualSelectedGroup) {
+      onGroupInspectorChange?.(actualSelectedGroup.id, 'animations', updatedAnimations);
+    } else if (actualSelectedElement) {
+      canvasStore.updateElement(actualSelectedElement.id, { animations: updatedAnimations });
+    }
 
     // Sync to stores
     syncToStores(updatedAnimations);
   };
 
-  // Handle all animation changes through local state
+  // Handle all animation changes through store updates
   const handleAnimationChange = (id: string, field: string, value: string | number | boolean) => {
     const updatedAnimations = animations.map(anim => {
       if (anim.id !== id) return anim;
@@ -226,8 +184,12 @@ export function AnimationsTab({
       }
     });
 
-    // Update local state immediately
-    setAnimations(updatedAnimations);
+    // Update store immediately instead of local state
+    if (actualSelectedGroup) {
+      onGroupInspectorChange?.(actualSelectedGroup.id, 'animations', updatedAnimations);
+    } else if (actualSelectedElement) {
+      canvasStore.updateElement(actualSelectedElement.id, { animations: updatedAnimations });
+    }
 
     // Sync to stores based on field type
     syncToStores(updatedAnimations, field, id);
@@ -266,8 +228,8 @@ export function AnimationsTab({
           <AnimationCard
             key={animation.id}
             animation={animation}
-            selectedElement={selectedElement}
-            selectedGroup={selectedGroup}
+            selectedElement={actualSelectedElement}
+            selectedGroup={actualSelectedGroup}
             isSelected={selectedAnimationId === animation.id}
             onAnimationChange={handleAnimationChange}
             onDuplicateAnimation={handleDuplicateAnimation}

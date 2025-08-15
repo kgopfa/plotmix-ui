@@ -10,6 +10,7 @@ import { calculateEffectiveEndTime, calculateEffectiveDuration } from '@/utils/a
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useProjectStore } from '@/stores/use-project-store';
+import { MAX_SCENE_DURATION } from '@/types/project';
 
 // Enable Immer MapSet plugin for Map support
 enableMapSet();
@@ -173,7 +174,7 @@ const initialPlaybackState: PlaybackState = {
   isPaused: false,
   isStopped: true,
   currentTime: 0,
-  totalDuration: 10,
+  totalDuration: MAX_SCENE_DURATION, // Maximum scene duration: 2 minutes (120 seconds)
   playbackSpeed: 1,
 };
 

@@ -4,6 +4,19 @@
 
 The timeline state management system in PlotMix handles animation timeline data, playback state, and timeline UI state. This document explains how the `useTimelineStore` works and how it coordinates with other stores to manage animations.
 
+## Timeline Duration Limits
+
+The timeline system enforces a **maximum scene duration of 2 minutes (120 seconds)**. This limit is applied consistently across:
+- Individual scenes
+- Animation tracks
+- Playback controls
+- Export/import operations
+
+Duration validation ensures:
+- `minimum`: 1 second (for basic functionality)
+- `maximum`: 120 seconds (2 minutes per scene)
+- `automatic clamping`: Values outside this range are automatically adjusted
+
 ## Timeline Store Architecture
 
 The timeline management is handled by the `useTimelineStore` Zustand store:

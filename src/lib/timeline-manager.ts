@@ -1,6 +1,7 @@
 import { AnimatedCanvasObject, CanvasGroup, ElementAnimation } from '@/types/canvas';
 import { TimelineState, TimelineTrackData } from '../types/timeline';
 import { calculateEffectiveEndTime } from '@/utils/animation-utils';
+import { MAX_SCENE_DURATION } from '@/types/project';
 
 type TimelineUpdateListener = (state: TimelineState) => void;
 
@@ -9,7 +10,7 @@ export class TimelineManager {
   private state: TimelineState = {
     tracks: [],
     trackData: [],
-    duration: 10,
+    duration: MAX_SCENE_DURATION, // Maximum scene duration: 2 minutes (120 seconds)
     scale: 100
   };
   private previousState: TimelineState | null = null;
@@ -112,7 +113,8 @@ export class TimelineManager {
       });
     });
     
-    this.state.duration = Math.max(10, Math.ceil(maxDuration));
+    // Ensure duration is between 1 second and maximum scene duration
+    this.state.duration = Math.max(1, Math.min(MAX_SCENE_DURATION, Math.ceil(maxDuration)));
   }
 
   getState(): TimelineState {
@@ -129,7 +131,7 @@ export class TimelineManager {
       this.state = {
         tracks: data.tracks || [],
         trackData: data.trackData || [],
-        duration: data.duration || 10,
+        duration: data.duration || MAX_SCENE_DURATION,
         scale: data.scale || 100
       };
       this.updateDuration();
@@ -218,5 +220,21 @@ export class TimelineManager {
     this.state.trackData = this.state.trackData.filter(track => track.id !== groupId);
     this.updateDuration();
     this.scheduleUpdate();
+  }
+
+  setDuration(duration: number): void {
+    // Ensure duration is within valid bounds (1 second to maximum scene duration)
+    const clampedDuration = Math.max(1, Math.min(MAX_SCENE_DURATION, duration));
+    
+    if (clampedDuration !== duration) {
+      console.warn(`Scene duration ${duration}s was clamped to ${clampedDuration}s (max: ${MAX_SCENE_DURATION}s)`);
+    }
+    
+    this.state.duration = clampedDuration;
+    this.scheduleUpdate();
+  }
+
+  getMaxDuration(): number {
+    return MAX_SCENE_DURATION;
   }
 } 

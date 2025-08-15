@@ -4,6 +4,20 @@
 
 The scene management system in PlotMix allows users to create multiple scenes within a single project, each with its own independent canvas state, timeline, and UI settings. This document explains how scenes work and how to manage them effectively.
 
+## Scene Duration Limits
+
+Each scene has a **maximum duration of 2 minutes (120 seconds)**. This limit ensures:
+- Optimal performance during playback
+- Reasonable file sizes for project storage
+- Compatibility with video export formats
+- Consistent user experience across scenes
+
+The system automatically enforces this limit when:
+- Creating new scenes
+- Importing project data
+- Adjusting timeline duration
+- Adding animations that extend beyond the limit
+
 ## Scene Store Architecture
 
 The scene management is handled by the `useSceneStore` Zustand store:

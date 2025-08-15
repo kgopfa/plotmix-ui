@@ -1,5 +1,8 @@
 import { AnimatedCanvasObject, CanvasGroup } from './canvas';
 
+// Maximum scene duration in seconds (2 minutes)
+export const MAX_SCENE_DURATION = 120;
+
 export interface AnimationState {
   // Source of truth
   baseDuration: number;

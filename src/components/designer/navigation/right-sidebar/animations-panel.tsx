@@ -3,7 +3,7 @@ import { AnimatedCanvasObject, ElementAnimation } from '@/types/canvas';
 import { AnimationsTab } from './tabs/animations';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useAnimationHandlers } from '@/hooks/use-animation-handlers';
-import { useGroupAnimationHandlers } from '@/hooks/use-group-animation-handlers';
+
 
 interface AnimationsPanelProps {
   onInspectorChange: (
@@ -43,14 +43,10 @@ export const AnimationsPanel: React.FC<AnimationsPanelProps> = ({
   const hasGroupSelection = hasValidGroupSelection;
   const hasSelection = selectedElement || hasGroupSelection;
 
-  const { localAnimations, handleEnterPathMode } = useAnimationHandlers(
+  const { handleEnterPathMode } = useAnimationHandlers(
     selectedElement,
     onInspectorChange
   );
-
-  const {
-    localGroupAnimations,
-  } = useGroupAnimationHandlers(selectedGroup, onGroupInspectorChange);
 
   // Ensure GSAP timeline is built when the animations panel opens
   useEffect(() => {
@@ -73,14 +69,14 @@ export const AnimationsPanel: React.FC<AnimationsPanelProps> = ({
       {hasGroupSelection ? (
         <AnimationsTab
           selectedGroup={selectedGroup!}
-          localAnimations={localGroupAnimations}
+          localAnimations={[]} // Empty array since AnimationsTab gets data from store
           onEnterPathMode={handleEnterPathMode}
           onGroupInspectorChange={onGroupInspectorChange}
         />
       ) : hasIndividualElement ? (
         <AnimationsTab
           selectedElement={selectedElement!}
-          localAnimations={localAnimations}
+          localAnimations={[]} // Empty array since AnimationsTab gets data from store
           onEnterPathMode={handleEnterPathMode}
         />
       ) : (

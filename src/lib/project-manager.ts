@@ -6,7 +6,8 @@ import {
   ProjectLoadOptions,
   ProjectSaveOptions,
   ProjectMetadata,
-  isLegacyProject
+  isLegacyProject,
+  MAX_SCENE_DURATION
 } from '@/types/project';
 import { ToolType } from '@/types/tool';
 import { useCanvasStore } from '@/stores/use-canvas-store';
@@ -481,7 +482,7 @@ export class ProjectManager {
       },
       timeline: {
         scale: 1,
-        duration: 10,
+        duration: MAX_SCENE_DURATION, // Maximum scene duration: 2 minutes (120 seconds)
         currentTime: 0,
         animationStates: {},
       },
@@ -738,7 +739,7 @@ export class ProjectManager {
           },
           timeline: {
             scale: 1,
-            duration: 10,
+            duration: MAX_SCENE_DURATION, // Maximum scene duration: 2 minutes (120 seconds)
             currentTime: 0,
             animationStates: {},
           },
