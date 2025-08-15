@@ -48,8 +48,8 @@ export const roundToPixel = (value: number): number => {
 // Helper function for smooth line positioning - allows sub-pixel positioning for anti-aliasing
 export const smoothLinePosition = (value: number): number => {
   // For smooth lines, we want to allow sub-pixel positioning to enable anti-aliasing
-  // Only apply minimal rounding to avoid floating point precision issues
-  return Math.round(value * 100) / 100;
+  // Use higher precision for smoother lines, but avoid excessive floating point precision issues
+  return Math.round(value * 1000) / 1000;
 };
 
 /**
@@ -209,7 +209,10 @@ export const drawSmoothCurve = (
     .stroke({
       color,
       width,
-      alpha
+      alpha,
+      alignment: 0.5, // Center the stroke on the path for consistent appearance
+      cap: 'round',    // Smooth rounded line caps
+      join: 'round'    // Smooth rounded line joins
     });
 };
 
@@ -301,18 +304,25 @@ export const drawLine = (
     } else {
       drawSmoothCurve(graphics, start, controlPoint, end, color, width, alpha);
     }
-  } else {
-    // True straight line - check if it should be dotted
-    if (shape.lineOptions.dotted) {
-      drawDottedLine(graphics, start, end, color, width, alpha);
-    } else {
-      graphics
-        .clear()
-        .moveTo(start.x, start.y)
-        .lineTo(end.x, end.y)
-        .stroke({ color, width, alpha });
+      } else {
+      // True straight line - check if it should be dotted
+      if (shape.lineOptions.dotted) {
+        drawDottedLine(graphics, start, end, color, width, alpha);
+      } else {
+        graphics
+          .clear()
+          .moveTo(start.x, start.y)
+          .lineTo(end.x, end.y)
+          .stroke({ 
+            color, 
+            width, 
+            alpha,
+            alignment: 0.5, // Center the stroke on the path for consistent appearance
+            cap: 'round',    // Smooth rounded line caps
+            join: 'round'    // Smooth rounded line joins
+          });
+      }
     }
-  }
 
   // Only draw arrows for straight lines
   if (shape.lineOptions.arrow && !shape.lineOptions.isCurved) {
@@ -468,8 +478,15 @@ function drawShapeAsPath(graphics: Graphics, shape: AnimatedCanvasObject) {
         dashLine.lineTo(end.x - shape.x, end.y - shape.y);
       }
 
-      // Make sure the line is actually drawn
-      graphics.stroke({ color: grayColor, width: 2, alpha: 0.7 });
+      // Make sure the line is actually drawn with quality settings
+      graphics.stroke({ 
+        color: grayColor, 
+        width: 2, 
+        alpha: 0.7,
+        alignment: 0.5, // Center the stroke on the path for consistent appearance
+        cap: 'round',    // Smooth rounded line caps
+        join: 'round'    // Smooth rounded line joins
+      });
     } else if (shape.type === 'path' && shape.pathPoints && shape.pathPoints.length > 1) {
       dashLine.moveTo(shape.pathPoints[0].x, shape.pathPoints[0].y);
       for (let i = 1; i < shape.pathPoints.length; i++) {
@@ -706,7 +723,10 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasObject) {
             graphics.stroke({
               color: grayColor,
               width: 2,
-              alpha: 0.7
+              alpha: 0.7,
+              alignment: 0.5, // Center the stroke on the path for consistent appearance
+              cap: 'round',    // Smooth rounded line caps
+              join: 'round'    // Smooth rounded line joins
             });
           }
           break;
