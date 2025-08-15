@@ -13,6 +13,7 @@ import { SearchBar } from '@/components/shared/search-bar';
 import React from 'react';
 import { getSession } from 'next-auth/react';
 import { apiClient } from '@/lib/api-client';
+import { ConfirmModal } from '@/components/shared/confirm-modal';
 
 export default function ChatsPage() {
   const router = useRouter();
@@ -20,12 +21,13 @@ export default function ChatsPage() {
   const { isAuthenticated, loading } = useAuth();
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
   const [selected, setSelected] = React.useState<Record<string, boolean>>({});
+  const [showDeleteSelectedModal, setShowDeleteSelectedModal] = React.useState(false);
+  const [showDeleteChatModal, setShowDeleteChatModal] = React.useState(false);
+  const [chatToDelete, setChatToDelete] = React.useState<{ id: string; projectId: string | null } | null>(null);
   const selectedIds = React.useMemo(() => Object.keys(selected).filter((id) => selected[id]), [selected]);
   const anySelected = selectedIds.length > 0;
 
   const handleDelete = async (conversationId: string, projectId: string | null) => {
-    const confirmed = window.confirm('Delete this conversation and its associated project? This cannot be undone.');
-    if (!confirmed) return;
     try {
       setDeletingId(conversationId);
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -51,6 +53,20 @@ export default function ChatsPage() {
     }
   };
 
+  const handleDeleteSelected = async () => {
+    await apiClient.post(`/api/conversations/batch/delete`, { ids: selectedIds });
+    setSelected({});
+    await refetch();
+    setShowDeleteSelectedModal(false);
+  };
+
+  const handleDeleteChat = async () => {
+    if (!chatToDelete) return;
+    await handleDelete(chatToDelete.id, chatToDelete.projectId);
+    setShowDeleteChatModal(false);
+    setChatToDelete(null);
+  };
+
   return (
     <>
       <NavigationSidebar navigation={navigation} />
@@ -63,13 +79,7 @@ export default function ChatsPage() {
             {anySelected && (
               <button
                 type="button"
-                onClick={async () => {
-                  const confirmed = window.confirm(`Delete ${selectedIds.length} selected chats? This cannot be undone.`);
-                  if (!confirmed) return;
-                  await apiClient.post(`/api/conversations/batch/delete`, { ids: selectedIds });
-                  setSelected({});
-                  await refetch();
-                }}
+                onClick={() => setShowDeleteSelectedModal(true)}
                 className="inline-flex items-center gap-x-2 px-3 py-2 text-xs font-bold rounded-lg border border-red-200 bg-red-600 text-white hover:bg-red-700"
               >
                 Delete Selected
@@ -112,7 +122,7 @@ export default function ChatsPage() {
                         <button
                           type="button"
                           onClick={() => setSelected({})}
-                          className="text-sm font-medium px-3 py-1.5 mr-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
+                          className="text-sm font-medium text-gray-600 hover:text-gray-800 px-3 py-1.5 mr-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
                         >
                           Cancel
                         </button>
@@ -149,7 +159,10 @@ export default function ChatsPage() {
                             lastMessageAt={lastMessageAt}
                             messageCount={messageCount}
                             onClick={open}
-                            onDelete={() => handleDelete(c.id, projectId)}
+                            onDelete={() => {
+                              setChatToDelete({ id: c.id, projectId });
+                              setShowDeleteChatModal(true);
+                            }}
                             isDeleting={deletingId === c.id}
                             selectable
                             selected={!!selected[c.id]}
@@ -177,6 +190,33 @@ export default function ChatsPage() {
           )}
         </div>
       </main>
+
+      {/* Delete Selected Chats Modal */}
+      <ConfirmModal
+        open={showDeleteSelectedModal}
+        title="Delete Selected Chats"
+        description={`Are you sure you want to delete ${selectedIds.length} selected chats? This action cannot be undone.`}
+        confirmLabel="Delete Chats"
+        cancelLabel="Cancel"
+        variant="danger"
+        onConfirm={handleDeleteSelected}
+        onCancel={() => setShowDeleteSelectedModal(false)}
+      />
+
+      {/* Delete Single Chat Modal */}
+      <ConfirmModal
+        open={showDeleteChatModal}
+        title="Delete Chat"
+        description="Are you sure you want to delete this conversation and its associated project? This action cannot be undone."
+        confirmLabel="Delete Chat"
+        cancelLabel="Cancel"
+        variant="danger"
+        onConfirm={handleDeleteChat}
+        onCancel={() => {
+          setShowDeleteChatModal(false);
+          setChatToDelete(null);
+        }}
+      />
     </>
   );
 }

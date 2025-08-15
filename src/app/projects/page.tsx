@@ -12,6 +12,7 @@ import QuickActionButtons from '@/components/shared/quick-action-buttons';
 import { useAuth } from '@/lib/auth-context';
 import { SearchBar } from '@/components/shared/search-bar';
 import { apiClient } from '@/lib/api-client';
+import { ConfirmModal } from '@/components/shared/confirm-modal';
 
 export default function ProjectsPage() {
   const router = useRouter();
@@ -19,6 +20,9 @@ export default function ProjectsPage() {
   const [selected, setSelected] = React.useState<Record<string, boolean>>({});
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
   const [openingId, setOpeningId] = React.useState<string | null>(null);
+  const [showDeleteSelectedModal, setShowDeleteSelectedModal] = React.useState(false);
+  const [showDeleteProjectModal, setShowDeleteProjectModal] = React.useState(false);
+  const [projectToDelete, setProjectToDelete] = React.useState<string | null>(null);
   const selectedIds = React.useMemo(() => Object.keys(selected).filter((id) => selected[id]), [selected]);
   const anySelected = selectedIds.length > 0;
   const { isAuthenticated, loading } = useAuth();
@@ -34,6 +38,24 @@ export default function ProjectsPage() {
     }
   }, [router]);
 
+  const handleDeleteSelected = async () => {
+    await apiClient.post(`/api/projects/batch/delete`, { ids: selectedIds });
+    setDeletingId(null);
+    setSelected({});
+    await refetch();
+    setShowDeleteSelectedModal(false);
+  };
+
+  const handleDeleteProject = async () => {
+    if (!projectToDelete) return;
+    setDeletingId(projectToDelete);
+    await apiClient.delete(`/api/projects/${projectToDelete}`);
+    setDeletingId(null);
+    await refetch();
+    setShowDeleteProjectModal(false);
+    setProjectToDelete(null);
+  };
+
   return (
     <>
       <NavigationSidebar navigation={navigation} />
@@ -45,14 +67,7 @@ export default function ProjectsPage() {
             {anySelected && (
               <button
                 type="button"
-                onClick={async () => {
-                  const confirmed = window.confirm(`Delete ${selectedIds.length} selected projects? This cannot be undone.`);
-                  if (!confirmed) return;
-                  await apiClient.post(`/api/projects/batch/delete`, { ids: selectedIds });
-                  setDeletingId(null);
-                  setSelected({});
-                  await refetch();
-                }}
+                onClick={() => setShowDeleteSelectedModal(true)}
                 className={`inline-flex items-center gap-x-2 px-3 py-2 text-xs font-bold rounded-lg border border-red-200 bg-red-600 text-white ${openingId ? 'opacity-60 cursor-not-allowed' : 'hover:bg-red-700'}`}
                 disabled={!!openingId}
               >
@@ -129,13 +144,9 @@ export default function ProjectsPage() {
                             router.push(`/designer/${p.id}`);
                           }}
                           showConversationWarning={!!p.conversation}
-                          onDelete={async () => {
-                            const confirmed = window.confirm('Delete this project? This cannot be undone.');
-                            if (!confirmed) return;
-                            setDeletingId(p.id);
-                            await apiClient.delete(`/api/projects/${p.id}`);
-                            setDeletingId(null);
-                            await refetch();
+                          onDelete={() => {
+                            setProjectToDelete(p.id);
+                            setShowDeleteProjectModal(true);
                           }}
                           isDeleting={deletingId === p.id}
                           selectable
@@ -168,6 +179,33 @@ export default function ProjectsPage() {
           )}
         </div>
       </main>
+
+      {/* Delete Selected Projects Modal */}
+      <ConfirmModal
+        open={showDeleteSelectedModal}
+        title="Delete Selected Projects"
+        description={`Are you sure you want to delete ${selectedIds.length} selected projects? This action cannot be undone.`}
+        confirmLabel="Delete Projects"
+        cancelLabel="Cancel"
+        variant="danger"
+        onConfirm={handleDeleteSelected}
+        onCancel={() => setShowDeleteSelectedModal(false)}
+      />
+
+      {/* Delete Single Project Modal */}
+      <ConfirmModal
+        open={showDeleteProjectModal}
+        title="Delete Project"
+        description="Are you sure you want to delete this project? This action cannot be undone."
+        confirmLabel="Delete Project"
+        cancelLabel="Cancel"
+        variant="danger"
+        onConfirm={handleDeleteProject}
+        onCancel={() => {
+          setShowDeleteProjectModal(false);
+          setProjectToDelete(null);
+        }}
+      />
     </>
   );
 }

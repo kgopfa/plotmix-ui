@@ -25,6 +25,7 @@ export function ClearCanvasDialog({ open, onClose, onConfirm }: ClearCanvasDialo
       }
       confirmLabel="Clear Canvas"
       cancelLabel="Cancel"
+      variant="designer"
       onConfirm={handleConfirm}
       onCancel={onClose}
       align="content"

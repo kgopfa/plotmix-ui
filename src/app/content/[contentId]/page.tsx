@@ -128,6 +128,7 @@ export default function ContentDetailPage() {
           )}
           confirmLabel="Continue to Designer"
           cancelLabel="Cancel"
+          variant="designer"
           align="content"
           onCancel={() => setShowConfirm(false)}
           onConfirm={async () => {
