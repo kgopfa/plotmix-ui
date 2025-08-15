@@ -30,6 +30,7 @@ interface ToolState {
   } | null;
   showPaths: boolean;
   pendingImageData: string | null;
+  lineType: 'straight' | 'curved';
 }
 
 interface SnappingState {
@@ -140,6 +141,7 @@ interface UIActions {
   setAnimationTarget: (target: { animationId: string; elementId: string } | null) => void;
   toggleShowPaths: () => void;
   setPendingImageData: (data: string | null) => void;
+  setLineType: (lineType: 'straight' | 'curved') => void;
   
   // Snapping Actions
   updateGridConfig: (config: Partial<GridConfig>) => void;
@@ -208,6 +210,7 @@ const defaultToolState: ToolState = {
   animationTarget: null,
   showPaths: true,
   pendingImageData: null,
+  lineType: 'curved',
 };
 
 const defaultSnappingState: SnappingState = {
@@ -445,6 +448,12 @@ export const useUIStore = create<UIStore>((set, get) => ({
   setPendingImageData: (data: string | null) => {
     set(produce((state) => {
       state.tools.pendingImageData = data;
+    }));
+  },
+
+  setLineType: (lineType: 'straight' | 'curved') => {
+    set(produce((state) => {
+      state.tools.lineType = lineType;
     }));
   },
 
@@ -770,6 +779,7 @@ export const useToolActions = () => useUIStore(
     setAnimationTarget: state.setAnimationTarget,
     toggleShowPaths: state.toggleShowPaths,
     setPendingImageData: state.setPendingImageData,
+    setLineType: state.setLineType,
   }))
 );
 

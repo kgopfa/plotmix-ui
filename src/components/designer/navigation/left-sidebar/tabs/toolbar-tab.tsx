@@ -9,10 +9,11 @@ import {
   MousePointer2,
   Pentagon
 } from 'lucide-react';
+import { LineToolMiniToolbar } from './line-tool-mini-toolbar';
 
 export function ToolbarTab() {
-  const { activeTool, isPathMode } = useToolState();
-  const { setActiveTool } = useToolActions();
+  const { activeTool, isPathMode, lineType } = useToolState();
+  const { setActiveTool, setLineType } = useToolActions();
   
   // Helper functions to map clear names to internal tool types
   const getPolygonTool = (): ToolType => 'line';
@@ -120,80 +121,89 @@ export function ToolbarTab() {
   };
 
   const renderVerticalToolbar = () => (
-    <div className="bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-xl shadow-gray-200/50 rounded-2xl flex flex-col gap-3 pt-6 pb-4 px-2 w-16 items-center">
-      <div className="flex flex-col items-center space-y-3">
-        <button
-          className={getButtonStyling('rectangle').buttonClass}
-          onClick={() => handleToolClick('rectangle')}
-          title={isToolDisabled('rectangle') ? "Rectangle (disabled in path mode)" : "Rectangle"}
-          disabled={isToolDisabled('rectangle')}
-        >
-          <Square className={getButtonStyling('rectangle').iconClass} />
-          <span className="sr-only">Rectangle</span>
-        </button>
+    <div className="relative">
+      <div className="bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-xl shadow-gray-200/50 rounded-2xl flex flex-col gap-3 pt-6 pb-4 px-2 w-16 items-center">
+        <div className="flex flex-col items-center space-y-3">
+          <button
+            className={getButtonStyling('rectangle').buttonClass}
+            onClick={() => handleToolClick('rectangle')}
+            title={isToolDisabled('rectangle') ? "Rectangle (disabled in path mode)" : "Rectangle"}
+            disabled={isToolDisabled('rectangle')}
+          >
+            <Square className={getButtonStyling('rectangle').iconClass} />
+            <span className="sr-only">Rectangle</span>
+          </button>
+          
+          <button
+            className={getButtonStyling('circle').buttonClass}
+            onClick={() => handleToolClick('circle')}
+            title={isToolDisabled('circle') ? "Circle (disabled in path mode)" : "Circle"}
+            disabled={isToolDisabled('circle')}
+          >
+            <Circle className={getButtonStyling('circle').iconClass} />
+            <span className="sr-only">Circle</span>
+          </button>
+          
+          <button
+            className={getButtonStyling('triangle').buttonClass}
+            onClick={() => handleToolClick('triangle')}
+            title={isToolDisabled('triangle') ? "Triangle (disabled in path mode)" : "Triangle"}
+            disabled={isToolDisabled('triangle')}
+          >
+            <Triangle className={getButtonStyling('triangle').iconClass} />
+            <span className="sr-only">Triangle</span>
+          </button>
+          
+          <button
+            className={getButtonStyling(getPolygonTool()).buttonClass}
+            onClick={() => handleToolClick(getPolygonTool())}
+            title="Polygon"
+            disabled={isToolDisabled(getPolygonTool())}
+          >
+            <Pentagon className={getButtonStyling(getPolygonTool()).iconClass} />
+            <span className="sr-only">Polygon</span>
+          </button>
+          
+          <button
+            className={getButtonStyling(getLineTool()).buttonClass}
+            onClick={() => handleToolClick(getLineTool())}
+            title="Line"
+            disabled={isToolDisabled(getLineTool())}
+          >
+            <Minus className={getButtonStyling(getLineTool()).iconClass} />
+            <span className="sr-only">Line</span>
+          </button>
+          
+          <button
+            className={getButtonStyling('draw').buttonClass}
+            onClick={() => handleToolClick('draw')}
+            title="Free Draw"
+            disabled={isToolDisabled('draw')}
+          >
+            <Pen className={getButtonStyling('draw').iconClass} />
+            <span className="sr-only">Free Draw</span>
+          </button>
+        </div>
+
+        <div className="border-t border-gray-300/50 w-full my-4"></div>
         
         <button
-          className={getButtonStyling('circle').buttonClass}
-          onClick={() => handleToolClick('circle')}
-          title={isToolDisabled('circle') ? "Circle (disabled in path mode)" : "Circle"}
-          disabled={isToolDisabled('circle')}
+          className={getButtonStyling('select').buttonClass}
+          onClick={() => handleToolClick('select')}
+          title={isToolDisabled('select') ? "Selection Tool (disabled in path mode)" : "Selection Tool"}
+          disabled={isToolDisabled('select')}
         >
-          <Circle className={getButtonStyling('circle').iconClass} />
-          <span className="sr-only">Circle</span>
-        </button>
-        
-        <button
-          className={getButtonStyling('triangle').buttonClass}
-          onClick={() => handleToolClick('triangle')}
-          title={isToolDisabled('triangle') ? "Triangle (disabled in path mode)" : "Triangle"}
-          disabled={isToolDisabled('triangle')}
-        >
-          <Triangle className={getButtonStyling('triangle').iconClass} />
-          <span className="sr-only">Triangle</span>
-        </button>
-        
-        <button
-          className={getButtonStyling(getPolygonTool()).buttonClass}
-          onClick={() => handleToolClick(getPolygonTool())}
-          title="Polygon"
-          disabled={isToolDisabled(getPolygonTool())}
-        >
-          <Pentagon className={getButtonStyling(getPolygonTool()).iconClass} />
-          <span className="sr-only">Polygon</span>
-        </button>
-        
-        <button
-          className={getButtonStyling(getLineTool()).buttonClass}
-          onClick={() => handleToolClick(getLineTool())}
-          title="Line"
-          disabled={isToolDisabled(getLineTool())}
-        >
-          <Minus className={getButtonStyling(getLineTool()).iconClass} />
-          <span className="sr-only">Line</span>
-        </button>
-        
-        <button
-          className={getButtonStyling('draw').buttonClass}
-          onClick={() => handleToolClick('draw')}
-          title="Free Draw"
-          disabled={isToolDisabled('draw')}
-        >
-          <Pen className={getButtonStyling('draw').iconClass} />
-          <span className="sr-only">Free Draw</span>
+          <MousePointer2 className={getButtonStyling('select').iconClass} />
+          <span className="sr-only">Selection Tool</span>
         </button>
       </div>
-
-      <div className="border-t border-gray-300/50 w-full my-4"></div>
       
-      <button
-        className={getButtonStyling('select').buttonClass}
-        onClick={() => handleToolClick('select')}
-        title={isToolDisabled('select') ? "Selection Tool (disabled in path mode)" : "Selection Tool"}
-        disabled={isToolDisabled('select')}
-      >
-        <MousePointer2 className={getButtonStyling('select').iconClass} />
-        <span className="sr-only">Selection Tool</span>
-      </button>
+      {/* Line Tool Mini Toolbar */}
+      <LineToolMiniToolbar
+        isVisible={activeTool === 'simpleLine'}
+        onLineTypeChange={setLineType}
+        currentLineType={lineType}
+      />
     </div>
   );
 

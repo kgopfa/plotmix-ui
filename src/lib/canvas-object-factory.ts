@@ -173,7 +173,7 @@ function createArc(props: BaseObjectProps): AnimatedCanvasObject {
   };
 }
 
-function createLine(props: BaseObjectProps & { startPoint?: { x: number; y: number }; endPoint?: { x: number; y: number } }): AnimatedCanvasObject {
+function createLine(props: BaseObjectProps & { startPoint?: { x: number; y: number }; endPoint?: { x: number; y: number }; lineType?: 'straight' | 'curved' }): AnimatedCanvasObject {
   // For line creation, we can have specific start and end points
   const startPoint = props.startPoint || { x: props.x, y: props.y };
   const endPoint = props.endPoint || { x: props.x + 100, y: props.y + 100 }; // Default endpoint if not specified
@@ -190,29 +190,33 @@ function createLine(props: BaseObjectProps & { startPoint?: { x: number; y: numb
   const centerX = (startPoint.x + endPoint.x) / 2;
   const centerY = (startPoint.y + endPoint.y) / 2;
 
-      // Calculate control point for curved line (midpoint)
-    const controlPoint = {
-      x: (startPoint.x + endPoint.x) / 2,
-      y: (startPoint.y + endPoint.y) / 2
-    };
+  // Determine if line should be curved based on props or default to curved
+  const isCurved = props.lineType !== 'straight';
+  
+  // Calculate control point for curved line (midpoint)
+  // For straight lines, we don't need a control point
+  const controlPoint = isCurved ? {
+    x: (startPoint.x + endPoint.x) / 2,
+    y: (startPoint.y + endPoint.y) / 2
+  } : undefined;
 
-    return {
-      ...generateCommonAttributes('line', props),
-      type: 'line',
-      x: centerX,
-      y: centerY,
-      width,
-      height,
-      lineOptions: {
-        points: { start: startPoint, end: endPoint },
-        controlPoint,
-        isCurved: true, // Lines are always curved by default
-        arrow: false,
-        dotted: props.isPath || false, // Make dotted if it's an animation path
-      },
-      isAnimationPath: props.isPath || false,
-      cornerRadius: 0,
-    };
+  return {
+    ...generateCommonAttributes('line', props),
+    type: 'line',
+    x: centerX,
+    y: centerY,
+    width,
+    height,
+    lineOptions: {
+      points: { start: startPoint, end: endPoint },
+      controlPoint,
+      isCurved,
+      arrow: false,
+      dotted: props.isPath || false, // Make dotted if it's an animation path
+    },
+    isAnimationPath: props.isPath || false,
+    cornerRadius: 0,
+  };
 }
 
 function createPath(props: BaseObjectProps): AnimatedCanvasObject {
@@ -327,7 +331,8 @@ export function createNewObject(
   height?: number,
   text?: string,
   startPoint?: { x: number; y: number },
-  endPoint?: { x: number; y: number }
+  endPoint?: { x: number; y: number },
+  lineType?: 'straight' | 'curved'
 ): AnimatedCanvasObject {
   const props: BaseObjectProps = { x, y, elements: canvasObjects, pathPoints, isPath, imageData, width, height, text };
 
@@ -341,7 +346,7 @@ export function createNewObject(
     case 'arc':
       return createArc(props);
     case 'line':
-      return createLine({ ...props, startPoint, endPoint });
+      return createLine({ ...props, startPoint, endPoint, lineType });
     case 'path':
       return createPath(props);
     case 'image':

@@ -284,28 +284,25 @@ export const drawLine = (
     y: smoothLinePosition(shape.lineOptions.points.end.y - shape.y)
   };
 
-  // Use provided control point when valid, otherwise fall back to midpoint for straight line
+  // Use provided control point when valid, otherwise fall back to midpoint for curved lines
   const hasControl = !!shape.lineOptions.controlPoint &&
     typeof shape.lineOptions.controlPoint.x === 'number' &&
     typeof shape.lineOptions.controlPoint.y === 'number';
-  const controlPoint = hasControl
-    ? {
-        x: smoothLinePosition(shape.lineOptions.controlPoint!.x - shape.x),
-        y: smoothLinePosition(shape.lineOptions.controlPoint!.y - shape.y)
-      }
-    : {
-        x: smoothLinePosition((start.x + end.x) / 2),
-        y: smoothLinePosition((start.y + end.y) / 2)
-      };
-
+  
+  // For straight lines, we don't need a control point
   if (shape.lineOptions.isCurved && hasControl) {
+    const controlPoint = {
+      x: smoothLinePosition(shape.lineOptions.controlPoint!.x - shape.x),
+      y: smoothLinePosition(shape.lineOptions.controlPoint!.y - shape.y)
+    };
+    
     if (shape.lineOptions.dotted) {
       drawDottedCurve(graphics, start, controlPoint, end, color, width, alpha);
     } else {
       drawSmoothCurve(graphics, start, controlPoint, end, color, width, alpha);
     }
   } else {
-    // Straight line fallback when no valid controlPoint
+    // Straight line - clear and draw a simple line
     graphics
       .clear()
       .moveTo(start.x, start.y)
@@ -385,18 +382,25 @@ function drawElement(graphics: Graphics, shape: AnimatedCanvasObject) {
     case 'line':
       if (shape.lineOptions?.points) {
         const { start, end } = shape.lineOptions.points;
-        const { controlPoint } = shape.lineOptions;
+        const { controlPoint, isCurved } = shape.lineOptions;
         const startX = smoothLinePosition(start.x - shape.x);
         const startY = smoothLinePosition(start.y - shape.y);
         const endX = smoothLinePosition(end.x - shape.x);
         const endY = smoothLinePosition(end.y - shape.y);
         
-        // Lines are always curved by default
-        const controlX = smoothLinePosition(controlPoint!.x - shape.x);
-        const controlY = smoothLinePosition(controlPoint!.y - shape.y);
-        graphics
-          .moveTo(startX, startY)
-          .quadraticCurveTo(controlX, controlY, endX, endY);
+        if (isCurved && controlPoint) {
+          // Draw curved line
+          const controlX = smoothLinePosition(controlPoint.x - shape.x);
+          const controlY = smoothLinePosition(controlPoint.y - shape.y);
+          graphics
+            .moveTo(startX, startY)
+            .quadraticCurveTo(controlX, controlY, endX, endY);
+        } else {
+          // Draw straight line
+          graphics
+            .moveTo(startX, startY)
+            .lineTo(endX, endY);
+        }
       }
       break;
 
@@ -428,21 +432,27 @@ function drawShapeAsPath(graphics: Graphics, shape: AnimatedCanvasObject) {
 
     if (shape.type === 'line' && shape.lineOptions?.points) {
       const { start, end } = shape.lineOptions.points;
-      const { controlPoint } = shape.lineOptions;
+      const { controlPoint, isCurved } = shape.lineOptions;
       
-      // Lines are always curved by default
-      const controlX = controlPoint!.x - shape.x;
-      const controlY = controlPoint!.y - shape.y;
-      
-      // Approximate quadratic curve with multiple line segments
-      const segments = 10;
-      dashLine.moveTo(start.x - shape.x, start.y - shape.y);
-      
-      for (let i = 1; i <= segments; i++) {
-        const t = i / segments;
-        const x = (1 - t) * (1 - t) * (start.x - shape.x) + 2 * (1 - t) * t * controlX + t * t * (end.x - shape.x);
-        const y = (1 - t) * (1 - t) * (start.y - shape.y) + 2 * (1 - t) * t * controlY + t * t * (end.y - shape.y);
-        dashLine.lineTo(x, y);
+      if (isCurved && controlPoint) {
+        // Draw curved line
+        const controlX = controlPoint.x - shape.x;
+        const controlY = controlPoint.y - shape.y;
+        
+        // Approximate quadratic curve with multiple line segments
+        const segments = 10;
+        dashLine.moveTo(start.x - shape.x, start.y - shape.y);
+        
+        for (let i = 1; i <= segments; i++) {
+          const t = i / segments;
+          const x = (1 - t) * (1 - t) * (start.x - shape.x) + 2 * (1 - t) * t * controlX + t * t * (end.x - shape.x);
+          const y = (1 - t) * (1 - t) * (start.y - shape.y) + 2 * (1 - t) * t * controlY + t * t * (end.y - shape.y);
+          dashLine.lineTo(x, y);
+        }
+      } else {
+        // Draw straight line
+        dashLine.moveTo(start.x - shape.x, start.y - shape.y);
+        dashLine.lineTo(end.x - shape.x, end.y - shape.y);
       }
 
       // Make sure the line is actually drawn

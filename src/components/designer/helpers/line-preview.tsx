@@ -3,6 +3,7 @@ import type { AnimatedCanvasObject } from '@/types/canvas';
 import type { Container } from 'pixi.js';
 import { convertGlobalToDesignCanvasCoords, constrainToAxis, detectLineAlignment } from '@/utils/coordinate-utils';
 import { LineAlignmentGuides } from './line-alignment-guides';
+import { useUIStore } from '@/stores/use-ui-store';
 
 interface LinePreviewProps {
   tool: string;
@@ -31,6 +32,9 @@ export const LinePreview: React.FC<LinePreviewProps> = ({
   canvasHeight = 1080,
   isSnappingEnabled = true,
 }) => {
+  // Get the current line type from the UI store
+  const lineType = useUIStore((state) => state.tools.lineType);
+  
   // Only render when we have the necessary data for line preview
   if (!(tool === 'line' || tool === 'simpleLine') || !lineStartPoint || !mousePos) {
     return null;
@@ -100,38 +104,95 @@ export const LinePreview: React.FC<LinePreviewProps> = ({
           }
         }
 
-        // Manually draw dotted line for better control
-        const dx = snapToPoint.x - lineStartPoint.x;
-        const dy = snapToPoint.y - lineStartPoint.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        // Avoid division by zero
-        if (distance === 0) {
-          return;
-        }
+        // Draw preview line based on line type
+        if (lineType === 'curved') {
+          // Draw curved preview line
+          const controlPoint = {
+            x: (lineStartPoint.x + snapToPoint.x) / 2,
+            y: (lineStartPoint.y + snapToPoint.y) / 2
+          };
+          
+          // Draw curved line with dashed effect
+          const steps = 20;
+          const points: Array<{ x: number; y: number }> = [];
+          
+          for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            const invT = 1 - t;
+            const x = invT * invT * lineStartPoint.x + 2 * invT * t * controlPoint.x + t * t * snapToPoint.x;
+            const y = invT * invT * lineStartPoint.y + 2 * invT * t * controlPoint.y + t * t * snapToPoint.y;
+            points.push({ x, y });
+          }
+          
+          // Draw dashed curved line
+          const dashLength = 8;
+          const gapLength = 4;
+          const totalDashLength = dashLength + gapLength;
+          
+          for (let i = 0; i < points.length - 1; i++) {
+            const start = points[i];
+            const end = points[i + 1];
+            const dx = end.x - start.x;
+            const dy = end.y - start.y;
+            const segmentLength = Math.sqrt(dx * dx + dy * dy);
+            
+            if (segmentLength === 0) continue;
+            
+            const numDashes = Math.floor(segmentLength / totalDashLength);
+            
+            for (let j = 0; j <= numDashes; j++) {
+              const startRatio = (j * totalDashLength) / segmentLength;
+              const endRatio = Math.min((j * totalDashLength + dashLength) / segmentLength, 1);
+              
+              const dashStartX = start.x + dx * startRatio;
+              const dashStartY = start.y + dy * startRatio;
+              const dashEndX = start.x + dx * endRatio;
+              const dashEndY = start.y + dy * endRatio;
+              
+              g.moveTo(dashStartX, dashStartY);
+              g.lineTo(dashEndX, dashEndY);
+              g.stroke({
+                width: 2,
+                color: canCloseShape ? 0x4CAF50 : 0x888888,
+                alpha: 0.7,
+                cap: 'round'
+              });
+            }
+          }
+        } else {
+          // Draw straight preview line
+          const dx = snapToPoint.x - lineStartPoint.x;
+          const dy = snapToPoint.y - lineStartPoint.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          // Avoid division by zero
+          if (distance === 0) {
+            return;
+          }
 
-        const dashLength = 8;
-        const gapLength = 4;
-        const totalDashLength = dashLength + gapLength;
-        const numDashes = Math.floor(distance / totalDashLength);
+          const dashLength = 8;
+          const gapLength = 4;
+          const totalDashLength = dashLength + gapLength;
+          const numDashes = Math.floor(distance / totalDashLength);
 
-        for (let i = 0; i <= numDashes; i++) {
-          const startRatio = (i * totalDashLength) / distance;
-          const endRatio = Math.min((i * totalDashLength + dashLength) / distance, 1);
+          for (let i = 0; i <= numDashes; i++) {
+            const startRatio = (i * totalDashLength) / distance;
+            const endRatio = Math.min((i * totalDashLength + dashLength) / distance, 1);
 
-          const startX = lineStartPoint.x + dx * startRatio;
-          const startY = lineStartPoint.y + dy * startRatio;
-          const endX = lineStartPoint.x + dx * endRatio;
-          const endY = lineStartPoint.y + dy * endRatio;
+            const startX = lineStartPoint.x + dx * startRatio;
+            const startY = lineStartPoint.y + dy * startRatio;
+            const endX = lineStartPoint.x + dx * endRatio;
+            const endY = lineStartPoint.y + dy * endRatio;
 
-          g.moveTo(startX, startY);
-          g.lineTo(endX, endY);
-          g.stroke({
-            width: 2,
-            color: canCloseShape ? 0x4CAF50 : 0x888888, // Green when can close shape
-            alpha: 0.7,
-            cap: 'round'
-          });
+            g.moveTo(startX, startY);
+            g.lineTo(endX, endY);
+            g.stroke({
+              width: 2,
+              color: canCloseShape ? 0x4CAF50 : 0x888888, // Green when can close shape
+              alpha: 0.7,
+              cap: 'round'
+            });
+          }
         }
 
         // Show start point indicator ONLY for the very first line in the chain

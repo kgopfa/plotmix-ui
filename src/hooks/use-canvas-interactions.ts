@@ -118,7 +118,8 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
               undefined, // height
               undefined, // text
               toolState.lineStartPoint!, // Start from current line start point
-              endPoint // End at the constrained or original point
+              endPoint, // End at the constrained or original point
+              toolState.lineType
             );
             
             // If in path mode, mark it as a path
@@ -171,7 +172,8 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
           undefined, // height
           undefined, // text
           startPoint,
-          endPoint
+          endPoint,
+          toolState.lineType
         );
         
         // If in path mode, mark it as a path
