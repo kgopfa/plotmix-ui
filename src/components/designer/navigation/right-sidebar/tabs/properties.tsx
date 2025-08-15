@@ -287,15 +287,18 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                   <span className="text-sm font-medium text-gray-700">Dotted line</span>
                 </label>
 
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={localElement.lineOptions?.arrow ?? false}
-                    onChange={e => updateLineOptions({ arrow: e.target.checked })}
-                    className="rounded border-gray-300 focus:ring-2 focus:ring-orange-500"
-                  />
-                  <span className="text-sm font-medium text-gray-700">Show arrow</span>
-                </label>
+                {/* Only show arrow option for straight lines */}
+                {!localElement.lineOptions?.isCurved && (
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={localElement.lineOptions?.arrow ?? false}
+                      onChange={e => updateLineOptions({ arrow: e.target.checked })}
+                      className="rounded border-gray-300 focus:ring-2 focus:ring-orange-500"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Show arrow</span>
+                  </label>
+                )}
               </div>
             </div>
           </div>

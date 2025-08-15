@@ -302,15 +302,20 @@ export const drawLine = (
       drawSmoothCurve(graphics, start, controlPoint, end, color, width, alpha);
     }
   } else {
-    // True straight line - clear and draw a simple line using lineTo
-    graphics
-      .clear()
-      .moveTo(start.x, start.y)
-      .lineTo(end.x, end.y)
-      .stroke({ color, width, alpha });
+    // True straight line - check if it should be dotted
+    if (shape.lineOptions.dotted) {
+      drawDottedLine(graphics, start, end, color, width, alpha);
+    } else {
+      graphics
+        .clear()
+        .moveTo(start.x, start.y)
+        .lineTo(end.x, end.y)
+        .stroke({ color, width, alpha });
+    }
   }
 
-  if (shape.lineOptions.arrow) {
+  // Only draw arrows for straight lines
+  if (shape.lineOptions.arrow && !shape.lineOptions.isCurved) {
     drawArrowhead(graphics, end, start, color);
   }
 };
@@ -396,10 +401,18 @@ function drawElement(graphics: Graphics, shape: AnimatedCanvasObject) {
             .moveTo(startX, startY)
             .quadraticCurveTo(controlX, controlY, endX, endY);
         } else {
-          // Draw true straight line using lineTo
-          graphics
-            .moveTo(startX, startY)
-            .lineTo(endX, endY);
+          // Draw true straight line - check if it should be dotted
+          if (shape.lineOptions.dotted) {
+            // Convert color to number format for drawDottedLine
+            const colorNum = typeof shape.stroke === 'string' ? parseColor(shape.stroke) : (shape.stroke || parseColor(shape.fill || '#000000'));
+            const width = shape.strokeWidth || 2;
+            const alpha = (shape.strokeOpacity ?? shape.opacity ?? 1);
+            drawDottedLine(graphics, { x: startX, y: startY }, { x: endX, y: endY }, colorNum, width, alpha);
+          } else {
+            graphics
+              .moveTo(startX, startY)
+              .lineTo(endX, endY);
+          }
         }
       }
       break;
