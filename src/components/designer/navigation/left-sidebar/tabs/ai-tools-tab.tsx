@@ -1,6 +1,10 @@
 import React from 'react';
 import { Sparkles, X, CircleFadingPlus } from 'lucide-react';
 import { useSetActiveNav, useSetHoverNav, useSetInteractedNav, useAIPromptHistory, useAIPromptHistoryActions } from '@/stores/use-ui-store';
+import { apiClient } from '@/lib/api-client';
+import { useProjectStore } from '@/stores/use-project-store';
+import { useCanvasStore } from '@/stores/use-canvas-store';
+import { useTimelineStore } from '@/stores/use-timeline-store';
 
 export const AIToolsTab: React.FC = () => {
   const setActiveNav = useSetActiveNav();
@@ -16,10 +20,40 @@ export const AIToolsTab: React.FC = () => {
     if (!message.trim() || isSubmitting) return;
     try {
       setIsSubmitting(true);
-      // TODO: Wire up to actual AI action for the designer when ready
-      addAIPrompt(message.trim());
-      // eslint-disable-next-line no-console
-      console.log('AI Tools prompt submitted:', message.trim());
+      const prompt = message.trim();
+      addAIPrompt(prompt);
+
+      // Call backend AI edit endpoint
+      const { projectId, captureBaseline } = useProjectStore.getState();
+      if (!projectId) throw new Error('No active project');
+      const resp = await apiClient.post<any>(`/api/projects/${projectId}/ai-edit`, { prompt });
+
+      // Extract updated mainState (supports either {project:{mainState}} or {data:{project}} shapes)
+      const project = resp?.data?.project || resp?.project || null;
+      const mainState = (project?.mainState as any) || null;
+      if (!mainState) throw new Error('No mainState returned');
+
+      // Hydrate stores with new state
+      const canvas = useCanvasStore.getState();
+      const timeline = useTimelineStore.getState();
+      const rawElements = Array.isArray(mainState.elements) ? mainState.elements : [];
+      const rawGroups = Array.isArray(mainState.groups) ? mainState.groups : [];
+      const elements = Array.from(new Map(rawElements.map((e: any) => [e.id, { animations: Array.isArray(e.animations) ? e.animations : [], fill: typeof e.fill === 'string' && e.fill ? e.fill : '#000000', ...e }])).values());
+      const groups = Array.from(new Map(rawGroups.map((g: any) => [g.id, { animations: Array.isArray(g.animations) ? g.animations : [], elementIds: Array.isArray(g.elementIds) ? g.elementIds : [], ...g }])).values());
+      canvas.setElements(elements as any);
+      canvas.setGroups(groups as any);
+      const tl = mainState.timeline || {};
+      timeline.loadProjectData({
+        elements: elements as any,
+        groups: groups as any,
+        animationStates: (tl.animationStates as any) || {},
+        scale: typeof tl.scale === 'number' ? tl.scale : 1,
+        duration: typeof tl.duration === 'number' ? tl.duration : 10,
+        currentTime: typeof tl.currentTime === 'number' ? tl.currentTime : 0,
+      });
+
+      // Update baseline for autosave diffing
+      captureBaseline();
       setMessage('');
     } finally {
       setIsSubmitting(false);

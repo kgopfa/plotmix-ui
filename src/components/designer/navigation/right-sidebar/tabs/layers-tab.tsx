@@ -84,6 +84,7 @@ export const LayersTab: FC = () => {
   const { setElementVisibility, setGroupVisibility } = useCanvasOperations();
   const { selectedElements, selectedGroups, select: selectElement, selectGroup, updateSelectedGroups } = useSelectionStore();
   const setActiveRightPanel = useSetActiveRightPanel();
+  const [lastSelectedElementId, setLastSelectedElementId] = useState<string | null>(null);
 
   // State for collapsed groups - initialize with all groups collapsed
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
@@ -130,16 +131,57 @@ export const LayersTab: FC = () => {
 
 
   const handleElementClick = (element: AnimatedCanvasObject, event?: React.MouseEvent) => {
+    if (event?.shiftKey) {
+      // Build a flat list of visible elements in render order
+      const visibleElements: AnimatedCanvasObject[] = [];
+      const nonDefaultGroups = groups.filter(group => !group.isDefaultGroup);
+      for (const group of nonDefaultGroups) {
+        const isCollapsed = collapsedGroups.has(group.id);
+        if (!isCollapsed) {
+          const elementsInGroup = canvasObjects.filter(el => el.groupId === group.id);
+          visibleElements.push(...elementsInGroup);
+        }
+      }
+      // Ungrouped elements appear after grouped ones
+      const ungroupedElementsLocal = canvasObjects.filter(el => {
+        if (!el.groupId) return true;
+        const group = groups.find(g => g.id === el.groupId);
+        return !group || group.isDefaultGroup;
+      });
+      visibleElements.push(...ungroupedElementsLocal);
+
+      const clickedIndex = visibleElements.findIndex(el => el.id === element.id);
+      // Determine anchor: lastSelectedElementId, or last currently selected, else clicked itself
+      const fallbackAnchorId = selectedElements.length > 0 ? selectedElements[selectedElements.length - 1].id : element.id;
+      const anchorId = lastSelectedElementId || fallbackAnchorId;
+      let anchorIndex = visibleElements.findIndex(el => el.id === anchorId);
+      if (anchorIndex === -1) {
+        anchorIndex = clickedIndex;
+      }
+
+      if (clickedIndex !== -1 && anchorIndex !== -1) {
+        const start = Math.min(anchorIndex, clickedIndex);
+        const end = Math.max(anchorIndex, clickedIndex);
+        const rangeSelection = visibleElements.slice(start, end + 1);
+        selectElement(rangeSelection);
+        setLastSelectedElementId(element.id);
+        return;
+      }
+    }
+
     if (event && (event.metaKey || event.ctrlKey)) {
-      // Multi-select: add to or remove from selection
+      // Multi-select: toggle add/remove
       selectElement(element, true);
+      setLastSelectedElementId(element.id);
     } else {
       // Single select: replace selection
       selectElement([element]);
+      setLastSelectedElementId(element.id);
     }
   };
 
-  const handleGroupClick = (group: CanvasGroup) => {
+  const handleGroupClick = (group: CanvasGroup, event?: React.MouseEvent) => {
+    if (event) event.stopPropagation();
     selectGroup(group);
   };
 
@@ -192,8 +234,26 @@ export const LayersTab: FC = () => {
         </div>
       </div>
 
-      <div className="flex-1 px-1 py-4 overflow-y-auto">
-        <div className="space-y-2 text-sm">
+      <div
+        className="flex-1 px-1 py-4 overflow-y-auto"
+        onClick={(e) => {
+          // Deselect when clicking on the scroll area background/padding
+          if (e.currentTarget === e.target) {
+            selectElement(null);
+            setLastSelectedElementId(null);
+          }
+        }}
+      >
+        <div
+          className="space-y-2 text-sm"
+          onClick={(e) => {
+            // Deselect when clicking on empty space between items
+            if (e.currentTarget === e.target) {
+              selectElement(null);
+              setLastSelectedElementId(null);
+            }
+          }}
+        >
 
           {/* Groups */}
           {groups.filter(group => !group.isDefaultGroup).length > 0 && (
@@ -225,7 +285,7 @@ export const LayersTab: FC = () => {
                         </button>
                         <Folder className="w-4 h-4 text-purple-600" />
                         <button
-                          onClick={() => handleGroupClick(group)}
+                          onClick={(e) => handleGroupClick(group, e)}
                           className="text-gray-700 flex-1 truncate text-left hover:text-indigo-600 transition-colors"
                         >
                           {group.name}
