@@ -252,7 +252,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                       placeholder="Project name"
                       value={projectName}
                       onChange={(e) => setProjectName(e.target.value)}
-                      className="col-start-1 row-start-1 block w-full h-9 rounded-md p-1.5 text-sm text-gray-500 font-semibold placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-500"
+                      className="col-start-1 row-start-1 block w-full h-9 rounded-md px-3 py-1.5 border-2 border-gray-300 text-sm text-gray-500 font-semibold placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-500"
                     />
                   </div>
                 </div>
