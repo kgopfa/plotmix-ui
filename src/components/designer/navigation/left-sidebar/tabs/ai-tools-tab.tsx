@@ -1,49 +1,34 @@
 import React from 'react';
-import { Sparkles, X } from 'lucide-react';
-import { useSetActiveNav, useSetHoverNav, useSetInteractedNav } from '@/stores/use-ui-store';
+import { Sparkles, X, CircleFadingPlus } from 'lucide-react';
+import { useSetActiveNav, useSetHoverNav, useSetInteractedNav, useAIPromptHistory, useAIPromptHistoryActions } from '@/stores/use-ui-store';
 
 export const AIToolsTab: React.FC = () => {
   const setActiveNav = useSetActiveNav();
   const setHoverNav = useSetHoverNav();
   const setInteractedNav = useSetInteractedNav();
-  
-  const aiFeatures = [
-    {
-      name: 'Auto Animations',
-      description: 'Generate smooth transitions',
-      icon: '🎭',
-      status: 'Available'
-    },
-    {
-      name: 'Smart Layout',
-      description: 'Arrange elements intelligently',
-      icon: '🧠',
-      status: 'Beta'
-    },
-    {
-      name: 'Style Transfer',
-      description: 'Apply visual styles automatically',
-      icon: '🎨',
-      status: 'Coming Soon'
-    },
-    {
-      name: 'Content Generation',
-      description: 'AI-powered text and shapes',
-      icon: '✨',
-      status: 'Coming Soon'
-    }
-  ];
+  const [message, setMessage] = React.useState('');
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const aiPromptHistory = useAIPromptHistory();
+  const { addAIPrompt } = useAIPromptHistoryActions();
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'Available':
-        return <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded-full">Available</span>;
-      case 'Beta':
-        return <span className="text-xs px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full">Beta</span>;
-      case 'Coming Soon':
-        return <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full">Coming Soon</span>;
-      default:
-        return null;
+  const handleSubmit = async (e?: React.FormEvent | React.KeyboardEvent) => {
+    if (e) e.preventDefault();
+    if (!message.trim() || isSubmitting) return;
+    try {
+      setIsSubmitting(true);
+      // TODO: Wire up to actual AI action for the designer when ready
+      addAIPrompt(message.trim());
+      // eslint-disable-next-line no-console
+      console.log('AI Tools prompt submitted:', message.trim());
+      setMessage('');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      handleSubmit(e);
     }
   };
 
@@ -74,24 +59,53 @@ export const AIToolsTab: React.FC = () => {
         </div>
       </div>
       <div className="flex-1 p-4 overflow-y-auto">
-        <div className="space-y-3 text-sm">
-          {aiFeatures.map((feature, index) => (
-            <div key={index} className="p-3 bg-purple-50 rounded-lg">
-              <div className="flex items-start justify-between mb-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">{feature.icon}</span>
-                  <div className="font-medium text-gray-700">{feature.name}</div>
-                </div>
-                {getStatusBadge(feature.status)}
+        <div className="max-w-md">
+          {/* Previous prompts list (user prompts only) */}
+          {aiPromptHistory.length > 0 && (
+            <div className="mb-4">
+              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Previous Prompts</div>
+              <div className="space-y-2">
+                {aiPromptHistory.map((entry) => (
+                  <div key={entry.id} className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                    <div className="text-[13px] text-gray-800 leading-relaxed whitespace-pre-wrap">{entry.text}</div>
+                    <div className="mt-1 text-[11px] text-gray-500">{new Date(entry.timestamp).toLocaleString()}</div>
+                  </div>
+                ))}
               </div>
-              <div className="text-gray-600 text-xs ml-6">{feature.description}</div>
             </div>
-          ))}
-        </div>
-        <div className="mt-4 p-3 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg">
-          <div className="text-xs text-gray-700 font-medium mb-1">Pro Tip</div>
-          <div className="text-xs text-gray-600">
-            AI features learn from your design patterns to provide better suggestions over time.
+          )}
+
+          <div className="mb-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+            <div className="p-4">
+              <div className="relative">
+                <textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Apply changes to the canvas..."
+                  className="w-full min-h-16 p-2 pr-16 resize-none border-0 focus:ring-0 focus:outline-none bg-transparent text-gray-900 placeholder-gray-500 text-sm leading-relaxed font-medium"
+                  style={{ fontFamily: 'Inter, system-ui, -apple-system, sans-serif' }}
+                />
+              </div>
+
+              <div className="flex items-center justify-end pt-3">
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={!message.trim() || isSubmitting}
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30 text-white hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Apply (⌘+Enter)"
+                >
+                  {isSubmitting ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.0" stroke="currentColor" className="w-4 h-4 text-white">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

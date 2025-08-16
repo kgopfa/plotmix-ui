@@ -82,6 +82,12 @@ interface UploadedFilesState {
   maxStorage: number; // 1GB in bytes
 }
 
+interface AIPromptEntry {
+  id: string;
+  text: string;
+  timestamp: string;
+}
+
 interface KeyboardShortcut {
   key: string;
   ctrlKey?: boolean;
@@ -116,6 +122,7 @@ interface UIState {
   hoverRightPanel: RightPanelKey | null;
   showAnimationsTab: boolean;
   uploadedFiles: UploadedFilesState;
+  aiPromptHistory: AIPromptEntry[];
 }
 
 // Actions
@@ -184,6 +191,10 @@ interface UIActions {
   updateUploadedFile: (fileId: string, updates: Partial<UploadedFile>) => void;
   clearUploadedFiles: () => void;
   linkFileToElement: (fileId: string, elementId: string) => void;
+
+  // AI Tools prompt history
+  addAIPrompt: (promptText: string) => void;
+  clearAIPrompts: () => void;
 }
 
 type UIStore = UIState & UIActions;
@@ -314,6 +325,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
       hoverRightPanel: null,
       showAnimationsTab: false,
       uploadedFiles: defaultUploadedFilesState,
+      aiPromptHistory: [],
 
   // Panel Actions
   toggleLeftPanel: () => {
@@ -733,6 +745,28 @@ export const useUIStore = create<UIStore>((set, get) => ({
       }
     }));
   },
+
+  // AI Tools prompt history
+  addAIPrompt: (promptText: string) => {
+    set(produce((state) => {
+      const entry: AIPromptEntry = {
+        id: Math.random().toString(36).slice(2),
+        text: promptText,
+        timestamp: new Date().toISOString(),
+      };
+      state.aiPromptHistory.unshift(entry);
+      // Keep only the latest 50 entries
+      if (state.aiPromptHistory.length > 50) {
+        state.aiPromptHistory = state.aiPromptHistory.slice(0, 50);
+      }
+    }));
+  },
+
+  clearAIPrompts: () => {
+    set(produce((state) => {
+      state.aiPromptHistory = [];
+    }));
+  },
 }));
 
 // Selector hooks for specific parts of the UI state
@@ -812,6 +846,14 @@ export const useUploadedFilesActions = () => useUIStore(
 );
 
 export const useUploadedFiles = () => useUIStore((state) => state.uploadedFiles);
+
+export const useAIPromptHistory = () => useUIStore((state) => state.aiPromptHistory);
+export const useAIPromptHistoryActions = () => useUIStore(
+  useShallow((state) => ({
+    addAIPrompt: state.addAIPrompt,
+    clearAIPrompts: state.clearAIPrompts,
+  }))
+);
 
 export const useKeyboardShortcutsStore = () => {
   const shortcuts = useUIStore((state) => state.keyboardShortcuts);
