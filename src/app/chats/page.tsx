@@ -195,7 +195,7 @@ export default function ChatsPage() {
       <ConfirmModal
         open={showDeleteSelectedModal}
         title="Delete Selected Chats"
-        description={`Are you sure you want to delete ${selectedIds.length} selected chats? This action cannot be undone.`}
+        description={`Are you sure you want to delete ${selectedIds.length} selected chats?`}
         confirmLabel="Delete Chats"
         cancelLabel="Cancel"
         variant="danger"
@@ -207,7 +207,7 @@ export default function ChatsPage() {
       <ConfirmModal
         open={showDeleteChatModal}
         title="Delete Chat"
-        description="Are you sure you want to delete this conversation and its associated project? This action cannot be undone."
+        description="Are you sure you want to delete this chat?"
         confirmLabel="Delete Chat"
         cancelLabel="Cancel"
         variant="danger"

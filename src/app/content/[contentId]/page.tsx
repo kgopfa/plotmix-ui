@@ -123,7 +123,7 @@ export default function ContentDetailPage() {
           description={(
             <div className="space-y-2">
               <p>This project was created from a chat. Opening it in the editor separates the editing workflow from the chat conversation.</p>
-              <p className="text-gray-700">Changes made in the editor won’t be reflected back on the conversation page.</p>
+              <p className="text-gray-700">Changes made in the editor won’t be reflected back on the immediately on the content.</p>
             </div>
           )}
           confirmLabel="Continue to Designer"

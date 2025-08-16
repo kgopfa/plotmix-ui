@@ -20,7 +20,7 @@ export function ClearCanvasDialog({ open, onClose, onConfirm }: ClearCanvasDialo
       title="Clear Canvas"
       description={
         <p>
-          Are you sure you want to clear the entire canvas? All elements, groups, and animations will be permanently removed. This action cannot be undone.
+          Are you sure you want to clear the entire canvas?
         </p>
       }
       confirmLabel="Clear Canvas"

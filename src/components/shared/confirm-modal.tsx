@@ -28,11 +28,11 @@ const variantStyles = {
     cancelButton: 'border-purple-500 text-purple-700 hover:bg-purple-50'
   },
   designer: {
-    confirmButton: 'bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700',
-    cancelButton: 'border-teal-500 text-teal-700 hover:bg-teal-50'
+    confirmButton: 'bg-gradient-to-r from-red-800 to-pink-800 hover:from-red-900 hover:to-pink-900',
+    cancelButton: 'border-red-500 text-red-700 hover:bg-red-50'
   },
   danger: {
-    confirmButton: 'bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700',
+    confirmButton: 'bg-gradient-to-r from-red-800 to-pink-800 hover:from-red-900 hover:to-pink-900',
     cancelButton: 'border-red-500 text-red-700 hover:bg-red-50'
   }
 };
@@ -56,20 +56,20 @@ export function ConfirmModal({
     <div className={`fixed inset-0 z-50 flex items-center justify-center ${align === 'content' ? 'lg:pl-20 xl:pr-80 2xl:pr-[calc(100vw/7)]' : ''}`}>
       <div className="absolute inset-0 bg-black/30" onClick={onCancel} />
       <div className="relative z-10 w-full max-w-md mx-auto bg-white rounded-2xl shadow-2xl border border-gray-200 p-9">
-        <h3 className="text-lg font-semibold text-gray-700">{title}</h3>
-        {description && <div className="mt-2 text-sm text-gray-600">{description}</div>}
-        <div className="mt-6 flex items-center justify-end gap-x-3">
+        <h3 className="text-xl font-semibold text-gray-900">{title}</h3>
+        {description && <div className="mt-2 text-sm text-gray-800 font-medium">{description}</div>}
+        <div className="mt-6 flex items-center justify-end gap-x-3 text-sm font-semibold">
           <button
             type="button"
             onClick={onCancel}
-            className={`inline-flex items-center h-10 px-4 py-2 text-sm font-medium rounded-lg border-2 ${styles.cancelButton}`}
+            className={`inline-flex items-center h-10 px-4 py-2 rounded-lg border-2 border-gray-200 text-gray-800 hover:bg-gray-200`}
           >
             {cancelLabel}
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className={`inline-flex items-center h-10 px-4 py-2 text-sm font-semibold rounded-lg text-white ${styles.confirmButton}`}
+            className={`inline-flex items-center h-10 px-4 py-2 rounded-lg text-white ${styles.confirmButton}`}
           >
             {confirmLabel}
           </button>
