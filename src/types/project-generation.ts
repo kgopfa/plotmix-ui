@@ -31,6 +31,18 @@ export interface ChatRequest {
   options?: ChatOptions;
 }
 
+export interface ChatResponse {
+  contentId: string;
+  title: string;
+  description: string;
+  videoUrl: string;
+  transcript: TranscriptSegment[];
+  chatHistory: ChatMessage[];
+  projectData: any;
+  createdAt: string;
+  author: string;
+}
+
 export interface ProjectGenerationResponse {
   success: boolean;
   message: string;
