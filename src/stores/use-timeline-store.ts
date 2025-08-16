@@ -694,12 +694,33 @@ export const useTimelineStore = create<TimelineStore>()(
       },
 
       syncWithTimeManager: (timeState: TimeManagerState) => {
+        const { playback, timeManager, gsapManager } = get();
+        const totalDuration = playback.totalDuration;
+
+        // First, clamp the reported time to total duration
+        const clampedTime = Math.max(0, Math.min(timeState.elapsedTime, totalDuration));
+
         set(produce((state) => {
           state.playback.isPlaying = timeState.isPlaying;
           state.playback.isPaused = !timeState.isPlaying && state.playback.currentTime > 0;
           state.playback.isStopped = !timeState.isPlaying && state.playback.currentTime === 0;
-          state.playback.currentTime = timeState.elapsedTime;
+          state.playback.currentTime = clampedTime;
         }));
+
+        // If we've reached or exceeded the scene cap, pause everything exactly at the cap
+        if (timeState.elapsedTime >= totalDuration) {
+          // Pause tickers
+          try { timeManager.pause(); } catch {}
+          try { gsapManager.handlePlayback(false, () => {}); } catch {}
+
+          // Reflect paused-at-end UI state
+          set(produce((state) => {
+            state.playback.isPlaying = false;
+            state.playback.isPaused = true;
+            state.playback.isStopped = false;
+            state.playback.currentTime = totalDuration;
+          }));
+        }
       },
 
       syncWithGSAP: () => {

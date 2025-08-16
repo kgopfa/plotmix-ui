@@ -22,6 +22,17 @@ const BLOCK_COLORS = [
   'bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700',
 ];
 
+function hashStringToIndex(value: string, modulo: number): number {
+  // djb2 hash
+  let hash = 5381;
+  for (let i = 0; i < value.length; i++) {
+    hash = ((hash << 5) + hash) + value.charCodeAt(i);
+    hash |= 0;
+  }
+  const positive = Math.abs(hash);
+  return positive % Math.max(1, modulo);
+}
+
 export const AnimationBlock: React.FC<AnimationBlockProps> = ({
   animation,
   elementId, // Add elementId to destructuring
@@ -41,8 +52,9 @@ export const AnimationBlock: React.FC<AnimationBlockProps> = ({
   const width = getEffectiveDuration(animation.id) * scale; // Get from Zustand
 
   // Get color based on animation number
-  const colorIndex = parseInt(animation.id.split('-')[1]) - 1;
-  const blockColor = BLOCK_COLORS[colorIndex % BLOCK_COLORS.length];
+  // Use a stable hash of the animation id so colors also appear correctly after project load
+  const colorIndex = hashStringToIndex(animation.id, BLOCK_COLORS.length);
+  const blockColor = BLOCK_COLORS[colorIndex];
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation();

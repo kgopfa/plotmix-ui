@@ -4,10 +4,10 @@ import React, { useRef, useEffect, useState } from 'react'
 import {
   WandSparkles,
   Palette,
-  Trash2,
   CircleFadingPlus,
   Type as TypeIcon,
   Blocks,
+  BrushCleaning,
 } from 'lucide-react'
 import {
   useActiveNav,
@@ -85,7 +85,7 @@ const bottomNavigation: NavItem[] = [
   {
     name: 'Clear Canvas',
     key: 'reset',
-    icon: Trash2,
+    icon: BrushCleaning,
     color: 'text-red-600',
     hoverColor: 'hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 hover:text-red-700',
     activeColor: 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30'
