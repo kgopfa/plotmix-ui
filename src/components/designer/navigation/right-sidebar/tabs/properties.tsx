@@ -35,6 +35,19 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
   const strokeColorTriggerRef = useRef<HTMLDivElement>(null);
   const setActiveRightPanel = useSetActiveRightPanel();
 
+  // Local input state for color fields with validation
+  const [fillHex, setFillHex] = useState<string>('');
+  const [fillHexError, setFillHexError] = useState<boolean>(false);
+  const [strokeHex, setStrokeHex] = useState<string>('');
+  const [strokeHexError, setStrokeHexError] = useState<boolean>(false);
+  const [shadowHex, setShadowHex] = useState<string>('');
+  const [shadowHexError, setShadowHexError] = useState<boolean>(false);
+  const [textStrokeHex, setTextStrokeHex] = useState<string>('');
+  const [textStrokeHexError, setTextStrokeHexError] = useState<boolean>(false);
+
+  const sanitizeHexInput = (raw: string) => raw.replace(/#/g, '').replace(/[^0-9A-Fa-f]/g, '').slice(0, 6).toUpperCase();
+  const isValidHex = (hex: string) => /^[0-9A-F]{6}$/.test(hex);
+
   // Sync with parent component when selected element changes
   useEffect(() => {
     // Exclude animations from local element state - they should only be managed by AnimationsTab
@@ -42,6 +55,23 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
     const { animations: _, ...elementWithoutAnimations } = selectedElement;
     setLocalElement({ ...elementWithoutAnimations, animations: [] } as AnimatedCanvasObject);
     setIsDirty({});
+
+    // Initialize color input states from the selected element
+    const initFill = (selectedElement.fill && selectedElement.fill !== 'none' ? selectedElement.fill : '#ffffff').replace('#', '').toUpperCase();
+    setFillHex(initFill);
+    setFillHexError(!isValidHex(initFill));
+
+    const initStroke = (selectedElement.stroke && selectedElement.stroke !== 'none' ? selectedElement.stroke : '#000000').replace('#', '').toUpperCase();
+    setStrokeHex(initStroke);
+    setStrokeHexError(!isValidHex(initStroke));
+
+    const initShadow = (selectedElement.shadowColor || '#000000').replace('#', '').toUpperCase();
+    setShadowHex(initShadow);
+    setShadowHexError(!isValidHex(initShadow));
+
+    const initTextStroke = (selectedElement.textStroke || '#000000').replace('#', '').toUpperCase();
+    setTextStrokeHex(initTextStroke);
+    setTextStrokeHexError(!isValidHex(initTextStroke));
   }, [selectedElement]);
 
   // Batch updates to the parent component
@@ -382,21 +412,41 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
               </div>
               <input
                 type="text"
-                value={(localElement.fill && localElement.fill !== 'none' ? localElement.fill : '#ffffff').replace('#', '').toUpperCase()}
-                onChange={e => updateLocalProperty('fill', '#' + e.target.value.toUpperCase())}
-                className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-purple-600 uppercase"
+                value={fillHex}
+                onChange={e => {
+                  const hex = sanitizeHexInput(e.target.value);
+                  setFillHex(hex);
+                  const valid = isValidHex(hex);
+                  setFillHexError(!valid);
+                  if (valid) {
+                    updateLocalProperty('fill', '#' + hex);
+                  }
+                }}
+                className={`-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 ${fillHexError ? 'outline-red-500 focus:outline-red-600' : 'outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-purple-600'} uppercase`}
                 placeholder="FFFFFF"
               />
               <ColorPicker
                 value={localElement.fill || '#ffffff'}
                 onChange={(color) => {
                   updateLocalProperty('fill', color);
+                  if (color === 'none') {
+                    setFillHex('');
+                    setFillHexError(false);
+                  } else {
+                    const next = color.replace('#', '').toUpperCase();
+                    setFillHex(next);
+                    setFillHexError(!isValidHex(next));
+                  }
                 }}
                 isOpen={showFillColorPicker}
                 onClose={() => setShowFillColorPicker(false)}
                 triggerRef={fillColorTriggerRef}
                 allowNone
-                onClear={() => updateLocalProperty('fill', 'none')}
+                onClear={() => {
+                  updateLocalProperty('fill', 'none');
+                  setFillHex('');
+                  setFillHexError(false);
+                }}
                 isNone={localElement.fill === 'none'}
               />
             </div>
@@ -446,19 +496,41 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
             </div>
             <input
               type="text"
-              value={(localElement.stroke && localElement.stroke !== 'none' ? localElement.stroke : '#000000').replace('#', '').toUpperCase()}
-              onChange={e => updateLocalProperty('stroke', '#' + e.target.value.toUpperCase())}
-              className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 uppercase"
+              value={strokeHex}
+              onChange={e => {
+                const hex = sanitizeHexInput(e.target.value);
+                setStrokeHex(hex);
+                const valid = isValidHex(hex);
+                setStrokeHexError(!valid);
+                if (valid) {
+                  updateLocalProperty('stroke', '#' + hex);
+                }
+              }}
+              className={`-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 ${strokeHexError ? 'outline-red-500 focus:outline-red-600' : 'outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600'} uppercase`}
               placeholder="000000"
             />
             <ColorPicker
               value={localElement.stroke || '#000000'}
-              onChange={(color) => updateLocalProperty('stroke', color)}
+              onChange={(color) => {
+                updateLocalProperty('stroke', color);
+                if (color === 'none') {
+                  setStrokeHex('');
+                  setStrokeHexError(false);
+                } else {
+                  const next = color.replace('#', '').toUpperCase();
+                  setStrokeHex(next);
+                  setStrokeHexError(!isValidHex(next));
+                }
+              }}
               isOpen={showStrokeColorPicker}
               onClose={() => setShowStrokeColorPicker(false)}
               triggerRef={strokeColorTriggerRef}
               allowNone
-              onClear={() => updateLocalProperty('stroke', 'none')}
+              onClear={() => {
+                updateLocalProperty('stroke', 'none');
+                setStrokeHex('');
+                setStrokeHexError(false);
+              }}
               isNone={localElement.stroke === 'none'}
             />
           </div>
@@ -628,13 +700,19 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                   </div>
                   <input
                     type="text"
-                    value={(localElement.shadowColor || '#000000').replace('#', '').toUpperCase()}
+                    value={shadowHex}
                     onChange={e => {
-                      const value = '#' + e.target.value.toUpperCase();
-                      updateLocalProperty('shadowColor', value);
-                      updateShadowFilters(localElement.id, { shadowColor: value });
+                      const hex = sanitizeHexInput(e.target.value);
+                      setShadowHex(hex);
+                      const valid = isValidHex(hex);
+                      setShadowHexError(!valid);
+                      if (valid) {
+                        const value = '#' + hex;
+                        updateLocalProperty('shadowColor', value);
+                        updateShadowFilters(localElement.id, { shadowColor: value });
+                      }
                     }}
-                    className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-amber-600 uppercase"
+                    className={`-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 ${shadowHexError ? 'outline-red-500 focus:outline-red-600' : 'outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-amber-600'} uppercase`}
                     placeholder="000000"
                   />
                 </div>
@@ -904,9 +982,17 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                         </div>
                         <input
                           type="text"
-                          value={(localElement.textStroke || '#000000').replace('#', '').toUpperCase()}
-                          onChange={e => updateLocalProperty('textStroke', '#' + e.target.value.toUpperCase())}
-                          className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-green-600 uppercase"
+                          value={textStrokeHex}
+                          onChange={e => {
+                            const hex = sanitizeHexInput(e.target.value);
+                            setTextStrokeHex(hex);
+                            const valid = isValidHex(hex);
+                            setTextStrokeHexError(!valid);
+                            if (valid) {
+                              updateLocalProperty('textStroke', '#' + hex);
+                            }
+                          }}
+                          className={`-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 ${textStrokeHexError ? 'outline-red-500 focus:outline-red-600' : 'outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-green-600'} uppercase`}
                           placeholder="000000"
                         />
                       </div>
@@ -991,9 +1077,17 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                         </div>
                         <input
                           type="text"
-                          value={(localElement.shadowColor || '#000000').replace('#', '').toUpperCase()}
-                          onChange={e => updateLocalProperty('shadowColor', '#' + e.target.value.toUpperCase())}
-                          className="-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-green-600 uppercase"
+                          value={shadowHex}
+                          onChange={e => {
+                            const hex = sanitizeHexInput(e.target.value);
+                            setShadowHex(hex);
+                            const valid = isValidHex(hex);
+                            setShadowHexError(!valid);
+                            if (valid) {
+                              updateLocalProperty('shadowColor', '#' + hex);
+                            }
+                          }}
+                          className={`-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 ${shadowHexError ? 'outline-red-500 focus:outline-red-600' : 'outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-green-600'} uppercase`}
                           placeholder="000000"
                         />
                       </div>
