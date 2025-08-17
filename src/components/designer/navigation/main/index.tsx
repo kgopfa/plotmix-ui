@@ -86,6 +86,15 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
   const handleUndo = async () => {
     if (!projectId) return;
     try {
+      // Ensure any in-memory edits are flushed as a change so undo has something to revert
+      await useProjectStore
+        .getState()
+        .persistIfDirty('Pre-undo autosave')
+        .catch((e) => {
+          // eslint-disable-next-line no-console
+          console.warn('Pre-undo autosave failed (continuing with undo):', e);
+        });
+
       await apiClient.post<any>(`/api/projects/${projectId}/undo`);
       const refreshed = await apiClient.get<any>(`/api/projects/${projectId}`);
       const project = refreshed.data.project;

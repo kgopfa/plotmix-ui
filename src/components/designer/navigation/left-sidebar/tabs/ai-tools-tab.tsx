@@ -97,7 +97,7 @@ export const AIToolsTab: React.FC = () => {
           {/* Previous prompts list (user prompts only) */}
           {aiPromptHistory.length > 0 && (
             <div className="mb-4">
-              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Previous Prompts</div>
+              <div className="text-xs font-medium text-gray-500 mb-2">Previous Prompts</div>
               <div className="space-y-2">
                 {aiPromptHistory.map((entry) => (
                   <div key={entry.id} className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
@@ -109,15 +109,15 @@ export const AIToolsTab: React.FC = () => {
             </div>
           )}
 
-          <div className="mb-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+          <div className="mb-4 bg-white border border-gray-200 rounded-lg shadow-sm">
             <div className="p-4">
               <div className="relative">
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Apply changes to the canvas..."
-                  className="w-full min-h-16 p-2 pr-16 resize-none border-0 focus:ring-0 focus:outline-none bg-transparent text-gray-900 placeholder-gray-500 text-sm leading-relaxed font-medium"
+                  placeholder="Generate design changes..."
+                  className="w-full min-h-14 p-2 pr-16 resize-none border-0 focus:ring-0 focus:outline-none bg-transparent text-gray-900 placeholder-gray-500 text-sm leading-relaxed font-medium"
                   style={{ fontFamily: 'Inter, system-ui, -apple-system, sans-serif' }}
                 />
               </div>
@@ -133,9 +133,7 @@ export const AIToolsTab: React.FC = () => {
                   {isSubmitting ? (
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.0" stroke="currentColor" className="w-4 h-4 text-white">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
-                    </svg>
+                    <Sparkles className="w-4 h-4 text-white" />
                   )}
                 </button>
               </div>
