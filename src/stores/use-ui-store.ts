@@ -195,6 +195,7 @@ interface UIActions {
   // AI Tools prompt history
   addAIPrompt: (promptText: string) => void;
   clearAIPrompts: () => void;
+  setAIPrompts: (items: { id: string; text: string; timestamp: string }[]) => void;
 }
 
 type UIStore = UIState & UIActions;
@@ -767,6 +768,12 @@ export const useUIStore = create<UIStore>((set, get) => ({
       state.aiPromptHistory = [];
     }));
   },
+
+  setAIPrompts: (items: { id: string; text: string; timestamp: string }[]) => {
+    set(produce((state) => {
+      state.aiPromptHistory = items.slice(0, 200);
+    }));
+  },
 }));
 
 // Selector hooks for specific parts of the UI state
@@ -852,6 +859,7 @@ export const useAIPromptHistoryActions = () => useUIStore(
   useShallow((state) => ({
     addAIPrompt: state.addAIPrompt,
     clearAIPrompts: state.clearAIPrompts,
+    setAIPrompts: (state as any).setAIPrompts,
   }))
 );
 

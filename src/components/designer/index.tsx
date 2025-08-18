@@ -1095,7 +1095,7 @@ export default function Designer() {
         })() && (
           <>
             <div
-              className={`absolute right-20 top-2 bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-xl shadow-gray-200/50 rounded-2xl overflow-y-auto z-50 mb-2 transform transition-all duration-300 ease-out translate-x-0 opacity-100`}
+              className={`absolute right-20 top-2 bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-xl shadow-gray-200/50 rounded-2xl overflow-y-auto z-[60] mb-2 transform transition-all duration-300 ease-out translate-x-0 opacity-100`}
               style={{ 
                 width: `${panelState.rightPanelWidth / 16}rem`,
                 bottom: `${panelState.timelineHeight + 8}px`,

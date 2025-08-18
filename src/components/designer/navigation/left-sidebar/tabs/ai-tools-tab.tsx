@@ -12,8 +12,25 @@ export const AIToolsTab: React.FC = () => {
   const setInteractedNav = useSetInteractedNav();
   const [message, setMessage] = React.useState('');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [showDecision, setShowDecision] = React.useState(false);
+  const [isReverting, setIsReverting] = React.useState(false);
   const aiPromptHistory = useAIPromptHistory();
-  const { addAIPrompt } = useAIPromptHistoryActions();
+  const { addAIPrompt, setAIPrompts } = useAIPromptHistoryActions();
+  React.useEffect(() => {
+    (async () => {
+      const { projectId } = useProjectStore.getState();
+      if (!projectId) return;
+      try {
+        const res = await apiClient.get<any>(`/api/projects/${projectId}/designer-prompts?limit=50`);
+        const prompts = res?.data?.prompts || res?.prompts || [];
+        const items = (prompts as any[]).map((p) => ({ id: p.id, text: p.prompt, timestamp: p.createdAt }));
+        setAIPrompts(items);
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn('Failed to load designer prompts', e);
+      }
+    })();
+  }, []);
 
   const handleSubmit = async (e?: React.FormEvent | React.KeyboardEvent) => {
     if (e) e.preventDefault();
@@ -55,6 +72,7 @@ export const AIToolsTab: React.FC = () => {
       // Update baseline for autosave diffing
       captureBaseline();
       setMessage('');
+      setShowDecision(true);
     } finally {
       setIsSubmitting(false);
     }
@@ -66,13 +84,52 @@ export const AIToolsTab: React.FC = () => {
     }
   };
 
+  const handleAccept = () => {
+    // Keep the versioned change; baseline already captured
+    setShowDecision(false);
+  };
+
+  const handleDiscard = async () => {
+    const { projectId, captureBaseline, setProjectInfo } = useProjectStore.getState();
+    if (!projectId || isReverting) return;
+    try {
+      setIsReverting(true);
+      await apiClient.post<any>(`/api/projects/${projectId}/undo`);
+      const refreshed = await apiClient.get<any>(`/api/projects/${projectId}`);
+      const project = refreshed.data.project;
+      setProjectInfo({ version: project.version, name: project.name, title: project.title });
+      const mainState = (project.mainState as any) || {};
+      const canvas = useCanvasStore.getState();
+      const timeline = useTimelineStore.getState();
+      const rawElements = Array.isArray(mainState.elements) ? mainState.elements : [];
+      const rawGroups = Array.isArray(mainState.groups) ? mainState.groups : [];
+      const elements = Array.from(new Map(rawElements.map((e: any) => [e.id, { animations: Array.isArray(e.animations) ? e.animations : [], fill: typeof e.fill === 'string' && e.fill ? e.fill : '#000000', ...e }])).values());
+      const groups = Array.from(new Map(rawGroups.map((g: any) => [g.id, { animations: Array.isArray(g.animations) ? g.animations : [], elementIds: Array.isArray(g.elementIds) ? g.elementIds : [], ...g }])).values());
+      canvas.setElements(elements as any);
+      canvas.setGroups(groups as any);
+      const tl = mainState.timeline || {};
+      timeline.loadProjectData({
+        elements: elements as any,
+        groups: groups as any,
+        animationStates: (tl.animationStates as any) || {},
+        scale: typeof tl.scale === 'number' ? tl.scale : 1,
+        duration: typeof tl.duration === 'number' ? tl.duration : 10,
+        currentTime: typeof tl.currentTime === 'number' ? tl.currentTime : 0,
+      });
+      captureBaseline();
+    } finally {
+      setIsReverting(false);
+      setShowDecision(false);
+    }
+  };
+
   return (
     <div className="h-full w-96 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
       <div className="p-4 border-b border-gray-100">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-purple-600" />
-            <h3 className="font-semibold text-gray-900">AI Tools</h3>
+          <div className="flex items-center gap-2 ml-0.5">
+            <Sparkles className="w-4 h-4 text-purple-500" />
+            <h3 className="font-semibold text-gray-800">Generative</h3>
           </div>
           <button
             onClick={(e) => {
@@ -94,6 +151,26 @@ export const AIToolsTab: React.FC = () => {
       </div>
       <div className="flex-1 p-4 overflow-y-auto">
         <div className="max-w-md">
+          {showDecision && (
+            <div className="mb-4 p-3 border border-blue-200 bg-blue-50 rounded-lg flex items-center justify-between">
+              <div className="text-[13px] text-blue-800 font-medium">Changes applied</div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleDiscard}
+                  disabled={isReverting}
+                  className="px-2 py-1 text-[12px] rounded-md border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-50"
+                >
+                  Discard
+                </button>
+                <button
+                  onClick={handleAccept}
+                  className="px-2 py-1 text-[12px] rounded-md border border-green-300 text-green-700 hover:bg-green-50"
+                >
+                  Accept
+                </button>
+              </div>
+            </div>
+          )}
           {/* Previous prompts list (user prompts only) */}
           {aiPromptHistory.length > 0 && (
             <div className="mb-4">
@@ -109,7 +186,7 @@ export const AIToolsTab: React.FC = () => {
             </div>
           )}
 
-          <div className="mb-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+          <div className="mb-4 bg-white border border-gray-200 rounded-lg">
             <div className="p-4">
               <div className="relative">
                 <textarea
