@@ -45,6 +45,7 @@ interface MainNavBarProps {
 }
 
 export const MainNavBar: React.FC<MainNavBarProps> = ({
+  canvasZoom,
   onGroupElements,
   onUngroupElements
 }) => {
@@ -250,10 +251,10 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                   </div>
                 </div>
 
-                {/* Page Zoom (placeholder, non-functional) */}
+                {/* Page Zoom (reflects viewport zoom) */}
                 <div className="ml-4 flex items-center gap-2">
-                  <div className="text-sm font-mono text-gray-600 w-16 rounded-md px-3 py-1.5 border border-gray-300 text-center select-none">
-                    100%
+                  <div className="text-sm font-mono text-gray-600 w-16 rounded-md px-3 py-1.5 border border-gray-300 text-center select-none" title="Canvas Zoom">
+                    {`${Math.round((canvasZoom ?? 1) * 100)}%`}
                   </div>
                 </div>
               </div>
