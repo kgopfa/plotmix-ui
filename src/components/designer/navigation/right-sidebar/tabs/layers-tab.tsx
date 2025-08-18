@@ -1,4 +1,4 @@
-import { useEffect, FC, useState } from 'react';
+import { useEffect, FC, useState, useRef } from 'react';
 import { Eye, EyeOff, Square, Circle, Type, Image as ImageIcon, Minus, Folder, ChevronDown, ChevronRight, X } from 'lucide-react';
 import Image from 'next/image';
 import { useCanvasElements, useCanvasGroups, useCanvasOperations } from '@/stores/use-canvas-store';
@@ -81,10 +81,15 @@ const getElementIcon = (type: string) => {
 export const LayersTab: FC = () => {
   const canvasObjects = useCanvasElements();
   const groups = useCanvasGroups();
-  const { setElementVisibility, setGroupVisibility } = useCanvasOperations();
+  const { setElementVisibility, setGroupVisibility, updateElement, updateGroup } = useCanvasOperations();
   const { selectedElements, selectedGroups, select: selectElement, selectGroup, updateSelectedGroups } = useSelectionStore();
   const setActiveRightPanel = useSetActiveRightPanel();
   const [lastSelectedElementId, setLastSelectedElementId] = useState<string | null>(null);
+  const [editingElementId, setEditingElementId] = useState<string | null>(null);
+  const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState<string>('');
+  const nameInputRef = useRef<HTMLInputElement | null>(null);
+  const commitByEnterRef = useRef<boolean>(false);
 
   // State for collapsed groups - initialize with all groups collapsed
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
@@ -113,6 +118,42 @@ export const LayersTab: FC = () => {
       return newSet;
     });
   }, [groups]);
+
+  // Focus the input when starting to edit
+  useEffect(() => {
+    if (editingElementId || editingGroupId) {
+      nameInputRef.current?.focus();
+      nameInputRef.current?.select();
+    }
+  }, [editingElementId, editingGroupId]);
+
+  const startEditElement = (element: AnimatedCanvasObject) => {
+    setEditingGroupId(null);
+    setEditingElementId(element.id);
+    setEditingName(element.name || '');
+  };
+
+  const commitEditElement = (element: AnimatedCanvasObject) => {
+    const newName = editingName.trim();
+    setEditingElementId(null);
+    if (newName && newName !== element.name) {
+      updateElement(element.id, { name: newName });
+    }
+  };
+
+  const startEditGroup = (group: CanvasGroup) => {
+    setEditingElementId(null);
+    setEditingGroupId(group.id);
+    setEditingName(group.name || '');
+  };
+
+  const commitEditGroup = (group: CanvasGroup) => {
+    const newName = editingName.trim();
+    setEditingGroupId(null);
+    if (newName && newName !== group.name) {
+      updateGroup(group.id, { name: newName });
+    }
+  };
 
 
 
@@ -284,12 +325,39 @@ export const LayersTab: FC = () => {
                           )}
                         </button>
                         <Folder className="w-4 h-4 text-purple-600" />
-                        <button
-                          onClick={(e) => handleGroupClick(group, e)}
-                          className="text-gray-700 flex-1 truncate text-left hover:text-indigo-600 transition-colors"
-                        >
-                          {group.name}
-                        </button>
+                        {editingGroupId === group.id ? (
+                          <input
+                            ref={nameInputRef}
+                            value={editingName}
+                            onChange={(e) => setEditingName(e.target.value)}
+                            onBlur={() => {
+                              if (commitByEnterRef.current) {
+                                commitByEnterRef.current = false;
+                                return;
+                              }
+                              commitEditGroup(group);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                commitByEnterRef.current = true;
+                                commitEditGroup(group);
+                              }
+                              if (e.key === 'Escape') setEditingGroupId(null);
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex-1 text-xs px-1 py-0.5 border border-indigo-300 rounded bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                          />
+                        ) : (
+                          <button
+                            onClick={(e) => handleGroupClick(group, e)}
+                            onDoubleClick={(e) => { e.stopPropagation(); startEditGroup(group); }}
+                            className="text-gray-700 flex-1 truncate text-left hover:text-indigo-600 transition-colors"
+                          >
+                            {group.name}
+                          </button>
+                        )}
                         <button
                           onClick={(e) => handleGroupVisibilityToggle(e, group)}
                           className="p-1 hover:bg-white rounded transition-colors"
@@ -320,12 +388,39 @@ export const LayersTab: FC = () => {
                               >
                                 <div className="flex items-center gap-2">
                                   <ElementThumbnail element={element} />
-                                  <button
-                                    onClick={(e) => handleElementClick(element, e)}
-                                    className="text-xs text-gray-700 flex-1 truncate text-left hover:text-blue-600 transition-colors"
-                                  >
-                                    {element.name}
-                                  </button>
+                                  {editingElementId === element.id ? (
+                                    <input
+                                      ref={nameInputRef}
+                                      value={editingName}
+                                      onChange={(e) => setEditingName(e.target.value)}
+                                      onBlur={() => {
+                                        if (commitByEnterRef.current) {
+                                          commitByEnterRef.current = false;
+                                          return;
+                                        }
+                                        commitEditElement(element);
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          commitByEnterRef.current = true;
+                                          commitEditElement(element);
+                                        }
+                                        if (e.key === 'Escape') setEditingElementId(null);
+                                      }}
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="flex-1 text-xs px-1 py-0.5 border border-blue-300 rounded bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                    />
+                                  ) : (
+                                    <button
+                                      onClick={(e) => handleElementClick(element, e)}
+                                      onDoubleClick={(e) => { e.stopPropagation(); startEditElement(element); }}
+                                      className="text-xs text-gray-700 flex-1 truncate text-left hover:text-blue-600 transition-colors"
+                                    >
+                                      {element.name}
+                                    </button>
+                                  )}
                                   <button
                                     onClick={(e) => handleElementVisibilityToggle(e, element)}
                                     className="p-1 hover:bg-gray-100 rounded transition-colors"
@@ -363,12 +458,39 @@ export const LayersTab: FC = () => {
                   >
                     <div className="flex items-center gap-2">
                       <ElementThumbnail element={element} />
-                      <button
-                        onClick={(e) => handleElementClick(element, e)}
-                        className="text-gray-700 flex-1 truncate text-left hover:text-blue-600 transition-colors"
-                      >
-                        {element.name}
-                      </button>
+                      {editingElementId === element.id ? (
+                        <input
+                          ref={nameInputRef}
+                          value={editingName}
+                          onChange={(e) => setEditingName(e.target.value)}
+                          onBlur={() => {
+                            if (commitByEnterRef.current) {
+                              commitByEnterRef.current = false;
+                              return;
+                            }
+                            commitEditElement(element);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              commitByEnterRef.current = true;
+                              commitEditElement(element);
+                            }
+                            if (e.key === 'Escape') setEditingElementId(null);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex-1 text-sm px-1 py-0.5 border border-blue-300 rounded bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        />
+                      ) : (
+                        <button
+                          onClick={(e) => handleElementClick(element, e)}
+                          onDoubleClick={(e) => { e.stopPropagation(); startEditElement(element); }}
+                          className="text-gray-700 flex-1 truncate text-left hover:text-blue-600 transition-colors"
+                        >
+                          {element.name}
+                        </button>
+                      )}
                       <button
                         onClick={(e) => handleElementVisibilityToggle(e, element)}
                         className="p-1 hover:bg-gray-200 rounded transition-colors"
