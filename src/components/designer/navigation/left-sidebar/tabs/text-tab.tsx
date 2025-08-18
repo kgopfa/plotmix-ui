@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlignLeft, Bold, Italic, Underline, X } from 'lucide-react';
+import { AlignLeft, Bold, Italic, Type, Underline, X } from 'lucide-react';
 import { useToolState, useToolActions, useSetActiveNav, useSetHoverNav, useSetInteractedNav } from '@/stores/use-ui-store';
 
 export const TextTab: React.FC = () => {
@@ -52,10 +52,13 @@ export const TextTab: React.FC = () => {
   };
 
   return (
-    <div className="h-full bg-white border-r border-gray-200 shadow-md rounded-xl overflow-y-auto p-4 space-y-6">
-      <div className="space-y-4">
-        <div className="flex items-center justify-between mb-4">
-          <div className="text-lg font-bold text-gray-800">Text Tools</div>
+    <div className="h-full w-96 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
+      <div className="border-b border-gray-100 p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 ml-0.5">
+            <Type strokeWidth={2.75} className="w-4 h-4 text-blue-600" />
+            <h3 className="font-semibold text-gray-800 ml-0.5">Text</h3>
+          </div>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -73,35 +76,35 @@ export const TextTab: React.FC = () => {
             <X className="w-4 h-4" />
           </button>
         </div>
-        
+      </div>
+
+      <div className="flex-1 p-4 overflow-y-auto">
+        <div className="space-y-6">
         <div className="space-y-3">
           <div className="text-sm font-semibold text-gray-700 mb-3">Text Tools</div>
           {textTools.map((tool, index) => (
             <button
               key={index}
               onClick={() => handleToolSelect(tool.tool)}
-              className={`w-full p-4 rounded-xl text-left transition-all duration-200 ease-out transform hover:scale-[1.02] ${
-                activeTool === tool.tool 
-                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30' 
-                  : 'bg-white/80 hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 border border-gray-200/50 hover:border-blue-200/50 shadow-sm hover:shadow-md'
-              }`}
+              className={`w-full p-4 rounded-xl text-left transition-all duration-200 ease-out transform hover:scale-[1.02] ${activeTool === tool.tool
+                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30'
+                : 'bg-white/80 hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 border border-gray-200/50 hover:border-blue-200/50 shadow-sm hover:shadow-md'
+                }`}
             >
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center gap-3">
                   <span className="text-xl">{tool.icon}</span>
                   <div className="font-medium text-gray-700">{tool.name}</div>
                 </div>
-                <span className={`text-xs px-2 py-1 rounded-lg ${
-                  activeTool === tool.tool 
-                    ? 'bg-white/20 text-white' 
-                    : 'bg-blue-100 text-blue-600'
-                }`}>
+                <span className={`text-xs px-2 py-1 rounded-lg ${activeTool === tool.tool
+                  ? 'bg-white/20 text-white'
+                  : 'bg-blue-100 text-blue-600'
+                  }`}>
                   {tool.shortcut}
                 </span>
               </div>
-              <div className={`text-xs ml-11 ${
-                activeTool === tool.tool ? 'text-blue-100' : 'text-gray-600'
-              }`}>
+              <div className={`text-xs ml-11 ${activeTool === tool.tool ? 'text-blue-100' : 'text-gray-600'
+                }`}>
                 {tool.description}
               </div>
             </button>
@@ -162,11 +165,12 @@ export const TextTab: React.FC = () => {
                 {activeTool === 'text' ? '📝' : '👆'}
               </span>
               <span className="text-blue-700 font-medium text-sm">
-                {activeTool === 'text' ? 'Single Text' : 
-                 'Selection Tool'}
+                {activeTool === 'text' ? 'Single Text' :
+                  'Selection Tool'}
               </span>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { CloudUpload, FileText, Image, Video, Music, CheckCircle, AlertCircle, Trash2, X } from 'lucide-react';
+import { CloudUpload, FileText, Image, Video, Music, CheckCircle, AlertCircle, Trash2, X, Upload } from 'lucide-react';
 import { useUploadedFiles, useUploadedFilesActions, useSetActiveNav, useSetHoverNav, useSetInteractedNav } from '@/stores/use-ui-store';
 
 export const UploadsTab: React.FC = () => {
@@ -172,9 +172,9 @@ export const UploadsTab: React.FC = () => {
     <div className="h-full w-96 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
       <div className="p-4 border-b border-gray-100">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CloudUpload className="w-5 h-5 text-green-600" />
-            <h3 className="font-semibold text-gray-900">Uploads</h3>
+          <div className="flex items-center gap-2 ml-0.5">
+            <Upload className="w-4 h-4 text-green-500" />
+            <h3 className="font-semibold text-gray-800 ml-0.5">Uploads</h3>
           </div>
           <button
             onClick={(e) => {

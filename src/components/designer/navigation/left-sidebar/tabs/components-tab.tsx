@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
-import { X } from 'lucide-react';
+import { Blocks, X } from 'lucide-react';
 import { componentLibrary, ComponentItem, getComponentsByCategory, searchComponents, getAllCategories } from '@/data/components';
 import { useSetActiveNav, useSetHoverNav, useSetInteractedNav } from '@/stores/use-ui-store';
 
@@ -44,31 +44,35 @@ export function ComponentsTab() {
   };
 
   return (
-    <div className="bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-xl shadow-gray-200/50 rounded-2xl p-6 w-96 h-full flex flex-col">
-      <div className="flex items-center justify-between mb-6 flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold text-gray-900">Components</h2>
-          <div className="text-sm text-gray-500">{filteredComponents.length} items</div>
-        </div>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setActiveNav(null);
-            setHoverNav(null);
-            setInteractedNav(null);
-            // Prevent immediate re-hovering by adding a small delay
-            setTimeout(() => {
+    <div className="h-full w-96 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
+      <div className="p-4 border-b border-gray-100">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 ml-0.5">
+            <Blocks strokeWidth={2.5} className="w-4 h-4 text-teal-600" />
+            <h3 className="font-semibold text-gray-800 ml-0.5">Components</h3>
+            <div className="text-xs text-gray-500">{filteredComponents.length} items</div>
+          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setActiveNav(null);
               setHoverNav(null);
-            }, 50);
-          }}
-          className="p-1 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-100"
-          title="Close"
-        >
-          <X className="w-4 h-4" />
-        </button>
+              setInteractedNav(null);
+              // Prevent immediate re-hovering by adding a small delay
+              setTimeout(() => {
+                setHoverNav(null);
+              }, 50);
+            }}
+            className="p-1 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-100"
+            title="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
       </div>
-      
-      <div className="flex flex-col h-full space-y-4">
+
+      <div className="flex-1 p-4 overflow-y-auto">
+        <div className="space-y-4">
         {/* Search bar */}
         <div className="relative flex-shrink-0">
           <input
@@ -112,10 +116,10 @@ export function ComponentsTab() {
           ))}
         </div>
 
-        {/* Components grid - takes remaining space */}
-        <div className="flex-1 min-h-0">
+        {/* Components grid */}
+        <div>
           {filteredComponents.length > 0 ? (
-            <div className="grid grid-cols-3 gap-3 h-full overflow-y-auto">
+            <div className="grid grid-cols-3 gap-3">
               {filteredComponents.map((component) => (
                 <div
                   key={component.id}
@@ -151,8 +155,9 @@ export function ComponentsTab() {
         </div>
 
         {/* Info text */}
-        <div className="text-xs text-gray-500 text-center pt-4 flex-shrink-0">
+        <div className="text-xs text-gray-500 text-center pt-4">
           Click on any component to add it to your canvas
+        </div>
         </div>
       </div>
     </div>
