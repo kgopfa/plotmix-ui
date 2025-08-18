@@ -245,8 +245,15 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                       placeholder="Project name"
                       value={projectName}
                       onChange={(e) => setProjectName(e.target.value)}
-                      className="col-start-1 row-start-1 block w-full h-9 rounded-md px-3 py-1.5 border-2 border-gray-300 text-sm text-gray-500 font-semibold placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-500"
+                      className="col-start-1 row-start-1 block w-full h-9 rounded-md px-3 py-1.5 border border-gray-300 text-sm text-gray-600 font-medium placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-500"
                     />
+                  </div>
+                </div>
+
+                {/* Page Zoom (placeholder, non-functional) */}
+                <div className="ml-4 flex items-center gap-2">
+                  <div className="text-sm font-mono text-gray-600 w-16 rounded-md px-3 py-1.5 border border-gray-300 text-center select-none">
+                    100%
                   </div>
                 </div>
               </div>

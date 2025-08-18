@@ -1,5 +1,5 @@
 import { useRef, useState, useMemo, useEffect } from 'react';
-import { Play, Pause, RotateCcw, Clock, Monitor, ChevronUp, ChevronDown } from 'lucide-react';
+import { Play, Pause, RotateCcw, ChevronUp, ChevronDown } from 'lucide-react';
 import { TimelineTrack } from '@/components/designer/timeline/timeline-track';
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { useCanvasElements, useCanvasGroups } from '@/stores/use-canvas-store';
@@ -53,11 +53,7 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
   const [scrollLeft, setScrollLeft] = useState(0);
   const [expandedElements, setExpandedElements] = useState<Set<string>>(new Set());
 
-  // Zoom mode: 'time' or 'view'
-  const [zoomMode, setZoomMode] = useState<'time' | 'view'>('view');
-
-  // Slider value derived from mode
-  const sliderValue = zoomMode === 'time' ? timelineUI.scale : (canvasZoom || 1) * 100;
+  // Zoom controls moved to main navigation; timeline no longer manages zoom
 
   // Pre-warm animation durations for newly detected animations
   useEffect(() => {
@@ -257,57 +253,12 @@ export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Zoom Mode Buttons */}
-          <div className="flex gap-1 overflow-hidden bg-white/95 backdrop-blur-sm rounded-md p-1 border border-gray-200/50 shadow-xl shadow-gray-200/50 ring-1 ring-gray-200/50">
-            <button
-              className={`px-3 py-2 text-sm font-semibold rounded-md flex flex-row items-center justify-center cursor-pointer transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 ${
-                zoomMode === 'time' 
-                  ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30' 
-                  : 'text-gray-500 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700'
-              }`}
-              onClick={() => setZoomMode('time')}
-            >
-              <Clock size={16} className={`transition-all duration-200 ${zoomMode === 'time' ? 'text-white drop-shadow-sm' : 'text-gray-500 group-hover:text-purple-700'}`} />
-              <span className="font-semibold ml-2 text-sm">Time</span>
-            </button>
-            <button
-              className={`px-3 py-2 text-sm font-semibold rounded-md flex flex-row items-center justify-center cursor-pointer transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 ${
-                zoomMode === 'view' 
-                  ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30' 
-                  : 'text-gray-500 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700'
-              }`}
-              onClick={() => setZoomMode('view')}
-            >
-              <Monitor size={16} className={`transition-all duration-200 ${zoomMode === 'view' ? 'text-white drop-shadow-sm' : 'text-gray-500 group-hover:text-purple-700'}`} />
-              <span className="font-semibold ml-2 text-sm">View</span>
-            </button>
-          </div>
-
-          {/* Zoom Slider */}
-          <div className="bg-white/60 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/30">
-            <input
-              type="range"
-              min={zoomMode === 'time' ? 20 : 10}
-              max={zoomMode === 'time' ? 400 : 500}
-              step={zoomMode === 'time' ? 10 : 10}
-              value={sliderValue}
-              onChange={e => {
-                const val = Number(e.target.value);
-                if (zoomMode === 'time') {
-                  setScale(val);
-                } else {
-                  onCanvasZoom?.(val / 100);
-                }
-              }}
-              className="h-2 w-32 cursor-pointer appearance-none bg-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-r [&::-webkit-slider-thumb]:from-blue-400 [&::-webkit-slider-thumb]:to-blue-500 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-gradient-to-r [&::-moz-range-thumb]:from-blue-400 [&::-moz-range-thumb]:to-blue-500 [&::-moz-range-thumb]:border-none [&::-moz-range-thumb]:cursor-pointer"
-              title="Zoom"
-            />
-          </div>
+          {/* Zoom controls removed from timeline; collapse button remains */}
 
           {/* Timeline Collapse/Expand Button */}
           <button
             onClick={toggleTimelineCollapse}
-            className="h-10 w-10 flex items-center justify-center bg-white/60 backdrop-blur-sm border border-gray-200/30 rounded-lg shadow-md shadow-gray-200/30 cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg"
+            className="h-10 w-10 flex items-center justify-center bg-white/60 backdrop-blur-sm border border-gray-200 rounded-lg cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg"
             title={isTimelineCollapsed ? "Expand Timeline" : "Collapse Timeline"}
           >
             {isTimelineCollapsed ? (
