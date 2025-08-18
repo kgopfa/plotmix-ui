@@ -68,6 +68,8 @@ interface ApplicationCanvasProps {
   shiftKey?: boolean;
   // Snapping state for alignment guides
   isSnappingEnabled?: boolean;
+  // Grid configuration
+  gridConfig?: { size: number; enabled: boolean; visible: boolean; snapThreshold: number };
   // Visual customization
   appBackgroundColor?: number; // default 0xF1F5F9
   designCanvasBackgroundColor?: number; // default 0xFFFFFF
@@ -402,6 +404,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
               canvasBackgroundColor={props.designCanvasBackgroundColor}
               canvasBorderColor={props.designCanvasBorderColor}
               dimensions={dimensions}
+              gridConfig={props.gridConfig}
               onElementContextMenu={handleElementContextMenu}
               onGroupContextMenu={handleGroupContextMenu}
             />

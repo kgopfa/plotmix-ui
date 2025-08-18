@@ -148,6 +148,14 @@ export default function Designer() {
   const canvasWidth = currentSize?.width || 1920;
   const canvasHeight = currentSize?.height || 1080;
 
+  // Memoize canvas bounds to prevent unnecessary re-renders
+  const canvasBounds = useMemo(() => ({
+    width: canvasWidth,
+    height: canvasHeight,
+    centerX: 0, // Canvas is centered at origin
+    centerY: 0
+  }), [canvasWidth, canvasHeight]);
+
   // Element snapping functionality
   // Element bounds cache for performance optimization
   const elementBoundsCache = useElementBoundsCache({
@@ -168,17 +176,12 @@ export default function Designer() {
     showGuides: elementSnapConfig.showGuides,
     enableSpacing: elementSnapConfig.enableSpacing,
     enableDistribution: elementSnapConfig.enableDistribution,
-    canvasBounds: {
-      width: canvasWidth,
-      height: canvasHeight,
-      centerX: 0, // Canvas is centered at origin
-      centerY: 0
-    }
+    canvasBounds
   });
 
   // Grid snapping functionality - use UI store state
   const {
-    snapPoint,
+    snapPoint: gridSnapPoint,
     isSnapTemporarilyDisabled: isGridSnapDisabled
   } = useGridSnapping({
     size: uiGridConfig.size,
@@ -186,6 +189,44 @@ export default function Designer() {
     visible: uiGridConfig.visible,
     snapThreshold: uiGridConfig.snapThreshold
   });
+
+  // Memoize snapPoint to prevent infinite re-renders
+  const snapPoint = useCallback((point: { x: number; y: number }, event?: { shiftKey?: boolean }) => {
+    // First apply grid snapping
+    const gridSnapped = gridSnapPoint(point, event);
+    
+    // Then apply element snapping if enabled and there are other elements
+    if (elementSnapConfig.enabled && canvasObjects.length > 0 && !event?.shiftKey) {
+      // Create a temporary element at the grid-snapped position to check for element snapping
+      const tempElement: AnimatedCanvasObject = {
+        id: 'temp',
+        name: 'temp',
+        x: gridSnapped.x,
+        y: gridSnapped.y,
+        width: 10, // Small size for better snapping detection
+        height: 10,
+        type: 'rectangle',
+        fill: '#000000',
+        rotation: 0,
+        opacity: 1,
+        isAnimationPath: false,
+        groupId: undefined,
+        zIndex: 0,
+        animations: [],
+        shadowEnabled: false,
+        visible: true
+      };
+      
+      const snapResult = snapElement(tempElement, canvasObjects);
+      
+      // Return the element-snapped position if it's different from grid-snapped
+      if (Math.abs(snapResult.x - gridSnapped.x) > 0.1 || Math.abs(snapResult.y - gridSnapped.y) > 0.1) {
+        return { x: snapResult.x, y: snapResult.y };
+      }
+    }
+    
+    return gridSnapped;
+  }, [gridSnapPoint, elementSnapConfig.enabled, canvasObjects, snapElement]);
 
   // Canvas interactions hook
   const {
@@ -1047,6 +1088,7 @@ export default function Designer() {
           }}
           shiftKey={shiftKey}
           isSnappingEnabled={elementSnapConfig.enabled && !isElementSnapDisabled}
+          gridConfig={uiGridConfig}
         />
 
         {/* Path Mode Banner */}

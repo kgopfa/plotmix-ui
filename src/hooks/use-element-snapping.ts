@@ -47,6 +47,49 @@ export const useElementSnapping = (
     ...DEFAULT_CONFIG,
     ...initialConfig,
   });
+
+  // Sync external initialConfig changes (e.g., from store) into local config
+  // Avoid depending on object identities; track primitive fields only
+  const icEnabled = initialConfig?.enabled;
+  const icSnapThreshold = initialConfig?.snapThreshold;
+  const icShowGuides = initialConfig?.showGuides;
+  const icEnableSpacing = initialConfig?.enableSpacing;
+  const icEnableDistribution = initialConfig?.enableDistribution;
+  const icWidth = initialConfig?.canvasBounds?.width;
+  const icHeight = initialConfig?.canvasBounds?.height;
+  const icCenterX = initialConfig?.canvasBounds?.centerX;
+  const icCenterY = initialConfig?.canvasBounds?.centerY;
+
+  useEffect(() => {
+    if (!initialConfig) return;
+    setConfigState((prev) => {
+      const next: ElementSnappingConfig = {
+        ...prev,
+        ...initialConfig,
+        canvasBounds: initialConfig.canvasBounds
+          ? {
+              width: initialConfig.canvasBounds.width ?? prev.canvasBounds?.width,
+              height: initialConfig.canvasBounds.height ?? prev.canvasBounds?.height,
+              centerX: initialConfig.canvasBounds.centerX ?? prev.canvasBounds?.centerX,
+              centerY: initialConfig.canvasBounds.centerY ?? prev.canvasBounds?.centerY,
+            }
+          : prev.canvasBounds,
+      } as ElementSnappingConfig;
+
+      const unchanged =
+        next.enabled === prev.enabled &&
+        next.snapThreshold === prev.snapThreshold &&
+        next.showGuides === prev.showGuides &&
+        next.enableSpacing === prev.enableSpacing &&
+        next.enableDistribution === prev.enableDistribution &&
+        (prev.canvasBounds?.width ?? undefined) === (next.canvasBounds?.width ?? undefined) &&
+        (prev.canvasBounds?.height ?? undefined) === (next.canvasBounds?.height ?? undefined) &&
+        (prev.canvasBounds?.centerX ?? undefined) === (next.canvasBounds?.centerX ?? undefined) &&
+        (prev.canvasBounds?.centerY ?? undefined) === (next.canvasBounds?.centerY ?? undefined);
+
+      return unchanged ? prev : next;
+    });
+  }, [icEnabled, icSnapThreshold, icShowGuides, icEnableSpacing, icEnableDistribution, icWidth, icHeight, icCenterX, icCenterY, initialConfig]);
   
   const [currentGuides, setCurrentGuides] = useState<SnapGuide[]>([]);
   const [isSnapTemporarilyDisabled, setIsSnapTemporarilyDisabled] = useState(false);

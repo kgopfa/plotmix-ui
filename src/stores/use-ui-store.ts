@@ -229,12 +229,12 @@ const defaultToolState: ToolState = {
 const defaultSnappingState: SnappingState = {
   gridConfig: {
     size: 10,
-    enabled: false, // Disabled by default
-    visible: false,
+    enabled: true, // Enable grid snapping by default
+    visible: true, // Show grid by default
     snapThreshold: 8,
   },
   elementSnapConfig: {
-    enabled: false, // Disabled by default
+    enabled: true, // Enable element snapping by default
     snapThreshold: 10,
     showGuides: true,
     enableSpacing: true,

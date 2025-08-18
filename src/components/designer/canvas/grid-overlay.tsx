@@ -67,7 +67,7 @@ export const GridOverlay: React.FC<GridOverlayProps> = ({
     <pixiGraphics
       draw={drawGrid}
       eventMode="none"
-      zIndex={-1} // Render behind all other elements
+      zIndex={0} // Render at base level
     />
   );
 }; 

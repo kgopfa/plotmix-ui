@@ -5,7 +5,6 @@ import { ElementSnappingConfig } from '../../../../../../hooks/use-element-snapp
 interface SnappingOptionsProps {
   // Grid configuration
   gridConfig: GridConfig;
-  onToggleGrid: () => void;
   onToggleGridSnap: () => void;
   onGridSizeChange: (size: number) => void;
   
@@ -24,7 +23,6 @@ interface SnappingOptionsProps {
 
 export const SnappingOptions: React.FC<SnappingOptionsProps> = ({
   gridConfig,
-  onToggleGrid,
   onToggleGridSnap,
   onGridSizeChange,
   elementSnapConfig,
@@ -48,27 +46,9 @@ export const SnappingOptions: React.FC<SnappingOptionsProps> = ({
         Snapping Options
       </div>
       
-      {/* Grid Section */}
+      {/* Grid Section (visibility toggle removed) */}
       <div className="space-y-3">
         <div className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Grid</div>
-        
-        {/* Grid Visibility Toggle */}
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-800 font-medium">Show Grid</span>
-          <button
-            onClick={onToggleGrid}
-            className={`w-11 h-6 rounded-full flex items-center transition-colors ${
-              gridConfig.visible ? 'bg-blue-500' : 'bg-gray-300'
-            }`}
-            title="Toggle grid visibility"
-          >
-            <div
-              className={`w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${
-                gridConfig.visible ? 'translate-x-5' : 'translate-x-0.5'
-              }`}
-            />
-          </button>
-        </div>
 
         {/* Grid Snap Toggle */}
         <div className="flex items-center justify-between">

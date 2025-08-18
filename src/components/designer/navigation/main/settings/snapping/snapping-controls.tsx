@@ -18,10 +18,6 @@ export const SnappingControls = () => {
   } = useSnappingActions();
 
   // Create toggle functions for the UI
-  const toggleGrid = useCallback(() => {
-    updateGridConfig({ visible: !gridConfig.visible });
-  }, [gridConfig.visible, updateGridConfig]);
-
   const toggleGridSnap = useCallback(() => {
     updateGridConfig({ enabled: !gridConfig.enabled });
   }, [gridConfig.enabled, updateGridConfig]);
@@ -110,7 +106,6 @@ export const SnappingControls = () => {
         >
           <SnappingOptions
             gridConfig={gridConfig}
-            onToggleGrid={toggleGrid}
             onToggleGridSnap={toggleGridSnap}
             onGridSizeChange={(size: number) => updateGridConfig({ size })}
             elementSnapConfig={elementSnapConfig}

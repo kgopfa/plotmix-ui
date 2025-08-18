@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useRef } from 'react';
 import { FederatedPointerEvent, Container } from 'pixi.js';
 import { createNewObject } from '@/lib/canvas-object-factory';
 import { useCanvasStore } from '@/stores/use-canvas-store';
@@ -38,7 +38,17 @@ interface UseCanvasInteractionsReturn {
 export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps): UseCanvasInteractionsReturn => {
   const { elements: canvasObjects, addElement } = useCanvasStore();
   const { select: selectElement } = useSelectionStore();
-  const toolState = useUIStore((state) => state.tools);
+  
+  // Destructure only the specific tool properties we need to avoid unnecessary re-renders
+  const {
+    activeTool,
+    isLineChaining,
+    chainedLineIds,
+    lineStartPoint,
+    isPathMode,
+    lineType
+  } = useUIStore((state) => state.tools);
+  
   const {
     setActiveTool,
     setMaskPos,
@@ -55,6 +65,9 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
   const [currentPath, setCurrentPath] = useState<Array<{ x: number; y: number }>>([]);
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
   const [editingTextId] = useState<string | null>(null);
+  
+  // Use ref to store current path during drawing to avoid state updates on every mouse move
+  const currentPathRef = useRef<Array<{ x: number; y: number }>>([]);
 
   // Canvas interaction handlers
   const handleCanvasClick = useCallback((e: FederatedPointerEvent) => {
@@ -79,7 +92,7 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
     const shiftKey = 'shiftKey' in e.nativeEvent ? e.nativeEvent.shiftKey : false;
     const snappedPos = snapPoint({ x: localPos.x, y: localPos.y }, { shiftKey });
     
-    if (toolState.activeTool === 'select') {
+    if (activeTool === 'select') {
       // Clear selections when clicking on empty canvas
       selectElement(null);
       setShowAnimationsTab(false);
@@ -87,10 +100,10 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
     }
 
     // Handle line and polygon drawing with two-click system
-    if (toolState.activeTool === 'line' || toolState.activeTool === 'simpleLine') {
+    if (activeTool === 'line' || activeTool === 'simpleLine') {
       // Check if we're in polygon chaining mode and trying to close the shape
-      if (toolState.isLineChaining && toolState.chainedLineIds.length > 0) {
-        const firstLineId = toolState.chainedLineIds[0];
+      if (isLineChaining && chainedLineIds.length > 0) {
+        const firstLineId = chainedLineIds[0];
         const firstLine = canvasObjects.find(el => el.id === firstLineId);
         
         if (firstLine?.lineOptions?.points) {
@@ -100,7 +113,7 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
           // Apply shift constraint if shift key is held
           const shiftKey = 'shiftKey' in e.nativeEvent ? e.nativeEvent.shiftKey : false;
           if (shiftKey) {
-            endPoint = constrainToAxis(toolState.lineStartPoint!, { x: snappedPos.x, y: snappedPos.y });
+            endPoint = constrainToAxis(lineStartPoint!, { x: snappedPos.x, y: snappedPos.y });
           }
           
           const clickDistance = Math.hypot(snappedPos.x - startPoint.x, snappedPos.y - startPoint.y);
@@ -112,18 +125,18 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
               0, 0, // Position will be calculated in createLine
               canvasObjects,
               undefined, // pathPoints
-              toolState.isPathMode, // isPath
+              isPathMode, // isPath
               undefined, // imageData
               undefined, // width
               undefined, // height
               undefined, // text
-              toolState.lineStartPoint!, // Start from current line start point
+              lineStartPoint!, // Start from current line start point
               endPoint, // End at the constrained or original point
-              toolState.lineType
+              lineType
             );
             
             // If in path mode, mark it as a path
-            if (toolState.isPathMode) {
+            if (isPathMode) {
               finalLine.isAnimationPath = true;
             }
 
@@ -137,15 +150,15 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
         }
       }
 
-      if (!toolState.lineStartPoint) {
+      if (!lineStartPoint) {
         // First click: Set the start point
         setLineStartPoint({ x: snappedPos.x, y: snappedPos.y });
-        if (toolState.activeTool === 'line') {
+        if (activeTool === 'line') {
           setLineChaining(true);
         }
       } else {
         // Second click: Create the line from start to end point
-        const startPoint = toolState.lineStartPoint;
+        const startPoint = lineStartPoint;
         let endPoint = { x: snappedPos.x, y: snappedPos.y };
         
         // Apply shift constraint if shift key is held
@@ -166,18 +179,18 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
           0, 0, // Position will be calculated in createLine
           canvasObjects,
           undefined, // pathPoints
-          toolState.isPathMode, // isPath
+          isPathMode, // isPath
           undefined, // imageData
           undefined, // width
           undefined, // height
           undefined, // text
           startPoint,
           endPoint,
-          toolState.lineType
+          lineType
         );
         
         // If in path mode, mark it as a path
-        if (toolState.isPathMode) {
+        if (isPathMode) {
           newElement.isAnimationPath = true;
         }
 
@@ -185,7 +198,7 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
         selectElement([newElement]);
 
         // Handle line chaining for polygon creation
-        if (toolState.activeTool === 'line') {
+        if (activeTool === 'line') {
           addChainedLineId(newElement.id);
           // Set the end point as the new start point for the next line
           setLineStartPoint(endPoint);
@@ -196,7 +209,7 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
           setMaskPos(null);
           
           // Dispatch draw-complete event for single line path mode completion
-          if (toolState.isPathMode) {
+          if (isPathMode) {
             const drawCompleteEvent = new CustomEvent('draw-complete', {
               detail: {
                 element: newElement,
@@ -211,11 +224,11 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
     }
 
     // Handle other creation tools (non-line tools)
-    if (['rectangle', 'circle', 'triangle', 'arc', 'text'].includes(toolState.activeTool)) {
-      const newElement = createNewObject(toolState.activeTool as 'rectangle' | 'circle' | 'triangle' | 'arc' | 'text', snappedPos.x, snappedPos.y, canvasObjects);
+    if (['rectangle', 'circle', 'triangle', 'arc', 'text'].includes(activeTool)) {
+      const newElement = createNewObject(activeTool as 'rectangle' | 'circle' | 'triangle' | 'arc' | 'text', snappedPos.x, snappedPos.y, canvasObjects);
       
       // If in path mode, mark it as a path
-      if (toolState.isPathMode) {
+      if (isPathMode) {
         newElement.isAnimationPath = true;
       }
 
@@ -227,7 +240,7 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
       setMaskPos(null);
       
       // Dispatch draw-complete event for path mode completion
-      if (toolState.isPathMode) {
+      if (isPathMode) {
         const drawCompleteEvent = new CustomEvent('draw-complete', {
           detail: {
             element: newElement,
@@ -237,7 +250,7 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
         window.dispatchEvent(drawCompleteEvent);
       }
     }
-  }, [toolState, canvasObjects, addElement, selectElement, snapPoint, setActiveTool, setMaskPos, setLineStartPoint, setLineChaining, addChainedLineId, setClosingShape, setShowAnimationsTab]);
+  }, [activeTool, isLineChaining, chainedLineIds, lineStartPoint, isPathMode, lineType, canvasObjects, addElement, selectElement, snapPoint, setActiveTool, setMaskPos, setLineStartPoint, setLineChaining, addChainedLineId, setClosingShape, setShowAnimationsTab]);
 
   const handleSelectElement = useCallback((id: string | null, isMultiSelect?: boolean) => {
     if (id) {
@@ -254,7 +267,7 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
   }, [canvasObjects, selectElement, setShowAnimationsTab]);
 
   const handleCanvasPointerDown = useCallback((e: FederatedPointerEvent) => {
-    if (toolState.activeTool === 'select') {
+    if (activeTool === 'select') {
       // Check if we clicked on an empty area (no element was hit)
       // This would need to be implemented with actual element bounds checking
       // For now, we'll just clear selection
@@ -263,53 +276,72 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
       return;
     }
     
-    if (toolState.activeTool === 'draw') {
+    if (activeTool === 'draw') {
       setIsDrawing(true);
       // Use the utility function for consistent coordinate conversion
       const designCanvasContainer = e.currentTarget as unknown as Container;
       if (designCanvasContainer) {
         const localPos = convertPointerEventToDesignCanvasCoords(e, designCanvasContainer);
         const newPoint = { x: localPos.x, y: localPos.y };
+        // Initialize both ref and state for the first point
+        currentPathRef.current = [newPoint];
         setCurrentPath([newPoint]);
       } else {
         // Fallback to global coordinates if container not found
         const newPoint = { x: e.global.x, y: e.global.y };
+        // Initialize both ref and state for the first point
+        currentPathRef.current = [newPoint];
         setCurrentPath([newPoint]);
       }
     }
-  }, [toolState.activeTool, selectElement, setShowAnimationsTab]);
+  }, [activeTool, selectElement, setShowAnimationsTab]);
 
   const handleCanvasPointerMove = useCallback((e: FederatedPointerEvent) => {
     setMousePos({ x: e.global.x, y: e.global.y });
     
-    if (isDrawing && toolState.activeTool === 'draw') {
+    if (isDrawing && activeTool === 'draw') {
       // Use the utility function for consistent coordinate conversion
       const designCanvasContainer = e.currentTarget as unknown as Container;
       if (designCanvasContainer) {
         const localPos = convertPointerEventToDesignCanvasCoords(e, designCanvasContainer);
         const newPoint = { x: localPos.x, y: localPos.y };
-        setCurrentPath(prev => [...prev, newPoint]);
+        
+        // Update the ref instead of state to avoid re-renders during drawing
+        currentPathRef.current = [...currentPathRef.current, newPoint];
+        
+        // Only update the visual state occasionally to maintain responsiveness
+        // Update every 5th point or when drawing stops
+        if (currentPathRef.current.length % 5 === 0) {
+          setCurrentPath([...currentPathRef.current]);
+        }
       } else {
         // Fallback to global coordinates if container not found
         const newPoint = { x: e.global.x, y: e.global.y };
-        setCurrentPath(prev => [...prev, newPoint]);
+        currentPathRef.current = [...currentPathRef.current, newPoint];
+        
+        if (currentPathRef.current.length % 5 === 0) {
+          setCurrentPath([...currentPathRef.current]);
+        }
       }
     }
-  }, [isDrawing, toolState.activeTool]);
+  }, [isDrawing, activeTool]);
 
   const handlePointerUp = useCallback(() => {
-    if (isDrawing && toolState.activeTool === 'draw') {
+    if (isDrawing && activeTool === 'draw') {
       setIsDrawing(false);
       
+      // Use the ref value for the final path
+      const finalPath = currentPathRef.current;
+      
       // Create a path element from the drawn path if we have enough points
-      if (currentPath.length >= 2) {
+      if (finalPath.length >= 2) {
         // Create a path element using the current path points
         const newPathElement = createNewObject(
           'path',
           0, 0, // Position will be calculated in createPath
           canvasObjects,
-          currentPath, // Pass the path points
-          toolState.isPathMode, // Mark as path if in path mode
+          finalPath, // Pass the final path points
+          isPathMode, // Mark as path if in path mode
           undefined, // imageData
           undefined, // width
           undefined, // height
@@ -317,7 +349,7 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
         );
         
         // If in path mode, mark it as an animation path
-        if (toolState.isPathMode) {
+        if (isPathMode) {
           newPathElement.isAnimationPath = true;
         }
         
@@ -331,7 +363,7 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
         setActiveTool('select');
         
         // Dispatch draw-complete event for path mode completion
-        if (toolState.isPathMode) {
+        if (isPathMode) {
           const drawCompleteEvent = new CustomEvent('draw-complete', {
             detail: {
               element: newPathElement,
@@ -342,10 +374,11 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
         }
       }
       
-      // Clear the current path
+      // Clear both the ref and the state
+      currentPathRef.current = [];
       setCurrentPath([]);
     }
-  }, [isDrawing, toolState.activeTool, currentPath, canvasObjects, addElement, selectElement, toolState.isPathMode, setActiveTool]);
+  }, [isDrawing, activeTool, canvasObjects, addElement, selectElement, isPathMode, setActiveTool]);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handlePointerDown = useCallback((id: string, _shapeX: number, _shapeY: number) => (e: FederatedPointerEvent) => {
@@ -354,11 +387,11 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
       (e.nativeEvent.metaKey || e.nativeEvent.ctrlKey) : false;
 
     // Only handle selection for select/draw tools; do nothing for other tools
-    if (toolState.activeTool === 'select' || toolState.activeTool === 'draw') {
+    if (activeTool === 'select' || activeTool === 'draw') {
       handleSelectElement(id, isMultiSelect);
     }
     // For other tools, do nothing (do not call handleCanvasClick)
-  }, [toolState.activeTool, handleSelectElement]);
+  }, [activeTool, handleSelectElement]);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleElementMouseMove = useCallback((id: string) => (_e: FederatedPointerEvent) => {

@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { extend } from '@pixi/react';
 import { SnapGuides } from './snap-guides';
+import { GridOverlay } from './grid-overlay';
 import { LinePreview } from '../helpers/line-preview';
 import { RichTextRenderer } from '../helpers/rich-text-renderer';
 import type { SnapGuide } from '../../../utils/element-snapping';
@@ -79,6 +80,8 @@ interface DesignCanvasProps {
   shiftKey?: boolean;
   // Snapping state for alignment guides
   isSnappingEnabled?: boolean;
+  // Grid configuration
+  gridConfig?: { size: number; enabled: boolean; visible: boolean; snapThreshold: number };
   // Visual customization (optional)
   canvasBackgroundColor?: number; // default 0xFFFFFF
   canvasBorderColor?: number; // default 0xE2E8F0
@@ -1040,6 +1043,24 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           canvasHeight={canvasFrameHeight}
           canvasFrameX={-canvasFrameWidth / 2}
           canvasFrameY={-canvasFrameHeight / 2}
+        />
+      </pixiContainer>
+
+      {/* Grid overlay - positioned relative to the design canvas frame */}
+      <pixiContainer zIndex={-100}>
+        <GridOverlay
+          gridConfig={props.gridConfig || {
+            size: 10,
+            enabled: true,
+            visible: true,
+            snapThreshold: 8
+          }}
+          viewportBounds={{
+            x: -canvasFrameWidth / 2,
+            y: -canvasFrameHeight / 2,
+            width: canvasFrameWidth,
+            height: canvasFrameHeight
+          }}
         />
       </pixiContainer>
     </pixiContainer>
