@@ -3,7 +3,8 @@ import { CanvasGroup, ElementAnimation } from '@/types/canvas';
 import { useCanvasElements, useCanvasOperations } from '@/stores/use-canvas-store';
 import { FontSelector } from './font-selector';
 import { ColorPicker } from './color-picker';
-import { Weight, SquareRoundCorner } from 'lucide-react';
+import { Weight, SquareRoundCorner, X } from 'lucide-react';
+import { useSetActiveRightPanel } from '@/stores/use-ui-store';
 
 interface GroupPropertiesTabProps {
   selectedGroup: CanvasGroup;
@@ -19,6 +20,7 @@ export function GroupPropertiesTab({ selectedGroup, onGroupInspectorChange }: Gr
   const [isDirty, setIsDirty] = useState<Record<string, boolean>>({});
   const elements = useCanvasElements();
   const { updateMultipleElements } = useCanvasOperations();
+  const setActiveRightPanel = useSetActiveRightPanel();
 
   // Elements belonging to the selected group
   const elementsInGroup = useMemo(() => {
@@ -72,8 +74,15 @@ export function GroupPropertiesTab({ selectedGroup, onGroupInspectorChange }: Gr
   return (
     <div className="flex flex-col gap-6 p-4">
       {/* Header */}
-      <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+      <div className="flex items-center justify-between pb-2 border-b border-gray-200">
         <h4 className="font-semibold text-blue-600 text-sm">Group Properties</h4>
+        <button
+          onClick={() => setActiveRightPanel(null)}
+          className="p-1 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-100"
+          title="Close"
+        >
+          <X className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Group Info Section */}
