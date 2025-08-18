@@ -49,8 +49,7 @@ export function ComponentsTab() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 ml-0.5">
             <Blocks strokeWidth={2.5} className="w-4 h-4 text-teal-600" />
-            <h3 className="font-semibold text-gray-800 ml-0.5">Components</h3>
-            <div className="text-xs text-gray-500">{filteredComponents.length} items</div>
+            <h3 className="font-semibold text-gray-800 ml-0.5 mt-0.5">Components</h3>
           </div>
           <button
             onClick={(e) => {
