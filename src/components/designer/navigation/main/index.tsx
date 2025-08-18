@@ -202,13 +202,6 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                     <span className="font-medium text-gray-500">Home</span>
                   </Link>
                   <Link
-                    href="/chat"
-                    className="flex items-center gap-3 p-3 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
-                  >
-                    <Sparkles className="size-4 text-purple-500" />
-                    <span className="font-medium text-gray-500">New Chat</span>
-                  </Link>
-                  <Link
                     href="/chats"
                     className="flex items-center gap-3 p-3 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
                   >
@@ -222,15 +215,6 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                     <Boxes strokeWidth={1.5} className="size-4 text-blue-500" />
                     <span className="font-medium text-gray-500">Projects</span>
                   </Link>
-                  {projectId && (
-                    <Link
-                      href={`/content/${projectId}`}
-                      className="flex items-center gap-3 p-3 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
-                    >
-                      <ListVideo className="size-4 text-fuchsia-500" />
-                      <span className="font-medium text-gray-500">Content</span>
-                    </Link>
-                  )}
                 </div>
               </DisclosurePanel>
             </div>
