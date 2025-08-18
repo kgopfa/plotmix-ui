@@ -86,6 +86,7 @@ interface AIPromptEntry {
   id: string;
   text: string;
   timestamp: string;
+  summary?: string;
 }
 
 interface KeyboardShortcut {
@@ -195,7 +196,7 @@ interface UIActions {
   // AI Tools prompt history
   addAIPrompt: (promptText: string) => void;
   clearAIPrompts: () => void;
-  setAIPrompts: (items: { id: string; text: string; timestamp: string }[]) => void;
+  setAIPrompts: (items: { id: string; text: string; timestamp: string; summary?: string }[]) => void;
 }
 
 type UIStore = UIState & UIActions;
@@ -859,7 +860,7 @@ export const useAIPromptHistoryActions = () => useUIStore(
   useShallow((state) => ({
     addAIPrompt: state.addAIPrompt,
     clearAIPrompts: state.clearAIPrompts,
-    setAIPrompts: (state as any).setAIPrompts,
+    setAIPrompts: state.setAIPrompts,
   }))
 );
 
