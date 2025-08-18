@@ -768,7 +768,7 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                         transition
                         className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white py-1 text-sm shadow-lg ring-1 ring-black/5 focus:outline-hidden data-leave:transition data-leave:duration-100 data-leave:ease-in data-closed:data-leave:opacity-0"
                       >
-                        {['normal', 'bold', 'lighter', 'bolder', '100', '200', '300', '400', '500', '600', '700', '800', '900'].map((weight) => (
+                        {['Normal', 'Bold', 'Lighter', 'Bolder', '100', '200', '300', '400', '500', '600', '700', '800', '900'].map((weight) => (
                           <ListboxOption
                             key={weight}
                             value={weight}
@@ -804,7 +804,7 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                         transition
                         className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white py-1 text-sm shadow-lg ring-1 ring-black/5 focus:outline-hidden data-leave:transition data-leave:duration-100 data-leave:ease-in data-closed:data-leave:opacity-0"
                       >
-                        {['normal', 'italic', 'oblique'].map((style) => (
+                        {['Normal', 'Italic', 'Oblique'].map((style) => (
                           <ListboxOption
                             key={style}
                             value={style}
@@ -838,7 +838,7 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                         transition
                         className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white py-1 text-sm shadow-lg ring-1 ring-black/5 focus:outline-hidden data-leave:transition data-leave:duration-100 data-leave:ease-in data-closed:data-leave:opacity-0"
                       >
-                        {['left', 'center', 'right', 'justify'].map((align) => (
+                        {['Left', 'Center', 'Right', 'Justify'].map((align) => (
                           <ListboxOption
                             key={align}
                             value={align}
