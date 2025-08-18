@@ -343,7 +343,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
 
   setLeftPanelWidth: (width: number) => {
     set(produce((state) => {
-      state.panels.leftPanelWidth = Math.max(384, Math.min(600, width));
+      state.panels.leftPanelWidth = Math.max(320, Math.min(600, width));
     }));
   },
 

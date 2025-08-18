@@ -883,6 +883,19 @@ export default function Designer() {
 
   const activeNav = useActiveNav();
 
+  // Track right panel actual width from Tailwind classes to sync dependent offsets
+  const rightPanelRef = useRef<HTMLDivElement | null>(null);
+  const setRightPanelWidth = useUIStore(state => state.setRightPanelWidth);
+  useEffect(() => {
+    if (!rightPanelRef.current) return;
+    const el = rightPanelRef.current;
+    const updateWidth = () => setRightPanelWidth(el.offsetWidth);
+    updateWidth();
+    const ro = new ResizeObserver(() => updateWidth());
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [setRightPanelWidth, panelState.rightPanelVisible, activeRightPanel]);
+
   const handleGroupSelectionDragStart = useCallback((virtualElement: AnimatedCanvasObject, mouseX: number, mouseY: number, allElements?: AnimatedCanvasObject[]) => {
     // Check if this is a real group selection (not just multi-selection)
     const selectedGroupIds = new Set(selectedGroups.map(g => g.id));
@@ -1096,9 +1109,9 @@ export default function Designer() {
         })() && (
           <>
             <div
-              className={`absolute right-20 top-2 bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-xl shadow-gray-200/50 rounded-2xl overflow-y-auto z-[60] mb-2 transform transition-all duration-300 ease-out translate-x-0 opacity-100`}
+              ref={rightPanelRef}
+              className={`absolute right-20 top-2 w-80 2xl:w-96 bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-xl shadow-gray-200/50 rounded-2xl overflow-y-auto z-[60] mb-2 transform transition-all duration-300 ease-out translate-x-0 opacity-100`}
               style={{ 
-                width: `${panelState.rightPanelWidth / 16}rem`,
                 bottom: `${panelState.timelineHeight + 8}px`,
                 height: `calc(100vh - ${panelState.timelineHeight + 8 + 16}px)`,
               }}

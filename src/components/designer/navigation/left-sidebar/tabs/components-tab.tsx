@@ -44,7 +44,7 @@ export function ComponentsTab() {
   };
 
   return (
-    <div className="h-full w-96 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
+    <div className="h-full w-80 2xl:w-96 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
       <div className="p-4 border-b border-gray-100">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 ml-0.5">

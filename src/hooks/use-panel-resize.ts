@@ -27,7 +27,7 @@ export const usePanelResize = (): UsePanelResizeReturn => {
     // Use requestAnimationFrame for smooth resizing
     requestAnimationFrame(() => {
       if (panelState.isResizing === 'left') {
-        const newWidth = Math.max(384, Math.min(600, e.clientX)); // Min 384px (w-96), max 600px
+        const newWidth = Math.max(320, Math.min(600, e.clientX)); // Min 320px (w-80), max 600px
         setLeftPanelWidth(newWidth);
       } else if (panelState.isResizing === 'right') {
         const newWidth = Math.max(200, Math.min(600, window.innerWidth - e.clientX)); // Min 200px, max 600px

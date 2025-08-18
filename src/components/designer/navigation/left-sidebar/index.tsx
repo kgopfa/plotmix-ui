@@ -201,6 +201,20 @@ export const LeftSidebar: React.FC = () => {
     setInteractedNav(null);
   };
 
+  // Track actual panel width so timeline offset stays accurate with responsive Tailwind widths
+  const tabPanelRef = useRef<HTMLDivElement | null>(null);
+  const setLeftPanelWidth = useUIStore(state => state.setLeftPanelWidth);
+
+  useEffect(() => {
+    if (!tabPanelRef.current) return;
+    const el = tabPanelRef.current;
+    const updateWidth = () => setLeftPanelWidth(el.offsetWidth);
+    updateWidth();
+    const resizeObserver = new ResizeObserver(() => updateWidth());
+    resizeObserver.observe(el);
+    return () => resizeObserver.disconnect();
+  }, [setLeftPanelWidth, activeNav, hoverNav, interactedNav, showAnimationsTab]);
+
   return (
     <>
       <div
@@ -328,14 +342,13 @@ export const LeftSidebar: React.FC = () => {
 
           {/* Actual tab panel */}
           <div
-            className={`fixed pointer-events-none tab-panel-area ${showAnimationsTab ? 'z-[45]' : 'z-[40]'
-              }`}
+            ref={tabPanelRef}
+            className={`fixed pointer-events-none tab-panel-area ${showAnimationsTab ? 'z-[45]' : 'z-[40]'} w-80 2xl:w-96`}
             style={{
               left: '80px', // Position after bridge
               top: '72px',
               maxHeight: 'calc(100vh - 80px)',
-              height: 'calc(100vh - 80px)',
-              width: '384px', // Fixed width for the panel content
+              height: 'calc(100vh - 80px)'
             }}
           >
             <div
