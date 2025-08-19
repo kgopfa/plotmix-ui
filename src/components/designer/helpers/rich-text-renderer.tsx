@@ -16,13 +16,6 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({ element, isE
     return null;
   }
 
-  // Debug: Log when RichTextRenderer is called
-  console.log(`RichTextRenderer called for element: ${element.id}`, {
-    text: element.text,
-    wordWrapWidth: element.wordWrapWidth,
-    elementWidth: element.width
-  });
-
   const isValidHex = (v: unknown): v is string => typeof v === 'string' && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v.trim());
   const toSafeColorNumber = (v: unknown, fallback: string = '#000000') => {
     const c = typeof v === 'string' ? v.trim() : '';

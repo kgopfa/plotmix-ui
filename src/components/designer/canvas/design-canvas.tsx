@@ -620,9 +620,9 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                 >
                   <pixiGraphics draw={(g) => drawShape(g, el)} />
 
-                  {/* Render text separately for text elements */}
-                  {el.type === 'text' && editingTextId !== el.id && (
-                    <RichTextRenderer key={`group-text-${el.id}`} element={el} isEditing={false} />
+                  {/* Render text separately for text elements (keep visible during editing, but non-interactive) */}
+                  {el.type === 'text' && (
+                    <RichTextRenderer key={`group-text-${el.id}`} element={el} isEditing={editingTextId === el.id} />
                   )}
 
                   {/* Show hover outline when hovered but not selected */}
@@ -842,9 +842,9 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
             >
               <pixiGraphics draw={(g) => drawShape(g, el)} />
 
-              {/* Render text separately for text elements */}
-              {el.type === 'text' && editingTextId !== el.id && (
-                <RichTextRenderer key={`ungrouped-text-${el.id}`} element={el} isEditing={false} />
+              {/* Render text separately for text elements (keep visible during editing, but non-interactive) */}
+              {el.type === 'text' && (
+                <RichTextRenderer key={`ungrouped-text-${el.id}`} element={el} isEditing={editingTextId === el.id} />
               )}
 
               {/* Show hover outline when hovered but not selected */}

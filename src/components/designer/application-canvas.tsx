@@ -103,6 +103,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
     const [activeEditingTextId, setActiveEditingTextId] = useState<string | null>(null);
     const [activeEditingValue, setActiveEditingValue] = useState<string>('');
     const [overlayRerenderTick, setOverlayRerenderTick] = useState<number>(0);
+    const [dismissedEditButtons, setDismissedEditButtons] = useState<Set<string>>(new Set());
 
     // Get current canvas size from UI store
     const canvasState = useCanvasState();
@@ -200,6 +201,11 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
         vp.off('zoomed-end', forceUpdate);
       };
     }, []);
+
+    // Reset dismissed edit buttons when selection changes
+    useEffect(() => {
+      setDismissedEditButtons(new Set());
+    }, [props.selectedIds.join(',')]);
 
     // Initialize viewport to center on the actual design canvas container position
     // Delay to ensure PIXI application, viewport world, and container refs are mounted
@@ -427,6 +433,14 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       setActiveEditingValue('');
     }, [activeEditingTextId, activeEditingValue]);
 
+    // Live update text on each keystroke while editing, without committing selection state
+    useEffect(() => {
+      if (!activeEditingTextId) return;
+      const { updateElement } = useCanvasStore.getState();
+      updateElement(activeEditingTextId, { text: activeEditingValue });
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeEditingTextId, activeEditingValue]);
+
     return (
       <div
         ref={canvasContainerRef}
@@ -471,6 +485,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
 
         {/* Edit buttons for text elements (hover or selected) */}
         {editButtonTargets.map((id) => {
+          if (dismissedEditButtons.has(id)) return null;
           const bounds = getElementBounds(id);
           if (!bounds) return null;
           const buttonTop = bounds.y + bounds.height + 8; // 8px below element
@@ -488,17 +503,38 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
               onClick={(e) => e.stopPropagation()}
             >
               {!isActive && (
-                <button
-                  className="px-2.5 py-1.5 text-xs rounded-full bg-white/95 backdrop-blur border border-gray-200/60 shadow-md hover:bg-white hover:shadow-lg text-gray-700 flex items-center gap-1 transition"
-                  onClick={() => {
-                    const el = props.elements.find(e => e.id === id);
-                    setActiveEditingTextId(id);
-                    setActiveEditingValue(el?.text || '');
-                  }}
+                <div
+                  className="inline-flex items-center rounded-full bg-white/95 backdrop-blur border border-gray-200/60 shadow-md hover:bg-white hover:shadow-lg transition"
+                  role="group"
                 >
-                  <Pencil className="w-3.5 h-3.5" />
-                  Edit text
-                </button>
+                  <button
+                    className="px-2.5 py-1.5 text-xs text-gray-700 flex items-center gap-1 transition rounded-l-full"
+                    onClick={() => {
+                      const el = props.elements.find(e => e.id === id);
+                      setActiveEditingTextId(id);
+                      setActiveEditingValue(el?.text || '');
+                    }}
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    Edit text
+                  </button>
+                  <div className="h-4 w-px bg-gray-200/80" />
+                  <button
+                    className="px-2 py-1 text-[11px] leading-none text-gray-400 hover:text-gray-600 rounded-r-full"
+                    title="Hide button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setDismissedEditButtons(prev => {
+                        const next = new Set(prev);
+                        next.add(id);
+                        return next;
+                      });
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
               )}
             </div>
           );
@@ -550,7 +586,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
                 />
                 <div className="flex justify-end gap-2 mt-2">
                   <button className="px-2.5 py-1 text-xs rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50" onMouseDown={(e) => { e.preventDefault(); commitTextEdit(false); }}>Cancel</button>
-                  <button className="px-2.5 py-1 text-xs rounded-md bg-blue-600 text-white hover:bg-blue-700" onMouseDown={(e) => { e.preventDefault(); commitTextEdit(true); }}>Save</button>
+                  <button className="px-3 py-1.5 text-xs rounded-md text-white bg-gradient-to-r from-purple-500 to-purple-600 shadow-md shadow-purple-500/30 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95" onMouseDown={(e) => { e.preventDefault(); commitTextEdit(true); }}>Save</button>
                 </div>
               </div>
             </div>
