@@ -1,9 +1,10 @@
 'use client';
 
-import React, { forwardRef, useImperativeHandle, useRef, useEffect, useState, useCallback } from 'react';
+import React, { forwardRef, useImperativeHandle, useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { Application, extend, type ApplicationRef } from '@pixi/react';
 import { Container, Graphics } from 'pixi.js';
 import { DesignCanvas } from './canvas/design-canvas';
+import { Pencil, X } from 'lucide-react';
 import { Viewport, ViewportWrapper, centerOnDesign, zoomToFit, resetZoom } from './viewport';
 import { useCanvasState, useUIStore } from '@/stores/use-ui-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
@@ -98,6 +99,11 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
     });
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number; targetId: string; targetType?: 'element' | 'group' } | null>(null);
 
+    // Local text editing state (overrides incoming prop when active)
+    const [activeEditingTextId, setActiveEditingTextId] = useState<string | null>(null);
+    const [activeEditingValue, setActiveEditingValue] = useState<string>('');
+    const [overlayRerenderTick, setOverlayRerenderTick] = useState<number>(0);
+
     // Get current canvas size from UI store
     const canvasState = useCanvasState();
     const currentSize = canvasState.currentSizeId === 'custom'
@@ -179,6 +185,21 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
         }
       }
     }, [canvasZoom, canvasWidth, canvasHeight]);
+
+    // Trigger overlay re-position updates when viewport moves/zooms
+    useEffect(() => {
+      if (!viewportRef.current) return;
+      const vp = viewportRef.current;
+      const forceUpdate = () => setOverlayRerenderTick(t => t + 1);
+      vp.on('moved', forceUpdate);
+      vp.on('zoomed', forceUpdate);
+      vp.on('zoomed-end', forceUpdate);
+      return () => {
+        vp.off('moved', forceUpdate);
+        vp.off('zoomed', forceUpdate);
+        vp.off('zoomed-end', forceUpdate);
+      };
+    }, []);
 
     // Initialize viewport to center on the actual design canvas container position
     // Delay to ensure PIXI application, viewport world, and container refs are mounted
@@ -371,6 +392,41 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
 
 
 
+    // Compute candidates for showing Edit buttons (hovered or selected text elements)
+    const editButtonTargets = useMemo(() => {
+      if (props.tool !== 'select') return [] as string[];
+      const ids = new Set<string>();
+      props.selectedIds.forEach(id => {
+        const el = props.elements.find(e => e.id === id);
+        if (el && el.type === 'text') ids.add(id);
+      });
+      return Array.from(ids);
+    }, [props.selectedIds, props.elements, overlayRerenderTick]);
+
+    // Helper to compute screen-space bounds for an element's container
+    const getElementBounds = useCallback((elementId: string) => {
+      const node = props.shapeRefs.current[elementId] as Container | undefined;
+      // getBounds returns in world/screen pixels relative to renderer canvas
+      const bounds = node?.getBounds();
+      if (!bounds) return null;
+      return bounds;
+    }, [props.shapeRefs]);
+
+    // Save edited text
+    const commitTextEdit = useCallback((save: boolean) => {
+      if (!activeEditingTextId) {
+        setActiveEditingTextId(null);
+        setActiveEditingValue('');
+        return;
+      }
+      if (save) {
+        const { updateElement } = useCanvasStore.getState();
+        updateElement(activeEditingTextId, { text: activeEditingValue });
+      }
+      setActiveEditingTextId(null);
+      setActiveEditingValue('');
+    }, [activeEditingTextId, activeEditingValue]);
+
     return (
       <div
         ref={canvasContainerRef}
@@ -407,9 +463,99 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
               gridConfig={props.gridConfig}
               onElementContextMenu={handleElementContextMenu}
               onGroupContextMenu={handleGroupContextMenu}
+              // When editing text, disable interaction for that text element
+              editingTextId={activeEditingTextId ?? props.editingTextId}
             />
           </Viewport>
         </Application>
+
+        {/* Edit buttons for text elements (hover or selected) */}
+        {editButtonTargets.map((id) => {
+          const bounds = getElementBounds(id);
+          if (!bounds) return null;
+          const buttonTop = bounds.y + bounds.height + 8; // 8px below element
+          const buttonLeft = bounds.x + bounds.width / 2; // center
+          const isActive = activeEditingTextId === id;
+          return (
+            <div
+              key={`edit-btn-${id}`}
+              className="absolute z-[70]"
+              style={{
+                top: `${buttonTop}px`,
+                left: `${buttonLeft}px`,
+                transform: 'translate(-50%, 0)',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {!isActive && (
+                <button
+                  className="px-2.5 py-1.5 text-xs rounded-full bg-white/95 backdrop-blur border border-gray-200/60 shadow-md hover:bg-white hover:shadow-lg text-gray-700 flex items-center gap-1 transition"
+                  onClick={() => {
+                    const el = props.elements.find(e => e.id === id);
+                    setActiveEditingTextId(id);
+                    setActiveEditingValue(el?.text || '');
+                  }}
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  Edit text
+                </button>
+              )}
+            </div>
+          );
+        })}
+
+        {/* Inline text editor overlay */}
+        {activeEditingTextId && (() => {
+          const bounds = getElementBounds(activeEditingTextId);
+          if (!bounds) return null;
+          const top = bounds.y + bounds.height + 8; // place under element
+          const width = Math.max(200, Math.floor(bounds.width));
+          const viewportW = typeof window !== 'undefined' ? window.innerWidth : 0;
+          const rawLeft = bounds.x;
+          const left = Math.max(8, Math.min(rawLeft, Math.max(8, viewportW - width - 8)));
+          return (
+            <div
+              key={`text-editor-${activeEditingTextId}`}
+              className="absolute z-[80]"
+              style={{ top: `${top}px`, left: `${left}px`, width: `${width}px` }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="bg-white/95 backdrop-blur-sm border border-gray-200/60 rounded-xl shadow-xl p-2.5">
+                <div className="flex items-center justify-between pb-1">
+                  <span className="text-xs tracking-wide text-gray-500">Edit text</span>
+                  <button
+                    className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                    onMouseDown={(e) => { e.preventDefault(); commitTextEdit(false); }}
+                    title="Cancel"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <textarea
+                  autoFocus
+                  className="w-full text-sm text-gray-800 outline-none resize-vertical rounded-md border border-gray-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-300 p-2 bg-white/90"
+                  rows={Math.min(6, Math.max(2, Math.round((bounds.height || 40) / 18)))}
+                  value={activeEditingValue}
+                  onChange={(e) => setActiveEditingValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if ((e.key === 'Enter' && (e.metaKey || e.ctrlKey))) {
+                      e.preventDefault();
+                      commitTextEdit(true);
+                    } else if (e.key === 'Escape') {
+                      e.preventDefault();
+                      commitTextEdit(false);
+                    }
+                  }}
+                  onBlur={() => commitTextEdit(true)}
+                />
+                <div className="flex justify-end gap-2 mt-2">
+                  <button className="px-2.5 py-1 text-xs rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50" onMouseDown={(e) => { e.preventDefault(); commitTextEdit(false); }}>Cancel</button>
+                  <button className="px-2.5 py-1 text-xs rounded-md bg-blue-600 text-white hover:bg-blue-700" onMouseDown={(e) => { e.preventDefault(); commitTextEdit(true); }}>Save</button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Context Menu */}
         <RightClickOptions
