@@ -12,10 +12,10 @@ export async function POST(request: NextRequest) {
     }
 
     const body: FollowUpChatRequest = await request.json();
-    const { contentId, message } = body;
+    const { conversationId, message } = body;
 
-    if (!contentId || !message || !message.trim()) {
-      return NextResponse.json({ error: 'Content ID and message are required' }, { status: 400 });
+    if (!conversationId || !message || !message.trim()) {
+      return NextResponse.json({ error: 'Conversation ID and message are required' }, { status: 400 });
     }
 
     // TODO: Integrate with actual AI service/backend

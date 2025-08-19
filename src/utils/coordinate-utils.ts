@@ -1,6 +1,6 @@
 import type { FederatedPointerEvent } from 'pixi.js';
 import type { Container } from 'pixi.js';
-import type { ViewportWrapper } from '@/components/editor/viewport/viewport-wrapper';
+import type { ViewportWrapper } from '@/components/designer/viewport/viewport-wrapper';
 
 /**
  * Convert global coordinates to design canvas local coordinates

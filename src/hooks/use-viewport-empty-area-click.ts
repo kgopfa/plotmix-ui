@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import type { Container } from 'pixi.js';
-import type { ViewportWrapper } from '@/components/editor/viewport/viewport-wrapper';
+import type { ViewportWrapper } from '@/components/designer/viewport/viewport-wrapper';
 import type { AnimatedCanvasObject } from '@/types/canvas';
 
 interface UseViewportEmptyAreaClickProps {

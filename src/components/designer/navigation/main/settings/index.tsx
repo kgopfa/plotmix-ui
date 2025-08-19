@@ -147,7 +147,6 @@ export const SettingsDropdown: React.FC = () => {
           <div className="relative z-50">
             <SnappingOptions
               gridConfig={gridConfig}
-              onToggleGrid={() => updateGridConfig({ visible: !gridConfig.visible })}
               onToggleGridSnap={() => updateGridConfig({ enabled: !gridConfig.enabled })}
               onGridSizeChange={(size: number) => updateGridConfig({ size })}
               elementSnapConfig={elementSnapConfig}
