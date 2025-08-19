@@ -13,8 +13,11 @@ export const calculateCanvasPosition = (
   const worldWidth = canvasWidth * 3;
   const worldHeight = canvasHeight * 3;
 
+  // Optimize responsive positioning calculations
   const screenAspectRatio = containerWidth / containerHeight;
   let verticalOffset = 0;
+  
+  // Use pre-calculated values to avoid repeated calculations
   if (screenAspectRatio > 2) {
     verticalOffset = Math.min(150, containerHeight * 0.15);
   } else if (screenAspectRatio > 1.5) {

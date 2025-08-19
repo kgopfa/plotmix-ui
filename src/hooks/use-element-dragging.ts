@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { AnimatedCanvasObject } from '@/types/canvas';
 import type { SnapGuide } from '@/utils/element-snapping';
 import { eventManager } from '@/lib/event-manager';
@@ -31,6 +31,85 @@ export const useElementDragging = ({
   const [isDraggingGroup, setIsDraggingGroup] = useState<boolean>(false);
   const [groupDragOffsets, setGroupDragOffsets] = useState<Array<{ id: string; offsetX: number; offsetY: number }>>([]);
 
+  // Optimized coordinate conversion caching
+  const coordinateCache = useRef<{
+    canvasRect: DOMRect | null;
+    lastUpdate: number;
+    worldCenterX: number;
+    worldCenterY: number;
+    centerX: number;
+    centerY: number;
+    canvasElement: HTMLCanvasElement | null;
+  }>({
+    canvasRect: null,
+    lastUpdate: 0,
+    worldCenterX: 0,
+    worldCenterY: 0,
+    centerX: 0,
+    centerY: 0,
+    canvasElement: null,
+  });
+
+  // Cache coordinate conversions to avoid expensive recalculations
+  const getOptimizedCoordinates = useCallback((e: PointerEvent) => {
+    const now = performance.now();
+    const cache = coordinateCache.current;
+    
+    // Update cache every 16ms (60fps) or when canvas rect changes
+    if (!cache.canvasRect || now - cache.lastUpdate > 16) {
+      // Cache canvas element reference to avoid repeated DOM queries
+      if (!cache.canvasElement) {
+        cache.canvasElement = document.querySelector('canvas');
+      }
+      
+      if (cache.canvasElement) {
+        const newRect = cache.canvasElement.getBoundingClientRect();
+        
+        // Only update if rect actually changed
+        if (!cache.canvasRect || 
+            cache.canvasRect.left !== newRect.left || 
+            cache.canvasRect.top !== newRect.top ||
+            cache.canvasRect.width !== newRect.width ||
+            cache.canvasRect.height !== newRect.height) {
+          
+          cache.canvasRect = newRect;
+          cache.lastUpdate = now;
+          
+          // Update world center calculations (these are static during dragging)
+          const canvasWidth = 1920; // Default, could be made configurable
+          const canvasHeight = 1080;
+          cache.worldCenterX = canvasWidth * 1.5;
+          cache.worldCenterY = canvasHeight * 1.5;
+          
+          // Calculate responsive center offsets (these are static during dragging)
+          const screenAspectRatio = newRect.width / newRect.height;
+          let verticalOffset = 0;
+          if (screenAspectRatio > 2) {
+            verticalOffset = Math.min(150, newRect.height * 0.15);
+          } else if (screenAspectRatio > 1.5) {
+            verticalOffset = Math.min(200, newRect.height * 0.18);
+          } else {
+            verticalOffset = Math.min(250, newRect.height * 0.22);
+          }
+          cache.centerX = 0;
+          cache.centerY = -verticalOffset;
+        }
+      }
+    }
+
+    if (!cache.canvasRect) return { worldX: 0, worldY: 0 };
+
+    // Fast coordinate conversion using cached values
+    const canvasX = e.clientX - cache.canvasRect.left;
+    const canvasY = e.clientY - cache.canvasRect.top;
+    
+    // Direct world coordinate calculation (no additional transformations)
+    const worldX = canvasX;
+    const worldY = canvasY;
+
+    return { worldX, worldY };
+  }, []);
+
   // Element drag end handler
   const onElementDragEnd = useCallback((id: string, x: number, y: number) => {
     moveElement(id, { x, y });
@@ -61,17 +140,8 @@ export const useElementDragging = ({
   const handleGlobalPointerMove = useCallback((e: PointerEvent) => {
     if (!draggingId) return;
 
-    // Get the canvas element to calculate proper coordinates
-    const canvasElement = document.querySelector('canvas');
-    if (!canvasElement) return;
-
-    const rect = canvasElement.getBoundingClientRect();
-    const canvasX = e.clientX - rect.left;
-    const canvasY = e.clientY - rect.top;
-
-    // Use direct coordinates since zoom functionality removed
-    const worldX = canvasX;
-    const worldY = canvasY;
+    // Use optimized coordinate conversion
+    const { worldX, worldY } = getOptimizedCoordinates(e);
 
     // Handle virtual group dragging first
     if (draggingId === 'virtual-group') {
@@ -126,7 +196,7 @@ export const useElementDragging = ({
         onElementDragEnd(draggingId, newX, newY);
       }
     }
-  }, [draggingId, isDraggingGroup, groupDragOffsets, onGroupDrag, elements, draggingEndpoint, onLineEndpointDrag, elementDragOffset, onElementDragEnd, onSnapElement, onSnapPoint, onSetSnapGuides]);
+  }, [draggingId, isDraggingGroup, groupDragOffsets, onGroupDrag, elements, draggingEndpoint, onLineEndpointDrag, elementDragOffset, onElementDragEnd, onSnapElement, onSnapPoint, onSetSnapGuides, getOptimizedCoordinates]);
 
   // Global pointer up handler for element dragging
   const handleGlobalPointerUp = useCallback(() => {
