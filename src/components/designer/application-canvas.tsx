@@ -152,22 +152,39 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
 
       // Allow PIXI viewport to handle all touch interactions
       canvas.style.touchAction = 'none';
+      // Prevent scroll chaining and browser history swipe gestures when interacting with the canvas
+      // Safari/Chromium handle this differently; combine CSS and JS listeners for reliability
+      canvas.style.overscrollBehavior = 'none';
+
+      // Prevent default browser scroll/zoom/navigation behaviors while over the canvas
+      const preventWheel = (e: WheelEvent) => {
+        e.preventDefault();
+      };
+      const preventGesture = (e: Event) => {
+        // Safari pinch/gesture events
+        e.preventDefault();
+      };
+      canvas.addEventListener('wheel', preventWheel, { passive: false });
+      canvas.addEventListener('gesturestart', preventGesture as EventListener, { passive: false } as AddEventListenerOptions);
+      canvas.addEventListener('gesturechange', preventGesture as EventListener, { passive: false } as AddEventListenerOptions);
+      canvas.addEventListener('gestureend', preventGesture as EventListener, { passive: false } as AddEventListenerOptions);
 
       return () => {
-        // Cleanup if needed
+        canvas.removeEventListener('wheel', preventWheel as EventListener);
+        canvas.removeEventListener('gesturestart', preventGesture as EventListener);
+        canvas.removeEventListener('gesturechange', preventGesture as EventListener);
+        canvas.removeEventListener('gestureend', preventGesture as EventListener);
       };
     }, [appRef]);
 
-    // Prevent default pinch zoom on desktop browsers while allowing PIXI viewport zoom
+    // Prevent default wheel (including pinch-zoom and horizontal swipe) while allowing PIXI viewport to handle it
     useEffect(() => {
       const node = canvasContainerRef.current;
       if (!node) return;
 
       const onWheel = (e: WheelEvent) => {
-        if (e.ctrlKey) {
-          // Only prevent default when pinch-zoom gesture detected
-          e.preventDefault();
-        }
+        // Always prevent default on wheel within canvas area to avoid page scroll/back-forward navigation
+        e.preventDefault();
       };
 
       node.addEventListener('wheel', onWheel, { passive: false });
@@ -458,7 +475,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
     return (
       <div
         ref={canvasContainerRef}
-        className="absolute inset-0 bg-slate-100 canvas-area"
+        className="absolute inset-0 bg-slate-100 canvas-area overscroll-none"
         onClick={handleApplicationCanvasClick}
         onContextMenu={(e) => {
           // Prevent browser's default context menu from appearing
