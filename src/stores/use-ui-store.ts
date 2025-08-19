@@ -116,6 +116,7 @@ interface UIState {
   tools: ToolState;
   snapping: SnappingState;
   canvas: CanvasState;
+  canvasZoom: number;
   preferences: UserPreferences;
   keyboardShortcuts: KeyboardShortcut[];
   navigation: NavigationState;
@@ -185,6 +186,7 @@ interface UIActions {
   setCustomCanvasSize: (width: number, height: number) => void;
   addCanvasSize: (size: CanvasSize) => void;
   removeCanvasSize: (sizeId: string) => void;
+  setCanvasZoom: (zoom: number) => void;
   
   // Uploaded Files Actions
   addUploadedFile: (file: UploadedFile) => void;
@@ -320,6 +322,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
       tools: defaultToolState,
       snapping: defaultSnappingState,
       canvas: defaultCanvasState,
+      canvasZoom: 1,
       preferences: defaultUserPreferences,
       keyboardShortcuts: defaultKeyboardShortcuts,
       navigation: { activeNav: null, hoverNav: null, interactedNav: null },
@@ -682,6 +685,14 @@ export const useUIStore = create<UIStore>((set, get) => ({
       if (state.canvas.currentSizeId === sizeId && state.canvas.availableSizes.length > 0) {
         state.canvas.currentSizeId = state.canvas.availableSizes[0].id;
       }
+    }));
+  },
+
+  setCanvasZoom: (zoom: number) => {
+    set(produce((state) => {
+      // Clamp to a reasonable range
+      const clamped = Math.max(0.05, Math.min(10, zoom));
+      state.canvasZoom = clamped;
     }));
   },
 

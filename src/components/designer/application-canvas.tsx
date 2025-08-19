@@ -88,7 +88,9 @@ export interface ApplicationCanvasRef extends TimelineCanvasRef {
 
 export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCanvasProps>(
   (props, ref) => {
-    const { canvasZoom, onCanvasZoomChange } = props;
+    // Read and write zoom from the UI store instead of props
+    const canvasZoom = useUIStore(state => state.canvasZoom);
+    const setCanvasZoom = useUIStore(state => state.setCanvasZoom);
     const appRef = useRef<ApplicationRef | null>(null);
     const viewportRef = useRef<ViewportWrapper | null>(null);
     const canvasContainerRef = useRef<HTMLDivElement | null>(null);
@@ -173,7 +175,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       return () => node.removeEventListener('wheel', onWheel);
     }, []);
 
-    // Handle canvas zoom changes from timeline
+    // Apply zoom changes coming from the UI store
     useEffect(() => {
       if (viewportRef.current && canvasZoom !== undefined) {
         const currentZoom = viewportRef.current.scale.x;
@@ -228,25 +230,37 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       return () => cancelAnimationFrame(rafId);
     }, [canvasWidth, canvasHeight, dimensions.width, dimensions.height, props.mainCanvasContainerRef]);
 
-    // Listen for viewport zoom changes and sync back to timeline
+    // Listen for viewport zoom changes and sync back to store (attach after ref is ready)
     useEffect(() => {
-      if (!viewportRef.current || !onCanvasZoomChange) return;
+      let attached = false;
+      let vp: ViewportWrapper | null = null;
 
-      const viewport = viewportRef.current;
       const handleZoomChange = () => {
-        const currentZoom = viewport.scale.x; // PIXI viewport scale
-        onCanvasZoomChange?.(currentZoom);
+        const current = vp?.scale.x ?? viewportRef.current?.scale.x;
+        if (typeof current === 'number') setCanvasZoom(current);
       };
 
-      // Listen for zoom events from the viewport
-      viewport.on('zoomed', handleZoomChange);
-      viewport.on('zoomed-end', handleZoomChange);
+      const attach = () => {
+        vp = viewportRef.current;
+        if (!vp) return false;
+        vp.on('zoomed', handleZoomChange);
+        vp.on('zoomed-end', handleZoomChange);
+        attached = true;
+        return true;
+      };
+
+      const rafId = requestAnimationFrame(() => {
+        if (!attach()) setTimeout(attach, 50);
+      });
 
       return () => {
-        viewport.off('zoomed', handleZoomChange);
-        viewport.off('zoomed-end', handleZoomChange);
+        cancelAnimationFrame(rafId);
+        if (attached && vp) {
+          vp.off('zoomed', handleZoomChange);
+          vp.off('zoomed-end', handleZoomChange);
+        }
       };
-    }, [onCanvasZoomChange]);
+    }, [setCanvasZoom]);
 
     // Use custom hook for viewport empty area click handling
     useViewportEmptyAreaClick({

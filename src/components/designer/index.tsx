@@ -99,8 +99,8 @@ export default function Designer() {
     setCanvasRef: setTimelineCanvasRef,
   } = useTimelineIntegration();
 
-  // Canvas zoom state - will be implemented with pixi-viewport
-  const [canvasZoom, setCanvasZoom] = useState(1);
+  // Canvas zoom is stored globally in UI store now
+  const canvasZoom = useUIStore(state => state.canvasZoom);
 
   // Shift key state for constrained drawing
   const [shiftKey, setShiftKey] = useState(false);
@@ -995,7 +995,6 @@ export default function Designer() {
       {/* Options Bar - Fixed at top */}
       <div className="fixed top-0 left-0 right-0 z-50">
         <MainNavBar
-          canvasZoom={canvasZoom}
           onGroupElements={handleGroupElements}
           onUngroupElements={handleUngroupElements}
         />
@@ -1065,8 +1064,6 @@ export default function Designer() {
           onPathStartClick={onPathStartClick}
           handleGroupSelectionDragStart={handleGroupSelectionDragStart}
           isElementInCustomOrPolygonGroup={isElementInCustomOrPolygonGroup}
-          canvasZoom={canvasZoom}
-          onCanvasZoomChange={setCanvasZoom}
           // Snapping handlers
           onSnapElement={snapElement}
           onSnapPoint={snapPoint}
@@ -1196,7 +1193,7 @@ export default function Designer() {
           />
         )}
 
-        <Timeline canvasZoom={canvasZoom} onCanvasZoom={setCanvasZoom} />
+        <Timeline />
       </div>
 
       {/* Hidden file input for image upload */}

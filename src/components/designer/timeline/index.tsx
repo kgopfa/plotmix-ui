@@ -8,12 +8,7 @@ import { useSelectionStore } from '@/stores/use-selection-store';
 import { usePanelState, useUIStore } from '@/stores/use-ui-store';
 import { useShallow } from 'zustand/react/shallow';
 
-interface TimelineProps {
-  canvasZoom?: number;
-  onCanvasZoom?: (zoom: number) => void;
-}
-
-export function Timeline({ canvasZoom, onCanvasZoom }: TimelineProps) {
+export function Timeline() {
   // Get data directly from stores
   const elements = useCanvasElements().filter(el => !el.isAnimationPath);
   const groups = useCanvasGroups();

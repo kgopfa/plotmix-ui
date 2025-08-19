@@ -36,21 +36,17 @@ import { useUIStore } from '@/stores/use-ui-store';
 
 // Simplified interface - only for props that can't be accessed via stores
 interface MainNavBarProps {
-  canvasZoom?: number;
-  onZoomIn?: () => void;
-  onZoomOut?: () => void;
-  onResetZoom?: () => void;
   onGroupElements: () => void;
   onUngroupElements: () => void;
 }
 
 export const MainNavBar: React.FC<MainNavBarProps> = ({
-  canvasZoom,
   onGroupElements,
   onUngroupElements
 }) => {
   const [projectName, setProjectName] = useState('Project Name');
-  const { projectId, name, title, saveStatus, getDiffFromBaseline, captureBaseline, setProjectInfo, setSaveStatus } = useProjectStore();
+  const { projectId, name, title, saveStatus, captureBaseline, setProjectInfo, setSaveStatus } = useProjectStore();
+  const canvasZoom = useUIStore(state => state.canvasZoom);
 
   useEffect(() => {
     if (name) setProjectName(name);
