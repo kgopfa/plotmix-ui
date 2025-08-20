@@ -284,6 +284,17 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       // Start monitoring when viewport is ready
       if (viewportRef.current) {
         startMonitoring();
+        
+        // Log initial viewport state once
+        const viewport = viewportRef.current;
+        console.log('Viewport State Debug:', {
+          scale: viewport.scale,
+          position: viewport.position,
+          worldWidth: viewport.worldWidth,
+          worldHeight: viewport.worldHeight,
+          screenWidth: viewport.screenWidth,
+          screenHeight: viewport.screenHeight
+        });
       } else {
         // Wait for viewport to be ready
         const checkViewport = setInterval(() => {
@@ -649,6 +660,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
               onGroupContextMenu={handleGroupContextMenu}
               // When editing text, disable interaction for that text element
               editingTextId={activeEditingTextId ?? props.editingTextId}
+              viewportRef={viewportRef}
             />
           </Viewport>
         </Application>

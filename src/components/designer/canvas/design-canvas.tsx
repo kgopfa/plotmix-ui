@@ -7,6 +7,7 @@ import { RichTextRenderer } from '../helpers/rich-text-renderer';
 import type { SnapGuide } from '../../../utils/element-snapping';
 import type { FederatedPointerEvent } from 'pixi.js';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
+import type { ViewportWrapper } from '../viewport/viewport-wrapper';
 import { Rectangle, Graphics, Container } from 'pixi.js';
 import { drawShape, applyShadowToContainer } from '@/utils/drawing-utils';
 import ElementSelect from '../selection/element-select';
@@ -56,6 +57,8 @@ interface DesignCanvasProps {
   mainCanvasContainerRef: React.MutableRefObject<Container | null>;
   drawingRef: React.MutableRefObject<Graphics | null>;
   canvasScaleFactor: React.MutableRefObject<number>;
+  // Viewport reference for coordinate transformations
+  viewportRef?: React.RefObject<ViewportWrapper | null>;
   // Handlers
   handleCanvasPointerDown: (e: FederatedPointerEvent) => void;
   handleCanvasPointerMove: (e: FederatedPointerEvent) => void;
@@ -147,10 +150,14 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
   const worldCenterY = canvasFrameHeight * 1.5;
 
   // Optimize canvas positioning by memoizing the final position
-  const canvasPosition = useMemo(() => ({
-    x: worldCenterX + centerX,
-    y: worldCenterY + centerY
-  }), [worldCenterX, worldCenterY, centerX, centerY]);
+  const canvasPosition = useMemo(() => {
+    const position = {
+      x: worldCenterX + centerX,
+      y: worldCenterY + centerY
+    };
+    
+    return position;
+  }, [worldCenterX, worldCenterY, centerX, centerY]);
 
   // Memoize hit area calculations to avoid recalculating on every render
   const getHitArea = useCallback((el: AnimatedCanvasObject) => {
@@ -204,6 +211,8 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
     onSnapPoint: props.onSnapPoint,
     onSetSnapGuides: props.onSetSnapGuides,
     onClearSnapGuides: props.onClearSnapGuides,
+    viewportRef: props.viewportRef,
+    canvasPosition: canvasPosition,
   });
 
   // Use element pointer handlers hook
@@ -224,6 +233,8 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
     startEndpointDragging,
     onElementContextMenu: props.onElementContextMenu,
     onGroupContextMenu: props.onGroupContextMenu,
+    viewportRef: props.viewportRef,
+    canvasPosition: canvasPosition,
   });
 
   // Set up global event listeners for element dragging

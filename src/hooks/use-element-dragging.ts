@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import type { AnimatedCanvasObject } from '@/types/canvas';
 import type { SnapGuide } from '@/utils/element-snapping';
+import type { ViewportWrapper } from '@/components/designer/viewport/viewport-wrapper';
 import { eventManager } from '@/lib/event-manager';
 import { useUIStore } from '@/stores/use-ui-store';
 
@@ -13,6 +14,8 @@ interface UseElementDraggingProps {
   onSnapPoint?: (point: { x: number; y: number }) => { x: number; y: number };
   onSetSnapGuides?: (guides: SnapGuide[]) => void;
   onClearSnapGuides?: () => void;
+  viewportRef?: React.RefObject<ViewportWrapper | null>;
+  canvasPosition?: { x: number; y: number };
 }
 
 export const useElementDragging = ({
@@ -24,6 +27,8 @@ export const useElementDragging = ({
   onSnapPoint,
   onSetSnapGuides,
   onClearSnapGuides,
+  viewportRef,
+  canvasPosition,
 }: UseElementDraggingProps) => {
   // Get zoom level from UI store
   const canvasZoom = useUIStore(state => state.canvasZoom);
@@ -103,6 +108,35 @@ export const useElementDragging = ({
 
     if (!cache.canvasRect) return { worldX: 0, worldY: 0 };
 
+    // Use viewport transformation if available (preferred method)
+    if (viewportRef?.current) {
+      try {
+        // Convert mouse coordinates to viewport world coordinates
+        const worldPos = viewportRef.current.toWorld(e.clientX, e.clientY);
+        
+        // Convert world coordinates to canvas-relative coordinates
+        // Use the actual canvas position if provided, otherwise fall back to cache
+        const canvasOffsetX = canvasPosition ? canvasPosition.x : (cache.worldCenterX + cache.centerX);
+        const canvasOffsetY = canvasPosition ? canvasPosition.y : (cache.worldCenterY + cache.centerY);
+        
+        const canvasX = worldPos.x - canvasOffsetX;
+        const canvasY = worldPos.y - canvasOffsetY;
+        
+        // Enhanced debugging for coordinate transformation
+        console.log('Coordinate Transform:', {
+          mouse: { x: e.clientX, y: e.clientY },
+          viewportWorld: worldPos,
+          canvasOffset: { x: canvasOffsetX, y: canvasOffsetY },
+          finalCanvas: { x: canvasX, y: canvasY }
+        });
+        
+        return { worldX: canvasX, worldY: canvasY };
+      } catch (error) {
+        console.warn('Viewport transformation failed, falling back to manual calculation:', error);
+      }
+    }
+
+    // Fallback to manual calculation if viewport is not available
     // Fast coordinate conversion using cached values
     const canvasX = e.clientX - cache.canvasRect.left;
     const canvasY = e.clientY - cache.canvasRect.top;
@@ -112,7 +146,7 @@ export const useElementDragging = ({
     const worldY = canvasY;
 
     return { worldX, worldY };
-  }, []);
+  }, [viewportRef, canvasPosition]);
 
   // Element drag end handler
   const onElementDragEnd = useCallback((id: string, x: number, y: number) => {
@@ -266,7 +300,19 @@ export const useElementDragging = ({
     setIsDraggingGroup(isGroup);
     setGroupDragOffsets(groupOffsets);
     setDraggingEndpoint(null);
-  }, []);
+
+    // Log initial element position when dragging starts
+    const element = elements.find(el => el.id === id);
+    if (element) {
+      console.log('Drag Started:', {
+        elementId: id,
+        initialPosition: { x: element.x, y: element.y },
+        offset: { x: offsetX, y: offsetY },
+        isGroup,
+        timestamp: Date.now()
+      });
+    }
+  }, [elements]);
 
   // Start dragging a line endpoint
   const startEndpointDragging = useCallback((id: string, endpoint: 'start' | 'end') => {

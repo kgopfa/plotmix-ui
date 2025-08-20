@@ -1,6 +1,7 @@
 import { useCallback, useRef } from 'react';
 import type { FederatedPointerEvent } from 'pixi.js';
 import type { AnimatedCanvasObject } from '@/types/canvas';
+import type { ViewportWrapper } from '@/components/designer/viewport/viewport-wrapper';
 
 interface UseElementPointerHandlersProps {
   tool: string;
@@ -15,6 +16,8 @@ interface UseElementPointerHandlersProps {
   startEndpointDragging: (id: string, endpoint: 'start' | 'end') => void;
   onElementContextMenu?: (e: FederatedPointerEvent, elementId: string) => void;
   onGroupContextMenu?: (e: FederatedPointerEvent, groupId: string) => void;
+  viewportRef?: React.RefObject<ViewportWrapper | null>;
+  canvasPosition?: { x: number; y: number };
 }
 
 interface UseElementPointerHandlersReturn {
@@ -37,9 +40,39 @@ export const useElementPointerHandlers = ({
   startEndpointDragging,
   onElementContextMenu,
   onGroupContextMenu,
+  viewportRef,
+  canvasPosition,
 }: UseElementPointerHandlersProps): UseElementPointerHandlersReturn => {
   const textClickTimeRef = useRef<Map<string, number>>(new Map());
   const dragStartRef = useRef<{ id: string; x: number; y: number; shapeX: number; shapeY: number; isMultiSelect: boolean } | null>(null);
+
+  // Helper function to convert PIXI coordinates to the same coordinate system used by dragging
+  const convertToDragCoordinates = useCallback((pixiX: number, pixiY: number) => {
+    if (viewportRef?.current && canvasPosition) {
+      // Convert PIXI world coordinates to viewport world coordinates
+      const viewportWorldPos = viewportRef.current.toWorld(pixiX, pixiY);
+      
+      // Convert to canvas-relative coordinates (same system as dragging logic)
+      const canvasX = viewportWorldPos.x - canvasPosition.x;
+      const canvasY = viewportWorldPos.y - canvasPosition.y;
+      
+      return { x: canvasX, y: canvasY };
+    }
+    
+    // Fallback to PIXI coordinates if viewport not available
+    return { x: pixiX, y: pixiY };
+  }, [viewportRef, canvasPosition]);
+
+  // Helper function to calculate zoom-aware offset
+  const calculateZoomAwareOffset = useCallback((dragCoords: { x: number; y: number }, element: AnimatedCanvasObject) => {
+    const zoomFactor = viewportRef?.current?.scale.x || 1;
+    
+    // Normalize offset by zoom factor to maintain consistent visual distance
+    const offsetX = (dragCoords.x - element.x) / zoomFactor;
+    const offsetY = (dragCoords.y - element.y) / zoomFactor;
+    
+    return { x: offsetX, y: offsetY };
+  }, [viewportRef]);
 
   // Enhanced handlePointerDown for element dragging
   const handleElementPointerDown = useCallback((id: string, shapeX: number, shapeY: number) => (e: FederatedPointerEvent) => {
@@ -162,9 +195,44 @@ export const useElementPointerHandlers = ({
     // Check if mouse has moved enough to start dragging (threshold of 5 pixels)
     const distance = Math.sqrt(Math.pow(currentX - startX, 2) + Math.pow(currentY - startY, 2));
     
+    // Debug threshold behavior to investigate visual delay
+    if (distance > 0) {
+      console.log('Drag Threshold Debug:', {
+        distance,
+        threshold: 5,
+        shouldStartDragging: distance > 5,
+        startPos: { x: startX, y: startY },
+        currentPos: { x: currentX, y: currentY },
+        delta: { x: currentX - startX, y: currentY - startY },
+        timestamp: Date.now()
+      });
+    }
+    
     if (distance > 5) {
       const element = elements.find(el => el.id === id);
       if (!element) return;
+
+      // Debug the exact moment dragging starts
+      console.log('Dragging Started - First Movement:', {
+        elementId: id,
+        initialOffset: { x: shapeX, y: shapeY },
+        firstElementPos: { x: element.x, y: element.y },
+        firstMousePos: { x: currentX, y: currentY },
+        thresholdDistance: distance,
+        timestamp: Date.now()
+      });
+
+      // Debug coordinate conversion and offset calculation
+      const dragCoords = convertToDragCoordinates(currentX, currentY);
+      const rawOffset = { x: dragCoords.x - element.x, y: dragCoords.y - element.y };
+      console.log('Coordinate Conversion Debug:', {
+        rawPixiCoords: { x: currentX, y: currentY },
+        convertedDragCoords: dragCoords,
+        elementPosition: { x: element.x, y: element.y },
+        rawOffset: rawOffset,
+        zoomFactor: viewportRef?.current?.scale.x || 1,
+        timestamp: Date.now()
+      });
 
       // Start dragging
       if (selectedIds.length > 1 && selectedIds.includes(id)) {
@@ -172,22 +240,35 @@ export const useElementPointerHandlers = ({
         const offsets = selectedIds.map(selectedId => {
           const selectedElement = elements.find(el => el.id === selectedId);
           if (!selectedElement) return { id: selectedId, offsetX: 0, offsetY: 0 };
+          
+          // Convert coordinates to the same system used by dragging logic
+          const dragCoords = convertToDragCoordinates(currentX, currentY);
+          // Use zoom-aware offset calculation
+          const offset = calculateZoomAwareOffset(dragCoords, selectedElement);
           return {
             id: selectedId,
-            offsetX: currentX - selectedElement.x,
-            offsetY: currentY - selectedElement.y
+            offsetX: offset.x,
+            offsetY: offset.y
           };
         });
-        startDragging(id, currentX - shapeX, currentY - shapeY, true, offsets);
+        
+        // Convert coordinates for the main element - offset should be distance from mouse to element center
+        const dragCoords = convertToDragCoordinates(currentX, currentY);
+        // Use zoom-aware offset calculation for main element
+        const mainOffset = calculateZoomAwareOffset(dragCoords, element);
+        startDragging(id, mainOffset.x, mainOffset.y, true, offsets);
       } else {
-        // Single element drag
-        startDragging(id, currentX - shapeX, currentY - shapeY);
+        // Single element drag - offset should be distance from mouse to element center
+        const dragCoords = convertToDragCoordinates(currentX, currentY);
+        // Use zoom-aware offset calculation
+        const offset = calculateZoomAwareOffset(dragCoords, element);
+        startDragging(id, offset.x, offset.y);
       }
 
       // Clear drag start ref
       dragStartRef.current = null;
     }
-  }, [elements, selectedIds, startDragging]);
+  }, [elements, selectedIds, startDragging, convertToDragCoordinates, calculateZoomAwareOffset]);
 
   // Handle pointer up to clear drag start ref
   const handleElementPointerUp = useCallback(() => {
