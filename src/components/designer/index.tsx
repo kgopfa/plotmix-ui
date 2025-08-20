@@ -156,27 +156,11 @@ export default function Designer() {
     centerY: 0
   }), [canvasWidth, canvasHeight]);
 
-  // Stabilize snapping configurations to prevent infinite re-renders
-  const stableElementSnapConfig = useMemo(() => ({
-    enabled: elementSnapConfig.enabled,
-    snapThreshold: elementSnapConfig.snapThreshold,
-    showGuides: elementSnapConfig.showGuides,
-    enableSpacing: elementSnapConfig.enableSpacing,
-    enableDistribution: elementSnapConfig.enableDistribution
-  }), [elementSnapConfig.enabled, elementSnapConfig.snapThreshold, elementSnapConfig.showGuides, elementSnapConfig.enableSpacing, elementSnapConfig.enableDistribution]);
-
-  const stableGridConfig = useMemo(() => ({
-    size: uiGridConfig.size,
-    enabled: uiGridConfig.enabled,
-    visible: uiGridConfig.visible,
-    snapThreshold: uiGridConfig.snapThreshold
-  }), [uiGridConfig.size, uiGridConfig.enabled, uiGridConfig.visible, uiGridConfig.snapThreshold]);
-
   // Element snapping functionality
   // Element bounds cache for performance optimization
   const elementBoundsCache = useElementBoundsCache({
     elements: canvasObjects,
-    snapThreshold: stableElementSnapConfig.snapThreshold
+    snapThreshold: elementSnapConfig.snapThreshold
   });
 
   // Use UI store snapping state instead of local hooks
@@ -187,11 +171,11 @@ export default function Designer() {
     clearGuides: clearElementSnapGuides,
     isSnapTemporarilyDisabled: isElementSnapDisabled
   } = useElementSnapping({
-    enabled: stableElementSnapConfig.enabled,
-    snapThreshold: stableElementSnapConfig.snapThreshold,
-    showGuides: stableElementSnapConfig.showGuides,
-    enableSpacing: stableElementSnapConfig.enableSpacing,
-    enableDistribution: stableElementSnapConfig.enableDistribution,
+    enabled: elementSnapConfig.enabled,
+    snapThreshold: elementSnapConfig.snapThreshold,
+    showGuides: elementSnapConfig.showGuides,
+    enableSpacing: elementSnapConfig.enableSpacing,
+    enableDistribution: elementSnapConfig.enableDistribution,
     canvasBounds
   });
 
@@ -200,10 +184,10 @@ export default function Designer() {
     snapPoint: gridSnapPoint,
     isSnapTemporarilyDisabled: isGridSnapDisabled
   } = useGridSnapping({
-    size: stableGridConfig.size,
-    enabled: stableGridConfig.enabled,
-    visible: stableGridConfig.visible,
-    snapThreshold: stableGridConfig.snapThreshold
+    size: uiGridConfig.size,
+    enabled: uiGridConfig.enabled, // Use UI store state instead of hardcoded false
+    visible: uiGridConfig.visible,
+    snapThreshold: uiGridConfig.snapThreshold
   });
 
   // Memoize snapPoint to prevent infinite re-renders
@@ -212,7 +196,7 @@ export default function Designer() {
     const gridSnapped = gridSnapPoint(point, event);
     
     // Then apply element snapping if enabled and there are other elements
-    if (stableElementSnapConfig.enabled && canvasObjects.length > 0 && !event?.shiftKey) {
+    if (elementSnapConfig.enabled && canvasObjects.length > 0 && !event?.shiftKey) {
       // Create a temporary element at the grid-snapped position to check for element snapping
       const tempElement: AnimatedCanvasObject = {
         id: 'temp',
@@ -242,7 +226,7 @@ export default function Designer() {
     }
     
     return gridSnapped;
-  }, [gridSnapPoint, stableElementSnapConfig.enabled, canvasObjects, snapElement]);
+  }, [gridSnapPoint, elementSnapConfig.enabled, canvasObjects, snapElement]);
 
   // Canvas interactions hook
   const {
@@ -272,7 +256,7 @@ export default function Designer() {
   const { dimensions } = useCanvasDimensions();
   
   // Grid and snap configuration - now properly integrated
-  const gridConfig = stableGridConfig;
+  const gridConfig = uiGridConfig;
   const snapGuides = currentGuides;
 
   // Force a center on mount/size changes using the exposed ref method
@@ -1100,8 +1084,8 @@ export default function Designer() {
             console.log('Group context menu:', groupId);
           }}
           shiftKey={shiftKey}
-          isSnappingEnabled={stableElementSnapConfig.enabled && !isElementSnapDisabled}
-          gridConfig={stableGridConfig}
+          isSnappingEnabled={elementSnapConfig.enabled && !isElementSnapDisabled}
+          gridConfig={uiGridConfig}
         />
 
         {/* Path Mode Banner */}
