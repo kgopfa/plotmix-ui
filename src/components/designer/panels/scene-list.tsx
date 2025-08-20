@@ -91,7 +91,7 @@ export function SceneList({ onSceneExpand, expandedScenes }: SceneListProps) {
   const handleNewScene = async () => {
     try {
       const newSceneId = projectManager.createScene();
-      console.log(`New scene created: ${newSceneId}`);
+
       
       // Auto-expand the newly created scene
       onSceneExpand(newSceneId, true);
@@ -103,13 +103,11 @@ export function SceneList({ onSceneExpand, expandedScenes }: SceneListProps) {
   const handleSceneSwitch = async (sceneId: string) => {
     // Don't switch if it's already the active scene
     if (sceneId === activeSceneId) {
-      console.log(`Already on scene ${sceneId}`);
       return;
     }
     
     try {
       // For scene switching, we need to use ProjectManager to handle full scene transitions
-      console.log(`Switching to scene: ${sceneId}`);
       await projectManager.switchScene(sceneId);
     } catch (error) {
       console.error('Failed to switch scene:', error);

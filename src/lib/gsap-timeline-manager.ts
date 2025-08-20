@@ -585,10 +585,7 @@ export class GSAPTimelineManager {
       // Return journey: target values → original values
       // Debug logging for scale animations
       if ('scaleX' in config.properties || 'scaleY' in config.properties) {
-        console.log('Scale Animation Debug:');
-        console.log('Forward properties:', config.properties);
-        console.log('Return properties:', originalValues);
-        console.log('Target scale object:', target.scale);
+        // Scale animation debug info removed for performance
       }
 
       // Create return properties in the same format as forward properties
@@ -596,7 +593,7 @@ export class GSAPTimelineManager {
 
       // For scale animations, let's try both approaches to see which works
       if ('scaleX' in config.properties || 'scaleY' in config.properties) {
-        console.log('Trying scaleX/scaleY format for return');
+
 
         // Alternative approach 1: try setting scale object directly
         // returnProperties = {
@@ -608,7 +605,6 @@ export class GSAPTimelineManager {
 
         // Alternative approach 2: Use GSAP's built-in yoyo instead of manual
         // Instead of manual yoyo, let's try using GSAP's native yoyo for this specific case
-        console.log('Testing GSAP native yoyo for scale...');
 
         // Skip the return animation and instead create a yoyo animation
         // Use half the cycle duration so total time (forward + return) = cycleDuration

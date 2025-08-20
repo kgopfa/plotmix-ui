@@ -88,7 +88,7 @@ export class ProjectManager {
         ? JSON.stringify(projectData, null, 2)
         : JSON.stringify(projectData);
 
-      console.log(`Project saved: ${metadata.name} (${canvasState.elements.length} elements, ${canvasState.groups.length} groups)`);
+
 
       return jsonData;
 
@@ -115,7 +115,7 @@ export class ProjectManager {
       // Check if this is a legacy project and migrate if needed
       let projectData: ProjectData;
       if (isLegacyProject(rawData)) {
-        console.log('Detected legacy project format, migrating to scene-based format...');
+
         projectData = this.migrateLegacyProject(rawData);
       } else {
         projectData = rawData as ProjectData;
@@ -131,7 +131,7 @@ export class ProjectManager {
       const migratedData = migrateVersion ? this.migrateProjectData(projectData) : projectData;
 
       if (validateOnly) {
-        console.log('Project validation successful');
+
         return;
       }
 
@@ -139,7 +139,7 @@ export class ProjectManager {
       await this.loadIntoStores(migratedData, { skipUI, skipSelection });
 
       const activeScene = migratedData.scenes.find(s => s.id === migratedData.activeSceneId) || migratedData.scenes[0];
-      console.log(`Project loaded: ${migratedData.metadata.name} (${activeScene.canvas.elements.length} elements)`);
+
     } catch (error) {
       console.error('Failed to load project:', error);
       throw new Error(`Load failed: ${error instanceof Error ? error.message : 'Invalid project file'}`);
@@ -156,7 +156,6 @@ export class ProjectManager {
     const { skipUI, skipSelection } = options;
 
     // 1. Sync scene store with project data
-    console.log('Syncing scene store...');
     const sceneStore = useSceneStore.getState();
 
     // Update the scene cache with loaded data
@@ -181,12 +180,10 @@ export class ProjectManager {
     }
 
     // 2. Clear existing state
-    console.log('Clearing existing state...');
     useCanvasStore.getState().clearCanvas();
     useSelectionStore.getState().clearSelections();
 
     // 3. Load canvas data from active scene - create fresh copies
-    console.log('Loading canvas data...');
     const canvasStore = useCanvasStore.getState();
     const freshElements = activeScene.canvas.elements.map(element => ({
       ...element,
@@ -200,7 +197,6 @@ export class ProjectManager {
     canvasStore.setGroups(freshGroups);
 
     // 4. Load timeline state from active scene
-    console.log('Loading timeline state...');
     const timelineStore = useTimelineStore.getState();
 
     // Use the store's loadProjectData method to properly handle Immer state updates
@@ -215,7 +211,6 @@ export class ProjectManager {
 
     // 5. Load UI state from active scene (optional)
     if (!skipUI && activeScene.ui) {
-      console.log('Loading UI state...');
       const uiStore = useUIStore.getState();
 
       // Panel state
@@ -248,7 +243,6 @@ export class ProjectManager {
 
     // 6. Restore selections from active scene (after elements are loaded)
     if (!skipSelection && activeScene.ui) {
-      console.log('Restoring selections...');
       const selectionStore = useSelectionStore.getState();
 
       const elementsToSelect = freshElements.filter(el =>
@@ -264,7 +258,6 @@ export class ProjectManager {
     }
 
     // 7. Rebuild timeline (with a small delay to ensure everything is ready)
-    console.log('Rebuilding timeline...');
     setTimeout(() => {
       timelineStore.updateTracks();
       timelineStore.buildGSAPTimeline();
@@ -373,7 +366,7 @@ export class ProjectManager {
    * Migrate legacy project (v1.x) to scene-based format (v2.x)
    */
   private migrateLegacyProject(legacyData: LegacyProjectData): ProjectData {
-    console.log('Migrating legacy project to scene-based format...');
+
 
     // Create a single scene from the legacy project data
     const defaultSceneId = 'scene-1';
@@ -402,7 +395,7 @@ export class ProjectManager {
   private migrateProjectData(data: ProjectData): ProjectData {
     // For now, return as-is. Future versions can add migration logic here
     if (data.version !== this.currentVersion) {
-      console.warn(`Project version ${data.version} differs from current ${this.currentVersion}. Some features may not work correctly.`);
+      // Version mismatch warning removed for performance
     }
 
     return {
@@ -508,7 +501,7 @@ export class ProjectManager {
 
     this.sceneDataCache.set(newSceneId, emptyScene);
 
-    console.log(`Created new scene: ${newSceneId}`);
+
     return newSceneId;
   }
 
@@ -558,7 +551,7 @@ export class ProjectManager {
       // Load the updated project data (this will switch to the new scene)
       this.loadProject(JSON.stringify(parsedData), { skipUI: false, skipSelection: false });
 
-      console.log(`Duplicated scene ${sceneId} to ${newSceneId}`);
+
       return newSceneId;
     } catch (error) {
       console.error('Failed to duplicate scene:', error);
@@ -574,7 +567,6 @@ export class ProjectManager {
     const currentSceneId = sceneStore.getActiveSceneId();
 
     if (currentSceneId === sceneId) {
-      console.log(`Already on scene ${sceneId}`);
       return;
     }
 
@@ -605,7 +597,7 @@ export class ProjectManager {
       // Load the project data (this will switch to the target scene)
       await this.loadProject(JSON.stringify(projectData), { skipUI: false, skipSelection: false });
 
-      console.log(`Switched to scene: ${sceneId}`);
+
     } catch (error) {
       console.error('Failed to switch scene:', error);
       throw new Error(`Failed to switch to scene ${sceneId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -700,7 +692,6 @@ export class ProjectManager {
     };
 
     this.sceneDataCache.set(currentSceneId, scene);
-    console.log(`Saved scene ${currentSceneId} to cache`);
   }
 
   /**

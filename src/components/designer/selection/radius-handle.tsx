@@ -38,7 +38,6 @@ const RadiusHandle: React.FC<RadiusHandleProps> = ({
   };
 
   const handlePointerDown = (e: PIXI.FederatedPointerEvent) => {
-    console.log(`Starting radius drag on ${corner} handle`);
     isDraggingRef.current = true;
     setIsDragging(true);
     
@@ -120,13 +119,7 @@ const RadiusHandle: React.FC<RadiusHandleProps> = ({
     // Calculate new radius
     const newRadius = Math.max(0, Math.min(50, dragStartRef.current.initialRadius + radiusDelta));
     
-    console.log(`Radius ${corner} changed:`, { 
-      deltaX, 
-      deltaY, 
-      radiusDelta, 
-      newRadius,
-      initialRadius: dragStartRef.current.initialRadius
-    });
+
     
     // Call the radius change callback
     onRadiusChange(newRadius);
@@ -134,7 +127,6 @@ const RadiusHandle: React.FC<RadiusHandleProps> = ({
 
   const handlePointerUp = () => {
     if (isDraggingRef.current) {
-      console.log(`Finished radius drag on ${corner} handle`);
       isDraggingRef.current = false;
       setIsDragging(false);
       

@@ -77,7 +77,7 @@ export const useSceneStore = create<SceneState>()(
             activeSceneId: newSceneId
           });
           
-          console.log(`Created new scene: ${newSceneName} (${newSceneId})`);
+
           return newSceneId;
         },
         
@@ -109,7 +109,7 @@ export const useSceneStore = create<SceneState>()(
             activeSceneId: newActiveSceneId
           });
           
-          console.log(`Deleted scene: ${sceneToDelete.name} (${sceneId})`);
+
           return true;
         },
         
@@ -130,7 +130,7 @@ export const useSceneStore = create<SceneState>()(
           };
           
           set({ scenes: updatedScenes });
-          console.log(`Renamed scene ${sceneId} to "${newName}"`);
+
           return true;
         },
         
@@ -157,7 +157,7 @@ export const useSceneStore = create<SceneState>()(
             activeSceneId: newSceneId
           });
           
-          console.log(`Duplicated scene: ${sceneToClone.name} -> ${duplicatedName} (${newSceneId})`);
+
           return newSceneId;
         },
         
@@ -197,7 +197,7 @@ export const useSceneStore = create<SceneState>()(
             activeSceneId: activeSceneId
           });
           
-          console.log(`Loaded ${loadedScenes.length} scenes into store, active: ${activeSceneId}`);
+
         },
       }),
       {

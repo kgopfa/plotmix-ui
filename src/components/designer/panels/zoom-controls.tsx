@@ -7,17 +7,14 @@ interface ZoomControlsProps {
 export const ZoomControls: React.FC<ZoomControlsProps> = ({ currentZoom }) => {
   const handleZoomIn = () => {
     // Zoom functionality removed
-    console.log('Zoom in - functionality removed');
   };
 
   const handleZoomOut = () => {
     // Zoom functionality removed
-    console.log('Zoom out - functionality removed');
   };
 
   const handleResetZoom = () => {
     // Zoom functionality removed
-    console.log('Reset zoom - functionality removed');
   };
 
   // Format zoom percentage for display

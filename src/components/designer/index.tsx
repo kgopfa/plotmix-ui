@@ -102,10 +102,7 @@ export default function Designer() {
   // Canvas zoom is stored globally in UI store now
   const canvasZoom = useUIStore(state => state.canvasZoom);
 
-  // Debug zoom changes
-  useEffect(() => {
-    console.log('Designer canvas zoom changed:', canvasZoom);
-  }, [canvasZoom]);
+  // Debug zoom changes removed for performance
 
   // Shift key state for constrained drawing
   const [shiftKey, setShiftKey] = useState(false);
@@ -590,7 +587,7 @@ export default function Designer() {
     });
 
     if (animationsUpdated > 0) {
-      console.log(`Updated ${animationsUpdated} animation(s) for path element ${pathElement.name || pathElement.id}`);
+
     }
 
     return updatedElements;
@@ -867,7 +864,6 @@ export default function Designer() {
 
   const handleSelectionNavbarOptions = useCallback(() => {
     // TODO: Implement options menu
-    console.log('Show options for selected elements');
   }, []);
 
   // Enhanced keyboard shortcuts integration
@@ -1098,11 +1094,9 @@ export default function Designer() {
           // Context menu handlers
           onElementContextMenu={(e, elementId) => {
             // Handle element context menu
-            console.log('Element context menu:', elementId);
           }}
           onGroupContextMenu={(e, groupId) => {
             // Handle group context menu
-            console.log('Group context menu:', groupId);
           }}
           shiftKey={shiftKey}
           isSnappingEnabled={stableElementSnapConfig.enabled && !isElementSnapDisabled}

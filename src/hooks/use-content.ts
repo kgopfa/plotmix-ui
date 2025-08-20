@@ -92,13 +92,12 @@ export function useContent(contentId: string): UseContentReturn {
   const fetchContent = async () => {
     if (!contentId) return;
 
-    console.log('🔍 Fetching content for contentId:', contentId);
+
     setIsLoading(true);
     setError(null);
 
     try {
       // Fetch project data
-      console.log('📡 Fetching project data from:', `/api/projects/${contentId}`);
       const projectResponse = await apiClient.get<ProjectDataResponse>(`/api/projects/${contentId}`);
       
       // Transform the response to match ContentData interface

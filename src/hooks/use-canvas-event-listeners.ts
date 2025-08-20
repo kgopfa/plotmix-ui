@@ -30,7 +30,7 @@ export const useCanvasEventListeners = ({
   useEffect(() => {
     const handleElementResize = (e: CustomEvent) => {
       const { id, width, height, handle } = e.detail;
-      console.log('Resize event:', { id, width, height, handle });
+
 
       // Use the ref to get current elements to avoid stale closure
       const currentElements = elementsRef.current;
@@ -80,16 +80,7 @@ export const useCanvasEventListeners = ({
           const finalScaleX = isShiftHeld ? Math.max(scaleX, scaleY) : scaleX;
           const finalScaleY = isShiftHeld ? Math.max(scaleX, scaleY) : scaleY;
           
-          console.log('Group resize:', { 
-            originalWidth, 
-            originalHeight, 
-            newWidth: width, 
-            newHeight: height, 
-            scaleX: finalScaleX, 
-            scaleY: finalScaleY,
-            isShiftHeld,
-            elementCount: elementsToResize.length
-          });
+
           
           // Update all elements in the group with the new scale
           const updatedElements = currentElements.map(el => {
@@ -189,15 +180,15 @@ export const useCanvasEventListeners = ({
 
       // If this is an animation path element, update related animations
       const resizedElement = updatedElements.find(el => el.id === id);
-      console.log('Resized element:', resizedElement?.name, 'isAnimationPath:', resizedElement?.isAnimationPath);
+
 
       if (resizedElement?.isAnimationPath) {
-        console.log('Updating animations for resized path element');
+
         const elementsWithUpdatedAnimations = updateAnimationsForPathElement(updatedElements, resizedElement);
 
         // Force a state update first, then rebuild timeline
         setTimeout(() => {
-          console.log('Rebuilding timeline with updated path element:', resizedElement.name, 'new width:', resizedElement.width);
+
           gsapManager.buildAnimationTimeline(elementsWithUpdatedAnimations);
         }, 10); // Small delay to ensure state is updated
 
@@ -307,14 +298,14 @@ export const useCanvasEventListeners = ({
   useEffect(() => {
     const handleAnimationPathUpdate = (e: CustomEvent) => {
       const { pathElement } = e.detail;
-      console.log('Animation path updated from ShapeSelect:', pathElement.name, 'new dimensions:', pathElement.width, 'x', pathElement.height);
+
 
       const currentElements = elementsRef.current;
       const elementsWithUpdatedAnimations = updateAnimationsForPathElement(currentElements, pathElement);
 
       // Rebuild timeline after animation path update
       setTimeout(() => {
-        console.log('Rebuilding timeline after path element resize via ShapeSelect');
+
         gsapManager.buildAnimationTimeline(elementsWithUpdatedAnimations);
       }, 10);
 
@@ -333,7 +324,7 @@ export const useCanvasEventListeners = ({
     // Listen for path mode exit events
     const handleExitPathMode = (e: CustomEvent) => {
       const { source } = e.detail;
-      console.log('Exiting path mode from:', source);
+
       
       const { tools } = useUIStore.getState();
       if (tools.isPathMode) {

@@ -20,7 +20,6 @@ export const useCanvasEventHandlers = ({
 }: UseCanvasEventHandlersProps) => {
   // Canvas pointer down handler
   const handleCanvasPointerDown = useCallback((e: FederatedPointerEvent) => {
-    console.log('[DesignCanvas] onPointerDown called', { x: e.global.x, y: e.global.y });
 
     // Only call canvas click handler if no element was clicked
     // This prevents deselection when clicking on elements
@@ -50,7 +49,6 @@ export const useCanvasEventHandlers = ({
 
   // Canvas click handler
   const handleCanvasClick = useCallback((e: FederatedPointerEvent) => {
-    console.log('[DesignCanvas] onClick called', { x: e.global.x, y: e.global.y });
     // Only call canvas click handler if no element was clicked
     // This prevents deselection when clicking on elements
     const hitElement = elements.find(element => {

@@ -47,9 +47,9 @@ export function useConversation(conversationId: string): UseConversationReturn {
     setError(null);
 
     try {
-      console.log('📡 Fetching conversation:', conversationId);
+
       const response = await apiClient.get<ConversationResponse>(`/api/conversations/${conversationId}`);
-      console.log('✅ Conversation data received:', response);
+
       setConversation(response.data);
     } catch (err) {
       console.error('❌ Error fetching conversation:', err);

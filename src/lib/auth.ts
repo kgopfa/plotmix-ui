@@ -68,7 +68,7 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
 
-          console.log('User authenticated successfully:', user.email);
+
           return {
             id: user.id,
             email: user.email,

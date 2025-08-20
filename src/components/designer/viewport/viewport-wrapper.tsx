@@ -18,7 +18,7 @@ export class ViewportWrapper extends BaseViewport {
       events: app.renderer.events,
     });
 
-    console.log('ViewportWrapper created with options:', { readonly, hasEvents: !!app.renderer.events });
+
 
     if (!readonly) {
       this
@@ -37,7 +37,7 @@ export class ViewportWrapper extends BaseViewport {
           bounce: 0.8
         });
       
-      console.log('Viewport plugins configured for interactive use');
+
     }
 
     // Initial zoom only; avoid animation to prevent race with later centering

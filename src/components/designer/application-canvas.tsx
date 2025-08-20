@@ -243,7 +243,6 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
 
       const handleTouchEnd = (e: TouchEvent) => {
         if (e.touches.length < 2) {
-          console.log('Pinch end detected');
           initialDistance = 0;
         }
       };
@@ -287,14 +286,6 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
         
         // Log initial viewport state once
         const viewport = viewportRef.current;
-        console.log('Viewport State Debug:', {
-          scale: viewport.scale,
-          position: viewport.position,
-          worldWidth: viewport.worldWidth,
-          worldHeight: viewport.worldHeight,
-          screenWidth: viewport.screenWidth,
-          screenHeight: viewport.screenHeight
-        });
       } else {
         // Wait for viewport to be ready
         const checkViewport = setInterval(() => {
@@ -483,33 +474,26 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
           break;
         case 'copy':
           // TODO: Implement copy functionality
-          console.log('Copy', targetType, targetId);
           break;
         case 'group':
           if (targetType === 'element') {
             // TODO: Implement group functionality
-            console.log('Group element', targetId);
           }
           break;
         case 'moveToFront':
           if (targetType === 'element') {
-            console.log('🎯 Context menu - moveToFront for element:', targetId);
             const { bringElementToFront } = useCanvasStore.getState();
             bringElementToFront(targetId);
           } else if (targetType === 'group') {
-            console.log('🎯 Context menu - moveToFront for group:', targetId);
             const { bringGroupToFront } = useCanvasStore.getState();
             bringGroupToFront(targetId);
           }
           break;
         case 'moveToBack':
           if (targetType === 'element') {
-            console.log('🎯 Context menu - moveToBack for element:', targetId);
             const { sendElementToBack } = useCanvasStore.getState();
             sendElementToBack(targetId);
           } else if (targetType === 'group') {
-            console.log('🎯 Context menu - moveToBack for group:', targetId);
-            console.log('🎯 Available groups in props:', props.groups.map(g => ({ id: g.id, name: g.name })));
             const { sendGroupToBack } = useCanvasStore.getState();
             sendGroupToBack(targetId);
           }

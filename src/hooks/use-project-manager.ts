@@ -169,7 +169,7 @@ export function useAutoBackup(intervalMinutes: number = 5) {
           localStorage.removeItem(allKeys[0]);
         }
         
-        console.log(`Auto-backup created at ${timestamp}`);
+
       } catch (error) {
         console.error('Auto-backup failed:', error);
       }

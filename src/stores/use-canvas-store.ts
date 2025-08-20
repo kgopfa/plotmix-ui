@@ -348,7 +348,6 @@ export const useCanvasStore = create<CanvasStore>()(
 
     // Z-index operations
     bringElementToFront: (id) => {
-      console.log('🔝 bringElementToFront called with id:', id);
       
       set(produce((state) => {
         const element = state.elements.find((el: AnimatedCanvasObject) => el.id === id);
@@ -357,7 +356,6 @@ export const useCanvasStore = create<CanvasStore>()(
           const maxZIndex = Math.max(...state.elements.map((el: AnimatedCanvasObject) => el.zIndex || 0));
           // Set the element's z-index to be higher than the current maximum
           element.zIndex = maxZIndex + 1;
-          console.log('✅ Updated element z-index to:', element.zIndex);
         } else {
           console.warn('⚠️ Element not found for id:', id);
         }
@@ -376,7 +374,6 @@ export const useCanvasStore = create<CanvasStore>()(
     },
 
     sendElementToBack: (id) => {
-      console.log('⬇️ sendElementToBack called with id:', id);
       
       set(produce((state) => {
         const element = state.elements.find((el: AnimatedCanvasObject) => el.id === id);
@@ -386,7 +383,6 @@ export const useCanvasStore = create<CanvasStore>()(
           // Set the element's z-index to be lower than the current minimum, but never below 0
           // Canvas frame background is at z-index -1, so elements should stay at 0 or higher
           element.zIndex = Math.max(0, minZIndex - 1);
-          console.log('✅ Updated element z-index to:', element.zIndex);
         } else {
           console.warn('⚠️ Element not found for id:', id);
         }

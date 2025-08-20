@@ -66,12 +66,11 @@ export const useElementPointerHandlers = ({
   // Helper function to calculate zoom-aware offset
   const calculateZoomAwareOffset = useCallback((dragCoords: { x: number; y: number }, element: AnimatedCanvasObject) => {
     const zoomFactor = viewportRef?.current?.scale.x || 1;
-    
-    // Normalize offset by zoom factor to maintain consistent visual distance
+    // FIXED: Divide by zoom factor to get the correct visual offset
+    // When zoomed out (zoom < 1), the offset should be smaller, not larger
     const offsetX = (dragCoords.x - element.x) / zoomFactor;
     const offsetY = (dragCoords.y - element.y) / zoomFactor;
-    
-    return { x: offsetX, y: offsetY };
+    return { id: element.id, offsetX, offsetY }; // Return full object for groupOffsets compatibility
   }, [viewportRef]);
 
   // Enhanced handlePointerDown for element dragging
@@ -192,82 +191,48 @@ export const useElementPointerHandlers = ({
     const currentX = e.global.x;
     const currentY = e.global.y;
 
-    // Check if mouse has moved enough to start dragging (threshold of 5 pixels)
+    // Start dragging immediately on first mouse movement (no threshold)
     const distance = Math.sqrt(Math.pow(currentX - startX, 2) + Math.pow(currentY - startY, 2));
     
-    // Debug threshold behavior to investigate visual delay
-    if (distance > 0) {
-      console.log('Drag Threshold Debug:', {
-        distance,
-        threshold: 5,
-        shouldStartDragging: distance > 5,
-        startPos: { x: startX, y: startY },
-        currentPos: { x: currentX, y: currentY },
-        delta: { x: currentX - startX, y: currentY - startY },
-        timestamp: Date.now()
-      });
-    }
-    
-    if (distance > 5) {
-      const element = elements.find(el => el.id === id);
-      if (!element) return;
+    // Start dragging immediately (no threshold check)
+    const element = elements.find(el => el.id === id);
+    if (!element) return;
 
-      // Debug the exact moment dragging starts
-      console.log('Dragging Started - First Movement:', {
-        elementId: id,
-        initialOffset: { x: shapeX, y: shapeY },
-        firstElementPos: { x: element.x, y: element.y },
-        firstMousePos: { x: currentX, y: currentY },
-        thresholdDistance: distance,
-        timestamp: Date.now()
-      });
 
-      // Debug coordinate conversion and offset calculation
-      const dragCoords = convertToDragCoordinates(currentX, currentY);
-      const rawOffset = { x: dragCoords.x - element.x, y: dragCoords.y - element.y };
-      console.log('Coordinate Conversion Debug:', {
-        rawPixiCoords: { x: currentX, y: currentY },
-        convertedDragCoords: dragCoords,
-        elementPosition: { x: element.x, y: element.y },
-        rawOffset: rawOffset,
-        zoomFactor: viewportRef?.current?.scale.x || 1,
-        timestamp: Date.now()
-      });
 
-      // Start dragging
-      if (selectedIds.length > 1 && selectedIds.includes(id)) {
-        // Group dragging: calculate offsets for all selected elements
-        const offsets = selectedIds.map(selectedId => {
-          const selectedElement = elements.find(el => el.id === selectedId);
-          if (!selectedElement) return { id: selectedId, offsetX: 0, offsetY: 0 };
-          
-          // Convert coordinates to the same system used by dragging logic
-          const dragCoords = convertToDragCoordinates(currentX, currentY);
-          // Use zoom-aware offset calculation
-          const offset = calculateZoomAwareOffset(dragCoords, selectedElement);
-          return {
-            id: selectedId,
-            offsetX: offset.x,
-            offsetY: offset.y
-          };
-        });
+    // Start dragging
+    if (selectedIds.length > 1 && selectedIds.includes(id)) {
+      // Group dragging: calculate offsets for all selected elements
+      const offsets = selectedIds.map(selectedId => {
+        const selectedElement = elements.find(el => el.id === selectedId);
+        if (!selectedElement) return { id: selectedId, offsetX: 0, offsetY: 0 };
         
-        // Convert coordinates for the main element - offset should be distance from mouse to element center
-        const dragCoords = convertToDragCoordinates(currentX, currentY);
-        // Use zoom-aware offset calculation for main element
-        const mainOffset = calculateZoomAwareOffset(dragCoords, element);
-        startDragging(id, mainOffset.x, mainOffset.y, true, offsets);
-      } else {
-        // Single element drag - offset should be distance from mouse to element center
+        // Convert coordinates to the same system used by dragging logic
         const dragCoords = convertToDragCoordinates(currentX, currentY);
         // Use zoom-aware offset calculation
-        const offset = calculateZoomAwareOffset(dragCoords, element);
-        startDragging(id, offset.x, offset.y);
-      }
-
-      // Clear drag start ref
-      dragStartRef.current = null;
+        const offset = calculateZoomAwareOffset(dragCoords, selectedElement);
+        return {
+          id: selectedId,
+          offsetX: offset.offsetX,
+          offsetY: offset.offsetY
+        };
+      });
+      
+      // Convert coordinates for the main element - offset should be distance from mouse to element center
+      const dragCoords = convertToDragCoordinates(currentX, currentY);
+      // Use zoom-aware offset calculation for main element
+      const mainOffset = calculateZoomAwareOffset(dragCoords, element);
+      startDragging(id, mainOffset.offsetX, mainOffset.offsetY, true, offsets);
+    } else {
+      // Single element drag - offset should be distance from mouse to element center
+      const dragCoords = convertToDragCoordinates(currentX, currentY);
+      // Use zoom-aware offset calculation
+      const offset = calculateZoomAwareOffset(dragCoords, element);
+      startDragging(id, offset.offsetX, offset.offsetY);
     }
+
+    // Clear drag start ref
+    dragStartRef.current = null;
   }, [elements, selectedIds, startDragging, convertToDragCoordinates, calculateZoomAwareOffset]);
 
   // Handle pointer up to clear drag start ref

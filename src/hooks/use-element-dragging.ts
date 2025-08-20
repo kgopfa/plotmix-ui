@@ -122,13 +122,7 @@ export const useElementDragging = ({
         const canvasX = worldPos.x - canvasOffsetX;
         const canvasY = worldPos.y - canvasOffsetY;
         
-        // Enhanced debugging for coordinate transformation
-        console.log('Coordinate Transform:', {
-          mouse: { x: e.clientX, y: e.clientY },
-          viewportWorld: worldPos,
-          canvasOffset: { x: canvasOffsetX, y: canvasOffsetY },
-          finalCanvas: { x: canvasX, y: canvasY }
-        });
+
         
         return { worldX: canvasX, worldY: canvasY };
       } catch (error) {
@@ -209,17 +203,7 @@ export const useElementDragging = ({
       const newX = worldX - elementDragOffset.x;
       const newY = worldY - elementDragOffset.y;
 
-      // Log coordinates and zoom for debugging drift issue
-      if (draggingId && element) {
-        console.log('Drag Debug:', {
-          mouse: { x: e.clientX, y: e.clientY },
-          world: { x: worldX, y: worldY },
-          element: { x: newX, y: newY },
-          zoom: canvasZoom,
-          offset: elementDragOffset,
-          timestamp: Date.now()
-        });
-      }
+
 
       if (onSnapElement && onSetSnapGuides) {
         // Create a temporary element with the new position for snapping calculation
@@ -301,17 +285,7 @@ export const useElementDragging = ({
     setGroupDragOffsets(groupOffsets);
     setDraggingEndpoint(null);
 
-    // Log initial element position when dragging starts
-    const element = elements.find(el => el.id === id);
-    if (element) {
-      console.log('Drag Started:', {
-        elementId: id,
-        initialPosition: { x: element.x, y: element.y },
-        offset: { x: offsetX, y: offsetY },
-        isGroup,
-        timestamp: Date.now()
-      });
-    }
+
   }, [elements]);
 
   // Start dragging a line endpoint

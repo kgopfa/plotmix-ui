@@ -253,7 +253,7 @@ export const useProjectStore = create<ProjectStore>()(
           state.saveStatus = 'success';
         }));
         
-        console.log('Full project save completed after group deletion');
+
         return true;
       } catch (e) {
         console.error('Full project save failed', e);
