@@ -49,20 +49,12 @@ export function UserAvatar({ className = '', showDropdown = true }: UserAvatarPr
 
   // Secure logout function that implements dual logout
   const handleSecureLogout = async () => {
-    console.log('=== LOGOUT FUNCTION CALLED ===');
-    
     if (isLoggingOut) return; // Prevent multiple logout attempts
-    
-    console.log('Starting secure logout...');
-    console.log('Session:', session);
     
     setIsLoggingOut(true);
     setIsOpen(false);
     
     try {
-      // Step 1: Backend logout (token blacklisting) via Next.js API route
-      console.log('Calling Next.js API route for logout...');
-      
       const response = await fetch('/api/auth/logout', {
         method: 'POST',
         headers: {
@@ -70,37 +62,13 @@ export function UserAvatar({ className = '', showDropdown = true }: UserAvatarPr
         },
       });
       
-      console.log('Logout response status:', response.status);
-      console.log('Logout response ok:', response.ok);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.warn('Backend logout failed with status:', response.status);
-        console.warn('Backend logout error response:', errorText);
-      } else {
-        const responseData = await response.json();
-        console.log('Backend logout successful:', responseData);
-      }
-      
-      // Step 2: Frontend logout (NextAuth session clearing)
-      console.log('Starting frontend logout...');
       await signOut({ 
         callbackUrl: '/login',
         redirect: false 
       });
-      console.log('Frontend logout completed');
       
-      // Step 3: Manual redirect to ensure proper cleanup
-      console.log('Redirecting to login...');
       router.push('/login');
-      
     } catch (error) {
-      console.error('Logout failed:', error);
-      console.error('Error details:', {
-        name: (error as Error).name,
-        message: (error as Error).message,
-        stack: (error as Error).stack
-      });
       // Fallback: force redirect to login
       router.push('/login');
     } finally {

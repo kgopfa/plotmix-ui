@@ -64,10 +64,6 @@ export const UploadsTab: React.FC = () => {
       for (const file of files) {
         if (file.type.startsWith('image/')) {
           await handleImageUpload(file);
-        } else {
-          // For now, we'll focus on image uploads
-          // Other file types can be handled later
-          console.log('File type not yet supported for canvas:', file.type);
         }
       }
       setUploadStatus(`Successfully uploaded ${files.length} file(s)`);
