@@ -31,6 +31,7 @@ interface ToolState {
   showPaths: boolean;
   pendingImageData: string | null;
   lineType: 'straight' | 'curved';
+  selectedFont: string; // Currently selected font for text creation
 }
 
 interface SnappingState {
@@ -151,6 +152,7 @@ interface UIActions {
   toggleShowPaths: () => void;
   setPendingImageData: (data: string | null) => void;
   setLineType: (lineType: 'straight' | 'curved') => void;
+  setSelectedFont: (fontFamily: string) => void;
   
   // Snapping Actions
   updateGridConfig: (config: Partial<GridConfig>) => void;
@@ -226,6 +228,7 @@ const defaultToolState: ToolState = {
   showPaths: true,
   pendingImageData: null,
   lineType: 'curved',
+  selectedFont: 'Arial', // Default font for text creation
 };
 
 const defaultSnappingState: SnappingState = {
@@ -471,6 +474,12 @@ export const useUIStore = create<UIStore>((set, get) => ({
   setLineType: (lineType: 'straight' | 'curved') => {
     set(produce((state) => {
       state.tools.lineType = lineType;
+    }));
+  },
+
+  setSelectedFont: (fontFamily: string) => {
+    set(produce((state) => {
+      state.tools.selectedFont = fontFamily;
     }));
   },
 
@@ -833,6 +842,7 @@ export const useToolActions = () => useUIStore(
     toggleShowPaths: state.toggleShowPaths,
     setPendingImageData: state.setPendingImageData,
     setLineType: state.setLineType,
+    setSelectedFont: state.setSelectedFont,
   }))
 );
 

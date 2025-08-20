@@ -46,7 +46,8 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
     chainedLineIds,
     lineStartPoint,
     isPathMode,
-    lineType
+    lineType,
+    selectedFont
   } = useUIStore((state) => state.tools);
   
   const {
@@ -225,7 +226,22 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
 
     // Handle other creation tools (non-line tools)
     if (['rectangle', 'circle', 'triangle', 'arc', 'text'].includes(activeTool)) {
-      const newElement = createNewObject(activeTool as 'rectangle' | 'circle' | 'triangle' | 'arc' | 'text', snappedPos.x, snappedPos.y, canvasObjects);
+      const newElement = createNewObject(
+        activeTool as 'rectangle' | 'circle' | 'triangle' | 'arc' | 'text', 
+        snappedPos.x, 
+        snappedPos.y, 
+        canvasObjects,
+        undefined, // pathPoints
+        undefined, // isPath
+        undefined, // imageData
+        undefined, // width
+        undefined, // height
+        activeTool === 'text' ? 'Double click text to edit' : undefined, // text
+        undefined, // startPoint
+        undefined, // endPoint
+        undefined, // lineType
+        activeTool === 'text' ? selectedFont : undefined // fontFamily
+      );
       
       // If in path mode, mark it as a path
       if (isPathMode) {
@@ -250,7 +266,7 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
         window.dispatchEvent(drawCompleteEvent);
       }
     }
-  }, [activeTool, isLineChaining, chainedLineIds, lineStartPoint, isPathMode, lineType, canvasObjects, addElement, selectElement, snapPoint, setActiveTool, setMaskPos, setLineStartPoint, setLineChaining, addChainedLineId, setClosingShape, setShowAnimationsTab]);
+  }, [activeTool, isLineChaining, chainedLineIds, lineStartPoint, isPathMode, lineType, selectedFont, canvasObjects, addElement, selectElement, snapPoint, setActiveTool, setMaskPos, setLineStartPoint, setLineChaining, addChainedLineId, setClosingShape, setShowAnimationsTab]);
 
   const handleSelectElement = useCallback((id: string | null, isMultiSelect?: boolean) => {
     if (id) {

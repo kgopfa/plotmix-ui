@@ -1,10 +1,16 @@
-import React from 'react';
-import { AlignLeft, Bold, Italic, Type, Underline, X } from 'lucide-react';
-import { useToolState, useToolActions, useSetActiveNav, useSetHoverNav, useSetInteractedNav } from '@/stores/use-ui-store';
+import React, { useEffect } from 'react';
+import { Type, X } from 'lucide-react';
+import { 
+  useToolState, 
+  useToolActions, 
+  useSetActiveNav, 
+  useSetHoverNav, 
+  useSetInteractedNav 
+} from '@/stores/use-ui-store';
 
 export const TextTab: React.FC = () => {
-  const { activeTool } = useToolState();
-  const { setActiveTool } = useToolActions();
+  const { activeTool, selectedFont } = useToolState();
+  const { setActiveTool, setSelectedFont } = useToolActions();
   const setActiveNav = useSetActiveNav();
   const setHoverNav = useSetHoverNav();
   const setInteractedNav = useSetInteractedNav();
@@ -51,7 +57,7 @@ export const TextTab: React.FC = () => {
     {
       name: 'Top Secret',
       family: 'Top-Secret',
-      sampleText: 'Stroke',
+      sampleText: 'Denied',
       category: 'Display',
       hasColor: true,
       gradient: 'from-orange-500 to-red-600'
@@ -115,8 +121,14 @@ export const TextTab: React.FC = () => {
     setActiveTool(tool);
   };
 
+  const handleFontPresetSelect = (fontFamily: string) => {
+    setSelectedFont(fontFamily);
+    // Also set the text tool as active when selecting a font preset
+    setActiveTool('text');
+  };
+
   // Function to load fonts dynamically
-  React.useEffect(() => {
+  useEffect(() => {
     const loadFonts = async () => {
       try {
         // Load OTF fonts with exact file names
@@ -133,7 +145,6 @@ export const TextTab: React.FC = () => {
         const ttfFonts = [
           { name: 'varsity_regular', file: 'varsity_regular.ttf' },
           { name: 'spacetime-regular', file: 'spacetime-regular.ttf' },
-          { name: 'african', file: 'african.ttf' },
           { name: 'Top-Secret', file: 'Top-Secret.ttf' },
           { name: 'Super-Kindly', file: 'Super-Kindly.ttf' },
           { name: 'Snowboarding', file: 'Snowboarding.ttf' },
@@ -240,7 +251,12 @@ export const TextTab: React.FC = () => {
               {fontShowcase.map((font, index) => (
                 <div 
                   key={index} 
-                  className="p-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 ease-out transform hover:scale-[1.02] cursor-pointer group h-24 flex items-center justify-center"
+                  onClick={() => handleFontPresetSelect(font.family)}
+                  className={`p-3 bg-white border rounded-lg shadow-sm hover:shadow-md transition-all duration-200 ease-out transform hover:scale-[1.02] cursor-pointer group h-24 flex items-center justify-center ${
+                    selectedFont === font.family 
+                      ? 'border-blue-500 bg-blue-50 shadow-md' 
+                      : 'border-gray-200'
+                  }`}
                 >
                   <div className="text-center w-full">
                     <div 

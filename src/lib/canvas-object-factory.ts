@@ -20,6 +20,7 @@ interface BaseObjectProps {
   width?: number;
   height?: number;
   text?: string;
+  fontFamily?: string; // Font family for text elements
 }
 
 interface CommonObjectAttributes {
@@ -297,7 +298,7 @@ function createText(props: BaseObjectProps): AnimatedCanvasObject {
     strokeWidth: 0,
     text: props.text || 'Double click text to edit',
     fontSize: 36, // Match working example font size
-    fontFamily: 'Arial', // Match working example font family
+    fontFamily: props.fontFamily || 'Arial', // Use provided font family or default to Arial
     fontWeight: 'bold', // Match working example font weight
     fontStyle: 'italic', // Match working example font style
     textAlign: 'left',
@@ -332,9 +333,10 @@ export function createNewObject(
   text?: string,
   startPoint?: { x: number; y: number },
   endPoint?: { x: number; y: number },
-  lineType?: 'straight' | 'curved'
+  lineType?: 'straight' | 'curved',
+  fontFamily?: string
 ): AnimatedCanvasObject {
-  const props: BaseObjectProps = { x, y, elements: canvasObjects, pathPoints, isPath, imageData, width, height, text };
+  const props: BaseObjectProps = { x, y, elements: canvasObjects, pathPoints, isPath, imageData, width, height, text, fontFamily };
 
   switch (type) {
     case 'rectangle':
