@@ -251,6 +251,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
     useEffect(() => {
       let attached = false;
       let vp: ViewportWrapper | null = null;
+      let intervalId: NodeJS.Timeout | null = null;
 
       const handleZoomChange = () => {
         const current = vp?.scale.x ?? viewportRef.current?.scale.x;
@@ -260,8 +261,29 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       const attach = () => {
         vp = viewportRef.current;
         if (!vp) return false;
+        
+        // Listen for all zoom-related events
         vp.on('zoomed', handleZoomChange);
         vp.on('zoomed-end', handleZoomChange);
+        
+        // Also listen for pinch and other gesture events that might affect zoom
+        vp.on('pinch', handleZoomChange);
+        vp.on('pinch-end', handleZoomChange);
+        
+        // Listen for scale changes directly
+        vp.on('scale', handleZoomChange);
+        
+        // Use a more aggressive approach - also check zoom on any viewport change
+        vp.on('moved', handleZoomChange);
+        vp.on('frame-end', handleZoomChange);
+        
+        // Add a periodic check as fallback for pinch gestures
+        intervalId = setInterval(() => {
+          if (vp && vp.scale.x !== canvasZoom) {
+            handleZoomChange();
+          }
+        }, 100); // Check every 100ms
+        
         attached = true;
         return true;
       };
@@ -272,12 +294,20 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
 
       return () => {
         cancelAnimationFrame(rafId);
+        if (intervalId) {
+          clearInterval(intervalId);
+        }
         if (attached && vp) {
           vp.off('zoomed', handleZoomChange);
           vp.off('zoomed-end', handleZoomChange);
+          vp.off('pinch', handleZoomChange);
+          vp.off('pinch-end', handleZoomChange);
+          vp.off('scale', handleZoomChange);
+          vp.off('moved', handleZoomChange);
+          vp.off('frame-end', handleZoomChange);
         }
       };
-    }, [setCanvasZoom]);
+    }, [setCanvasZoom, canvasZoom]);
 
     // Use custom hook for viewport empty area click handling
     useViewportEmptyAreaClick({

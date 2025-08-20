@@ -198,7 +198,7 @@ interface UIActions {
   // AI Tools prompt history
   addAIPrompt: (promptText: string) => void;
   clearAIPrompts: () => void;
-  setAIPrompts: (items: { id: string; text: string; timestamp: string; summary?: string }[]) => void;
+  setAIPrompts: (items: { id: string; text: string; timestamp: string }[]) => void;
 }
 
 type UIStore = UIState & UIActions;
@@ -317,20 +317,20 @@ const defaultKeyboardShortcuts: KeyboardShortcut[] = [
 ];
 
 export const useUIStore = create<UIStore>((set, get) => ({
-      // Initial state
-      panels: defaultPanelState,
-      tools: defaultToolState,
-      snapping: defaultSnappingState,
-      canvas: defaultCanvasState,
-      canvasZoom: 1,
-      preferences: defaultUserPreferences,
-      keyboardShortcuts: defaultKeyboardShortcuts,
-      navigation: { activeNav: null, hoverNav: null, interactedNav: null },
-      activeRightPanel: null,
-      hoverRightPanel: null,
-      showAnimationsTab: false,
-      uploadedFiles: defaultUploadedFilesState,
-      aiPromptHistory: [],
+  // Initial state
+  panels: defaultPanelState,
+  tools: defaultToolState,
+  snapping: defaultSnappingState,
+  canvas: defaultCanvasState,
+  canvasZoom: 1,
+  preferences: defaultUserPreferences,
+  keyboardShortcuts: defaultKeyboardShortcuts,
+  navigation: { activeNav: null, hoverNav: null, interactedNav: null },
+  activeRightPanel: null,
+  hoverRightPanel: null,
+  showAnimationsTab: false,
+  uploadedFiles: defaultUploadedFilesState,
+  aiPromptHistory: [],
 
   // Panel Actions
   toggleLeftPanel: () => {
@@ -799,7 +799,7 @@ export const useActiveNav = () => useUIStore((state) => state.navigation.activeN
 export const useHoverNav = () => useUIStore((state) => state.navigation.hoverNav);
 export const useInteractedNav = () => useUIStore((state) => state.navigation.interactedNav);
 export const useSetActiveNav = () => useUIStore((state) => state.setActiveNav);
-export const useSetHoverNav = () => useUIStore((state) => state.setHoverNav);
+export const useSetHoverNav = () => useUIStore((state) => state.setActiveNav);
 export const useSetInteractedNav = () => useUIStore((state) => state.setInteractedNav);
 export const useActiveRightPanel = () => useUIStore((state) => state.activeRightPanel);
 export const useSetActiveRightPanel = () => useUIStore((state) => state.setActiveRightPanel);

@@ -4,6 +4,7 @@ import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useTimelineStore } from '@/stores/use-timeline-store';
 import { DiffPatcher } from 'jsondiffpatch';
 import { apiClient } from '@/lib/api-client';
+import { useUIStore } from '@/stores/use-ui-store';
 
 type SaveStatus = 'idle' | 'saving' | 'success' | 'error';
 
@@ -162,6 +163,42 @@ export const useProjectStore = create<ProjectStore>()(
             state.version = response.data.project.version;
             state.saveStatus = 'success';
           }));
+        }
+
+        // Also save UI configuration (including snapping preferences)
+        try {
+          const uiStore = useUIStore.getState();
+          const configuration = {
+            canvas: uiStore.canvas,
+            ui: {
+              zoom: uiStore.canvasZoom,
+              selectedElements: [], // These change frequently, don't persist
+              selectedGroups: [],   // These change frequently, don't persist
+              panelState: uiStore.panels,
+              toolState: uiStore.tools,
+            },
+            editor: {
+              selectedShape: undefined, // Don't persist current selection
+              snappingEnabled: uiStore.snapping.elementSnapConfig.enabled,
+              gridEnabled: uiStore.snapping.gridConfig.enabled,
+              gridSize: uiStore.snapping.gridConfig.size,
+              showGuides: uiStore.snapping.elementSnapConfig.showGuides,
+              snapping: {
+                grid: uiStore.snapping.gridConfig,
+                elements: uiStore.snapping.elementSnapConfig,
+              },
+            },
+            animation: {
+              playbackRate: 1, // Default values
+              isLooping: false,
+              autoPlay: false,
+            },
+          };
+
+          await apiClient.put<any>(`/api/projects/${projectId}`, { configuration });
+        } catch (configError) {
+          console.warn('Failed to save UI configuration:', configError);
+          // Don't fail the save if configuration save fails
         }
 
         // Reset save status back to idle shortly

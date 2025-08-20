@@ -7,12 +7,14 @@ import { apiClient } from '@/lib/api-client';
 import { useProjectStore } from '@/stores/use-project-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useTimelineStore } from '@/stores/use-timeline-store';
+import { useSnappingPersistence } from '@/hooks/use-snapping-persistence';
 import type { AnimationState } from '@/types/project';
 
 export default function DesignerPage() {
   const params = useParams();
   const contentId = params.contentId as string;
   const { setProjectInfo, setBaseline, captureBaseline } = useProjectStore();
+  const { loadSnappingPreferences } = useSnappingPersistence();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,7 +30,7 @@ export default function DesignerPage() {
     } catch {}
 
     try {
-      const res = await apiClient.get<{ data: { project: { id: string; name: string; title?: string; version: string; mainState?: unknown } } }>(`/api/projects/${contentId}`);
+      const res = await apiClient.get<{ data: { project: { id: string; name: string; title?: string; version: string; mainState?: unknown; configuration?: unknown } } }>(`/api/projects/${contentId}`);
       const project = res.data.project;
       setProjectInfo({
         projectId: project.id,
@@ -36,6 +38,11 @@ export default function DesignerPage() {
         title: project.title,
         version: project.version,
       });
+      
+      // Load snapping preferences from project configuration
+      if (project.configuration) {
+        loadSnappingPreferences(project.configuration as Record<string, unknown>);
+      }
       
       const mainState = (project.mainState as { elements?: unknown[]; groups?: unknown[]; timeline?: unknown }) || {};
       setBaseline(mainState);

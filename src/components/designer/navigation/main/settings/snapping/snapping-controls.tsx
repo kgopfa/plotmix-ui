@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useSnappingState, useSnappingActions } from '@/stores/use-ui-store';
+import { useSnappingPersistence } from '@/hooks/use-snapping-persistence';
 import { SnappingOptions } from './snap-options';
 
 export const SnappingControls = () => {
@@ -17,26 +18,46 @@ export const SnappingControls = () => {
     updateElementSnapConfig
   } = useSnappingActions();
 
-  // Create toggle functions for the UI
-  const toggleGridSnap = useCallback(() => {
+  // Get persistence hook
+  const { saveSnappingPreferences } = useSnappingPersistence();
+
+  // Create toggle functions for the UI that also save to backend
+  const toggleGridSnap = useCallback(async () => {
     updateGridConfig({ enabled: !gridConfig.enabled });
-  }, [gridConfig.enabled, updateGridConfig]);
+    await saveSnappingPreferences();
+  }, [gridConfig.enabled, updateGridConfig, saveSnappingPreferences]);
 
-  const toggleElementSnap = useCallback(() => {
+  const toggleElementSnap = useCallback(async () => {
     updateElementSnapConfig({ enabled: !elementSnapConfig.enabled });
-  }, [elementSnapConfig.enabled, updateElementSnapConfig]);
+    await saveSnappingPreferences();
+  }, [elementSnapConfig.enabled, updateElementSnapConfig, saveSnappingPreferences]);
 
-  const toggleGuides = useCallback(() => {
+  const toggleGuides = useCallback(async () => {
     updateElementSnapConfig({ showGuides: !elementSnapConfig.showGuides });
-  }, [elementSnapConfig.showGuides, updateElementSnapConfig]);
+    await saveSnappingPreferences();
+  }, [elementSnapConfig.showGuides, updateElementSnapConfig, saveSnappingPreferences]);
 
-  const toggleSpacing = useCallback(() => {
+  const toggleSpacing = useCallback(async () => {
     updateElementSnapConfig({ enableSpacing: !elementSnapConfig.enableSpacing });
-  }, [elementSnapConfig.enableSpacing, updateElementSnapConfig]);
+    await saveSnappingPreferences();
+  }, [elementSnapConfig.enableSpacing, updateElementSnapConfig, saveSnappingPreferences]);
 
-  const toggleDistribution = useCallback(() => {
+  const toggleDistribution = useCallback(async () => {
     updateElementSnapConfig({ enableDistribution: !elementSnapConfig.enableDistribution });
-  }, [elementSnapConfig.enableDistribution, updateElementSnapConfig]);
+    await saveSnappingPreferences();
+  }, [elementSnapConfig.enableDistribution, updateElementSnapConfig, saveSnappingPreferences]);
+
+  // Handle grid size change with persistence
+  const handleGridSizeChange = useCallback(async (size: number) => {
+    updateGridConfig({ size });
+    await saveSnappingPreferences();
+  }, [updateGridConfig, saveSnappingPreferences]);
+
+  // Handle snap threshold change with persistence
+  const handleSnapThresholdChange = useCallback(async (threshold: number) => {
+    updateElementSnapConfig({ snapThreshold: threshold });
+    await saveSnappingPreferences();
+  }, [updateElementSnapConfig, saveSnappingPreferences]);
 
   // Handle click outside to close snapping menu
   useEffect(() => {
@@ -107,13 +128,13 @@ export const SnappingControls = () => {
           <SnappingOptions
             gridConfig={gridConfig}
             onToggleGridSnap={toggleGridSnap}
-            onGridSizeChange={(size: number) => updateGridConfig({ size })}
+            onGridSizeChange={handleGridSizeChange}
             elementSnapConfig={elementSnapConfig}
             onToggleElementSnap={toggleElementSnap}
             onToggleGuides={toggleGuides}
             onToggleSpacing={toggleSpacing}
             onToggleDistribution={toggleDistribution}
-            onSnapThresholdChange={(threshold: number) => updateElementSnapConfig({ snapThreshold: threshold })}
+            onSnapThresholdChange={handleSnapThresholdChange}
             isGridSnapTemporarilyDisabled={isGridSnapTemporarilyDisabled}
             isElementSnapTemporarilyDisabled={isElementSnapTemporarilyDisabled}
           />

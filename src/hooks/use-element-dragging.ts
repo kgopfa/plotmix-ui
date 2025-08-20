@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import type { AnimatedCanvasObject } from '@/types/canvas';
 import type { SnapGuide } from '@/utils/element-snapping';
 import { eventManager } from '@/lib/event-manager';
+import { useUIStore } from '@/stores/use-ui-store';
 
 interface UseElementDraggingProps {
   elements: AnimatedCanvasObject[];
@@ -24,6 +25,9 @@ export const useElementDragging = ({
   onSetSnapGuides,
   onClearSnapGuides,
 }: UseElementDraggingProps) => {
+  // Get zoom level from UI store
+  const canvasZoom = useUIStore(state => state.canvasZoom);
+  
   // Element dragging state
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [elementDragOffset, setElementDragOffset] = useState<{ x: number; y: number } | null>(null);
@@ -171,6 +175,17 @@ export const useElementDragging = ({
       const newX = worldX - elementDragOffset.x;
       const newY = worldY - elementDragOffset.y;
 
+      // Log coordinates and zoom for debugging drift issue
+      if (draggingId && element) {
+        console.log('Drag Debug:', {
+          mouse: { x: e.clientX, y: e.clientY },
+          world: { x: worldX, y: worldY },
+          element: { x: newX, y: newY },
+          zoom: canvasZoom,
+          offset: elementDragOffset
+        });
+      }
+
       if (onSnapElement && onSetSnapGuides) {
         // Create a temporary element with the new position for snapping calculation
         const tempElement = { ...element, x: newX, y: newY };
@@ -196,7 +211,7 @@ export const useElementDragging = ({
         onElementDragEnd(draggingId, newX, newY);
       }
     }
-  }, [draggingId, isDraggingGroup, groupDragOffsets, onGroupDrag, elements, draggingEndpoint, onLineEndpointDrag, elementDragOffset, onElementDragEnd, onSnapElement, onSnapPoint, onSetSnapGuides, getOptimizedCoordinates]);
+  }, [draggingId, isDraggingGroup, groupDragOffsets, onGroupDrag, elements, draggingEndpoint, onLineEndpointDrag, elementDragOffset, onElementDragEnd, onSnapElement, onSnapPoint, onSetSnapGuides, getOptimizedCoordinates, canvasZoom]);
 
   // Global pointer up handler for element dragging
   const handleGlobalPointerUp = useCallback(() => {
