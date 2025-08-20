@@ -48,6 +48,11 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
   const { projectId, name, title, saveStatus, captureBaseline, setProjectInfo, setSaveStatus } = useProjectStore();
   const canvasZoom = useUIStore(state => state.canvasZoom);
 
+  // Debug zoom changes in navbar
+  useEffect(() => {
+    console.log('MainNavBar received zoom update:', canvasZoom);
+  }, [canvasZoom]);
+
   useEffect(() => {
     if (name) setProjectName(name);
   }, [name]);

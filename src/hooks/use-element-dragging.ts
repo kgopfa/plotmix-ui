@@ -182,7 +182,8 @@ export const useElementDragging = ({
           world: { x: worldX, y: worldY },
           element: { x: newX, y: newY },
           zoom: canvasZoom,
-          offset: elementDragOffset
+          offset: elementDragOffset,
+          timestamp: Date.now()
         });
       }
 

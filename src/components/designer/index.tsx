@@ -102,6 +102,11 @@ export default function Designer() {
   // Canvas zoom is stored globally in UI store now
   const canvasZoom = useUIStore(state => state.canvasZoom);
 
+  // Debug zoom changes
+  useEffect(() => {
+    console.log('Designer canvas zoom changed:', canvasZoom);
+  }, [canvasZoom]);
+
   // Shift key state for constrained drawing
   const [shiftKey, setShiftKey] = useState(false);
 

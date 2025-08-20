@@ -194,17 +194,108 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
 
     // Apply zoom changes coming from the UI store
     useEffect(() => {
-      if (viewportRef.current && canvasZoom !== undefined) {
-        const currentZoom = viewportRef.current.scale.x;
-
-        // Only update if the zoom values are significantly different to prevent infinite loops
-        if (Math.abs(currentZoom - canvasZoom) > 0.001) {
-          viewportRef.current.setZoom(canvasZoom, false);
-          // Don't reset the center position during zoom changes to maintain user's view
-          // viewportRef.current.moveCenter(0, 0);
-        }
+      if (viewportRef.current && canvasZoom !== viewportRef.current.scale.x) {
+        viewportRef.current.setZoom(canvasZoom, false);
+        // Don't reset the center position during zoom changes to maintain user's view
       }
-    }, [canvasZoom, canvasWidth, canvasHeight]);
+    }, [canvasZoom]);
+
+    // Add touch event listeners for pinch gestures
+    useEffect(() => {
+      const canvas = canvasContainerRef.current;
+      if (!canvas) return;
+
+      let initialDistance = 0;
+      let initialZoom = 1;
+
+      const handleTouchStart = (e: TouchEvent) => {
+        if (e.touches.length === 2) {
+          const touch1 = e.touches[0];
+          const touch2 = e.touches[1];
+          initialDistance = Math.sqrt(
+            Math.pow(touch2.clientX - touch1.clientX, 2) +
+            Math.pow(touch2.clientY - touch1.clientY, 2)
+          );
+          initialZoom = viewportRef.current?.scale.x ?? 1;
+        }
+      };
+
+      const handleTouchMove = (e: TouchEvent) => {
+        if (e.touches.length === 2) {
+          const touch1 = e.touches[0];
+          const touch2 = e.touches[1];
+          const currentDistance = Math.sqrt(
+            Math.pow(touch2.clientX - touch1.clientX, 2) +
+            Math.pow(touch2.clientY - touch1.clientY, 2)
+          );
+          
+          if (initialDistance > 0) {
+            const scale = currentDistance / initialDistance;
+            const newZoom = initialZoom * scale;
+            
+            // Update the store directly for pinch gestures
+            if (Math.abs(newZoom - (viewportRef.current?.scale.x ?? 1)) > 0.01) {
+              setCanvasZoom(newZoom);
+            }
+          }
+        }
+      };
+
+      const handleTouchEnd = (e: TouchEvent) => {
+        if (e.touches.length < 2) {
+          console.log('Pinch end detected');
+          initialDistance = 0;
+        }
+      };
+
+      canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+      canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+      canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+
+      return () => {
+        canvas.removeEventListener('touchstart', handleTouchStart);
+        canvas.removeEventListener('touchmove', handleTouchMove);
+        canvas.removeEventListener('touchend', handleTouchEnd);
+      };
+    }, [setCanvasZoom]);
+
+    // Add a robust zoom monitoring mechanism
+    useEffect(() => {
+      let monitoringInterval: NodeJS.Timeout | null = null;
+      
+      const startMonitoring = () => {
+        if (monitoringInterval) return;
+        
+        monitoringInterval = setInterval(() => {
+          const viewport = viewportRef.current;
+          if (viewport && Math.abs(viewport.scale.x - canvasZoom) > 0.001) {
+            setCanvasZoom(viewport.scale.x);
+          }
+        }, 10); // Check every 10ms for very responsive detection
+      };
+
+      const stopMonitoring = () => {
+        if (monitoringInterval) {
+          clearInterval(monitoringInterval);
+          monitoringInterval = null;
+        }
+      };
+
+      // Start monitoring when viewport is ready
+      if (viewportRef.current) {
+        startMonitoring();
+      } else {
+        // Wait for viewport to be ready
+        const checkViewport = setInterval(() => {
+          if (viewportRef.current) {
+            clearInterval(checkViewport);
+            startMonitoring();
+          }
+        }, 100);
+      }
+
+      return stopMonitoring;
+    }, [canvasZoom, setCanvasZoom]);
 
     // Trigger overlay re-position updates when viewport moves/zooms
     useEffect(() => {
@@ -252,10 +343,14 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       let attached = false;
       let vp: ViewportWrapper | null = null;
       let intervalId: NodeJS.Timeout | null = null;
+      let lastKnownZoom = canvasZoom;
 
       const handleZoomChange = () => {
         const current = vp?.scale.x ?? viewportRef.current?.scale.x;
-        if (typeof current === 'number') setCanvasZoom(current);
+        if (typeof current === 'number' && current !== lastKnownZoom) {
+          lastKnownZoom = current;
+          setCanvasZoom(current);
+        }
       };
 
       const attach = () => {
@@ -263,26 +358,40 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
         if (!vp) return false;
         
         // Listen for all zoom-related events
-        vp.on('zoomed', handleZoomChange);
-        vp.on('zoomed-end', handleZoomChange);
+        vp.on('zoomed', () => {
+          handleZoomChange();
+        });
+        vp.on('zoomed-end', () => {
+          handleZoomChange();
+        });
         
         // Also listen for pinch and other gesture events that might affect zoom
-        vp.on('pinch', handleZoomChange);
-        vp.on('pinch-end', handleZoomChange);
+        vp.on('pinch', () => {
+          handleZoomChange();
+        });
+        vp.on('pinch-end', () => {
+          handleZoomChange();
+        });
         
         // Listen for scale changes directly
-        vp.on('scale', handleZoomChange);
+        vp.on('scale', () => {
+          handleZoomChange();
+        });
         
         // Use a more aggressive approach - also check zoom on any viewport change
-        vp.on('moved', handleZoomChange);
-        vp.on('frame-end', handleZoomChange);
+        vp.on('moved', () => {
+          handleZoomChange();
+        });
+        vp.on('frame-end', () => {
+          handleZoomChange();
+        });
         
-        // Add a periodic check as fallback for pinch gestures
+        // Add a more frequent check for pinch gestures
         intervalId = setInterval(() => {
-          if (vp && vp.scale.x !== canvasZoom) {
+          if (vp && vp.scale.x !== lastKnownZoom) {
             handleZoomChange();
           }
-        }, 100); // Check every 100ms
+        }, 16); // Check every 16ms (60fps) for very responsive pinch detection
         
         attached = true;
         return true;
