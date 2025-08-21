@@ -1,62 +1,161 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, Play, RotateCcw, ChevronDown, Sparkles } from 'lucide-react';
+import { ArrowLeft, Play, RotateCcw, Sparkles } from 'lucide-react';
 import { useProjectStore } from '@/stores/use-project-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useTimelineStore } from '@/stores/use-timeline-store';
+import { apiClient } from '@/lib/api-client';
 import AceEditor from 'react-ace';
 
 import 'ace-builds/src-noconflict/mode-javascript';
 import 'ace-builds/src-noconflict/mode-json';
 import 'ace-builds/src-noconflict/theme-monokai';
 
-
 export default function ScriptsPage() {
   const router = useRouter();
   const params = useParams();
   const projectId = params.projectId as string;
-  
-  const { projectId: storeProjectId, name, version } = useProjectStore();
-  const { elements, groups, setElements, setGroups } = useCanvasStore();
-  const { animationStates } = useTimelineStore();
-  
+
+  const { name, version, setProjectInfo, setBaseline, captureBaseline } = useProjectStore();
+  const { elements, groups, setElements, setGroups, clearCanvas } = useCanvasStore();
+  const { animationStates, loadProjectData, resetTimeline } = useTimelineStore();
+
   const [code, setCode] = useState('');
-  const [result, setResult] = useState<any>(null);
+  const [prompt, setPrompt] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [result, setResult] = useState<{
+    groups: any[];
+    elements: any[];
+    timeline: {
+      scale: number;
+      duration: number;
+      currentTime: number;
+      animationStates: Record<string, any>;
+    };
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [showPrompt, setShowPrompt] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Verify we're working with the correct project
-  useEffect(() => {
-    if (projectId !== storeProjectId) {
-      router.push('/projects');
-    }
-  }, [projectId, storeProjectId, router]);
+  // Initialize project data
+  const initialize = useCallback(async () => {
+    if (!projectId) return;
+    setIsLoading(true);
+    setError(null);
 
-  // Initialize with current project data
-  useEffect(() => {
-    if (projectId && elements && groups) {
+    try {
+      // Clear any stale canvas/timeline state
+      clearCanvas();
+      resetTimeline();
+
+      // Fetch project data from API
+      const res = await apiClient.get<{ data: { project: { id: string; name: string; title?: string; version: string; mainState?: unknown } } }>(`/api/projects/${projectId}`);
+      const project = res.data.project;
+      
+      setProjectInfo({
+        projectId: project.id,
+        name: project.name,
+        title: project.title,
+        version: project.version,
+      });
+
+      const mainState = (project.mainState as { elements?: unknown[]; groups?: unknown[]; timeline?: unknown }) || {};
+      setBaseline(mainState);
+
+      // Hydrate canvas and timeline stores from mainState
+      const rawElements = Array.isArray(mainState.elements) ? mainState.elements : [];
+      const rawGroups = Array.isArray(mainState.groups) ? mainState.groups : [];
+
+      // Sanitize elements
+      const sanitizedElements = rawElements.map((el: unknown) => ({
+        animations: Array.isArray((el as any)?.animations) ? (el as any).animations : [],
+        fill: typeof (el as any)?.fill === 'string' && (el as any).fill ? (el as any).fill : '#000000',
+        ...(el as any),
+      }));
+      const elements = Array.from(
+        new Map(sanitizedElements.map((e: any) => [e.id as string, e])).values()
+      ) as any[];
+
+      // Sanitize groups
+      const sanitizedGroups = rawGroups.map((g: unknown) => ({
+        animations: Array.isArray((g as any)?.animations) ? (g as any).animations : [],
+        elementIds: Array.isArray((g as any)?.elementIds) ? (g as any).elementIds : [],
+        ...(g as any),
+      }));
+      const groups = Array.from(
+        new Map(sanitizedGroups.map((g: any) => [g.id as string, g])).values()
+      ) as any[];
+
+      setElements(elements);
+      setGroups(groups);
+
+      // Load timeline data
+      const timeline = (mainState.timeline as { animationStates?: any; scale?: number; duration?: number; currentTime?: number }) || {};
+      loadProjectData({
+        elements,
+        groups,
+        animationStates: (timeline.animationStates as Record<string, any>) || {},
+        scale: typeof timeline.scale === 'number' ? timeline.scale : 1,
+        duration: typeof timeline.duration === 'number' ? timeline.duration : 10,
+        currentTime: typeof timeline.currentTime === 'number' ? timeline.currentTime : 0,
+      });
+
+      // Capture baseline after stores are hydrated
+      captureBaseline();
+
+      // Set initial result
       const projectData = {
         groups: groups,
         elements: elements,
         timeline: {
-          scale: 100,
-          duration: 1,
-          currentTime: 0,
-          animationStates: animationStates
+          scale: timeline.scale || 100,
+          duration: timeline.duration || 1,
+          currentTime: timeline.currentTime || 0,
+          animationStates: timeline.animationStates || {}
         }
       };
       setResult(projectData);
+
+      setIsLoading(false);
+    } catch (err) {
+      console.error('Failed to initialize project', err);
+      setError('Failed to load project');
+      setIsLoading(false);
     }
-  }, [projectId, elements, groups, animationStates]);
+  }, [projectId, setProjectInfo, setBaseline, captureBaseline, clearCanvas, resetTimeline, setElements, setGroups, loadProjectData]);
+
+  // Initialize project on mount
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
+
+  // Update stores when result changes
+  useEffect(() => {
+    if (result && result.groups && result.elements) {
+      setGroups(result.groups as any);
+      setElements(result.elements as any);
+      
+      // Update timeline if timeline data exists
+      if (result.timeline) {
+        loadProjectData({
+          elements: result.elements as any,
+          groups: result.groups as any,
+          animationStates: result.timeline.animationStates || {},
+          scale: result.timeline.scale || 1,
+          duration: result.timeline.duration || 10,
+          currentTime: result.timeline.currentTime || 0,
+        });
+      }
+    }
+  }, [result, setGroups, setElements, loadProjectData]);
 
   const executeCode = () => {
     if (!code.trim()) return;
 
     try {
       setError(null);
-      
+
       // Create a safe execution environment with access to project data
       const projectData = {
         groups: groups,
@@ -73,46 +172,74 @@ export default function ScriptsPage() {
       const executeFunction = new Function('project', 'setResult', 'setError', code);
       executeFunction(projectData, setResult, setError);
 
-      // Update the actual project if result contains valid data
-      if (result && result.groups && result.elements) {
-        setGroups(result.groups);
-        setElements(result.elements);
-      }
-
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error occurred');
     }
   };
 
   const resetToOriginal = () => {
-    if (projectId && elements && groups) {
-      const projectData = {
-        groups: groups,
-        elements: elements,
-        timeline: {
-          scale: 100,
-          duration: 1,
-          currentTime: 0,
-          animationStates: animationStates
-        }
-      };
-      setResult(projectData);
+    if (result) {
+      setResult(result);
       setCode('');
       setError(null);
     }
   };
 
-  if (!projectId || projectId !== storeProjectId) {
+  const generateScript = async () => {
+    if (!prompt.trim()) return;
+
+    try {
+      setIsGenerating(true);
+      setError(null);
+
+      const response = await fetch(`/api/projects/${projectId}/generate-script`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt: prompt.trim() }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to generate script');
+      }
+
+      const data = await response.json();
+      if (data.success && data.data.script) {
+        setCode(data.data.script);
+      } else {
+        throw new Error('No script generated');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to generate script');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-zinc-100 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Invalid Project</h1>
-          <p className="text-gray-600 mb-6">Please open a project in the designer to use scripts.</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Loading Project</h1>
+          <p className="text-gray-600 mb-6">Please wait while we load your project data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-zinc-100 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Error Loading Project</h1>
+          <p className="text-red-600 mb-6">{error}</p>
           <button
-            onClick={() => router.push('/projects')}
+            onClick={() => initialize()}
             className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
           >
-            Go to Projects
+            Retry
           </button>
         </div>
       </div>
@@ -121,8 +248,6 @@ export default function ScriptsPage() {
 
   return (
     <div className="min-h-screen bg-white">
-
-      
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
         <div className="flex items-center justify-between">
@@ -148,13 +273,13 @@ export default function ScriptsPage() {
       <div className="flex h-[calc(100vh-120px)]">
         {/* Left Side - Code Editor and Prompt Areas */}
         <div className="w-1/2 border-r border-gray-200 p-6">
-          {/* Code Editor Area - Now Above */}
+          {/* Code Editor Area */}
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Code Editor</h3>
             <p className="text-sm text-gray-600 mb-3">
               Write JavaScript to manipulate the project object. Use <code className="bg-gray-100 px-1 rounded text-gray-800">project</code> to access data.
             </p>
-            
+
             <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
               <AceEditor
                 mode="javascript"
@@ -183,27 +308,21 @@ setResult(project);`}
             </div>
           </div>
 
-          {/* Prompt Area - Collapsible, Now Below */}
+          {/* Prompt Area */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-lg font-semibold text-gray-900">Generate Code</h3>
-              <button
-                onClick={() => setShowPrompt(!showPrompt)}
-                className="text-sm font-medium text-gray-600 hover:text-gray-900 flex items-center gap-1 px-2 py-1 rounded-md hover:bg-gray-100 transition-colors"
-              >
-                {showPrompt ? 'Hide' : 'Show'}
-                <ChevronDown className={`w-4 h-4 transition-transform ${showPrompt ? 'rotate-180' : ''}`} />
-              </button>
             </div>
-            
-            {showPrompt && (
-              <div className="mb-4">
-                <textarea
-                  placeholder="Describe what you want to do with the project elements, groups, or animations..."
-                  className="w-full h-24 p-3 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none text-gray-900 bg-white"
-                />
-              </div>
-            )}
+
+            <div className="mb-4">
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="Describe what you want to do with the project elements, groups, or animations..."
+                className="w-full h-24 p-3 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none text-gray-900 bg-white"
+              />
+            </div>
+
           </div>
 
           {/* All Action Buttons in One Row */}
@@ -215,7 +334,7 @@ setResult(project);`}
             >
               <Play className="w-4 h-4" />
             </button>
-            
+
             <button
               onClick={resetToOriginal}
               className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2 shadow-sm"
@@ -223,11 +342,14 @@ setResult(project);`}
               <RotateCcw className="w-4 h-4" />
             </button>
 
-            {showPrompt && (
-              <button className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-2 shadow-sm">
-                <Sparkles className="w-4 h-4" />
-              </button>
-            )}
+            <button
+              onClick={generateScript}
+              disabled={!prompt.trim() || isGenerating}
+              className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2 shadow-sm"
+            >
+              <Sparkles className="w-4 h-4" />
+              {isGenerating ? 'Generating...' : 'Generate'}
+            </button>
           </div>
 
           {/* Error Display */}
@@ -246,7 +368,7 @@ setResult(project);`}
               Current state of the project object
             </p>
           </div>
-          
+
           <div className="border border-gray-200 rounded-lg overflow-hidden h-[calc(100vh-200px)] shadow-sm">
             <AceEditor
               mode="json"
