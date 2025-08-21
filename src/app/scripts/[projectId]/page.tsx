@@ -6,10 +6,12 @@ import { ArrowLeft, Play, RotateCcw, ChevronDown, Sparkles } from 'lucide-react'
 import { useProjectStore } from '@/stores/use-project-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useTimelineStore } from '@/stores/use-timeline-store';
-import CodeMirror from '@uiw/react-codemirror';
-import { javascript } from '@codemirror/lang-javascript';
-import { json } from '@codemirror/lang-json';
-import { oneDark } from '@codemirror/theme-one-dark';
+import AceEditor from 'react-ace';
+
+import 'ace-builds/src-noconflict/mode-javascript';
+import 'ace-builds/src-noconflict/mode-json';
+import 'ace-builds/src-noconflict/theme-monokai';
+
 
 export default function ScriptsPage() {
   const router = useRouter();
@@ -119,6 +121,8 @@ export default function ScriptsPage() {
 
   return (
     <div className="min-h-screen bg-white">
+
+      
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
         <div className="flex items-center justify-between">
@@ -152,12 +156,22 @@ export default function ScriptsPage() {
             </p>
             
             <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-              <CodeMirror
+              <AceEditor
+                mode="javascript"
+                theme="monokai"
                 value={code}
-                onChange={(value) => setCode(value)}
+                onChange={setCode}
+                name="code-editor"
+                editorProps={{ $blockScrolling: true }}
+                setOptions={{
+                  enableBasicAutocompletion: true,
+                  enableLiveAutocompletion: true,
+                  enableSnippets: true,
+                  showLineNumbers: true,
+                  tabSize: 2,
+                }}
+                width="100%"
                 height="240px"
-                extensions={[javascript()]}
-                theme={oneDark}
                 placeholder={`// Example: Move all elements to the right
 project.elements.forEach(element => {
   element.x += 100;
@@ -165,32 +179,6 @@ project.elements.forEach(element => {
 
 // Update the result
 setResult(project);`}
-                basicSetup={{
-                  lineNumbers: true,
-                  highlightActiveLineGutter: true,
-                  highlightSpecialChars: true,
-                  history: true,
-                  foldGutter: true,
-                  drawSelection: true,
-                  dropCursor: true,
-                  allowMultipleSelections: true,
-                  indentOnInput: true,
-                  syntaxHighlighting: true,
-                  bracketMatching: true,
-                  closeBrackets: true,
-                  autocompletion: true,
-                  rectangularSelection: true,
-                  crosshairCursor: true,
-                  highlightActiveLine: true,
-                  highlightSelectionMatches: true,
-                  closeBracketsKeymap: true,
-                  defaultKeymap: true,
-                  searchKeymap: true,
-                  historyKeymap: true,
-                  foldKeymap: true,
-                  completionKeymap: true,
-                  lintKeymap: true,
-                }}
               />
             </div>
           </div>
@@ -260,36 +248,20 @@ setResult(project);`}
           </div>
           
           <div className="border border-gray-200 rounded-lg overflow-hidden h-[calc(100vh-200px)] shadow-sm">
-            <CodeMirror
+            <AceEditor
+              mode="json"
+              theme="monokai"
               value={result ? JSON.stringify(result, null, 2) : 'Loading...'}
-              height="100%"
-              extensions={[json()]}
-              theme={oneDark}
               readOnly={true}
-              basicSetup={{
-                lineNumbers: true,
-                highlightActiveLineGutter: true,
-                highlightSpecialChars: true,
-                foldGutter: true,
-                drawSelection: true,
-                dropCursor: true,
-                indentOnInput: false,
-                syntaxHighlighting: true,
-                bracketMatching: true,
-                closeBrackets: false,
-                autocompletion: false,
-                rectangularSelection: true,
-                crosshairCursor: true,
-                highlightActiveLine: true,
-                highlightSelectionMatches: true,
-                closeBracketsKeymap: false,
-                defaultKeymap: false,
-                searchKeymap: true,
-                historyKeymap: false,
-                foldKeymap: true,
-                completionKeymap: false,
-                lintKeymap: false,
+              name="json-editor"
+              editorProps={{ $blockScrolling: true }}
+              setOptions={{
+                showLineNumbers: true,
+                tabSize: 2,
+                showPrintMargin: false,
               }}
+              width="100%"
+              height="100%"
             />
           </div>
         </div>
