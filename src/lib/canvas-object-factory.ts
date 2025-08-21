@@ -194,8 +194,11 @@ function createPolygon(props: BaseObjectProps & { polygonPoints?: Array<{ x: num
   const centerX = (minX + maxX) / 2;
   const centerY = (minY + maxY) / 2;
 
+  // Create polygon without automatic group assignment to prevent empty groups
+  const commonAttrs = generateCommonAttributes('polygon', props);
   return {
-    ...generateCommonAttributes('polygon', props),
+    ...commonAttrs,
+    groupId: undefined, // Don't assign to a group automatically
     type: 'polygon',
     width,
     height,

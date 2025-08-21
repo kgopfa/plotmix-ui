@@ -494,24 +494,29 @@ export default function Designer() {
       // Check if any of the lines in the polygon are dotted (indicating path mode)
       const isPolygonPath = chainedLines.some(line => line.lineOptions?.dotted === true);
 
-      // Create a polygon group using the typed group system
-      // Note: createPolygonGroup already handles all state updates including setGroups and setCanvasObjects
-      const polygonGroup = createPolygonGroup(chainedLines, true); // true = closed polygon
+      if (isPolygonPath) {
+        // For path mode: use the old polygon group system (needed for animations)
+        const polygonGroup = createPolygonGroup(chainedLines, true); // true = closed polygon
 
-      // If this polygon was created in path mode, mark the group as an animation path and exit path mode
-      if (isPolygonPath && polygonGroup) {
-        setGroups(prevGroups =>
-          prevGroups.map(group =>
-            group.id === polygonGroup.id
-              ? { ...group, isAnimationPath: true }
-              : group
-          )
-        );
+        if (polygonGroup) {
+          // Mark the group as an animation path
+          setGroups(prevGroups =>
+            prevGroups.map(group =>
+              group.id === polygonGroup.id
+                ? { ...group, isAnimationPath: true }
+                : group
+            )
+          );
 
-        // Add the polygon group to the animation and exit path mode
-        addPathToAnimation(polygonGroup as unknown as AnimatedCanvasObject);
-        togglePathMode();
-        setAnimationTarget(null);
+          // Add the polygon group to the animation and exit path mode
+          addPathToAnimation(polygonGroup as unknown as AnimatedCanvasObject);
+          togglePathMode();
+          setAnimationTarget(null);
+        }
+      } else {
+        // For non-path mode: let the new system in use-canvas-interactions.ts handle it
+        // This creates individual polygon elements and removes the lines
+        // We don't need to do anything here - the new system will handle it
       }
     }
 

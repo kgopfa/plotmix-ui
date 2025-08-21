@@ -448,8 +448,9 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
   }, []);
 
   // Handle polygon closure - create polygon element from chained lines
+  // Only run this for non-path mode polygons (path mode uses the old group system)
   useEffect(() => {
-    if (isClosingShape && chainedLineIds.length >= 3) {
+    if (isClosingShape && chainedLineIds.length >= 3 && !isPathMode) {
       console.log('Creating polygon from', chainedLineIds.length, 'chained lines:', chainedLineIds);
       // Get all the chained line elements
       const lineElements = chainedLineIds.map(id => 
