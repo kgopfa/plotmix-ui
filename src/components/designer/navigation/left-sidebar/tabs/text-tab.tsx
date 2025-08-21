@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Type, X } from 'lucide-react';
 import { 
   useToolState, 
@@ -7,6 +7,7 @@ import {
   useSetHoverNav, 
   useSetInteractedNav 
 } from '@/stores/use-ui-store';
+import { useFontLoading } from '@/hooks/use-font-loading';
 
 export const TextTab: React.FC = () => {
   const { activeTool, selectedFont } = useToolState();
@@ -15,14 +16,13 @@ export const TextTab: React.FC = () => {
   const setHoverNav = useSetHoverNav();
   const setInteractedNav = useSetInteractedNav();
   
-  const [loadingFonts, setLoadingFonts] = useState(true);
+  const { loadingFonts, availableFonts } = useFontLoading();
 
-  const textTools =
-    {
-      name: 'Add a textbox',
-      icon: <Type className="w-4 h-4 text-blue-600" />,
-      tool: 'text' as const,
-    };
+  const textTools = {
+    name: 'Add a textbox',
+    icon: <Type className="w-4 h-4 text-blue-600" />,
+    tool: 'text' as const,
+  };
 
   // Font showcase data with sample text similar to Photoshop effects
   const fontShowcase = [
@@ -129,86 +129,13 @@ export const TextTab: React.FC = () => {
     setActiveTool('text');
   };
 
-  // Function to load fonts dynamically
+  // Check if the currently selected font is available, if not reset to Arial
   useEffect(() => {
-    const loadFonts = async () => {
-      try {
-        // Load OTF fonts with exact file names
-        const otfFonts = [
-          { name: 'Bouncy-PERSONAL_USE_ONLY', file: 'Bouncy-PERSONAL_USE_ONLY.otf' },
-          { name: 'College-Block', file: 'College-Block.otf' },
-          { name: 'Playful-Boxes', file: 'Playful-Boxes.otf' },
-          { name: 'DK-Jambo', file: 'DK-Jambo.otf' },
-          { name: 'Bouncy-Thin-PERSONAL_USE_ONLY', file: 'Bouncy-Thin-PERSONAL_USE_ONLY.otf' },
-          { name: 'Bouncy-Black-PERSONAL_USE_ONLY', file: 'Bouncy-Black-PERSONAL_USE_ONLY.otf' }
-        ];
-        
-        // Load TTF fonts with exact file names
-        const ttfFonts = [
-          { name: 'varsity_regular', file: 'varsity_regular.ttf' },
-          { name: 'spacetime-regular', file: 'spacetime-regular.ttf' },
-          { name: 'Top-Secret', file: 'Top-Secret.ttf' },
-          { name: 'Super-Kindly', file: 'Super-Kindly.ttf' },
-          { name: 'Snowboarding', file: 'Snowboarding.ttf' },
-          { name: 'Richis-Stiller', file: 'Richis-Stiller.ttf' },
-          { name: 'Ka-Blam', file: 'Ka-Blam.ttf' },
-          { name: 'Cute-Notes', file: 'Cute-Notes.ttf' },
-          { name: 'KGChasingCars', file: 'KGChasingCars.ttf' },
-          { name: 'Angelia-Beauty', file: 'Angelia-Beauty.ttf' }
-        ];
-
-        // Load all fonts concurrently and wait for completion
-        const fontPromises = [
-          ...otfFonts.map(async (font) => {
-            try {
-              const fontFace = new FontFace(font.name, `url(/fonts/otf/${font.file})`);
-              await fontFace.load();
-              document.fonts.add(fontFace);
-              console.log('Font loaded successfully:', font.name);
-              return font.name;
-            } catch (err) {
-              console.error('Font loading failed:', font.name, err);
-              return null;
-            }
-          }),
-          ...ttfFonts.map(async (font) => {
-            try {
-              const fontFace = new FontFace(font.name, `url(/fonts/tff/${font.file})`);
-              await fontFace.load();
-              document.fonts.add(fontFace);
-              console.log('Font loaded successfully:', font.name);
-              return font.name;
-            } catch (err) {
-              console.error('Font loading failed:', font.name, err);
-              return null;
-            }
-          })
-        ];
-
-        // Wait for all fonts to load
-        const loadedFonts = await Promise.all(fontPromises);
-        const successfulFonts = loadedFonts.filter(name => name !== null);
-        console.log(`Successfully loaded ${successfulFonts.length} fonts`);
-
-        // Check if the currently selected font is available, if not reset to Arial
-        if (selectedFont !== 'Arial' && !successfulFonts.includes(selectedFont)) {
-          console.warn(`Selected font ${selectedFont} not available, resetting to Arial`);
-          setSelectedFont('Arial');
-        }
-
-        setLoadingFonts(false);
-
-      } catch (error) {
-        console.error('Error loading fonts:', error);
-        // If font loading fails, reset to Arial
-        if (selectedFont !== 'Arial') {
-          setSelectedFont('Arial');
-        }
-      }
-    };
-
-    loadFonts();
-  }, [selectedFont, setSelectedFont]);
+    if (availableFonts.length > 1 && selectedFont !== 'Arial' && !availableFonts.includes(selectedFont)) {
+      console.warn(`Selected font ${selectedFont} not available, resetting to Arial`);
+      setSelectedFont('Arial');
+    }
+  }, [availableFonts, selectedFont, setSelectedFont]);
 
   return (
     <div className="h-full w-80 2xl:w-96 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
@@ -310,4 +237,4 @@ export const TextTab: React.FC = () => {
       </div>
     </div>
   );
-}; 
+};

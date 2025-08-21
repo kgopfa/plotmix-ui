@@ -2,6 +2,7 @@ import React from 'react';
 import { Text, TextStyle, FillGradient, Color } from 'pixi.js';
 import { extend } from '@pixi/react';
 import type { AnimatedCanvasObject } from '@/types/canvas';
+import { useFontLoading } from '@/hooks/use-font-loading';
 
 // Extend PIXI components for React
 extend({ Text });
@@ -12,9 +13,35 @@ interface RichTextRendererProps {
 }
 
 export const RichTextRenderer: React.FC<RichTextRendererProps> = ({ element, isEditing = false }) => {
+  const { fontsLoaded, availableFonts } = useFontLoading();
+  
   if (element.type !== 'text' || !element.text) {
     return null;
   }
+
+  // If fonts aren't loaded yet, show a loading state or fallback
+  if (!fontsLoaded) {
+    return (
+      <pixiText
+        text={element.text}
+        style={new TextStyle({
+          fontFamily: 'Arial',
+          fontSize: element.fontSize || 36,
+          fill: '#666666',
+        })}
+        anchor={{ x: 0, y: 0.5 }}
+        x={-element.width / 2}
+        y={0}
+        interactive={!isEditing}
+        eventMode={!isEditing ? 'dynamic' : 'none'}
+      />
+    );
+  }
+
+  // Check if the requested font is available, fallback to Arial if not
+  const fontFamily = availableFonts.includes(element.fontFamily || '') 
+    ? element.fontFamily 
+    : 'Arial';
 
   const isValidHex = (v: unknown): v is string => typeof v === 'string' && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v.trim());
   const toSafeColorNumber = (v: unknown, fallback: string = '#000000') => {
@@ -45,7 +72,7 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({ element, isE
 
   // Create rich text style using element properties
   const richStyle = new TextStyle({
-    fontFamily: element.fontFamily || 'Arial',
+    fontFamily: fontFamily,
     fontSize: element.fontSize || 36,
     fontStyle: (element.fontStyle as 'normal' | 'italic' | 'oblique') || 'italic',
     fontWeight: (element.fontWeight as 'normal' | 'bold' | 'bolder' | 'lighter' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900') || 'bold',
