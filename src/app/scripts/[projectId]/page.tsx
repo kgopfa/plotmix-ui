@@ -2,11 +2,13 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, Play, RotateCcw, Sparkles } from 'lucide-react';
+import { ArrowLeft, Play, RotateCcw, Sparkles, Save, RotateCcw as Overwrite } from 'lucide-react';
 import { useProjectStore } from '@/stores/use-project-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useTimelineStore } from '@/stores/use-timeline-store';
 import { apiClient } from '@/lib/api-client';
+import { CodeExecutor, type ProjectData } from '@/utils/code-executor';
+import { DiffUtils } from '@/utils/diff-utils';
 import AceEditor from 'react-ace';
 
 import 'ace-builds/src-noconflict/mode-javascript';
@@ -18,25 +20,19 @@ export default function ScriptsPage() {
   const params = useParams();
   const projectId = params.projectId as string;
 
-  const { name, version, setProjectInfo, setBaseline, captureBaseline } = useProjectStore();
+  const { name, version, setProjectInfo, setBaseline, captureBaseline, checkStateDiff, persistIfDirty } = useProjectStore();
   const { elements, groups, setElements, setGroups, clearCanvas } = useCanvasStore();
   const { animationStates, loadProjectData, resetTimeline } = useTimelineStore();
 
   const [code, setCode] = useState('');
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [result, setResult] = useState<{
-    groups: any[];
-    elements: any[];
-    timeline: {
-      scale: number;
-      duration: number;
-      currentTime: number;
-      animationStates: Record<string, any>;
-    };
-  } | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isOverwriting, setIsOverwriting] = useState(false);
+  const [result, setResult] = useState<ProjectData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDirty, setIsDirty] = useState(false);
 
   // Initialize project data
   const initialize = useCallback(async () => {
@@ -150,6 +146,46 @@ export default function ScriptsPage() {
     }
   }, [result, setGroups, setElements, loadProjectData]);
 
+  // Check if project is dirty whenever result changes
+  useEffect(() => {
+    if (result) {
+      // Temporarily update stores to check diff, then restore
+      const originalGroups = groups;
+      const originalElements = elements;
+      
+      setGroups(result.groups as any);
+      setElements(result.elements as any);
+      
+      if (result.timeline) {
+        loadProjectData({
+          elements: result.elements as any,
+          groups: result.groups as any,
+          animationStates: result.timeline.animationStates || {},
+          scale: result.timeline.scale || 1,
+          duration: result.timeline.duration || 10,
+          currentTime: result.timeline.currentTime || 0,
+        });
+      }
+      
+      // Check if there are changes using the project store's diffing
+      const hasChanges = checkStateDiff({
+        elements: result.elements,
+        groups: result.groups,
+        timeline: {
+          scale: result.timeline.scale || 1,
+          duration: result.timeline.duration || 10,
+          currentTime: result.timeline.currentTime || 0,
+          animationStates: result.timeline.animationStates || {}
+        }
+      });
+      setIsDirty(hasChanges);
+      
+      // Restore original state
+      setGroups(originalGroups);
+      setElements(originalElements);
+    }
+  }, [result, groups, elements, setGroups, setElements, loadProjectData, checkStateDiff]);
+
   const executeCode = () => {
     if (!code.trim()) return;
 
@@ -157,7 +193,7 @@ export default function ScriptsPage() {
       setError(null);
 
       // Create a safe execution environment with access to project data
-      const projectData = {
+      const projectData: ProjectData = {
         groups: groups,
         elements: elements,
         timeline: {
@@ -168,9 +204,24 @@ export default function ScriptsPage() {
         }
       };
 
-      // Execute the code with access to project data
-      const executeFunction = new Function('project', 'setResult', 'setError', code);
-      executeFunction(projectData, setResult, setError);
+      // Execute the code using the CodeExecutor
+      const executionResult = CodeExecutor.execute(
+        code,
+        projectData,
+        setResult,
+        setError
+      );
+
+      if (executionResult.success) {
+        // Check if the result is different from the original project data
+        const diffResult = DiffUtils.generateDiff(
+          { groups, elements, timeline: { scale: 100, duration: 1, currentTime: 0, animationStates } },
+          result || projectData
+        );
+        setIsDirty(diffResult.hasChanges);
+      } else {
+        setError(executionResult.error || 'Code execution failed');
+      }
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error occurred');
@@ -215,6 +266,90 @@ export default function ScriptsPage() {
       setError(err instanceof Error ? err.message : 'Failed to generate script');
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const createNewProject = async () => {
+    if (!result) return;
+
+    try {
+      setIsSaving(true);
+      setError(null);
+
+      const response = await fetch('/api/projects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: `${name} - Script Result`,
+          mainState: result,
+          configuration: {
+            canvas: { width: 1280, height: 720 },
+            editor: { snappingEnabled: true, gridEnabled: false },
+            animation: { playbackRate: 1, isLooping: false, autoPlay: false }
+          }
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create new project');
+      }
+
+      const data = await response.json();
+      if (data.success && data.data.project) {
+        // Navigate to the new project
+        router.push(`/designer/${data.data.project.id}`);
+      } else {
+        throw new Error('Failed to create new project');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create new project');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+
+
+  const overwriteCurrentProject = async () => {
+    if (!result || !projectId) return;
+
+    try {
+      setIsOverwriting(true);
+      setError(null);
+
+      // First, update the stores with the result data so the project store can detect changes
+      setGroups(result.groups as any);
+      setElements(result.elements as any);
+      
+      if (result.timeline) {
+        loadProjectData({
+          elements: result.elements as any,
+          groups: result.groups as any,
+          animationStates: result.timeline.animationStates || {},
+          scale: result.timeline.scale || 1,
+          duration: result.timeline.duration || 10,
+          currentTime: result.timeline.currentTime || 0,
+        });
+      }
+
+      // Use the existing project store diffing and persistence
+      const success = await persistIfDirty('Script execution result');
+      
+      if (success) {
+        // Update the baseline and mark as not dirty
+        setIsDirty(false);
+        // Refresh the project data
+        initialize();
+      } else {
+        throw new Error('No changes detected or save failed');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to overwrite project');
+    } finally {
+      setIsOverwriting(false);
     }
   };
 
@@ -351,6 +486,34 @@ setResult(project);`}
               {isGenerating ? 'Generating...' : 'Generate'}
             </button>
           </div>
+
+          {/* Save/Overwrite Buttons - Only show when project is dirty */}
+          {isDirty && result && (
+            <div className="flex items-center gap-3 mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex-1">
+                <p className="text-sm text-yellow-800 font-medium">Project has unsaved changes</p>
+                <p className="text-xs text-yellow-600">Choose to save as new project or overwrite current project</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={createNewProject}
+                  disabled={isSaving}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2 shadow-sm"
+                >
+                  <Save className="w-4 h-4" />
+                  {isSaving ? 'Creating...' : 'Save as New'}
+                </button>
+                <button
+                  onClick={overwriteCurrentProject}
+                  disabled={isOverwriting}
+                  className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2 shadow-sm"
+                >
+                  <Overwrite className="w-4 h-4" />
+                  {isOverwriting ? 'Overwriting...' : 'Overwrite'}
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Error Display */}
           {error && (

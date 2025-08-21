@@ -35,6 +35,8 @@ interface ProjectStoreActions {
   scheduleAutosave: () => void;
   setAutosaveDelay: (ms: number) => void;
   forceFullSave: () => Promise<boolean>;
+  checkStateDiff: (stateToCheck: Record<string, unknown>) => boolean;
+  getStateDiff: (stateToCheck: Record<string, unknown>) => Record<string, unknown> | null;
 }
 
 type ProjectStore = ProjectStoreState & ProjectStoreActions;
@@ -264,6 +266,55 @@ export const useProjectStore = create<ProjectStore>()(
         return false;
       }
     },
+
+    // Reusable function to check if a given state differs from baseline
+    // This can be used by other components (like scripts page) to check dirty state
+    checkStateDiff: (stateToCheck: Record<string, unknown>): boolean => {
+      const baseline = get().baselineMainState;
+      if (!baseline) return true; // If no baseline, consider it different
+      
+      // Fast equality check
+      const baselineStr = JSON.stringify(baseline);
+      const checkStr = JSON.stringify(stateToCheck);
+      if (baselineStr === checkStr) return false;
+      
+      // Use the same robust diffing logic as getDiffFromBaseline
+      const robustPatcher = new DiffPatcher({
+        objectHash: (obj: any) => obj?.id ?? JSON.stringify(obj),
+        arrays: { detectMove: true, includeValueOnMove: false }
+      } as any);
+      
+      const delta = robustPatcher.diff(baseline, stateToCheck);
+      return delta !== null;
+    },
+
+    // Reusable function to get diff between baseline and a given state
+    // Returns the diff delta that can be used for versioning
+    getStateDiff: (stateToCheck: Record<string, unknown>): Record<string, unknown> | null => {
+      const baseline = get().baselineMainState;
+      if (!baseline) return null;
+      
+      // Fast equality check
+      const baselineStr = JSON.stringify(baseline);
+      const checkStr = JSON.stringify(stateToCheck);
+      if (baselineStr === checkStr) return null;
+      
+      // Use the same robust diffing logic as getDiffFromBaseline
+      const robustPatcher = new DiffPatcher({
+        objectHash: (obj: any) => obj?.id ?? JSON.stringify(obj),
+        arrays: { detectMove: true, includeValueOnMove: false }
+      } as any);
+      
+      let delta = robustPatcher.diff(baseline, stateToCheck);
+      
+      // Last resort: snapshot diff to force persistence
+      if (!delta) {
+        const snapshotPatcher = new DiffPatcher();
+        delta = snapshotPatcher.diff({}, stateToCheck);
+      }
+      
+      return delta || null;
+    }
   })
 );
 
