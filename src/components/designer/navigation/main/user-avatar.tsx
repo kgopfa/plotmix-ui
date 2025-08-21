@@ -148,7 +148,7 @@ export function UserAvatar({ className = '', showDropdown = true }: UserAvatarPr
   const AvatarButton = () => (
     <div 
       ref={avatarRef}
-      className="h-10 w-10 rounded-full bg-purple-200 flex items-center justify-center border border-indigo-300 hover:bg-purple-300 transition-colors duration-200 cursor-pointer"
+      className="h-9 w-9 rounded-full bg-slate-300 flex items-center justify-center border border-indigo-300 hover:bg-slate-200 transition-colors duration-200 cursor-pointer"
       onClick={() => {
         setIsOpen(!isOpen)
       }}
