@@ -25,7 +25,7 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({ element, isE
       <pixiText
         text={element.text}
         style={new TextStyle({
-          fontFamily: 'Arial',
+          fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
           fontSize: element.fontSize || 36,
           fontWeight: '400',
           fontStyle: 'normal',
@@ -40,10 +40,10 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({ element, isE
     );
   }
 
-  // Check if the requested font is available, fallback to Arial if not
+  // Check if the requested font is available, fallback to Tailwind font-sans stack if not
   const fontFamily = availableFonts.includes(element.fontFamily || '') 
     ? element.fontFamily 
-    : 'Arial';
+    : 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
   const isValidHex = (v: unknown): v is string => typeof v === 'string' && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v.trim());
   const toSafeColorNumber = (v: unknown, fallback: string = '#000000') => {

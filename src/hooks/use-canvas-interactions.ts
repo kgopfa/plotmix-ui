@@ -49,6 +49,7 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
     isPathMode,
     lineType,
     selectedFont,
+    selectedFontWeight,
     isClosingShape
   } = useUIStore((state) => state.tools);
   
@@ -268,7 +269,8 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
         undefined, // startPoint
         undefined, // endPoint
         undefined, // lineType
-        activeTool === 'text' ? selectedFont : undefined // fontFamily
+        activeTool === 'text' ? selectedFont : undefined, // fontFamily
+        activeTool === 'text' ? selectedFontWeight : undefined // fontWeight
       );
       
       // If in path mode, mark it as a path
@@ -294,7 +296,7 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
         window.dispatchEvent(drawCompleteEvent);
       }
     }
-  }, [activeTool, isLineChaining, chainedLineIds, lineStartPoint, isPathMode, lineType, selectedFont, canvasObjects, addElement, selectElement, snapPoint, setActiveTool, setMaskPos, setLineStartPoint, setLineChaining, addChainedLineId, setClosingShape, setShowAnimationsTab]);
+  }, [activeTool, isLineChaining, chainedLineIds, lineStartPoint, isPathMode, lineType, selectedFont, selectedFontWeight, canvasObjects, addElement, selectElement, snapPoint, setActiveTool, setMaskPos, setLineStartPoint, setLineChaining, addChainedLineId, setClosingShape, setShowAnimationsTab]);
 
   const handleSelectElement = useCallback((id: string | null, isMultiSelect?: boolean) => {
     if (id) {
@@ -516,6 +518,7 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
           undefined, // endPoint
           undefined, // lineType
           undefined, // fontFamily
+          undefined, // fontWeight
           uniquePoints // Use cleaned up points
         );
 

@@ -21,6 +21,7 @@ interface BaseObjectProps {
   height?: number;
   text?: string;
   fontFamily?: string; // Font family for text elements
+  fontWeight?: string; // Font weight for text elements
 }
 
 interface CommonObjectAttributes {
@@ -339,8 +340,8 @@ function createText(props: BaseObjectProps): AnimatedCanvasObject {
     strokeWidth: 0,
     text: props.text || 'Double click text to edit',
     fontSize: 36, // Match working example font size
-    fontFamily: props.fontFamily || 'Arial', // Use provided font family or default to Arial
-    fontWeight: '400', // Normal weight (400 = normal, 700 = bold)
+    fontFamily: props.fontFamily || 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif', // Use provided font family or default to Tailwind font-sans stack
+    fontWeight: props.fontWeight || '400', // Use provided font weight or default to normal (400)
     fontStyle: 'normal', // Normal style instead of italic
     textAlign: 'left',
     lineHeight: 1.2,
@@ -376,9 +377,10 @@ export function createNewObject(
   endPoint?: { x: number; y: number },
   lineType?: 'straight' | 'curved',
   fontFamily?: string,
+  fontWeight?: string,
   polygonPoints?: Array<{ x: number; y: number }>
 ): AnimatedCanvasObject {
-  const props: BaseObjectProps = { x, y, elements: canvasObjects, pathPoints, isPath, imageData, width, height, text, fontFamily };
+  const props: BaseObjectProps = { x, y, elements: canvasObjects, pathPoints, isPath, imageData, width, height, text, fontFamily, fontWeight };
 
   switch (type) {
     case 'rectangle':

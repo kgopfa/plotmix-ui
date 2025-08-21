@@ -10,8 +10,8 @@ import {
 import { useFontLoading } from '@/hooks/use-font-loading';
 
 export const TextTab: React.FC = () => {
-  const { activeTool, selectedFont } = useToolState();
-  const { setActiveTool, setSelectedFont } = useToolActions();
+  const { activeTool, selectedFont, selectedFontWeight } = useToolState();
+  const { setActiveTool, setSelectedFont, setSelectedFontWeight } = useToolActions();
   const setActiveNav = useSetActiveNav();
   const setHoverNav = useSetHoverNav();
   const setInteractedNav = useSetInteractedNav();
@@ -129,13 +129,21 @@ export const TextTab: React.FC = () => {
     setActiveTool('text');
   };
 
-  // Check if the currently selected font is available, if not reset to Arial
+  const handleTextStyleSelect = (fontWeight: string) => {
+    setSelectedFontWeight(fontWeight);
+    setSelectedFont('ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif');
+    setActiveTool('text');
+  };
+
+  // Check if the currently selected font is available, if not reset to Tailwind font-sans stack
+  const tailwindFontStack = 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+  
   useEffect(() => {
-    if (availableFonts.length > 1 && selectedFont !== 'Arial' && !availableFonts.includes(selectedFont)) {
-      console.warn(`Selected font ${selectedFont} not available, resetting to Arial`);
-      setSelectedFont('Arial');
+    if (availableFonts.length > 1 && selectedFont !== tailwindFontStack && !availableFonts.includes(selectedFont)) {
+      console.warn(`Selected font ${selectedFont} not available, resetting to Tailwind font-sans stack`);
+      setSelectedFont(tailwindFontStack);
     }
-  }, [availableFonts, selectedFont, setSelectedFont]);
+  }, [availableFonts, selectedFont, setSelectedFont, tailwindFontStack]);
 
   return (
     <div className="h-full w-80 2xl:w-96 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
@@ -173,7 +181,7 @@ export const TextTab: React.FC = () => {
             >
               <div className="flex items-center justify-center gap-3">
                 <span className="text-xl">{textTools.icon}</span>
-                <div className="font-medium text-sm text-gray-700">{textTools.name}</div>
+                <div className="font-medium text-sm text-gray-900">{textTools.name}</div>
               </div>
             </button>
           </div>
@@ -182,19 +190,43 @@ export const TextTab: React.FC = () => {
           <div className="space-y-3">
             <div className="text-sm font-medium text-gray-700 mb-3">Text Styles</div>
             <div className="grid grid-cols-1 gap-2">
-              <button className="p-3 rounded-lg text-center border border-gray-200 transition-all duration-200 ease-out transform hover:scale-105 hover:bg-blue-50">
+              <button 
+                onClick={() => handleTextStyleSelect('900')}
+                className="p-3 rounded-lg text-center border border-gray-200 transition-all duration-200 ease-out transform hover:scale-105 hover:bg-blue-50"
+              >
                 <div className="flex items-center justify-center gap-2">
-                  <span className="text-lg font-extrabold text-gray-700">Add a heading</span>
+                  <span 
+                    className="text-lg font-extrabold text-gray-900"
+                    style={{ fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' }}
+                  >
+                    Add a heading
+                  </span>
                 </div>
               </button>
-              <button className="p-3 rounded-lg text-center border border-gray-200 transition-all duration-200 ease-out transform hover:scale-105 hover:bg-blue-50">
+              <button 
+                onClick={() => handleTextStyleSelect('600')}
+                className="p-3 rounded-lg text-center border border-gray-200 transition-all duration-200 ease-out transform hover:scale-105 hover:bg-blue-50"
+              >
                 <div className="flex items-center justify-center gap-2">
-                  <span className="text-lg font-semibold text-gray-700">Add a subheading</span>
+                  <span 
+                    className="text-lg font-semibold text-gray-900"
+                    style={{ fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' }}
+                  >
+                    Add a subheading
+                  </span>
                 </div>
               </button>
-              <button className="p-3 rounded-lg text-center border border-gray-200 transition-all duration-200 ease-out transform hover:scale-105 hover:bg-blue-50">
+              <button 
+                onClick={() => handleTextStyleSelect('400')}
+                className="p-3 rounded-lg text-center border border-gray-200 transition-all duration-200 ease-out transform hover:scale-105 hover:bg-blue-50"
+              >
                 <div className="flex items-center justify-center gap-2">
-                  <span className="text-lg font-normal text-gray-700">Add body text</span>
+                  <span 
+                    className="text-lg font-normal text-gray-900"
+                    style={{ fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' }}
+                  >
+                    Add body text
+                  </span>
                 </div>
               </button>
             </div>

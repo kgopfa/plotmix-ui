@@ -32,6 +32,7 @@ interface ToolState {
   pendingImageData: string | null;
   lineType: 'straight' | 'curved';
   selectedFont: string; // Currently selected font for text creation
+  selectedFontWeight: string; // Currently selected font weight for text creation
 }
 
 interface SnappingState {
@@ -153,6 +154,7 @@ interface UIActions {
   setPendingImageData: (data: string | null) => void;
   setLineType: (lineType: 'straight' | 'curved') => void;
   setSelectedFont: (fontFamily: string) => void;
+  setSelectedFontWeight: (fontWeight: string) => void;
   
   // Snapping Actions
   updateGridConfig: (config: Partial<GridConfig>) => void;
@@ -228,7 +230,8 @@ const defaultToolState: ToolState = {
   showPaths: true,
   pendingImageData: null,
   lineType: 'curved',
-  selectedFont: 'Arial', // Default font for text creation
+  selectedFont: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif', // Default font for text creation - Tailwind font-sans stack
+  selectedFontWeight: '400', // Default font weight for text creation
 };
 
 const defaultSnappingState: SnappingState = {
@@ -329,7 +332,8 @@ export const useUIStore = create<UIStore>((set, get) => {
       if (persisted) {
         const parsed = JSON.parse(persisted);
         return {
-          selectedFont: parsed.selectedFont || 'Arial',
+          selectedFont: parsed.selectedFont || 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+          selectedFontWeight: parsed.selectedFontWeight || '400',
         };
       }
     } catch (error) {
@@ -345,7 +349,8 @@ export const useUIStore = create<UIStore>((set, get) => {
     panels: defaultPanelState,
     tools: {
       ...defaultToolState,
-      selectedFont: persistedState.selectedFont || 'Arial',
+      selectedFont: persistedState.selectedFont || 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+      selectedFontWeight: persistedState.selectedFontWeight || '400',
     },
     snapping: defaultSnappingState,
     canvas: defaultCanvasState,
@@ -515,6 +520,24 @@ export const useUIStore = create<UIStore>((set, get) => {
         localStorage.setItem('plotmix-ui-state', JSON.stringify(parsed));
       } catch (error) {
         console.warn('Failed to persist selected font:', error);
+      }
+    }
+  },
+
+  setSelectedFontWeight: (fontWeight: string) => {
+    set(produce((state) => {
+      state.tools.selectedFontWeight = fontWeight;
+    }));
+    
+    // Persist to localStorage
+    if (typeof window !== 'undefined') {
+      try {
+        const currentState = localStorage.getItem('plotmix-ui-state') || '{}';
+        const parsed = JSON.parse(currentState);
+        parsed.selectedFontWeight = fontWeight;
+        localStorage.setItem('plotmix-ui-state', JSON.stringify(parsed));
+      } catch (error) {
+        console.warn('Failed to persist selected font weight:', error);
       }
     }
   },
@@ -880,6 +903,7 @@ export const useToolActions = () => useUIStore(
     setPendingImageData: state.setPendingImageData,
     setLineType: state.setLineType,
     setSelectedFont: state.setSelectedFont,
+    setSelectedFontWeight: state.setSelectedFontWeight,
   }))
 );
 

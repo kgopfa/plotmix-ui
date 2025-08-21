@@ -18,6 +18,7 @@ export const FONT_CATEGORIES: FontCategory[] = [
     name: 'Sans-serif',
     description: 'Clean, without serifs. Highly legible, versatile, and ideal for motion graphics and digital interfaces.',
     fonts: [
+      { name: 'Tailwind Sans', family: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif', category: 'Sans-serif', webSafe: true, popular: true, description: 'Official Tailwind CSS font stack - optimal performance and system compatibility' },
       { name: 'Arial', family: 'Arial, sans-serif', category: 'Sans-serif', webSafe: true, popular: true },
       { name: 'Helvetica', family: 'Helvetica, Arial, sans-serif', category: 'Sans-serif', webSafe: true, popular: true },
       { name: 'Helvetica Neue', family: 'Helvetica Neue, Helvetica, Arial, sans-serif', category: 'Sans-serif', popular: true },
