@@ -152,14 +152,8 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
             // Now trigger polygon closure
             setClosingShape(true);
             
-            // Clear line chaining state after closing
-            setLineChaining(false);
-            setLineStartPoint(null);
-            clearChainedLineIds();
-            
-            // Switch to select tool after closing shape
-            setActiveTool('select');
-            setMaskPos(null);
+            // Note: Don't clear state here - let the polygon creation useEffect handle it
+            // The useEffect will clean up the state after creating the polygon
             
             // Dispatch draw-complete event for path mode completion
             if (isPathMode) {
@@ -300,7 +294,7 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
         window.dispatchEvent(drawCompleteEvent);
       }
     }
-  }, [activeTool, isLineChaining, chainedLineIds, lineStartPoint, isPathMode, lineType, selectedFont, canvasObjects, addElement, selectElement, snapPoint, setActiveTool, setMaskPos, setLineStartPoint, setLineChaining, addChainedLineId, setClosingShape, setShowAnimationsTab, clearChainedLineIds]);
+  }, [activeTool, isLineChaining, chainedLineIds, lineStartPoint, isPathMode, lineType, selectedFont, canvasObjects, addElement, selectElement, snapPoint, setActiveTool, setMaskPos, setLineStartPoint, setLineChaining, addChainedLineId, setClosingShape, setShowAnimationsTab]);
 
   const handleSelectElement = useCallback((id: string | null, isMultiSelect?: boolean) => {
     if (id) {
@@ -456,28 +450,57 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
   // Handle polygon closure - create polygon element from chained lines
   useEffect(() => {
     if (isClosingShape && chainedLineIds.length >= 3) {
+      console.log('Creating polygon from', chainedLineIds.length, 'chained lines:', chainedLineIds);
       // Get all the chained line elements
       const lineElements = chainedLineIds.map(id => 
         canvasObjects.find(el => el.id === id)
       ).filter(Boolean) as AnimatedCanvasObject[];
 
       if (lineElements.length >= 3) {
-        // Extract polygon points from the line elements
+        // Extract polygon points from the line elements in the correct order
         const polygonPoints: Array<{ x: number; y: number }> = [];
         
+        // For a properly connected polygon, we need to trace the path
         // Start with the first line's start point
         if (lineElements[0]?.lineOptions?.points) {
-          polygonPoints.push(lineElements[0].lineOptions.points.start);
-        }
-
-        // Add end points of each line in sequence
-        lineElements.forEach(line => {
-          if (line.lineOptions?.points) {
-            polygonPoints.push(line.lineOptions.points.end);
+          const firstLine = lineElements[0];
+          const firstLineOptions = firstLine.lineOptions;
+          if (firstLineOptions?.points) {
+            polygonPoints.push(firstLineOptions.points.start);
+            
+            // Add the end point of the first line
+            polygonPoints.push(firstLineOptions.points.end);
           }
+          
+          // For the remaining lines, only add the end point (since start should connect to previous end)
+          for (let i = 1; i < lineElements.length; i++) {
+            const line = lineElements[i];
+            if (line?.lineOptions?.points) {
+              polygonPoints.push(line.lineOptions.points.end);
+            }
+          }
+        }
+        
+        // Remove duplicate points (the last point should connect back to the first)
+        const uniquePoints = polygonPoints.filter((point, index, arr) => {
+          if (index === 0) return true; // Always include first point
+          if (index === arr.length - 1) {
+            // Don't include last point if it's the same as the first (closing point)
+            const firstPoint = arr[0];
+            const distance = Math.hypot(point.x - firstPoint.x, point.y - firstPoint.y);
+            return distance > 1; // Only include if more than 1 pixel away
+          }
+          return true;
         });
 
-        // Create polygon element
+        // Only create polygon if we have enough unique points
+        if (uniquePoints.length < 3) {
+          console.warn('Not enough unique points to create polygon:', uniquePoints.length);
+          setClosingShape(false);
+          return;
+        }
+
+        // Create polygon element with the cleaned up points
         const polygonElement = createNewObject(
           'polygon',
           0, 0, // Position will be calculated in createPolygon
@@ -492,7 +515,7 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
           undefined, // endPoint
           undefined, // lineType
           undefined, // fontFamily
-          polygonPoints // polygonPoints
+          uniquePoints // Use cleaned up points
         );
 
         // If in path mode, mark it as an animation path
@@ -502,6 +525,7 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
 
         // Add the polygon element to the canvas
         addElement(polygonElement);
+        console.log('Created polygon with', uniquePoints.length, 'points:', uniquePoints);
 
         // Remove the individual line elements and clean up groups
         const canvasStore = useCanvasStore.getState();
@@ -549,7 +573,7 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
         selectElement(null);
         
         // Select the new polygon element
-        selectElement([polygonElement]);
+        selectElement(polygonElement);
 
         // Switch to select tool
         setActiveTool('select');
