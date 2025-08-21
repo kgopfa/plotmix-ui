@@ -37,9 +37,10 @@ export const useSnappingPersistence = () => {
 
   // Load snapping preferences from backend configuration
   const loadSnappingPreferences = useCallback((configuration: Record<string, unknown>) => {
-    if (!configuration?.editor?.snapping) return;
+    const editor = configuration?.editor as Record<string, unknown> | undefined;
+    if (!editor || !editor.snapping) return;
 
-    const { snapping } = configuration.editor as Record<string, unknown>;
+    const { snapping } = editor;
 
     // Load grid snapping settings
     if (snapping && typeof snapping === 'object' && 'grid' in snapping) {

@@ -96,13 +96,11 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
         // Regular property updates (excluding animations)
         else if (key in localElement) {
           const value = localElement[key as keyof AnimatedCanvasObject];
-          // Ensure value is of the expected type before passing to onInspectorChange
-          if (value !== undefined) {
-            onInspectorChange(key, value as string | number | boolean | ElementAnimation[] | NonNullable<AnimatedCanvasObject['lineOptions']> | {
-              animationId: string;
-              elementId: string;
-            });
-          }
+          // Always send the value, including undefined for properties that can be explicitly disabled
+          onInspectorChange(key, value as string | number | boolean | ElementAnimation[] | NonNullable<AnimatedCanvasObject['lineOptions']> | {
+            animationId: string;
+            elementId: string;
+          });
         }
       });
 
@@ -908,7 +906,7 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
-                    checked={!!(localElement.textStroke && localElement.textStrokeWidth)}
+                    checked={!!(localElement.textStroke && (localElement.textStrokeWidth ?? 0) > 0)}
                     onChange={e => {
                       if (e.target.checked) {
                         updateLocalProperty('textStroke', '#000000');
@@ -922,15 +920,14 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                   />
                   <span className="text-sm font-medium text-gray-700">Text Stroke</span>
                 </div>
-
-                {localElement.textStroke && localElement.textStrokeWidth && (
+                {localElement.textStroke && (localElement.textStrokeWidth ?? 0) > 0 && (
                   <div className="space-y-3 pl-6 border-l-2 border-green-200">
                     <div className="grid grid-cols-2 gap-3">
                       <label className="flex flex-col gap-1">
                         <span className="text-xs font-semibold text-green-400">Stroke Width</span>
                         <input
                           type="number"
-                          value={localElement.textStrokeWidth}
+                          value={localElement.textStrokeWidth ?? 0}
                           onChange={e => updateLocalProperty('textStrokeWidth', Number(e.target.value))}
                           min={0.5}
                           max={10}
