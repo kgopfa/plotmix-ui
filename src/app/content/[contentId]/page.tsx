@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { NavigationSidebar } from '@/components/shared/navigation-sidebar';
 import { ContentSidebar } from '@/components/content/content-sidebar';
 import { Link2, Pencil, UserPlus } from 'lucide-react';
@@ -11,11 +11,11 @@ import { ProjectCanvasPreview } from '@/components/player/project-canvas-preview
 import { ConfirmModal } from '@/components/shared/confirm-modal';
 import { navigation } from '@/data/shared-navigation';
 import { useContent } from '@/hooks/use-content';
-import { VerticalPlaybackControls } from '@/components/player/vertical-playback-controls';
 import PlaybackControls from '@/components/player/playback-controls';
 
 export default function ContentDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const contentId = params.contentId as string;
   const { content, isLoading, error } = useContent(contentId);
   const [showConfirm, setShowConfirm] = React.useState(false);
@@ -138,7 +138,7 @@ export default function ContentDetailPage() {
             } catch (e) {
               // non-blocking
             } finally {
-              window.location.href = `/designer/${contentId}`;
+              router.push(`/designer/${contentId}`);
             }
           }}
         />

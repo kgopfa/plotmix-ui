@@ -14,11 +14,10 @@ import {
   Undo2,
   CloudCheck,
   Home,
-  Sparkles,
-  FileText,
-  ListVideo,
   MessagesSquare,
-  Boxes
+  Boxes,
+  Code,
+  CodeXml
 } from 'lucide-react'
 import { ProjectControls } from './project-controls';
 import { PathModeIndicator } from './path-mode-indicator';
@@ -261,6 +260,13 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
           <div className="flex items-center gap-4">
             {/* Desktop user menu */}
             <div className="hidden lg:flex lg:items-center gap-x-5 mr-5">
+              <Link
+                href={`/scripts/${projectId}`}
+                className="group h-9 w-10 flex items-center justify-center rounded-md bg-gradient-to-r from-slate-500 to-gray-600 text-white shadow-lg shadow-slate-600/30 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 hover:from-slate-700 hover:to-gray-800"
+              >
+                <CodeXml className="size-5 transition-all duration-200 group-hover:scale-110 drop-shadow-sm" />
+              </Link>
+
               <button
                 type="button"
                 className="group relative inline-flex w-28 h-9 items-center gap-x-2.5 rounded-md bg-gradient-to-r from-indigo-500 to-purple-600 px-3 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 hover:from-indigo-600 hover:to-purple-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95"
@@ -294,13 +300,22 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
             Generate
           </DisclosureButton>
           {projectId && (
-            <DisclosureButton
-              as="a"
-              href={`/content/${projectId}`}
-              className="block border-l-4 border-transparent py-2 pr-4 pl-3 text-base font-medium text-gray-600 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800"
-            >
-              Project
-            </DisclosureButton>
+            <>
+              <DisclosureButton
+                as="a"
+                href={`/content/${projectId}`}
+                className="block border-l-4 border-transparent py-2 pr-4 pl-3 text-base font-medium text-gray-600 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800"
+              >
+                Project
+              </DisclosureButton>
+              <DisclosureButton
+                as="a"
+                href={`/scripts/${projectId}`}
+                className="block border-l-4 border-transparent py-2 pr-4 pl-3 text-base font-medium text-gray-600 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800"
+              >
+                Scripts
+              </DisclosureButton>
+            </>
           )}
         </div>
 
