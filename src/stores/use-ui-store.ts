@@ -319,21 +319,45 @@ const defaultKeyboardShortcuts: KeyboardShortcut[] = [
   { key: 'Escape', action: 'escape', description: 'Escape/Cancel' },
 ];
 
-export const useUIStore = create<UIStore>((set, get) => ({
-  // Initial state
-  panels: defaultPanelState,
-  tools: defaultToolState,
-  snapping: defaultSnappingState,
-  canvas: defaultCanvasState,
-  canvasZoom: 1,
-  preferences: defaultUserPreferences,
-  keyboardShortcuts: defaultKeyboardShortcuts,
-  navigation: { activeNav: null, hoverNav: null, interactedNav: null },
-  activeRightPanel: null,
-  hoverRightPanel: null,
-  showAnimationsTab: false,
-  uploadedFiles: defaultUploadedFilesState,
-  aiPromptHistory: [],
+export const useUIStore = create<UIStore>((set, get) => {
+  // Load persisted state from localStorage
+  const loadPersistedState = () => {
+    if (typeof window === 'undefined') return {};
+    
+    try {
+      const persisted = localStorage.getItem('plotmix-ui-state');
+      if (persisted) {
+        const parsed = JSON.parse(persisted);
+        return {
+          selectedFont: parsed.selectedFont || 'Arial',
+        };
+      }
+    } catch (error) {
+      console.warn('Failed to load persisted UI state:', error);
+    }
+    return {};
+  };
+
+  const persistedState = loadPersistedState();
+
+  return {
+    // Initial state with persisted values
+    panels: defaultPanelState,
+    tools: {
+      ...defaultToolState,
+      selectedFont: persistedState.selectedFont || 'Arial',
+    },
+    snapping: defaultSnappingState,
+    canvas: defaultCanvasState,
+    canvasZoom: 1,
+    preferences: defaultUserPreferences,
+    keyboardShortcuts: defaultKeyboardShortcuts,
+    navigation: { activeNav: null, hoverNav: null, interactedNav: null },
+    activeRightPanel: null,
+    hoverRightPanel: null,
+    showAnimationsTab: false,
+    uploadedFiles: defaultUploadedFilesState,
+    aiPromptHistory: [],
 
   // Panel Actions
   toggleLeftPanel: () => {
@@ -481,6 +505,18 @@ export const useUIStore = create<UIStore>((set, get) => ({
     set(produce((state) => {
       state.tools.selectedFont = fontFamily;
     }));
+    
+    // Persist to localStorage
+    if (typeof window !== 'undefined') {
+      try {
+        const currentState = localStorage.getItem('plotmix-ui-state') || '{}';
+        const parsed = JSON.parse(currentState);
+        parsed.selectedFont = fontFamily;
+        localStorage.setItem('plotmix-ui-state', JSON.stringify(parsed));
+      } catch (error) {
+        console.warn('Failed to persist selected font:', error);
+      }
+    }
   },
 
   // Snapping Actions
@@ -795,7 +831,8 @@ export const useUIStore = create<UIStore>((set, get) => ({
       state.aiPromptHistory = items.slice(0, 200);
     }));
   },
-}));
+  };
+});
 
 // Selector hooks for specific parts of the UI state
 export const usePanelState = () => useUIStore((state) => state.panels);

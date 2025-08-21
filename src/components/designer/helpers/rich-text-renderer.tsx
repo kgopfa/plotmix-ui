@@ -70,8 +70,8 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({ element, isE
     <pixiText
       text={element.text}
       style={richStyle}
-      anchor={{ x: 0.5, y: 0.5 }}
-      x={0}
+      anchor={{ x: 0, y: 0.5 }}
+      x={-element.width / 2}
       y={0}
       interactive={!isEditing}
       eventMode={!isEditing ? 'dynamic' : 'none'}

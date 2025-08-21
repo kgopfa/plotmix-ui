@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Type, X } from 'lucide-react';
 import { 
   useToolState, 
@@ -14,6 +14,8 @@ export const TextTab: React.FC = () => {
   const setActiveNav = useSetActiveNav();
   const setHoverNav = useSetHoverNav();
   const setInteractedNav = useSetInteractedNav();
+  
+  const [loadingFonts, setLoadingFonts] = useState(true);
 
   const textTools =
     {
@@ -155,31 +157,58 @@ export const TextTab: React.FC = () => {
           { name: 'Angelia-Beauty', file: 'Angelia-Beauty.ttf' }
         ];
 
-        // Create font faces for OTF fonts
-        otfFonts.forEach(font => {
-          const fontFace = new FontFace(font.name, `url(/fonts/otf/${font.file})`);
-          fontFace.load().then(() => {
-            document.fonts.add(fontFace);
-            console.log('Font loaded successfully:', font.name);
-          }).catch(err => console.log('Font loading failed:', font.name, err));
-        });
+        // Load all fonts concurrently and wait for completion
+        const fontPromises = [
+          ...otfFonts.map(async (font) => {
+            try {
+              const fontFace = new FontFace(font.name, `url(/fonts/otf/${font.file})`);
+              await fontFace.load();
+              document.fonts.add(fontFace);
+              console.log('Font loaded successfully:', font.name);
+              return font.name;
+            } catch (err) {
+              console.error('Font loading failed:', font.name, err);
+              return null;
+            }
+          }),
+          ...ttfFonts.map(async (font) => {
+            try {
+              const fontFace = new FontFace(font.name, `url(/fonts/tff/${font.file})`);
+              await fontFace.load();
+              document.fonts.add(fontFace);
+              console.log('Font loaded successfully:', font.name);
+              return font.name;
+            } catch (err) {
+              console.error('Font loading failed:', font.name, err);
+              return null;
+            }
+          })
+        ];
 
-        // Create font faces for TTF fonts
-        ttfFonts.forEach(font => {
-          const fontFace = new FontFace(font.name, `url(/fonts/tff/${font.file})`);
-          fontFace.load().then(() => {
-            document.fonts.add(fontFace);
-            console.log('Font loaded successfully:', font.name);
-          }).catch(err => console.log('Font loading failed:', font.name, err));
-        });
+        // Wait for all fonts to load
+        const loadedFonts = await Promise.all(fontPromises);
+        const successfulFonts = loadedFonts.filter(name => name !== null);
+        console.log(`Successfully loaded ${successfulFonts.length} fonts`);
+
+        // Check if the currently selected font is available, if not reset to Arial
+        if (selectedFont !== 'Arial' && !successfulFonts.includes(selectedFont)) {
+          console.warn(`Selected font ${selectedFont} not available, resetting to Arial`);
+          setSelectedFont('Arial');
+        }
+
+        setLoadingFonts(false);
 
       } catch (error) {
         console.error('Error loading fonts:', error);
+        // If font loading fails, reset to Arial
+        if (selectedFont !== 'Arial') {
+          setSelectedFont('Arial');
+        }
       }
     };
 
     loadFonts();
-  }, []);
+  }, [selectedFont, setSelectedFont]);
 
   return (
     <div className="h-full w-80 2xl:w-96 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
@@ -246,16 +275,23 @@ export const TextTab: React.FC = () => {
 
           {/* Font Showcase */}
           <div className="space-y-3">
-            <div className="text-sm font-semibold text-gray-700 mb-3">Presets</div>
+            <div className="text-sm font-semibold text-gray-700 mb-3">
+              Presets
+              {loadingFonts && (
+                <span className="ml-2 text-xs text-gray-500">(Loading fonts...)</span>
+              )}
+            </div>
             <div className="grid grid-cols-2 gap-3">
               {fontShowcase.map((font, index) => (
                 <div 
                   key={index} 
-                  onClick={() => handleFontPresetSelect(font.family)}
-                  className={`p-3 bg-white border rounded-lg shadow-sm hover:shadow-md transition-all duration-200 ease-out transform hover:scale-[1.02] cursor-pointer group h-24 flex items-center justify-center ${
-                    selectedFont === font.family 
-                      ? 'border-blue-500 bg-blue-50 shadow-md' 
-                      : 'border-gray-200'
+                  onClick={loadingFonts ? undefined : () => handleFontPresetSelect(font.family)}
+                  className={`p-3 bg-white border rounded-lg shadow-sm transition-all duration-200 ease-out transform group h-24 flex items-center justify-center ${
+                    loadingFonts 
+                      ? 'border-gray-200 bg-gray-50 cursor-not-allowed opacity-60' 
+                      : selectedFont === font.family 
+                        ? 'border-blue-500 bg-blue-50 shadow-md hover:shadow-md hover:scale-[1.02] cursor-pointer' 
+                        : 'border-gray-200 hover:shadow-md hover:scale-[1.02] cursor-pointer'
                   }`}
                 >
                   <div className="text-center w-full">
