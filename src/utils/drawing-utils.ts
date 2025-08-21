@@ -437,6 +437,17 @@ function drawElement(graphics: Graphics, shape: AnimatedCanvasObject) {
         }
       }
       break;
+
+    case 'polygon':
+      if (shape.polygonOptions?.points && shape.polygonOptions.points.length > 2) {
+        // Convert polygon points to relative coordinates (relative to shape center)
+        const points = shape.polygonOptions.points.map(point => ({
+          x: roundToPixel(point.x - shape.x),
+          y: roundToPixel(point.y - shape.y)
+        }));
+        graphics.poly(points);
+      }
+      break;
   }
 }
 
@@ -532,6 +543,20 @@ function drawShapeAsPath(graphics: Graphics, shape: AnimatedCanvasObject) {
           .lineTo(-halfWidth, height / 2)
           .closePath();
         break;
+
+      case 'polygon':
+        if (shape.polygonOptions?.points && shape.polygonOptions.points.length > 2) {
+          const firstPoint = shape.polygonOptions.points[0];
+          dashLine.moveTo(firstPoint.x - shape.x, firstPoint.y - shape.y);
+          for (let i = 1; i < shape.polygonOptions.points.length; i++) {
+            const point = shape.polygonOptions.points[i];
+            dashLine.lineTo(point.x - shape.x, point.y - shape.y);
+          }
+          if (shape.polygonOptions.isClosed) {
+            dashLine.closePath();
+          }
+        }
+        break;
     }
   }
 }
@@ -569,6 +594,22 @@ export function createShapeGraphics(shape: AnimatedCanvasObject, color?: string 
         alignment: 0.5, // Center the stroke on the path for consistent appearance
         cap: 'round',    // Smooth rounded line caps
         join: 'round'    // Smooth rounded line joins
+      });
+    }
+  } else if (shape.type === 'polygon') {
+    drawElement(graphics, shape);
+    if (shape.fill !== 'none') {
+      graphics.fill({ color: fillColor, alpha: shape.opacity ?? 1 });
+    }
+    // For polygon, always add stroke to show the shape clearly
+    if (shape.stroke && shape.stroke !== 'none') {
+      graphics.stroke({
+        color: shape.stroke,
+        width: shape.strokeWidth || 2,
+        alpha: (shape.strokeOpacity ?? shape.opacity ?? 1),
+        alignment: 0.5,
+        cap: 'round',
+        join: 'round'
       });
     }
   } else {
@@ -631,6 +672,26 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasObject) {
         dashLine.moveTo(shape.pathPoints[0].x, shape.pathPoints[0].y);
         for (let i = 1; i < shape.pathPoints.length; i++) {
           dashLine.lineTo(shape.pathPoints[i].x, shape.pathPoints[i].y);
+        }
+      }
+    } else if (shape.type === 'polygon') {
+      // For polygon paths, use dotted line dash pattern
+      if (shape.polygonOptions?.points && shape.polygonOptions.points.length > 2) {
+        const dashLine = new AnimationPath(graphics, {
+          dash: [5, 3],
+          width: 2,
+          color: grayColor,
+          alpha: 0.7
+        });
+
+        const firstPoint = shape.polygonOptions.points[0];
+        dashLine.moveTo(firstPoint.x - shape.x, firstPoint.y - shape.y);
+        for (let i = 1; i < shape.polygonOptions.points.length; i++) {
+          const point = shape.polygonOptions.points[i];
+          dashLine.lineTo(point.x - shape.x, point.y - shape.y);
+        }
+        if (shape.polygonOptions.isClosed) {
+          dashLine.closePath();
         }
       }
     } else {
@@ -741,6 +802,8 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasObject) {
             .lineTo(-halfWidth, height / 2)
             .closePath();
           break;
+
+
       }
     }
   } else {

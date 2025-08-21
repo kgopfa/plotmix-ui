@@ -8,7 +8,7 @@ const generateId = () => {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
 };
 
-type ShapeType = 'rectangle' | 'circle' | 'triangle' | 'arc' | 'line' | 'path' | 'image' | 'text';
+type ShapeType = 'rectangle' | 'circle' | 'triangle' | 'arc' | 'line' | 'path' | 'image' | 'text' | 'polygon';
 
 interface BaseObjectProps {
   x: number;
@@ -58,7 +58,8 @@ function generateCommonAttributes(
     line: 'Line',
     path: 'Path',
     image: 'Image',
-    text: 'Text'
+    text: 'Text',
+    polygon: 'Polygon'
   };
 
   // Count existing elements of the same type to generate name
@@ -169,6 +170,43 @@ function createArc(props: BaseObjectProps): AnimatedCanvasObject {
     y: props.y,
     pivotX: defaultWidth / 2,
     pivotY: defaultHeight / 2,
+    isAnimationPath: props.isPath || false,
+    cornerRadius: 0,
+  };
+}
+
+function createPolygon(props: BaseObjectProps & { polygonPoints?: Array<{ x: number; y: number }> }): AnimatedCanvasObject {
+  if (!props.polygonPoints || props.polygonPoints.length < 3) {
+    throw new Error('Polygon must have at least 3 points');
+  }
+
+  // Calculate bounding box
+  const xs = props.polygonPoints.map(p => p.x);
+  const ys = props.polygonPoints.map(p => p.y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const width = maxX - minX;
+  const height = maxY - minY;
+
+  // Calculate center position
+  const centerX = (minX + maxX) / 2;
+  const centerY = (minY + maxY) / 2;
+
+  return {
+    ...generateCommonAttributes('polygon', props),
+    type: 'polygon',
+    width,
+    height,
+    x: centerX,
+    y: centerY,
+    pivotX: width / 2,
+    pivotY: height / 2,
+    polygonOptions: {
+      points: props.polygonPoints,
+      isClosed: true,
+    },
     isAnimationPath: props.isPath || false,
     cornerRadius: 0,
   };
@@ -334,7 +372,8 @@ export function createNewObject(
   startPoint?: { x: number; y: number },
   endPoint?: { x: number; y: number },
   lineType?: 'straight' | 'curved',
-  fontFamily?: string
+  fontFamily?: string,
+  polygonPoints?: Array<{ x: number; y: number }>
 ): AnimatedCanvasObject {
   const props: BaseObjectProps = { x, y, elements: canvasObjects, pathPoints, isPath, imageData, width, height, text, fontFamily };
 
@@ -355,6 +394,8 @@ export function createNewObject(
       return createImage(props);
     case 'text':
       return createText(props);
+    case 'polygon':
+      return createPolygon({ ...props, polygonPoints });
     default:
       throw new Error(`Unknown shape type: ${type}`);
   }

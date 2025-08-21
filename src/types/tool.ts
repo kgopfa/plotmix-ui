@@ -6,6 +6,7 @@ export type ToolType =
   | 'arc'
   | 'line' 
   | 'simpleLine'
+  | 'polygon'
   | 'draw' 
   | 'image'
   | 'text'; 

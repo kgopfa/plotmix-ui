@@ -103,7 +103,7 @@ export interface BaseAnimationConfig {
 export interface AnimatedCanvasObject {
   id: string;
   name: string;
-  type: 'rectangle' | 'circle' | 'triangle' | 'arc' | 'line' | 'path' | 'image' | 'text' ;
+  type: 'rectangle' | 'circle' | 'triangle' | 'arc' | 'line' | 'path' | 'image' | 'text' | 'polygon';
   x: number;
   y: number;
   width: number;
@@ -138,6 +138,11 @@ export interface AnimatedCanvasObject {
   imageData?: string;
   // Arc-specific properties  
   arcOptions?: Record<string, never>; // Empty object - arc shape determined by width/height
+  // Polygon-specific properties
+  polygonOptions?: {
+    points: Array<{x: number, y: number}>; // Array of points defining the polygon
+    isClosed: boolean; // Whether the polygon path is closed
+  };
   animations: ElementAnimation[];
   isAnimationPath?: boolean;
   // Text-specific properties

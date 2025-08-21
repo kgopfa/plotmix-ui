@@ -177,12 +177,12 @@ export const useSelectionStore = create<SelectionStore>((set, get) => ({
     const nonDefaultGroupCount = state.currentGroups.filter(g => !g.isDefaultGroup).length;
 
     // Determine group type based on selected elements
-    const hasOnlyLines = state.selectedElements.every(el => el.type === 'line');
-    const groupType = hasOnlyLines ? 'polygon' : 'custom';
+    // Don't create polygon groups anymore since polygons are now single elements
+    const groupType = 'custom';
 
     const group: CanvasGroup = {
       id: groupId,
-      name: groupType === 'polygon' ? `Polygon ${nonDefaultGroupCount + 1}` : `Group ${nonDefaultGroupCount + 1}`,
+      name: `Group ${nonDefaultGroupCount + 1}`,
       elementIds: state.selectedElements.map(el => el.id),
       x: centerX,
       y: centerY,

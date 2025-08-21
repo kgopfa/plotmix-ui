@@ -1,10 +1,11 @@
-import { useCallback, useState, useRef } from 'react';
+import { useCallback, useState, useRef, useEffect } from 'react';
 import { FederatedPointerEvent, Container } from 'pixi.js';
 import { createNewObject } from '@/lib/canvas-object-factory';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useUIStore } from '@/stores/use-ui-store';
 import { convertPointerEventToDesignCanvasCoords, constrainToAxis } from '@/utils/coordinate-utils';
+import { AnimatedCanvasObject } from '@/types/canvas';
 
 interface UseCanvasInteractionsProps {
   snapPoint: (point: { x: number; y: number }, event?: { shiftKey?: boolean }) => { x: number; y: number };
@@ -47,7 +48,8 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
     lineStartPoint,
     isPathMode,
     lineType,
-    selectedFont
+    selectedFont,
+    isClosingShape
   } = useUIStore((state) => state.tools);
   
   const {
@@ -57,7 +59,8 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
     setLineChaining,
     addChainedLineId,
     setClosingShape,
-    setShowAnimationsTab
+    setShowAnimationsTab,
+    clearChainedLineIds
   } = useUIStore();
 
   // Interactive state for canvas operations
@@ -221,6 +224,13 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
           }
         }
       }
+      return;
+    }
+
+    // Handle polygon tool - start line chaining mode
+    if (activeTool === 'polygon') {
+      setLineChaining(true);
+      setLineStartPoint({ x: snappedPos.x, y: snappedPos.y });
       return;
     }
 
@@ -418,6 +428,129 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
   const handleElementMouseLeave = useCallback((_id: string) => () => {
     setHoveredId(null);
   }, []);
+
+  // Handle polygon closure - create polygon element from chained lines
+  useEffect(() => {
+    if (isClosingShape && chainedLineIds.length >= 3) {
+      // Get all the chained line elements
+      const lineElements = chainedLineIds.map(id => 
+        canvasObjects.find(el => el.id === id)
+      ).filter(Boolean) as AnimatedCanvasObject[];
+
+      if (lineElements.length >= 3) {
+        // Extract polygon points from the line elements
+        const polygonPoints: Array<{ x: number; y: number }> = [];
+        
+        // Start with the first line's start point
+        if (lineElements[0]?.lineOptions?.points) {
+          polygonPoints.push(lineElements[0].lineOptions.points.start);
+        }
+
+        // Add end points of each line in sequence
+        lineElements.forEach(line => {
+          if (line.lineOptions?.points) {
+            polygonPoints.push(line.lineOptions.points.end);
+          }
+        });
+
+        // Create polygon element
+        const polygonElement = createNewObject(
+          'polygon',
+          0, 0, // Position will be calculated in createPolygon
+          canvasObjects,
+          undefined, // pathPoints
+          isPathMode, // isPath
+          undefined, // imageData
+          undefined, // width
+          undefined, // height
+          undefined, // text
+          undefined, // startPoint
+          undefined, // endPoint
+          undefined, // lineType
+          undefined, // fontFamily
+          polygonPoints // polygonPoints
+        );
+
+        // If in path mode, mark it as an animation path
+        if (isPathMode) {
+          polygonElement.isAnimationPath = true;
+        }
+
+        // Add the polygon element to the canvas
+        addElement(polygonElement);
+
+        // Remove the individual line elements and clean up groups
+        const canvasStore = useCanvasStore.getState();
+        const { removeElement, removeGroup, groups: canvasGroups } = canvasStore;
+        
+        if (!removeElement || !removeGroup) {
+          console.error('Required canvas store methods not found');
+          return;
+        }
+        const groupsToRemove = new Set<string>();
+        
+        // Find groups that contain the line elements
+        lineElements.forEach(line => {
+          if (line.groupId) {
+            const group = canvasGroups.find(g => g.id === line.groupId);
+            if (group) {
+              // Remove any group that contains these lines, not just polygon groups
+              // This ensures we clean up any groups that were created during the drawing process
+              groupsToRemove.add(group.id);
+            }
+          }
+        });
+        
+        // Remove groups first (before removing elements)
+        groupsToRemove.forEach(groupId => {
+          try {
+            removeGroup(groupId);
+            console.log(`Removed group: ${groupId}`);
+          } catch (error) {
+            console.warn(`Failed to remove group ${groupId}:`, error);
+          }
+        });
+        
+        // Remove the individual line elements
+        lineElements.forEach(line => {
+          try {
+            removeElement(line.id);
+            console.log(`Removed line element: ${line.id}`);
+          } catch (error) {
+            console.warn(`Failed to remove line element ${line.id}:`, error);
+          }
+        });
+
+        // Clear any existing selection first
+        selectElement(null);
+        
+        // Select the new polygon element
+        selectElement([polygonElement]);
+
+        // Switch to select tool
+        setActiveTool('select');
+
+        // Clear the chained line state
+        clearChainedLineIds();
+        setLineChaining(false);
+        setLineStartPoint(null);
+
+        // Dispatch draw-complete event for path mode completion
+        if (isPathMode) {
+          const drawCompleteEvent = new CustomEvent('draw-complete', {
+            detail: {
+              element: polygonElement,
+              isPathMode: true
+            }
+          });
+          window.dispatchEvent(drawCompleteEvent);
+        }
+      }
+
+      // Reset the closing shape state
+      setClosingShape(false);
+    }
+  }, [isClosingShape, chainedLineIds, canvasObjects, isPathMode, addElement, selectElement, setActiveTool, clearChainedLineIds, setLineChaining, setLineStartPoint, setClosingShape]);
 
   return {
     // State
