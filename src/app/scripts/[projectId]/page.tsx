@@ -465,7 +465,7 @@ setResult(project);`}
             <button
               onClick={executeCode}
               disabled={!code.trim()}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2 shadow-sm"
+              className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2 shadow-sm"
             >
               <Play className="w-4 h-4" />
             </button>
@@ -480,10 +480,9 @@ setResult(project);`}
             <button
               onClick={generateScript}
               disabled={!prompt.trim() || isGenerating}
-              className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2 shadow-sm"
+              className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2 shadow-sm"
             >
               <Sparkles className="w-4 h-4" />
-              {isGenerating ? 'Generating...' : 'Generate'}
             </button>
           </div>
 
