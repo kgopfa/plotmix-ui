@@ -6,6 +6,10 @@ import { ArrowLeft, Play, RotateCcw } from 'lucide-react';
 import { useProjectStore } from '@/stores/use-project-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useTimelineStore } from '@/stores/use-timeline-store';
+import CodeMirror from '@uiw/react-codemirror';
+import { javascript } from '@codemirror/lang-javascript';
+import { json } from '@codemirror/lang-json';
+import { oneDark } from '@codemirror/theme-one-dark';
 
 export default function ScriptsPage() {
   const router = useRouter();
@@ -146,18 +150,48 @@ export default function ScriptsPage() {
             </p>
           </div>
           
-          <textarea
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            placeholder={`// Example: Move all elements to the right
+          <div className="border border-gray-300 rounded-lg overflow-hidden">
+            <CodeMirror
+              value={code}
+              onChange={(value) => setCode(value)}
+              height="340px"
+              extensions={[javascript()]}
+              theme={oneDark}
+              placeholder={`// Example: Move all elements to the right
 project.elements.forEach(element => {
   element.x += 100;
 });
 
 // Update the result
 setResult(project);`}
-            className="w-full h-80 p-4 font-mono text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
-          />
+              basicSetup={{
+                lineNumbers: true,
+                highlightActiveLineGutter: true,
+                highlightSpecialChars: true,
+                history: true,
+                foldGutter: true,
+                drawSelection: true,
+                dropCursor: true,
+                allowMultipleSelections: true,
+                indentOnInput: true,
+                syntaxHighlighting: true,
+                bracketMatching: true,
+                closeBrackets: true,
+                autocompletion: true,
+                rectangularSelection: true,
+                crosshairCursor: true,
+                highlightActiveLine: true,
+                highlightSelectionMatches: true,
+                closeBracketsKeymap: true,
+                defaultKeymap: true,
+                searchKeymap: true,
+                historyKeymap: true,
+                foldKeymap: true,
+                completionKeymap: true,
+                lintKeymap: true,
+              }}
+            />
+          </div>
 
           <div className="mt-4 flex items-center gap-3">
             <button
@@ -194,10 +228,38 @@ setResult(project);`}
             </p>
           </div>
           
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 h-80 overflow-auto">
-            <pre className="text-xs text-gray-800 whitespace-pre-wrap">
-              {result ? JSON.stringify(result, null, 2) : 'Loading...'}
-            </pre>
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <CodeMirror
+              value={result ? JSON.stringify(result, null, 2) : 'Loading...'}
+              height="340px"
+              extensions={[json()]}
+              theme={oneDark}
+              readOnly={true}
+              basicSetup={{
+                lineNumbers: true,
+                highlightActiveLineGutter: true,
+                highlightSpecialChars: true,
+                foldGutter: true,
+                drawSelection: true,
+                dropCursor: true,
+                indentOnInput: false,
+                syntaxHighlighting: true,
+                bracketMatching: true,
+                closeBrackets: false,
+                autocompletion: false,
+                rectangularSelection: true,
+                crosshairCursor: true,
+                highlightActiveLine: true,
+                highlightSelectionMatches: true,
+                closeBracketsKeymap: false,
+                defaultKeymap: false,
+                searchKeymap: true,
+                historyKeymap: false,
+                foldKeymap: true,
+                completionKeymap: false,
+                lintKeymap: false,
+              }}
+            />
           </div>
         </div>
       </div>
