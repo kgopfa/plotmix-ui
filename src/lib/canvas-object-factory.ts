@@ -299,8 +299,8 @@ function createText(props: BaseObjectProps): AnimatedCanvasObject {
     text: props.text || 'Double click text to edit',
     fontSize: 36, // Match working example font size
     fontFamily: props.fontFamily || 'Arial', // Use provided font family or default to Arial
-    fontWeight: 'bold', // Match working example font weight
-    fontStyle: 'italic', // Match working example font style
+    fontWeight: '400', // Normal weight (400 = normal, 700 = bold)
+    fontStyle: 'normal', // Normal style instead of italic
     textAlign: 'left',
     lineHeight: 1.2,
     // Rich text properties - start with simple styling

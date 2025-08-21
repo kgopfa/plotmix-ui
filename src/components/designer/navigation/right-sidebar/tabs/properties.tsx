@@ -469,11 +469,12 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
         </div>
       </div>
 
-      {/* Stroke Properties */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
-          <h4 className="font-semibold text-indigo-600 text-sm">Stroke</h4>
-        </div>
+      {/* Stroke Properties - hide for text elements since they use textStroke instead */}
+      {localElement.type !== 'text' && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+            <h4 className="font-semibold text-indigo-600 text-sm">Stroke</h4>
+          </div>
 
         <label className="flex flex-col gap-1">
           <span className="text-xs font-semibold text-indigo-400">Fill</span>
@@ -583,6 +584,7 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
           />
         </label>
       </div>
+      )}
 
       {/* Shadow Properties - for all elements */}
       <div className="space-y-4">
@@ -1001,19 +1003,150 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                 )}
               </div>
 
-              {/* Drop Shadow Controls */}
+              {/* Drop Shadow Controls - Different behavior for text vs other elements */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
-                    checked={localElement.shadowEnabled || false}
-                    onChange={e => updateLocalProperty('shadowEnabled', e.target.checked)}
+                    checked={
+                      localElement.type === 'text' 
+                        ? !!(localElement.textDropShadow) 
+                        : (localElement.shadowEnabled || false)
+                    }
+                    onChange={e => {
+                      if (localElement.type === 'text') {
+                        if (e.target.checked) {
+                          updateLocalProperty('textDropShadow', {
+                            color: '#000000',
+                            blur: 4,
+                            angle: Math.PI / 6,
+                            distance: 6,
+                            alpha: 1
+                          });
+                        } else {
+                          updateLocalProperty('textDropShadow', undefined);
+                        }
+                      } else {
+                        updateLocalProperty('shadowEnabled', e.target.checked);
+                      }
+                    }}
                     className="rounded border-gray-300 focus:ring-2 focus:ring-green-500"
                   />
                   <span className="text-sm font-medium text-gray-700">Drop Shadow</span>
                 </div>
 
-                {localElement.shadowEnabled && (
+                {/* Text Drop Shadow Controls */}
+                {localElement.type === 'text' && localElement.textDropShadow && (
+                  <div className="space-y-3 pl-6 border-l-2 border-green-200">
+                    <div className="grid grid-cols-2 gap-3">
+                      <label className="flex flex-col gap-1">
+                        <span className="text-xs font-semibold text-green-400">Blur</span>
+                        <input
+                          type="number"
+                          value={localElement.textDropShadow.blur || 4}
+                          onChange={e => updateLocalProperty('textDropShadow', {
+                            color: localElement.textDropShadow?.color || '#000000',
+                            blur: Number(e.target.value),
+                            angle: localElement.textDropShadow?.angle || Math.PI / 6,
+                            distance: localElement.textDropShadow?.distance || 6,
+                            alpha: localElement.textDropShadow?.alpha || 1
+                          })}
+                          min={0}
+                          max={50}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors text-sm"
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1">
+                        <span className="text-xs font-semibold text-green-400">Distance</span>
+                        <input
+                          type="number"
+                          value={localElement.textDropShadow.distance || 6}
+                          onChange={e => updateLocalProperty('textDropShadow', {
+                            color: localElement.textDropShadow?.color || '#000000',
+                            blur: localElement.textDropShadow?.blur || 4,
+                            angle: localElement.textDropShadow?.angle || Math.PI / 6,
+                            distance: Number(e.target.value),
+                            alpha: localElement.textDropShadow?.alpha || 1
+                          })}
+                          min={0}
+                          max={50}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors text-sm"
+                        />
+                      </label>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <label className="flex flex-col gap-1">
+                        <span className="text-xs font-semibold text-green-400">Angle (°)</span>
+                        <input
+                          type="number"
+                          value={Math.round(((localElement.textDropShadow.angle || Math.PI / 6) * 180) / Math.PI)}
+                          onChange={e => updateLocalProperty('textDropShadow', {
+                            color: localElement.textDropShadow?.color || '#000000',
+                            blur: localElement.textDropShadow?.blur || 4,
+                            angle: (Number(e.target.value) * Math.PI) / 180,
+                            distance: localElement.textDropShadow?.distance || 6,
+                            alpha: localElement.textDropShadow?.alpha || 1
+                          })}
+                          min={0}
+                          max={360}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors text-sm"
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1">
+                        <span className="text-xs font-semibold text-green-400">Opacity</span>
+                        <input
+                          type="number"
+                          value={localElement.textDropShadow.alpha || 1}
+                          onChange={e => updateLocalProperty('textDropShadow', {
+                            color: localElement.textDropShadow?.color || '#000000',
+                            blur: localElement.textDropShadow?.blur || 4,
+                            angle: localElement.textDropShadow?.angle || Math.PI / 6,
+                            distance: localElement.textDropShadow?.distance || 6,
+                            alpha: Number(e.target.value)
+                          })}
+                          min={0}
+                          max={1}
+                          step={0.1}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors text-sm"
+                        />
+                      </label>
+                    </div>
+
+                    <label className="flex flex-col gap-1">
+                      <span className="text-xs font-semibold text-green-400">Shadow Color</span>
+                      <div className="flex relative">
+                        <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-green-500 outline-1 -outline-offset-1 outline-gray-300">
+                          <div
+                            className="w-4 h-4 rounded border border-gray-300 cursor-pointer hover:scale-110 transition-transform"
+                            style={{ backgroundColor: localElement.textDropShadow.color || '#000000' }}
+                          />
+                        </div>
+                        <input
+                          type="text"
+                          value={(localElement.textDropShadow.color || '#000000').replace('#', '').toUpperCase()}
+                          onChange={e => {
+                            const hex = sanitizeHexInput(e.target.value);
+                            if (isValidHex(hex)) {
+                              updateLocalProperty('textDropShadow', {
+                                color: '#' + hex,
+                                blur: localElement.textDropShadow?.blur || 4,
+                                angle: localElement.textDropShadow?.angle || Math.PI / 6,
+                                distance: localElement.textDropShadow?.distance || 6,
+                                alpha: localElement.textDropShadow?.alpha || 1
+                              });
+                            }
+                          }}
+                          className="block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:ring-green-600 uppercase"
+                          placeholder="000000"
+                        />
+                      </div>
+                    </label>
+                  </div>
+                )}
+
+                {/* General Shadow Controls for non-text elements */}
+                {localElement.type !== 'text' && localElement.shadowEnabled && (
                   <div className="space-y-3 pl-6 border-l-2 border-green-200">
                     <div className="grid grid-cols-2 gap-3">
                       <label className="flex flex-col gap-1">

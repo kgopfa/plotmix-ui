@@ -27,6 +27,8 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({ element, isE
         style={new TextStyle({
           fontFamily: 'Arial',
           fontSize: element.fontSize || 36,
+          fontWeight: '400',
+          fontStyle: 'normal',
           fill: '#666666',
         })}
         anchor={{ x: 0, y: 0.5 }}
@@ -74,8 +76,8 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({ element, isE
   const richStyle = new TextStyle({
     fontFamily: fontFamily,
     fontSize: element.fontSize || 36,
-    fontStyle: (element.fontStyle as 'normal' | 'italic' | 'oblique') || 'italic',
-    fontWeight: (element.fontWeight as 'normal' | 'bold' | 'bolder' | 'lighter' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900') || 'bold',
+    fontStyle: (element.fontStyle as 'normal' | 'italic' | 'oblique') || 'normal',
+    fontWeight: (element.fontWeight as 'normal' | 'bold' | 'bolder' | 'lighter' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900') || '400',
     fill: fillInput,
     stroke: element.textStroke && element.textStrokeWidth && isValidHex(element.textStroke) ? {
       color: toSafeColorNumber(element.textStroke),
@@ -91,6 +93,8 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({ element, isE
     } : undefined,
     wordWrap: true, // Always enabled
     wordWrapWidth: element.width, // Always use element width for consistency
+    letterSpacing: element.letterSpacing || 0, // Add letter spacing support
+    align: (element.textAlign as 'left' | 'center' | 'right') || 'left', // Add text alignment support
   });
 
   return (
