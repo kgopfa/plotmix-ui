@@ -9,13 +9,12 @@ interface UseElementPointerHandlersProps {
   lineStartPoint: { x: number; y: number } | null;
   elements: AnimatedCanvasObject[];
   selectedIds: string[];
-  selectElement: (element: AnimatedCanvasObject | AnimatedCanvasObject[] | null, addToSelection?: boolean) => void;
+  selectElement: (element: AnimatedCanvasObject | null, addToSelection?: boolean) => void;
   handleCanvasClick: (e: FederatedPointerEvent) => void;
   handleCanvasPointerDown: (e: FederatedPointerEvent) => void;
-  startDragging: (id: string, offsetX: number, offsetY: number, isGroup?: boolean, groupOffsets?: Array<{ id: string; offsetX: number; offsetY: number }>) => void;
+  startDragging: (id: string, offsetX: number, offsetY: number, isGroupDrag?: boolean, groupOffsets?: Array<{ id: string; offsetX: number; offsetY: number }>) => void;
   startEndpointDragging: (id: string, endpoint: 'start' | 'end') => void;
   onElementContextMenu?: (e: FederatedPointerEvent, elementId: string) => void;
-  onGroupContextMenu?: (e: FederatedPointerEvent, groupId: string) => void;
   viewportRef?: React.RefObject<ViewportWrapper | null>;
   canvasPosition?: { x: number; y: number };
 }
@@ -39,12 +38,11 @@ export const useElementPointerHandlers = ({
   startDragging,
   startEndpointDragging,
   onElementContextMenu,
-  onGroupContextMenu,
   viewportRef,
   canvasPosition,
 }: UseElementPointerHandlersProps): UseElementPointerHandlersReturn => {
   const textClickTimeRef = useRef<Map<string, number>>(new Map());
-  const dragStartRef = useRef<{ id: string; x: number; y: number; shapeX: number; shapeY: number; isMultiSelect: boolean } | null>(null);
+  const dragStartRef = useRef<{ id: string; x: number; y: number; isMultiSelect: boolean } | null>(null);
 
   // Helper function to convert PIXI coordinates to the same coordinate system used by dragging
   const convertToDragCoordinates = useCallback((pixiX: number, pixiY: number) => {
@@ -74,7 +72,7 @@ export const useElementPointerHandlers = ({
   }, [viewportRef]);
 
   // Enhanced handlePointerDown for element dragging
-  const handleElementPointerDown = useCallback((id: string, shapeX: number, shapeY: number) => (e: FederatedPointerEvent) => {
+  const handleElementPointerDown = useCallback((id: string) => (e: FederatedPointerEvent) => {
     // Check for right-click (button 2) and show context menu
     if (e.button === 2) {
       e.stopPropagation();
@@ -110,8 +108,11 @@ export const useElementPointerHandlers = ({
         const { start } = element.lineOptions.points;
         const clickX = pos.x;
         const clickY = pos.y;
-        const ENDPOINT_CLICK_SIZE = 15;
+        
+        // Use a larger click area for shape closing to make it easier to close shapes
+        const ENDPOINT_CLICK_SIZE = 20; // Increased from 15 for better UX
         const halfSize = ENDPOINT_CLICK_SIZE / 2;
+        
         if (
           clickX >= start.x - halfSize &&
           clickX <= start.x + halfSize &&
@@ -147,8 +148,6 @@ export const useElementPointerHandlers = ({
       id,
       x: pos.x,
       y: pos.y,
-      shapeX,
-      shapeY,
       isMultiSelect
     };
 
@@ -157,7 +156,7 @@ export const useElementPointerHandlers = ({
       const { start, end } = element.lineOptions.points;
       const clickX = pos.x;
       const clickY = pos.y;
-      const ENDPOINT_CLICK_SIZE = 12;
+      const ENDPOINT_CLICK_SIZE = 16; // Consistent with shape closing size
       const halfSize = ENDPOINT_CLICK_SIZE / 2;
       if (
         clickX >= start.x - halfSize &&
@@ -181,18 +180,17 @@ export const useElementPointerHandlers = ({
 
     // Don't start dragging immediately - wait for pointer move
     // The dragging will be started in the pointer move handler if the user actually moves the mouse
-  }, [tool, isLineChaining, lineStartPoint, elements, selectedIds, selectElement, handleCanvasClick, handleCanvasPointerDown, startDragging, startEndpointDragging, onElementContextMenu, onGroupContextMenu]);
+  }, [tool, isLineChaining, lineStartPoint, elements, selectElement, handleCanvasClick, handleCanvasPointerDown, startEndpointDragging, onElementContextMenu]);
 
   // Handle pointer move to detect when dragging should start
   const handleElementPointerMove = useCallback((e: FederatedPointerEvent) => {
     if (!dragStartRef.current) return;
 
-    const { id, x: startX, y: startY, shapeX, shapeY } = dragStartRef.current;
+    const { id } = dragStartRef.current;
     const currentX = e.global.x;
     const currentY = e.global.y;
 
     // Start dragging immediately on first mouse movement (no threshold)
-    const distance = Math.sqrt(Math.pow(currentX - startX, 2) + Math.pow(currentY - startY, 2));
     
     // Start dragging immediately (no threshold check)
     const element = elements.find(el => el.id === id);

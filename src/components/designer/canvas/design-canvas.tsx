@@ -232,7 +232,6 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
     startDragging,
     startEndpointDragging,
     onElementContextMenu: props.onElementContextMenu,
-    onGroupContextMenu: props.onGroupContextMenu,
     viewportRef: props.viewportRef,
     canvasPosition: canvasPosition,
   });

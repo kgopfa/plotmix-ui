@@ -120,9 +120,11 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
             endPoint = constrainToAxis(lineStartPoint!, { x: snappedPos.x, y: snappedPos.y });
           }
           
+          // Use the snap threshold from settings for consistent behavior
+          const snapThreshold = 30; // Default threshold for shape closing
           const clickDistance = Math.hypot(snappedPos.x - startPoint.x, snappedPos.y - startPoint.y);
           
-          if (clickDistance <= 30) { // Within 30px of start point - close the polygon
+          if (clickDistance <= snapThreshold) { // Within snap threshold of start point - close the polygon
             // Create the final closing line from current position to the origin
             const finalLine = createNewObject(
               'line', 
@@ -149,6 +151,28 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
             
             // Now trigger polygon closure
             setClosingShape(true);
+            
+            // Clear line chaining state after closing
+            setLineChaining(false);
+            setLineStartPoint(null);
+            clearChainedLineIds();
+            
+            // Switch to select tool after closing shape
+            setActiveTool('select');
+            setMaskPos(null);
+            
+            // Dispatch draw-complete event for path mode completion
+            if (isPathMode) {
+              const drawCompleteEvent = new CustomEvent('draw-complete', {
+                detail: {
+                  element: finalLine,
+                  isPathMode: true,
+                  isShapeClosed: true
+                }
+              });
+              window.dispatchEvent(drawCompleteEvent);
+            }
+            
             return;
           }
         }
@@ -276,7 +300,7 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
         window.dispatchEvent(drawCompleteEvent);
       }
     }
-  }, [activeTool, isLineChaining, chainedLineIds, lineStartPoint, isPathMode, lineType, selectedFont, canvasObjects, addElement, selectElement, snapPoint, setActiveTool, setMaskPos, setLineStartPoint, setLineChaining, addChainedLineId, setClosingShape, setShowAnimationsTab]);
+  }, [activeTool, isLineChaining, chainedLineIds, lineStartPoint, isPathMode, lineType, selectedFont, canvasObjects, addElement, selectElement, snapPoint, setActiveTool, setMaskPos, setLineStartPoint, setLineChaining, addChainedLineId, setClosingShape, setShowAnimationsTab, clearChainedLineIds]);
 
   const handleSelectElement = useCallback((id: string | null, isMultiSelect?: boolean) => {
     if (id) {
