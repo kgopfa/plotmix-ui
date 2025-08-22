@@ -19,7 +19,7 @@ export default function ScriptsPage() {
   const params = useParams();
   const projectId = params.projectId as string;
 
-  const { name, version, setProjectInfo, setBaseline, captureBaseline, checkStateDiff, persistIfDirty } = useProjectStore();
+  const { name, version, setProjectInfo, setBaseline, captureBaseline, checkStateDiff, getStateDiff, persistIfDirty } = useProjectStore();
   const { elements, groups, setElements, setGroups, clearCanvas } = useCanvasStore();
   const { animationStates, loadProjectData, resetTimeline } = useTimelineStore();
 
@@ -33,6 +33,7 @@ export default function ScriptsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isExecuting, setIsExecuting] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const [showChangesOnly, setShowChangesOnly] = useState(false);
 
   // Initialize project data
   const initialize = useCallback(async () => {
@@ -322,6 +323,67 @@ export default function ScriptsPage() {
     }
   };
 
+  // Function to get the diff between original and result
+  const getChangesDiff = useCallback(() => {
+    if (!result) return null;
+    
+    // Create the original project data structure
+    const originalData = {
+      elements: elements,
+      groups: groups,
+      timeline: {
+        scale: 1,
+        duration: 10,
+        currentTime: 0,
+        animationStates: animationStates
+      }
+    };
+    
+    // Create the new result data structure
+    const newData = {
+      elements: result.elements,
+      groups: result.groups,
+      timeline: {
+        scale: result.timeline?.scale || 1,
+        duration: result.timeline?.duration || 10,
+        currentTime: result.timeline?.currentTime || 0,
+        animationStates: result.timeline?.animationStates || {}
+      }
+    };
+    
+    // Use jsondiffpatch to create a visual diff
+    // For now, let's create a simple diff by highlighting what changed
+    const diff = {
+      original: originalData,
+      modified: newData,
+      changes: {
+        elements: {
+          count: originalData.elements.length,
+          newCount: newData.elements.length,
+          added: newData.elements.filter((el: any) => !originalData.elements.find((orig: any) => orig.id === el.id)),
+          modified: newData.elements.filter((el: any) => {
+            const orig = originalData.elements.find((orig: any) => orig.id === el.id);
+            return orig && JSON.stringify(orig) !== JSON.stringify(el);
+          }),
+          removed: originalData.elements.filter((el: any) => !newData.elements.find((newEl: any) => newEl.id === el.id))
+        },
+        groups: {
+          count: originalData.groups.length,
+          newCount: newData.groups.length,
+          added: newData.groups.filter((g: any) => !originalData.groups.find((orig: any) => orig.id === g.id)),
+          modified: newData.groups.filter((g: any) => {
+            const orig = originalData.groups.find((orig: any) => orig.id === g.id);
+            return orig && JSON.stringify(orig) !== JSON.stringify(g);
+          }),
+          removed: originalData.groups.filter((g: any) => !newData.groups.find((newG: any) => newG.id === g.id))
+        }
+      }
+    };
+    
+    console.log('🔍 Custom diff data:', diff);
+    return diff;
+  }, [result, elements, groups, animationStates]);
+
   const overwriteCurrentProject = async () => {
     if (!result || !projectId) return;
 
@@ -411,6 +473,16 @@ export default function ScriptsPage() {
             {/* Save/Overwrite Buttons - Only show when project is dirty */}
             {isDirty && result && (
               <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowChangesOnly(!showChangesOnly)}
+                  className={`px-3 py-1.5 rounded text-xs font-medium transition-colors flex items-center gap-1.5 ${
+                    showChangesOnly 
+                      ? 'bg-green-600 text-white hover:bg-green-700' 
+                      : 'bg-gray-600 text-white hover:bg-gray-700'
+                  }`}
+                >
+                  {showChangesOnly ? 'Show All' : 'View Changes'}
+                </button>
                 <span className="text-xs text-yellow-700 font-medium">Modified:</span>
                 <button
                   onClick={createNewProject}
@@ -549,7 +621,14 @@ setResult(project);`}
         <div className="w-1/2 p-6">
           <div className="mb-3">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-lg font-semibold text-gray-900">Project Data</h3>
+              <h3 className={`text-lg font-semibold ${showChangesOnly ? 'text-green-700' : 'text-gray-900'}`}>
+                {showChangesOnly ? 'Changes Only' : 'Project Data'}
+                {showChangesOnly && (
+                  <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    Changes View
+                  </span>
+                )}
+              </h3>
               {result && (
                 <div className="flex items-center gap-2">
                   {isDirty && (
@@ -564,11 +643,17 @@ setResult(project);`}
               )}
             </div>
             <p className="text-sm text-gray-600">
-              {result ? 'Current state after script execution' : 'Loading project data...'}
+              {result ? (
+                showChangesOnly 
+                  ? 'Showing only the changes made by the script (highlighted in green)' 
+                  : 'Current state after script execution'
+              ) : 'Loading project data...'}
             </p>
           </div>
 
-          <div className="border border-gray-200 rounded-lg overflow-hidden h-[calc(100vh-200px)] shadow-sm relative">
+          <div className={`border rounded-lg overflow-hidden h-[calc(100vh-200px)] shadow-sm relative ${
+            showChangesOnly ? 'border-green-300 bg-green-50' : 'border-gray-200'
+          }`}>
             {isExecuting && (
               <div className="absolute inset-0 bg-black/10 flex items-center justify-center z-10">
                 <div className="bg-white rounded-lg px-4 py-3 flex items-center gap-3 shadow-lg">
@@ -580,7 +665,32 @@ setResult(project);`}
             <AceEditor
               mode="json"
               theme="monokai"
-              value={result ? JSON.stringify(result, null, 2) : 'Loading...'}
+              value={
+                result ? (
+                  showChangesOnly 
+                    ? (() => {
+                        const diff = getChangesDiff();
+                        if (diff && diff.changes) {
+                          // Check if there are actual changes
+                          const hasChanges = diff.changes.elements.added.length > 0 || 
+                                           diff.changes.elements.modified.length > 0 || 
+                                           diff.changes.elements.removed.length > 0 ||
+                                           diff.changes.groups.added.length > 0 || 
+                                           diff.changes.groups.modified.length > 0 || 
+                                           diff.changes.groups.removed.length > 0;
+                          
+                          if (hasChanges) {
+                            return JSON.stringify(diff.changes, null, 2);
+                          } else {
+                            return '// No changes detected\n// The script execution did not modify the project data';
+                          }
+                        } else {
+                          return '// No changes detected\n// The script execution did not modify the project data';
+                        }
+                      })()
+                    : JSON.stringify(result, null, 2)
+                ) : 'Loading...'
+              }
               readOnly={true}
               name="json-editor"
               editorProps={{ $blockScrolling: true }}
@@ -591,7 +701,7 @@ setResult(project);`}
               }}
               width="100%"
               height="100%"
-              key={result ? JSON.stringify(result).length : 'loading'} // Force re-render when result changes
+              key={`${result ? JSON.stringify(result).length : 'loading'}-${showChangesOnly}`} // Force re-render when result or view mode changes
             />
           </div>
         </div>
