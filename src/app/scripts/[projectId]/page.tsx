@@ -148,6 +148,13 @@ export default function ScriptsPage() {
 
   // Check if project is dirty whenever result changes
   useEffect(() => {
+    console.log('🔄 Result state changed:', {
+      hasResult: !!result,
+      resultType: typeof result,
+      resultKeys: result ? Object.keys(result) : [],
+      resultPreview: result ? JSON.stringify(result).substring(0, 200) + '...' : 'null'
+    });
+    
     if (result) {
       // Temporarily update stores to check diff, then restore
       const originalGroups = groups;
@@ -178,6 +185,8 @@ export default function ScriptsPage() {
           animationStates: result.timeline.animationStates || {}
         }
       });
+      
+      console.log('🔍 Dirty check result:', { hasChanges });
       setIsDirty(hasChanges);
       
       // Restore original state
@@ -191,6 +200,7 @@ export default function ScriptsPage() {
 
     try {
       setError(null);
+      console.log('🚀 Executing code:', code.substring(0, 100) + (code.length > 100 ? '...' : ''));
 
       // Create a safe execution environment with access to project data
       const projectData: ProjectData = {
@@ -204,26 +214,46 @@ export default function ScriptsPage() {
         }
       };
 
+      console.log('📊 Project data before execution:', {
+        elementsCount: projectData.elements.length,
+        groupsCount: projectData.groups.length,
+        hasTimeline: !!projectData.timeline
+      });
+
       // Execute the code using the CodeExecutor
       const executionResult = CodeExecutor.execute(
         code,
         projectData,
-        setResult,
-        setError
+        (newResult) => {
+          console.log('✅ Code execution completed, setting result:', {
+            hasResult: !!newResult,
+            resultType: typeof newResult,
+            resultKeys: newResult ? Object.keys(newResult) : [],
+            resultPreview: newResult ? JSON.stringify(newResult).substring(0, 200) + '...' : 'null'
+          });
+          setResult(newResult);
+          
+          // Also check if the result is different from the original
+          if (newResult) {
+            const isDifferent = JSON.stringify(newResult) !== JSON.stringify(projectData);
+            console.log('🔄 Result comparison:', { isDifferent });
+            setIsDirty(isDifferent);
+          }
+        },
+        (error) => {
+          console.error('❌ Code execution error:', error);
+          setError(error);
+        }
       );
 
-      if (executionResult.success) {
-        // Check if the result is different from the original project data
-        const diffResult = DiffUtils.generateDiff(
-          { groups, elements, timeline: { scale: 100, duration: 1, currentTime: 0, animationStates } },
-          result || projectData
-        );
-        setIsDirty(diffResult.hasChanges);
-      } else {
+      console.log('📋 Execution result:', executionResult);
+
+      if (!executionResult.success) {
         setError(executionResult.error || 'Code execution failed');
       }
 
     } catch (err) {
+      console.error('💥 Unexpected error in executeCode:', err);
       setError(err instanceof Error ? err.message : 'Unknown error occurred');
     }
   };
@@ -243,20 +273,10 @@ export default function ScriptsPage() {
       setIsGenerating(true);
       setError(null);
 
-      const response = await fetch(`/api/projects/${projectId}/generate-script`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt: prompt.trim() }),
+      const data = await apiClient.post<{ success: boolean; data: { script: string } }>(`/api/projects/${projectId}/generate-script`, {
+        prompt: prompt.trim()
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to generate script');
-      }
-
-      const data = await response.json();
+      
       if (data.success && data.data.script) {
         setCode(data.data.script);
       } else {
@@ -276,28 +296,16 @@ export default function ScriptsPage() {
       setIsSaving(true);
       setError(null);
 
-      const response = await fetch('/api/projects', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: `${name} - Script Result`,
-          mainState: result,
-          configuration: {
-            canvas: { width: 1280, height: 720 },
-            editor: { snappingEnabled: true, gridEnabled: false },
-            animation: { playbackRate: 1, isLooping: false, autoPlay: false }
-          }
-        }),
+      const data = await apiClient.post<{ success: boolean; data: { project: { id: string } } }>('/api/projects', {
+        name: `${name} - Script Result`,
+        mainState: result,
+        configuration: {
+          canvas: { width: 1920, height: 1080 },
+          editor: { snappingEnabled: true, gridEnabled: false },
+          animation: { playbackRate: 1, isLooping: false, autoPlay: false }
+        }
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create new project');
-      }
-
-      const data = await response.json();
+      
       if (data.success && data.data.project) {
         // Navigate to the new project
         router.push(`/designer/${data.data.project.id}`);
@@ -310,8 +318,6 @@ export default function ScriptsPage() {
       setIsSaving(false);
     }
   };
-
-
 
   const overwriteCurrentProject = async () => {
     if (!result || !projectId) return;

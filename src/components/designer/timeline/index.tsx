@@ -1,5 +1,5 @@
 import { useRef, useState, useMemo, useEffect } from 'react';
-import { Play, Pause, RotateCcw, ChevronUp, ChevronDown } from 'lucide-react';
+import { Play, Pause, ChevronUp, ChevronDown, Square } from 'lucide-react';
 import { TimelineTrack } from '@/components/designer/timeline/timeline-track';
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { useCanvasElements, useCanvasGroups } from '@/stores/use-canvas-store';
@@ -238,9 +238,9 @@ export function Timeline() {
           </button>
           <button
             onClick={handleStop}
-            className="h-12 w-12 flex items-center justify-center bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-xl shadow-md shadow-gray-200/30 cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg"
+            className="h-12 w-12 flex items-center justify-center bg-white/80 backdrop-blur-sm border border-gray-200 rounded-xl shadow-md shadow-gray-200/30 cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg"
           >
-            <RotateCcw size={26} stroke="#dd7be0" strokeWidth={2} />
+            <Square size={24} stroke="#dd7be0" />
           </button>
           <div className="text-sm font-mono text-gray-700 w-32 bg-white/60 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/30">
             {formatTime(playback.currentTime)}
