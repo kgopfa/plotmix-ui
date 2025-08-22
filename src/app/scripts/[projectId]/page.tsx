@@ -2,13 +2,12 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, Play, RotateCcw, Sparkles, Save, RotateCcw as Overwrite, Loader2 } from 'lucide-react';
+import { ArrowLeft, Play, RotateCcw, Sparkles, Save, Loader2, RedoDot } from 'lucide-react';
 import { useProjectStore } from '@/stores/use-project-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useTimelineStore } from '@/stores/use-timeline-store';
 import { apiClient } from '@/lib/api-client';
 import { CodeExecutor, type ProjectData } from '@/utils/code-executor';
-import { DiffUtils } from '@/utils/diff-utils';
 import AceEditor from 'react-ace';
 
 import 'ace-builds/src-noconflict/mode-javascript';
@@ -139,6 +138,11 @@ export default function ScriptsPage() {
     }
   }, [result]);
 
+  // Log when isDirty changes (for debugging)
+  useEffect(() => {
+    console.log('🔍 isDirty state changed:', isDirty);
+  }, [isDirty]);
+
   // Log when result state changes (for debugging)
   useEffect(() => {
     console.log('🔄 Result state changed:', {
@@ -188,23 +192,44 @@ export default function ScriptsPage() {
           });
           setResult(newResult);
           
-          // Check if the result is different from the original project data
+          // Use the same diffing system as the designer page
           if (newResult) {
-            // Compare with the original project data (NOT the stores)
-            const originalProjectData = {
-              groups: groups,
-              elements: elements,
-              timeline: {
-                scale: 100,
-                duration: 1,
-                currentTime: 0,
-                animationStates: animationStates
-              }
-            };
+            // Temporarily update stores to check diff using project store
+            const originalGroups = groups;
+            const originalElements = elements;
             
-            const hasChanges = JSON.stringify(newResult) !== JSON.stringify(originalProjectData);
-            console.log('🔄 Result comparison:', { hasChanges });
+            setGroups(newResult.groups as any);
+            setElements(newResult.elements as any);
+            
+            if (newResult.timeline) {
+              loadProjectData({
+                elements: newResult.elements as any,
+                groups: newResult.groups as any,
+                animationStates: newResult.timeline.animationStates || {},
+                scale: newResult.timeline.scale || 1,
+                duration: newResult.timeline.duration || 10,
+                currentTime: newResult.timeline.currentTime || 0,
+              });
+            }
+            
+            // Use the same diffing logic as designer page
+            const hasChanges = checkStateDiff({
+              elements: newResult.elements,
+              groups: newResult.groups,
+              timeline: {
+                scale: newResult.timeline.scale || 1,
+                duration: newResult.timeline.duration || 10,
+                currentTime: newResult.timeline.currentTime || 0,
+                animationStates: newResult.timeline.animationStates || {}
+              }
+            });
+            
+            console.log('🔄 Project store diffing result:', { hasChanges });
             setIsDirty(hasChanges);
+            
+            // Restore original state
+            setGroups(originalGroups);
+            setElements(originalElements);
           }
         },
         (error) => {
@@ -319,13 +344,13 @@ export default function ScriptsPage() {
         });
       }
 
-      // Use the existing project store diffing and persistence
+      // Use the existing project store diffing and persistence (same as designer auto-save)
       const success = await persistIfDirty('Script execution result');
       
       if (success) {
         // Update the baseline and mark as not dirty
         setIsDirty(false);
-        // Refresh the project data
+        // Refresh the project data to show the new version
         initialize();
       } else {
         throw new Error('No changes detected or save failed');
@@ -382,8 +407,40 @@ export default function ScriptsPage() {
               <p className="text-gray-600">Manipulate project data with JavaScript</p>
             </div>
           </div>
-          <div className="text-xs text-gray-600 bg-gray-100 px-3 py-2 font-medium rounded-lg">
-            {version}
+          <div className="flex items-center gap-4">
+            {/* Save/Overwrite Buttons - Only show when project is dirty */}
+            {isDirty && result && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-yellow-700 font-medium">Modified:</span>
+                <button
+                  onClick={createNewProject}
+                  disabled={isSaving}
+                  className="bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+                >
+                  {isSaving ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Save className="w-3 h-3" />
+                  )}
+                  Save as New
+                </button>
+                <button
+                  onClick={overwriteCurrentProject}
+                  disabled={isOverwriting}
+                  className="bg-orange-600 text-white px-3 py-1.5 rounded text-xs font-medium hover:bg-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+                >
+                  {isOverwriting ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <RedoDot className="w-3 h-3" />
+                  )}
+                  Overwrite
+                </button>
+              </div>
+            )}
+            <div className="text-xs text-gray-600 bg-gray-100 px-3 py-2 font-medium rounded-lg">
+              {version}
+            </div>
           </div>
         </div>
       </div>
@@ -478,39 +535,7 @@ setResult(project);`}
             </button>
           </div>
 
-          {/* Save/Overwrite Buttons - Only show when project is dirty */}
-          {isDirty && result && (
-            <div className="flex items-center gap-3 mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <div className="flex-1">
-                <p className="text-sm text-yellow-800 font-medium">Project has unsaved changes</p>
-                <p className="text-xs text-yellow-600">Choose to save as new project or overwrite current project</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={createNewProject}
-                  disabled={isSaving}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2 shadow-sm"
-                >
-                  {isSaving ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Save className="w-4 h-4" />
-                  )}
-                </button>
-                <button
-                  onClick={overwriteCurrentProject}
-                  disabled={isOverwriting}
-                  className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2 shadow-sm"
-                >
-                  {isOverwriting ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Overwrite className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
-            </div>
-          )}
+
 
           {/* Error Display */}
           {error && (
