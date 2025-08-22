@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, Play, RotateCcw, Sparkles, Save, RotateCcw as Overwrite } from 'lucide-react';
+import { ArrowLeft, Play, RotateCcw, Sparkles, Save, RotateCcw as Overwrite, Loader2 } from 'lucide-react';
 import { useProjectStore } from '@/stores/use-project-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useTimelineStore } from '@/stores/use-timeline-store';
@@ -32,6 +32,7 @@ export default function ScriptsPage() {
   const [result, setResult] = useState<ProjectData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExecuting, setIsExecuting] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
 
   // Initialize project data
@@ -126,27 +127,19 @@ export default function ScriptsPage() {
     initialize();
   }, [initialize]);
 
-  // Update stores when result changes
+  // Log when result state changes (for debugging)
   useEffect(() => {
-    if (result && result.groups && result.elements) {
-      setGroups(result.groups as any);
-      setElements(result.elements as any);
-      
-      // Update timeline if timeline data exists
-      if (result.timeline) {
-        loadProjectData({
-          elements: result.elements as any,
-          groups: result.groups as any,
-          animationStates: result.timeline.animationStates || {},
-          scale: result.timeline.scale || 1,
-          duration: result.timeline.duration || 10,
-          currentTime: result.timeline.currentTime || 0,
-        });
-      }
+    if (result) {
+      console.log('🔄 Result state changed:', {
+        hasResult: !!result,
+        resultType: typeof result,
+        resultKeys: result ? Object.keys(result) : [],
+        resultPreview: result ? JSON.stringify(result).substring(0, 200) + '...' : 'null'
+      });
     }
-  }, [result, setGroups, setElements, loadProjectData]);
+  }, [result]);
 
-  // Check if project is dirty whenever result changes
+  // Log when result state changes (for debugging)
   useEffect(() => {
     console.log('🔄 Result state changed:', {
       hasResult: !!result,
@@ -154,51 +147,13 @@ export default function ScriptsPage() {
       resultKeys: result ? Object.keys(result) : [],
       resultPreview: result ? JSON.stringify(result).substring(0, 200) + '...' : 'null'
     });
-    
-    if (result) {
-      // Temporarily update stores to check diff, then restore
-      const originalGroups = groups;
-      const originalElements = elements;
-      
-      setGroups(result.groups as any);
-      setElements(result.elements as any);
-      
-      if (result.timeline) {
-        loadProjectData({
-          elements: result.elements as any,
-          groups: result.groups as any,
-          animationStates: result.timeline.animationStates || {},
-          scale: result.timeline.scale || 1,
-          duration: result.timeline.duration || 10,
-          currentTime: result.timeline.currentTime || 0,
-        });
-      }
-      
-      // Check if there are changes using the project store's diffing
-      const hasChanges = checkStateDiff({
-        elements: result.elements,
-        groups: result.groups,
-        timeline: {
-          scale: result.timeline.scale || 1,
-          duration: result.timeline.duration || 10,
-          currentTime: result.timeline.currentTime || 0,
-          animationStates: result.timeline.animationStates || {}
-        }
-      });
-      
-      console.log('🔍 Dirty check result:', { hasChanges });
-      setIsDirty(hasChanges);
-      
-      // Restore original state
-      setGroups(originalGroups);
-      setElements(originalElements);
-    }
-  }, [result, groups, elements, setGroups, setElements, loadProjectData, checkStateDiff]);
+  }, [result]);
 
   const executeCode = () => {
     if (!code.trim()) return;
 
     try {
+      setIsExecuting(true);
       setError(null);
       console.log('🚀 Executing code:', code.substring(0, 100) + (code.length > 100 ? '...' : ''));
 
@@ -233,11 +188,23 @@ export default function ScriptsPage() {
           });
           setResult(newResult);
           
-          // Also check if the result is different from the original
+          // Check if the result is different from the original project data
           if (newResult) {
-            const isDifferent = JSON.stringify(newResult) !== JSON.stringify(projectData);
-            console.log('🔄 Result comparison:', { isDifferent });
-            setIsDirty(isDifferent);
+            // Compare with the original project data (NOT the stores)
+            const originalProjectData = {
+              groups: groups,
+              elements: elements,
+              timeline: {
+                scale: 100,
+                duration: 1,
+                currentTime: 0,
+                animationStates: animationStates
+              }
+            };
+            
+            const hasChanges = JSON.stringify(newResult) !== JSON.stringify(originalProjectData);
+            console.log('🔄 Result comparison:', { hasChanges });
+            setIsDirty(hasChanges);
           }
         },
         (error) => {
@@ -255,6 +222,8 @@ export default function ScriptsPage() {
     } catch (err) {
       console.error('💥 Unexpected error in executeCode:', err);
       setError(err instanceof Error ? err.message : 'Unknown error occurred');
+    } finally {
+      setIsExecuting(false);
     }
   };
 
@@ -278,7 +247,16 @@ export default function ScriptsPage() {
       });
       
       if (data.success && data.data.script) {
-        setCode(data.data.script);
+        console.log('📝 Generated script:', data.data.script);
+        
+        // Validate that the script calls setResult
+        if (!data.data.script.includes('setResult')) {
+          console.warn('⚠️ Generated script does not call setResult - adding it automatically');
+          const enhancedScript = data.data.script + '\n\n// Ensure result is set\nsetResult(project);';
+          setCode(enhancedScript);
+        } else {
+          setCode(data.data.script);
+        }
       } else {
         throw new Error('No script generated');
       }
@@ -450,7 +428,7 @@ setResult(project);`}
           </div>
 
           {/* Prompt Area */}
-          <div className="mb-6">
+          <div className="mb-2">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-lg font-semibold text-gray-900">Generate Code</h3>
             </div>
@@ -470,10 +448,14 @@ setResult(project);`}
           <div className="flex items-center gap-3 mb-4">
             <button
               onClick={executeCode}
-              disabled={!code.trim()}
+              disabled={!code.trim() || isExecuting}
               className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2 shadow-sm"
             >
-              <Play className="w-4 h-4" />
+              {isExecuting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Play className="w-4 h-4" />
+              )}
             </button>
 
             <button
@@ -488,7 +470,11 @@ setResult(project);`}
               disabled={!prompt.trim() || isGenerating}
               className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2 shadow-sm"
             >
-              <Sparkles className="w-4 h-4" />
+              {isGenerating ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4" />
+              )}
             </button>
           </div>
 
@@ -505,16 +491,22 @@ setResult(project);`}
                   disabled={isSaving}
                   className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2 shadow-sm"
                 >
-                  <Save className="w-4 h-4" />
-                  {isSaving ? 'Creating...' : 'Save as New'}
+                  {isSaving ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
                 </button>
                 <button
                   onClick={overwriteCurrentProject}
                   disabled={isOverwriting}
                   className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2 shadow-sm"
                 >
-                  <Overwrite className="w-4 h-4" />
-                  {isOverwriting ? 'Overwriting...' : 'Overwrite'}
+                  {isOverwriting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Overwrite className="w-4 h-4" />
+                  )}
                 </button>
               </div>
             </div>
@@ -531,13 +523,35 @@ setResult(project);`}
         {/* Right Side - JSON Result (Larger Height) */}
         <div className="w-1/2 p-6">
           <div className="mb-3">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Project Data</h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold text-gray-900">Project Data</h3>
+              {result && (
+                <div className="flex items-center gap-2">
+                  {isDirty && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                      Modified
+                    </span>
+                  )}
+                  <span className="text-xs text-gray-500">
+                    {result.elements?.length || 0} elements, {result.groups?.length || 0} groups
+                  </span>
+                </div>
+              )}
+            </div>
             <p className="text-sm text-gray-600">
-              Current state of the project object
+              {result ? 'Current state after script execution' : 'Loading project data...'}
             </p>
           </div>
 
-          <div className="border border-gray-200 rounded-lg overflow-hidden h-[calc(100vh-200px)] shadow-sm">
+          <div className="border border-gray-200 rounded-lg overflow-hidden h-[calc(100vh-200px)] shadow-sm relative">
+            {isExecuting && (
+              <div className="absolute inset-0 bg-black/10 flex items-center justify-center z-10">
+                <div className="bg-white rounded-lg px-4 py-3 flex items-center gap-3 shadow-lg">
+                  <Loader2 className="w-5 h-5 animate-spin text-indigo-600" />
+                  <span className="text-sm font-medium text-gray-700">Executing script...</span>
+                </div>
+              </div>
+            )}
             <AceEditor
               mode="json"
               theme="monokai"
@@ -552,6 +566,7 @@ setResult(project);`}
               }}
               width="100%"
               height="100%"
+              key={result ? JSON.stringify(result).length : 'loading'} // Force re-render when result changes
             />
           </div>
         </div>
