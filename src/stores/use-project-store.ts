@@ -35,6 +35,8 @@ interface ProjectStoreActions {
   persistIfDirty: (actionDescription?: string) => Promise<boolean>;
   scheduleAutosave: () => void;
   setAutosaveDelay: (ms: number) => void;
+  disableAutosave: () => void;
+  enableAutosave: () => void;
   forceFullSave: () => Promise<boolean>;
   checkStateDiff: (stateToCheck: Record<string, unknown>) => boolean;
   getStateDiff: (stateToCheck: Record<string, unknown>) => Record<string, unknown> | null;
@@ -74,28 +76,44 @@ export const useProjectStore = create<ProjectStore>()(
     },
 
     setBaseline: (stateObj) => {
-      // Validate that the state object uses the new schema format
+      // Validate that the state object has scenes
       if (!stateObj || !stateObj.scenes || !Array.isArray(stateObj.scenes)) {
         console.error('Invalid mainState format: missing scenes array');
         return;
       }
       
-      const deepCopy = JSON.parse(JSON.stringify(stateObj));
+      // Convert old canvas structure to new sceneCanvas structure if needed
+      const convertedState = {
+        ...stateObj,
+        scenes: stateObj.scenes.map((scene: any) => {
+          // If scene has old 'canvas' structure, convert to 'sceneCanvas'
+          if (scene.canvas && !scene.sceneCanvas) {
+            return {
+              ...scene,
+              sceneCanvas: scene.canvas,
+              canvas: undefined // Remove old structure
+            };
+          }
+          return scene;
+        })
+      };
+      
+      const deepCopy = JSON.parse(JSON.stringify(convertedState));
       set(produce((state: ProjectStore) => {
         state.baselineMainState = deepCopy;
       }));
       
       // Update the scene store with scene data
-      if (stateObj && 'scenes' in stateObj && 'activeSceneId' in stateObj) {
+      if (convertedState && 'scenes' in convertedState && 'activeSceneId' in convertedState) {
         const sceneStore = useSceneStore.getState();
-        const scenesData = stateObj.scenes?.map((scene: any) => ({
+        const scenesData = convertedState.scenes?.map((scene: any) => ({
           id: scene.id,
           name: scene.name,
           lastModified: scene.lastModified || new Date().toISOString()
         })) || [];
         
         if (scenesData.length > 0) {
-          const activeSceneId = typeof stateObj.activeSceneId === 'string' ? stateObj.activeSceneId : 'scene-1';
+          const activeSceneId = typeof convertedState.activeSceneId === 'string' ? convertedState.activeSceneId : 'scene-1';
           sceneStore.loadScenes(scenesData, activeSceneId);
         }
       }
@@ -317,6 +335,24 @@ export const useProjectStore = create<ProjectStore>()(
     setAutosaveDelay: (ms: number) => {
       set(produce((state: ProjectStore) => {
         state.autosaveDelayMs = Math.max(300, Math.min(ms, 10000));
+      }));
+    },
+
+    // Temporarily disable autosave to prevent failed saves from rolling back changes
+    disableAutosave: () => {
+      set(produce((state: ProjectStore) => {
+        if (state.autosaveTimer) {
+          clearTimeout(state.autosaveTimer as unknown as number);
+          state.autosaveTimer = null;
+        }
+        state.autosaveDelayMs = 0; // Set to 0 to effectively disable
+      }));
+    },
+
+    // Re-enable autosave with default delay
+    enableAutosave: () => {
+      set(produce((state: ProjectStore) => {
+        state.autosaveDelayMs = 1200; // Restore default delay
       }));
     },
 

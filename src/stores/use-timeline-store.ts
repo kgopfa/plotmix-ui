@@ -410,8 +410,15 @@ export const useTimelineStore = create<TimelineStore>()(
           });
         }));
         get().updateTracks();
-        // Autosave on timeline-affecting element updates
-        try { useProjectStore.getState().scheduleAutosave(); } catch {}
+        
+        // Temporarily disable autosave to prevent failed saves from rolling back animation changes
+        const projectStore = useProjectStore.getState();
+        projectStore.disableAutosave();
+        
+        // Re-enable autosave after a delay to allow the animation to be properly established
+        setTimeout(() => {
+          projectStore.enableAutosave();
+        }, 2000);
       },
 
       setGroups: (groups: CanvasGroup[]) => {
@@ -436,7 +443,15 @@ export const useTimelineStore = create<TimelineStore>()(
           });
         }));
         get().updateTracks();
-        try { useProjectStore.getState().scheduleAutosave(); } catch {}
+        
+        // Temporarily disable autosave to prevent failed saves from rolling back animation changes
+        const projectStore = useProjectStore.getState();
+        projectStore.disableAutosave();
+        
+        // Re-enable autosave after a delay to allow the animation to be properly established
+        setTimeout(() => {
+          projectStore.enableAutosave();
+        }, 2000);
       },
 
       updateTracks: () => {
@@ -491,7 +506,15 @@ export const useTimelineStore = create<TimelineStore>()(
           });
         }));
         get().updateTracks();
-        try { useProjectStore.getState().scheduleAutosave(); } catch {}
+        
+        // Temporarily disable autosave to prevent failed saves from rolling back animation changes
+        const projectStore = useProjectStore.getState();
+        projectStore.disableAutosave();
+        
+        // Re-enable autosave after a delay to allow the animation to be properly established
+        setTimeout(() => {
+          projectStore.enableAutosave();
+        }, 2000);
       },
 
       updateAnimation: (trackId: string, animationId: string, updates: Partial<ElementAnimation>, trackType: 'element' | 'group') => {
@@ -545,7 +568,15 @@ export const useTimelineStore = create<TimelineStore>()(
           }
         }));
         get().updateTracks();
-        try { useProjectStore.getState().scheduleAutosave(); } catch {}
+        
+        // Temporarily disable autosave to prevent failed saves from rolling back animation changes
+        const projectStore = useProjectStore.getState();
+        projectStore.disableAutosave();
+        
+        // Re-enable autosave after a delay to allow the animation to be properly established
+        setTimeout(() => {
+          projectStore.enableAutosave();
+        }, 2000);
       },
 
       removeAnimation: (trackId: string, animationId: string, trackType: 'element' | 'group') => {
@@ -567,7 +598,15 @@ export const useTimelineStore = create<TimelineStore>()(
           state.animationStates.delete(animationId);
         }));
         get().updateTracks();
-        try { useProjectStore.getState().scheduleAutosave(); } catch {}
+        
+        // Temporarily disable autosave to prevent failed saves from rolling back animation changes
+        const projectStore = useProjectStore.getState();
+        projectStore.disableAutosave();
+        
+        // Re-enable autosave after a delay to allow the animation to be properly established
+        setTimeout(() => {
+          projectStore.enableAutosave();
+        }, 2000);
       },
 
       duplicateAnimation: (trackId: string, animationId: string, trackType: 'element' | 'group') => {
@@ -614,7 +653,15 @@ export const useTimelineStore = create<TimelineStore>()(
           }
         }));
         get().updateTracks();
-        try { useProjectStore.getState().scheduleAutosave(); } catch {}
+        
+        // Temporarily disable autosave to prevent failed saves from rolling back animation changes
+        const projectStore = useProjectStore.getState();
+        projectStore.disableAutosave();
+        
+        // Re-enable autosave after a delay to allow the animation to be properly established
+        setTimeout(() => {
+          projectStore.enableAutosave();
+        }, 2000);
       },
 
       // UI controls
