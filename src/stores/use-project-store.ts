@@ -111,7 +111,7 @@ export const useProjectStore = create<ProjectStore>()(
         id: sceneStore.activeSceneId || 'scene-1',
         name: sceneStore.getSceneById(sceneStore.activeSceneId || 'scene-1')?.name || 'Scene 1',
         lastModified: new Date().toISOString(),
-        canvas: {
+        sceneCanvas: {
           elements: canvas.elements,
           groups: canvas.groups,
           dimensions: { width: 1920, height: 1080 },
@@ -158,7 +158,7 @@ export const useProjectStore = create<ProjectStore>()(
             id: sceneInfo.id,
             name: sceneInfo.name,
             lastModified: sceneInfo.lastModified,
-            canvas: { elements: [], groups: [], dimensions: { width: 1920, height: 1080 }, canvasSize: { currentSizeId: 'fhd', customSize: null } },
+            sceneCanvas: { elements: [], groups: [], dimensions: { width: 1920, height: 1080 }, canvasSize: { currentSizeId: 'fhd', customSize: null } },
             timeline: { scale: 1, duration: 10, currentTime: 0, animationStates: {} },
             ui: {
               zoom: 1,

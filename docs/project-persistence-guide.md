@@ -340,8 +340,8 @@ private validateProjectData(data: ProjectData): ProjectValidationError[] {
       errors.push({ field: 'scenes', message: 'Scene ID is required', index });
     }
     
-    if (!scene.canvas) {
-      errors.push({ field: 'scenes', message: 'Scene canvas is required', index });
+    if (!scene.sceneCanvas) {
+      errors.push({ field: 'scenes', message: 'Scene sceneCanvas is required', index });
     }
   });
   
@@ -375,15 +375,15 @@ getProjectStats(): {
   let totalAnimations = 0;
   
   allScenes.forEach(scene => {
-    totalElements += scene.canvas.elements.length;
-    totalGroups += scene.canvas.groups.length;
+    totalElements += scene.sceneCanvas.elements.length;
+    totalGroups += scene.sceneCanvas.groups.length;
     
     // Count animations
-    scene.canvas.elements.forEach(element => {
+    scene.sceneCanvas.elements.forEach(element => {
       totalAnimations += element.animations.length;
     });
     
-    scene.canvas.groups.forEach(group => {
+    scene.sceneCanvas.groups.forEach(group => {
       totalAnimations += group.animations.length;
     });
   });

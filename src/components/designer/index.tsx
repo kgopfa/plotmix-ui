@@ -168,6 +168,16 @@ export default function Designer() {
     enableDistribution: elementSnapConfig.enableDistribution
   }), [elementSnapConfig.enabled, elementSnapConfig.snapThreshold, elementSnapConfig.showGuides, elementSnapConfig.enableSpacing, elementSnapConfig.enableDistribution]);
 
+  // Memoize the element snapping config object to prevent infinite re-renders
+  const stableElementSnapHookConfig = useMemo(() => ({
+    enabled: stableElementSnapConfig.enabled,
+    snapThreshold: stableElementSnapConfig.snapThreshold,
+    showGuides: stableElementSnapConfig.showGuides,
+    enableSpacing: stableElementSnapConfig.enableSpacing,
+    enableDistribution: stableElementSnapConfig.enableDistribution,
+    canvasBounds
+  }), [stableElementSnapConfig.enabled, stableElementSnapConfig.snapThreshold, stableElementSnapConfig.showGuides, stableElementSnapConfig.enableSpacing, stableElementSnapConfig.enableDistribution, canvasBounds]);
+
   const stableGridConfig = useMemo(() => ({
     size: uiGridConfig.size,
     enabled: uiGridConfig.enabled,
@@ -189,14 +199,7 @@ export default function Designer() {
     setCurrentGuides,
     clearGuides: clearElementSnapGuides,
     isSnapTemporarilyDisabled: isElementSnapDisabled
-  } = useElementSnapping({
-    enabled: stableElementSnapConfig.enabled,
-    snapThreshold: stableElementSnapConfig.snapThreshold,
-    showGuides: stableElementSnapConfig.showGuides,
-    enableSpacing: stableElementSnapConfig.enableSpacing,
-    enableDistribution: stableElementSnapConfig.enableDistribution,
-    canvasBounds
-  });
+  } = useElementSnapping(stableElementSnapHookConfig);
 
   // Grid snapping functionality - use UI store state
   const {

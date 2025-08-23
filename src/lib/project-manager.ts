@@ -181,14 +181,14 @@ export class ProjectManager {
 
       // 3. Load active scene data into canvas store
       const canvasStore = useCanvasStore.getState();
-      canvasStore.loadSceneData(activeScene.id, activeScene.canvas.elements, activeScene.canvas.groups);
+      canvasStore.loadSceneData(activeScene.id, activeScene.sceneCanvas.elements, activeScene.sceneCanvas.groups);
 
       // 4. Load active scene timeline data
       if (!skipTimeline) {
         const timelineStore = useTimelineStore.getState();
         timelineStore.loadSceneTimeline(activeScene.id, {
-          elements: activeScene.canvas.elements,
-          groups: activeScene.canvas.groups,
+          elements: activeScene.sceneCanvas.elements,
+          groups: activeScene.sceneCanvas.groups,
           animationStates: activeScene.timeline.animationStates,
           scale: activeScene.timeline.scale,
           duration: activeScene.timeline.duration,
@@ -215,15 +215,15 @@ export class ProjectManager {
           uiStore.togglePathMode();
         }
 
-        // Canvas size state (restore from canvas.canvasSize if available)
-        if (activeScene.canvas.canvasSize) {
-          if (activeScene.canvas.canvasSize.currentSizeId === 'custom' && activeScene.canvas.canvasSize.customSize) {
+        // Canvas size state (restore from sceneCanvas.canvasSize if available)
+        if (activeScene.sceneCanvas.canvasSize) {
+          if (activeScene.sceneCanvas.canvasSize.currentSizeId === 'custom' && activeScene.sceneCanvas.canvasSize.customSize) {
             uiStore.setCustomCanvasSize(
-              activeScene.canvas.canvasSize.customSize.width,
-              activeScene.canvas.canvasSize.customSize.height
+              activeScene.sceneCanvas.canvasSize.customSize.width,
+              activeScene.sceneCanvas.canvasSize.customSize.height
             );
           } else {
-            uiStore.setCanvasSize(activeScene.canvas.canvasSize.currentSizeId);
+            uiStore.setCanvasSize(activeScene.sceneCanvas.canvasSize.currentSizeId);
           }
         }
       }
@@ -232,7 +232,7 @@ export class ProjectManager {
       if (!skipSelection && activeScene.ui) {
         const selectionStore = useSelectionStore.getState();
 
-        const elementsToSelect = activeScene.canvas.elements.filter(el =>
+        const elementsToSelect = activeScene.sceneCanvas.elements.filter(el =>
           activeScene.ui.selectedElements.includes(el.id)
         );
 
@@ -302,10 +302,10 @@ export class ProjectManager {
       timelineStore.setCurrentScene(sceneId);
 
       // Load the new scene data
-      canvasStore.loadSceneData(sceneId, sceneData.canvas.elements, sceneData.canvas.groups);
+      canvasStore.loadSceneData(sceneId, sceneData.sceneCanvas.elements, sceneData.sceneCanvas.groups);
       timelineStore.loadSceneTimeline(sceneId, {
-        elements: sceneData.canvas.elements,
-        groups: sceneData.canvas.groups,
+        elements: sceneData.sceneCanvas.elements,
+        groups: sceneData.sceneCanvas.groups,
         animationStates: sceneData.timeline.animationStates,
         scale: sceneData.timeline.scale,
         duration: sceneData.timeline.duration,
@@ -370,14 +370,14 @@ export class ProjectManager {
       }
 
       // Canvas validation
-      if (!scene.canvas) {
-        errors.push({ field: 'scenes', message: 'Scene missing canvas data', index: sceneIndex });
+      if (!scene.sceneCanvas) {
+        errors.push({ field: 'scenes', message: 'Scene missing sceneCanvas data', index: sceneIndex });
       } else {
-        if (!Array.isArray(scene.canvas.elements)) {
-          errors.push({ field: 'scenes', message: 'Scene canvas elements must be an array', index: sceneIndex });
+        if (!Array.isArray(scene.sceneCanvas.elements)) {
+          errors.push({ field: 'scenes', message: 'Scene sceneCanvas elements must be an array', index: sceneIndex });
         } else {
           // Validate each element in the scene
-          scene.canvas.elements.forEach((element, elementIndex) => {
+          scene.sceneCanvas.elements.forEach((element, elementIndex) => {
             if (!element.id) {
               errors.push({ field: 'scenes', message: `Scene ${sceneIndex} element missing ID`, index: elementIndex });
             }
@@ -390,11 +390,11 @@ export class ProjectManager {
           });
         }
 
-        if (!Array.isArray(scene.canvas.groups)) {
-          errors.push({ field: 'scenes', message: 'Scene canvas groups must be an array', index: sceneIndex });
+        if (!Array.isArray(scene.sceneCanvas.groups)) {
+          errors.push({ field: 'scenes', message: 'Scene sceneCanvas groups must be an array', index: sceneIndex });
         } else {
           // Validate each group in the scene
-          scene.canvas.groups.forEach((group, groupIndex) => {
+          scene.sceneCanvas.groups.forEach((group, groupIndex) => {
             if (!group.id) {
               errors.push({ field: 'scenes', message: `Scene ${sceneIndex} group missing ID`, index: groupIndex });
             }

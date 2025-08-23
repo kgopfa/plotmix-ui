@@ -43,54 +43,11 @@ const DEFAULT_CONFIG: ElementSnappingConfig = {
 export const useElementSnapping = (
   initialConfig?: Partial<ElementSnappingConfig>
 ): UseElementSnappingReturn => {
-  const [config, setConfigState] = useState<ElementSnappingConfig>({
+  const [config, setConfigState] = useState<ElementSnappingConfig>(() => ({
     ...DEFAULT_CONFIG,
     ...initialConfig,
-  });
+  }));
 
-  // Sync external initialConfig changes (e.g., from store) into local config
-  // Avoid depending on object identities; track primitive fields only
-  const icEnabled = initialConfig?.enabled;
-  const icSnapThreshold = initialConfig?.snapThreshold;
-  const icShowGuides = initialConfig?.showGuides;
-  const icEnableSpacing = initialConfig?.enableSpacing;
-  const icEnableDistribution = initialConfig?.enableDistribution;
-  const icWidth = initialConfig?.canvasBounds?.width;
-  const icHeight = initialConfig?.canvasBounds?.height;
-  const icCenterX = initialConfig?.canvasBounds?.centerX;
-  const icCenterY = initialConfig?.canvasBounds?.centerY;
-
-  useEffect(() => {
-    if (!initialConfig) return;
-    setConfigState((prev) => {
-      const next: ElementSnappingConfig = {
-        ...prev,
-        ...initialConfig,
-        canvasBounds: initialConfig.canvasBounds
-          ? {
-              width: initialConfig.canvasBounds.width ?? prev.canvasBounds?.width,
-              height: initialConfig.canvasBounds.height ?? prev.canvasBounds?.height,
-              centerX: initialConfig.canvasBounds.centerX ?? prev.canvasBounds?.centerX,
-              centerY: initialConfig.canvasBounds.centerY ?? prev.canvasBounds?.centerY,
-            }
-          : prev.canvasBounds,
-      } as ElementSnappingConfig;
-
-      const unchanged =
-        next.enabled === prev.enabled &&
-        next.snapThreshold === prev.snapThreshold &&
-        next.showGuides === prev.showGuides &&
-        next.enableSpacing === prev.enableSpacing &&
-        next.enableDistribution === prev.enableDistribution &&
-        (prev.canvasBounds?.width ?? undefined) === (next.canvasBounds?.width ?? undefined) &&
-        (prev.canvasBounds?.height ?? undefined) === (next.canvasBounds?.height ?? undefined) &&
-        (prev.canvasBounds?.centerX ?? undefined) === (next.canvasBounds?.centerX ?? undefined) &&
-        (prev.canvasBounds?.centerY ?? undefined) === (next.canvasBounds?.centerY ?? undefined);
-
-      return unchanged ? prev : next;
-    });
-  }, [icEnabled, icSnapThreshold, icShowGuides, icEnableSpacing, icEnableDistribution, icWidth, icHeight, icCenterX, icCenterY, initialConfig]);
-  
   const [currentGuides, setCurrentGuides] = useState<SnapGuide[]>([]);
   const [isSnapTemporarilyDisabled, setIsSnapTemporarilyDisabled] = useState(false);
   
@@ -153,9 +110,28 @@ export const useElementSnapping = (
     // Use regular snapping
     const result = applyElementSnapping(element, allElements, config.snapThreshold, config.enableSpacing, config.enableDistribution, config.canvasBounds);
     
-    // Update guides if showing guides is enabled
+    // Update guides if showing guides is enabled and guides have changed
     if (config.showGuides) {
-      setCurrentGuides(result.guides);
+      // Only update if guides have actually changed to prevent unnecessary re-renders
+      setCurrentGuides(prev => {
+        if (prev.length !== result.guides.length) return result.guides;
+        
+        // Check if any guide properties have changed
+        for (let i = 0; i < prev.length; i++) {
+          const prevGuide = prev[i];
+          const newGuide = result.guides[i];
+          if (!newGuide || 
+              prevGuide.alignmentType !== newGuide.alignmentType ||
+              prevGuide.position !== newGuide.position ||
+              prevGuide.type !== newGuide.type ||
+              prevGuide.sourceElementId !== newGuide.sourceElementId ||
+              prevGuide.targetElementId !== newGuide.targetElementId) {
+            return result.guides;
+          }
+        }
+        
+        return prev; // No changes, return previous value
+      });
     } else {
       setCurrentGuides([]);
     }

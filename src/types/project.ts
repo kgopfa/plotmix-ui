@@ -66,7 +66,7 @@ export interface ProjectUI {
 export interface Scene {
   id: string;
   name: string;
-  canvas: ProjectCanvas;
+  sceneCanvas: ProjectCanvas;  // Changed from 'canvas' to 'sceneCanvas'
   timeline: ProjectTimeline;
   ui: ProjectUI;
 }

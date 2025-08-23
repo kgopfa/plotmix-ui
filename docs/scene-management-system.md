@@ -323,14 +323,14 @@ private async loadSceneIntoStores(scene: Scene): Promise<void> {
   
   // Load canvas data
   const canvasStore = useCanvasStore.getState();
-  canvasStore.setElements(scene.canvas.elements);
-  canvasStore.setGroups(scene.canvas.groups);
+  canvasStore.setElements(scene.sceneCanvas.elements);
+  canvasStore.setElements(scene.sceneCanvas.groups);
   
   // Load timeline state
   const timelineStore = useTimelineStore.getState();
   timelineStore.loadProjectData({
-    elements: scene.canvas.elements,
-    groups: scene.canvas.groups,
+    elements: scene.sceneCanvas.elements,
+    groups: scene.sceneCanvas.groups,
     animationStates: scene.timeline.animationStates,
     scale: scene.timeline.scale,
     duration: scene.timeline.duration,
