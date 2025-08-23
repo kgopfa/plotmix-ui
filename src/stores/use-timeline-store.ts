@@ -392,20 +392,18 @@ export const useTimelineStore = create<TimelineStore>()(
         set(produce((state) => {
           state.elements = elements;
           
-          // Initialize animation states for all element animations
+          // Always update animation states for all element animations to ensure synchronization
           elements.forEach(element => {
             element.animations.forEach(animation => {
-              if (!state.animationStates.has(animation.id)) {
-                const effectiveDuration = calculateEffectiveDuration(animation);
-                state.animationStates.set(animation.id, {
-                  baseDuration: animation.duration,
-                  repeat: animation.repeat,
-                  repeatDelay: animation.repeatDelay,
-                  yoyo: animation.yoyo,
-                  effectiveDuration,
-                  effectiveEndTime: animation.startTime + effectiveDuration
-                });
-              }
+              const effectiveDuration = calculateEffectiveDuration(animation);
+              state.animationStates.set(animation.id, {
+                baseDuration: animation.duration,
+                repeat: animation.repeat,
+                repeatDelay: animation.repeatDelay,
+                yoyo: animation.yoyo,
+                effectiveDuration,
+                effectiveEndTime: animation.startTime + effectiveDuration
+              });
             });
           });
         }));
@@ -425,20 +423,18 @@ export const useTimelineStore = create<TimelineStore>()(
         set(produce((state) => {
           state.groups = groups;
           
-          // Initialize animation states for all group animations
+          // Always update animation states for all group animations to ensure synchronization
           groups.forEach(group => {
             group.animations.forEach(animation => {
-              if (!state.animationStates.has(animation.id)) {
-                const effectiveDuration = calculateEffectiveDuration(animation);
-                state.animationStates.set(animation.id, {
-                  baseDuration: animation.duration,
-                  repeat: animation.repeat,
-                  repeatDelay: animation.repeatDelay,
-                  yoyo: animation.yoyo,
-                  effectiveDuration,
-                  effectiveEndTime: animation.startTime + effectiveDuration
-                });
-              }
+              const effectiveDuration = calculateEffectiveDuration(animation);
+              state.animationStates.set(animation.id, {
+                baseDuration: animation.duration,
+                repeat: animation.repeat,
+                repeatDelay: animation.repeatDelay,
+                yoyo: animation.yoyo,
+                effectiveDuration,
+                effectiveEndTime: animation.startTime + effectiveDuration
+              });
             });
           });
         }));
@@ -1163,15 +1159,53 @@ export const useTimelineStore = create<TimelineStore>()(
           
           // Clear and reload animation states
           state.animationStates.clear();
-          Object.entries(data.animationStates).forEach(([key, value]) => {
-            // Create a fresh copy to avoid frozen object issues
-            state.animationStates.set(key, {
-              baseDuration: value.baseDuration,
-              repeat: value.repeat,
-              repeatDelay: value.repeatDelay,
-              yoyo: value.yoyo,
-              effectiveDuration: value.effectiveDuration,
-              effectiveEndTime: value.effectiveEndTime,
+          
+          // First, load animation states from project data if available
+          if (data.animationStates && Object.keys(data.animationStates).length > 0) {
+            Object.entries(data.animationStates).forEach(([key, value]) => {
+              // Create a fresh copy to avoid frozen object issues
+              state.animationStates.set(key, {
+                baseDuration: value.baseDuration,
+                repeat: value.repeat,
+                repeatDelay: value.repeatDelay,
+                yoyo: value.yoyo,
+                effectiveDuration: value.effectiveDuration,
+                effectiveEndTime: value.effectiveEndTime,
+              });
+            });
+          }
+          
+          // Then, ensure all animations from elements and groups have their states initialized
+          // This handles cases where animationStates might be missing or incomplete
+          state.elements.forEach((element: AnimatedCanvasObject) => {
+            element.animations.forEach((animation: ElementAnimation) => {
+              if (!state.animationStates.has(animation.id)) {
+                const effectiveDuration = calculateEffectiveDuration(animation);
+                state.animationStates.set(animation.id, {
+                  baseDuration: animation.duration,
+                  repeat: animation.repeat,
+                  repeatDelay: animation.repeatDelay,
+                  yoyo: animation.yoyo,
+                  effectiveDuration,
+                  effectiveEndTime: animation.startTime + effectiveDuration
+                });
+              }
+            });
+          });
+          
+          state.groups.forEach((group: CanvasGroup) => {
+            group.animations.forEach((animation: ElementAnimation) => {
+              if (!state.animationStates.has(animation.id)) {
+                const effectiveDuration = calculateEffectiveDuration(animation);
+                state.animationStates.set(animation.id, {
+                  baseDuration: animation.duration,
+                  repeat: animation.repeat,
+                  repeatDelay: animation.repeatDelay,
+                  yoyo: animation.yoyo,
+                  effectiveDuration,
+                  effectiveEndTime: animation.startTime + effectiveDuration
+                });
+              }
             });
           });
           
