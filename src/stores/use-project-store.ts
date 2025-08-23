@@ -74,22 +74,29 @@ export const useProjectStore = create<ProjectStore>()(
     },
 
     setBaseline: (stateObj) => {
-      const deepCopy = stateObj ? JSON.parse(JSON.stringify(stateObj)) : null;
+      // Validate that the state object uses the new schema format
+      if (!stateObj || !stateObj.scenes || !Array.isArray(stateObj.scenes)) {
+        console.error('Invalid mainState format: missing scenes array');
+        return;
+      }
+      
+      const deepCopy = JSON.parse(JSON.stringify(stateObj));
       set(produce((state: ProjectStore) => {
         state.baselineMainState = deepCopy;
       }));
       
-      // If the baseline includes scene data, update the scene store
+      // Update the scene store with scene data
       if (stateObj && 'scenes' in stateObj && 'activeSceneId' in stateObj) {
         const sceneStore = useSceneStore.getState();
-        const scenesData = (stateObj as any).scenes?.map((scene: any) => ({
+        const scenesData = stateObj.scenes?.map((scene: any) => ({
           id: scene.id,
           name: scene.name,
           lastModified: scene.lastModified || new Date().toISOString()
         })) || [];
         
         if (scenesData.length > 0) {
-          sceneStore.loadScenes(scenesData, (stateObj as any).activeSceneId || 'scene-1');
+          const activeSceneId = typeof stateObj.activeSceneId === 'string' ? stateObj.activeSceneId : 'scene-1';
+          sceneStore.loadScenes(scenesData, activeSceneId);
         }
       }
     },
@@ -163,16 +170,9 @@ export const useProjectStore = create<ProjectStore>()(
           };
         }),
         activeSceneId: sceneStore.activeSceneId || 'scene-1',
-        // Legacy support - keep the old structure for backward compatibility
-        elements: canvas.elements,
-        groups: canvas.groups,
-        timeline: {
-          scale: timeline.ui.scale,
-          duration: timeline.playback.totalDuration,
-          currentTime: timeline.playback.currentTime,
-          animationStates: Object.fromEntries(timeline.animationStates as unknown as Iterable<readonly [PropertyKey, unknown]>),
-        },
       };
+
+
 
       return projectState;
     },
@@ -181,6 +181,7 @@ export const useProjectStore = create<ProjectStore>()(
       const baseline = get().baselineMainState;
       const current = get().getCurrentMainState();
       if (!baseline) return null;
+      
       // Fast equality check
       const baselineStr = JSON.stringify(baseline ?? {});
       const currentStr = JSON.stringify(current ?? {});

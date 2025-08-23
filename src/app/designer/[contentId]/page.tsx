@@ -44,14 +44,26 @@ export default function DesignerPage() {
         loadSnappingPreferences(project.configuration as Record<string, unknown>);
       }
       
-      const mainState = (project.mainState as { elements?: unknown[]; groups?: unknown[]; timeline?: unknown }) || {};
+      const mainState = (project.mainState as { scenes?: unknown[] }) || {};
       setBaseline(mainState);
 
       // Hydrate canvas and timeline stores from mainState
       const canvasStore = useCanvasStore.getState();
       const timelineStore = useTimelineStore.getState();
-      const rawElements = Array.isArray(mainState.elements) ? mainState.elements : [];
-      const rawGroups = Array.isArray(mainState.groups) ? mainState.groups : [];
+      
+      // Validate and extract data from new schema format
+      if (!mainState.scenes || !Array.isArray(mainState.scenes) || mainState.scenes.length === 0) {
+        throw new Error('Invalid project format: missing scenes array');
+      }
+      
+      const firstScene = mainState.scenes[0] as any;
+      if (!firstScene?.sceneCanvas) {
+        throw new Error('Invalid project format: missing sceneCanvas in first scene');
+      }
+      
+      const rawElements = Array.isArray(firstScene.sceneCanvas.elements) ? firstScene.sceneCanvas.elements : [];
+      const rawGroups = Array.isArray(firstScene.sceneCanvas.groups) ? firstScene.sceneCanvas.groups : [];
+      const timeline = firstScene.timeline || {};
 
       // Sanitize to ensure required fields exist
       const sanitizedElements = rawElements.map((el: unknown) => ({
@@ -76,7 +88,6 @@ export default function DesignerPage() {
       canvasStore.setElements(elements);
       canvasStore.setGroups(groups);
 
-      const timeline = (mainState.timeline as { animationStates?: unknown; scale?: number; duration?: number; currentTime?: number }) || {};
       timelineStore.loadProjectData({
         elements,
         groups,

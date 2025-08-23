@@ -71,26 +71,12 @@ export interface Scene {
   ui: ProjectUI;
 }
 
-// Legacy project structure (version 1.x)
-export interface LegacyProjectData {
-  version: string;
-  metadata: ProjectMetadata;
-  canvas: ProjectCanvas;
-  timeline: ProjectTimeline;
-  ui: ProjectUI;
-}
-
 // Current project structure (version 2.x) - scene-based
 export interface ProjectData {
-  version: string;                    // For compatibility/migration
+  version: string;
   metadata: ProjectMetadata;
   scenes: Scene[];
   activeSceneId: string;
-}
-
-// Type guard to check if project data is legacy format
-export function isLegacyProject(data: unknown): data is LegacyProjectData {
-  return typeof data === 'object' && data !== null && 'canvas' in data && !('scenes' in data);
 }
 
 export interface ProjectValidationError {

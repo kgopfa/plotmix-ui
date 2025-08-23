@@ -1,0 +1,790 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PlotMix Project Schema",
+  "description": "Complete schema for PlotMix animation projects with backend-produced structure",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Project name identifier",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "title": {
+      "type": "string",
+      "description": "Project display title",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "description": {
+      "type": "string",
+      "description": "Project description",
+      "maxLength": 1000
+    },
+    "mainState": {
+      "type": "object",
+      "description": "Main project state containing dimensions and scenes",
+      "properties": {
+        "dimensions": {
+          "type": "object",
+          "description": "Canvas dimensions shared across all scenes",
+          "properties": {
+            "width": {
+              "type": "number",
+              "minimum": 1,
+              "description": "Canvas width in pixels"
+            },
+            "height": {
+              "type": "number",
+              "minimum": 1,
+              "description": "Canvas height in pixels"
+            }
+          },
+          "required": ["width", "height"]
+        },
+        "scenes": {
+          "type": "array",
+          "description": "Array of scenes in the project",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "sceneId": {
+                "type": "string",
+                "description": "Unique scene identifier",
+                "pattern": "^scene-[a-zA-Z0-9-]+$"
+              },
+              "sceneName": {
+                "type": "string",
+                "description": "Scene name",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "sceneCanvas": {
+                "type": "object",
+                "description": "Canvas data for the scene",
+                "properties": {
+                  "elements": {
+                    "type": "array",
+                    "description": "Array of canvas elements",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "description": "Unique element identifier"
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "Element name"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": ["rectangle", "circle", "triangle", "arc", "line", "path", "image", "text", "polygon"],
+                          "description": "Element type"
+                        },
+                        "x": {
+                          "type": "number",
+                          "description": "X coordinate (center position)"
+                        },
+                        "y": {
+                          "type": "number",
+                          "description": "Y coordinate (center position)"
+                        },
+                        "width": {
+                          "type": "number",
+                          "minimum": 0,
+                          "description": "Element width"
+                        },
+                        "height": {
+                          "type": "number",
+                          "minimum": 0,
+                          "description": "Element height"
+                        },
+                        "fill": {
+                          "type": "string",
+                          "description": "Fill color"
+                        },
+                        "stroke": {
+                          "type": "string",
+                          "description": "Stroke color"
+                        },
+                        "strokeWidth": {
+                          "type": "number",
+                          "minimum": 0,
+                          "description": "Stroke width"
+                        },
+                        "radius": {
+                          "type": "number",
+                          "minimum": 0,
+                          "description": "Radius for circles and rounded rectangles"
+                        },
+                        "cornerRadius": {
+                          "type": "number",
+                          "minimum": 0,
+                          "description": "Corner radius for rectangles"
+                        },
+                        "rotation": {
+                          "type": "number",
+                          "description": "Rotation in radians"
+                        },
+                        "opacity": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1,
+                          "default": 1,
+                          "description": "Element opacity"
+                        },
+                        "visible": {
+                          "type": "boolean",
+                          "default": true,
+                          "description": "Element visibility"
+                        },
+                        "zIndex": {
+                          "type": "number",
+                          "minimum": 0,
+                          "default": 0,
+                          "description": "Z-index for layering"
+                        },
+                        "shadowEnabled": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Whether shadow is enabled"
+                        },
+                        "shadowColor": {
+                          "type": "string",
+                          "description": "Shadow color"
+                        },
+                        "shadowBlur": {
+                          "type": "number",
+                          "minimum": 0,
+                          "description": "Shadow blur radius"
+                        },
+                        "shadowOffsetX": {
+                          "type": "number",
+                          "description": "Shadow X offset"
+                        },
+                        "shadowOffsetY": {
+                          "type": "number",
+                          "description": "Shadow Y offset"
+                        },
+                        "shadowOpacity": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1,
+                          "description": "Shadow opacity"
+                        },
+                        "pivotX": {
+                          "type": "number",
+                          "default": 0,
+                          "description": "Pivot point X offset"
+                        },
+                        "pivotY": {
+                          "type": "number",
+                          "default": 0,
+                          "description": "Pivot point Y offset"
+                        },
+                        "lineOptions": {
+                          "type": "object",
+                          "description": "Line-specific options",
+                          "properties": {
+                            "points": {
+                              "type": "object",
+                              "properties": {
+                                "start": {
+                                  "type": "object",
+                                  "properties": {
+                                    "x": { "type": "number" },
+                                    "y": { "type": "number" }
+                                  },
+                                  "required": ["x", "y"]
+                                },
+                                "end": {
+                                  "type": "object",
+                                  "properties": {
+                                    "x": { "type": "number" },
+                                    "y": { "type": "number" }
+                                  },
+                                  "required": ["x", "y"]
+                                }
+                              },
+                              "required": ["start", "end"]
+                            },
+                            "controlPoint": {
+                              "type": "object",
+                              "description": "Control point for curved lines",
+                              "properties": {
+                                "x": { "type": "number" },
+                                "y": { "type": "number" }
+                              },
+                              "required": ["x", "y"]
+                            },
+                            "arrow": {
+                              "type": "boolean",
+                              "default": false,
+                              "description": "Whether line has arrow"
+                            },
+                            "dotted": {
+                              "type": "boolean",
+                              "default": false,
+                              "description": "Whether line is dotted"
+                            },
+                            "isCurved": {
+                              "type": "boolean",
+                              "default": true,
+                              "description": "Whether line is curved vs straight"
+                            }
+                          },
+                          "required": ["points", "arrow", "dotted"]
+                        },
+                        "pathPoints": {
+                          "type": "array",
+                          "description": "Array of points for path elements",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "x": { "type": "number" },
+                              "y": { "type": "number" }
+                            },
+                            "required": ["x", "y"]
+                          }
+                        },
+                        "imageData": {
+                          "type": "string",
+                          "description": "Base64 encoded image data for image elements"
+                        },
+                        "polygonOptions": {
+                          "type": "object",
+                          "description": "Polygon-specific properties",
+                          "properties": {
+                            "points": {
+                              "type": "array",
+                              "description": "Array of points defining the polygon",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "x": { "type": "number" },
+                                  "y": { "type": "number" }
+                                },
+                                "required": ["x", "y"]
+                              }
+                            },
+                            "isClosed": {
+                              "type": "boolean",
+                              "default": true,
+                              "description": "Whether the polygon path is closed"
+                            }
+                          },
+                          "required": ["points", "isClosed"]
+                        },
+                        "text": {
+                          "type": "string",
+                          "description": "Text content for text elements"
+                        },
+                        "fontSize": {
+                          "type": "number",
+                          "minimum": 1,
+                          "description": "Font size in pixels"
+                        },
+                        "fontFamily": {
+                          "type": "string",
+                          "description": "Font family name"
+                        },
+                        "fontWeight": {
+                          "type": "string",
+                          "enum": ["normal", "bold", "100", "200", "300", "400", "500", "600", "700", "800", "900"],
+                          "description": "Font weight"
+                        },
+                        "fontStyle": {
+                          "type": "string",
+                          "enum": ["normal", "italic", "oblique"],
+                          "description": "Font style"
+                        },
+                        "textAlign": {
+                          "type": "string",
+                          "enum": ["left", "center", "right", "justify"],
+                          "default": "center",
+                          "description": "Text alignment"
+                        },
+                        "lineHeight": {
+                          "type": "number",
+                          "minimum": 0,
+                          "description": "Line height multiplier"
+                        },
+                        "textStroke": {
+                          "type": "string",
+                          "description": "Text stroke color"
+                        },
+                        "textStrokeWidth": {
+                          "type": "number",
+                          "minimum": 0,
+                          "description": "Text stroke width"
+                        },
+                        "textDropShadow": {
+                          "type": "object",
+                          "description": "Text drop shadow properties",
+                          "properties": {
+                            "color": { "type": "string" },
+                            "blur": { "type": "number", "minimum": 0 },
+                            "angle": { "type": "number" },
+                            "distance": { "type": "number" },
+                            "alpha": { "type": "number", "minimum": 0, "maximum": 1 }
+                          },
+                          "required": ["color", "blur", "angle", "distance", "alpha"]
+                        },
+                        "textGradient": {
+                          "type": "object",
+                          "description": "Text gradient properties",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "enum": ["linear", "radial"]
+                            },
+                            "colors": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "color": { "type": "string" },
+                                  "offset": { "type": "number", "minimum": 0, "maximum": 1 }
+                                },
+                                "required": ["color", "offset"]
+                              }
+                            },
+                            "angle": { "type": "number" },
+                            "center": {
+                              "type": "object",
+                              "properties": {
+                                "x": { "type": "number" },
+                                "y": { "type": "number" }
+                              },
+                              "required": ["x", "y"]
+                            },
+                            "radius": { "type": "number" }
+                          },
+                          "required": ["type", "colors"]
+                        },
+                        "letterSpacing": {
+                          "type": "number",
+                          "description": "Letter spacing in pixels"
+                        },
+                        "wordWrap": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Whether text wraps to new lines"
+                        },
+                        "wordWrapWidth": {
+                          "type": "number",
+                          "minimum": 0,
+                          "description": "Width at which text wraps"
+                        },
+                        "groupId": {
+                          "type": "string",
+                          "description": "ID of the group this element belongs to"
+                        },
+                        "parent": {
+                          "type": ["string", "null"],
+                          "description": "ID of parent element or group, null if top-level"
+                        },
+                        "isAnimationPath": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Whether this element is used as an animation path"
+                        },
+                        "animations": {
+                          "type": "array",
+                          "description": "Array of animations applied to this element",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "description": "Unique animation identifier"
+                              },
+                              "displayName": {
+                                "type": "string",
+                                "description": "Human-readable animation name"
+                              },
+                              "type": {
+                                "type": "string",
+                                "enum": ["rotate", "scale", "move", "color", "fade", "path", "typewriter", "textScale", "physics"],
+                                "description": "Animation type"
+                              },
+                              "startTime": {
+                                "type": "number",
+                                "minimum": 0,
+                                "description": "Animation start time in seconds"
+                              },
+                              "duration": {
+                                "type": "number",
+                                "minimum": 0.1,
+                                "description": "Animation duration in seconds"
+                              },
+                              "properties": {
+                                "type": "object",
+                                "description": "Animation properties and target values",
+                                "properties": {
+                                  "x": { "type": "number" },
+                                  "y": { "type": "number" },
+                                  "width": { "type": "number" },
+                                  "height": { "type": "number" },
+                                  "fillColor": { "type": "string" },
+                                  "scaleX": { "type": "number" },
+                                  "scaleY": { "type": "number" },
+                                  "alpha": { "type": "number", "minimum": 0, "maximum": 1 },
+                                  "radius": { "type": "number" },
+                                  "cornerRadius": { "type": "number" },
+                                  "shadowBlur": { "type": "number" },
+                                  "shadowOffsetX": { "type": "number" },
+                                  "shadowOffsetY": { "type": "number" },
+                                  "shadowOpacity": { "type": "number", "minimum": 0, "maximum": 1 },
+                                  "rotation": { "type": "number" },
+                                  "pivotX": { "type": "number" },
+                                  "pivotY": { "type": "number" },
+                                  "pathPoints": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "x": { "type": "number" },
+                                        "y": { "type": "number" }
+                                      },
+                                      "required": ["x", "y"]
+                                    }
+                                  },
+                                  "pathDirection": {
+                                    "type": "string",
+                                    "enum": ["clockwise", "counterclockwise"]
+                                  },
+                                  "yoyo": { "type": "boolean" },
+                                  "pathElement": { "type": "string" },
+                                  "isPolygonPath": { "type": "boolean" },
+                                  "text": { "type": "string" },
+                                  "fontSize": { "type": "number" },
+                                  "letterSpacing": { "type": "number" },
+                                  "velocity": { "type": "number" },
+                                  "angle": { "type": "number" },
+                                  "gravity": { "type": "number" },
+                                  "acceleration": { "type": "number" },
+                                  "accelerationAngle": { "type": "number" },
+                                  "friction": { "type": "number" },
+                                  "xProp": { "type": "string" },
+                                  "yProp": { "type": "string" }
+                                }
+                              },
+                              "easing": {
+                                "type": "string",
+                                "description": "GSAP easing function name"
+                              },
+                              "repeat": {
+                                "type": "number",
+                                "minimum": 0,
+                                "default": 0,
+                                "description": "Number of times to repeat animation"
+                              },
+                              "repeatDelay": {
+                                "type": "number",
+                                "minimum": 0,
+                                "default": 0,
+                                "description": "Delay between repeats in seconds"
+                              },
+                              "yoyo": {
+                                "type": "boolean",
+                                "default": false,
+                                "description": "Whether animation plays backwards after completion"
+                              },
+                              "yoyoReturnEasing": {
+                                "type": "string",
+                                "description": "Easing for yoyo return animation"
+                              },
+                              "stagger": {
+                                "type": "number",
+                                "minimum": 0,
+                                "description": "Delay between each element in group animation"
+                              },
+                              "staggerFrom": {
+                                "type": "string",
+                                "enum": ["start", "end", "center"],
+                                "description": "Direction of stagger effect"
+                              },
+                              "staggerEase": {
+                                "type": "string",
+                                "description": "Easing for stagger effect"
+                              }
+                            },
+                            "required": ["id", "displayName", "type", "startTime", "duration", "properties"]
+                          }
+                        }
+                      },
+                      "required": ["id", "name", "type", "x", "y", "width", "height", "fill", "animations"]
+                    }
+                  },
+                  "groups": {
+                    "type": "array",
+                    "description": "Array of canvas groups",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "description": "Unique group identifier"
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "Group name"
+                        },
+                        "elementIds": {
+                          "type": "array",
+                          "description": "Array of element IDs in this group",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "x": {
+                          "type": "number",
+                          "description": "Group center X coordinate"
+                        },
+                        "y": {
+                          "type": "number",
+                          "description": "Group center Y coordinate"
+                        },
+                        "rotation": {
+                          "type": "number",
+                          "default": 0,
+                          "description": "Group rotation in radians"
+                        },
+                        "visible": {
+                          "type": "boolean",
+                          "default": true,
+                          "description": "Group visibility"
+                        },
+                        "opacity": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1,
+                          "default": 1,
+                          "description": "Group opacity"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": ["text", "custom", "polygon"],
+                          "default": "custom",
+                          "description": "Group type"
+                        },
+                        "isDefaultGroup": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Whether this is an auto-created default group"
+                        },
+                        "isAnimationPath": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Whether this group is used as an animation path"
+                        },
+                        "characters": {
+                          "type": "array",
+                          "description": "Individual characters for text groups",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "fontSize": {
+                          "type": "number",
+                          "description": "Font size for text groups"
+                        },
+                        "fontFamily": {
+                          "type": "string",
+                          "description": "Font family for text groups"
+                        },
+                        "fontWeight": {
+                          "type": "string",
+                          "description": "Font weight for text groups"
+                        },
+                        "fontStyle": {
+                          "type": "string",
+                          "description": "Font style for text groups"
+                        },
+                        "textAlign": {
+                          "type": "string",
+                          "description": "Text alignment for text groups"
+                        },
+                        "letterSpacing": {
+                          "type": "number",
+                          "description": "Letter spacing for text groups"
+                        },
+                        "isClosed": {
+                          "type": "boolean",
+                          "description": "Whether polygon path is closed"
+                        },
+                        "parent": {
+                          "type": ["string", "null"],
+                          "description": "ID of parent group, null if top-level"
+                        },
+                        "animations": {
+                          "type": "array",
+                          "description": "Array of animations applied to this group",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "description": "Unique animation identifier"
+                              },
+                              "displayName": {
+                                "type": "string",
+                                "description": "Human-readable animation name"
+                              },
+                              "type": {
+                                "type": "string",
+                                "enum": ["rotate", "scale", "move", "color", "fade", "path", "typewriter", "textScale", "physics"],
+                                "description": "Animation type"
+                              },
+                              "startTime": {
+                                "type": "number",
+                                "minimum": 0,
+                                "description": "Animation start time in seconds"
+                              },
+                              "duration": {
+                                "type": "number",
+                                "minimum": 0.1,
+                                "description": "Animation duration in seconds"
+                              },
+                              "properties": {
+                                "type": "object",
+                                "description": "Animation properties and target values",
+                                "properties": {
+                                  "x": { "type": "number" },
+                                  "y": { "type": "number" },
+                                  "rotation": { "type": "number" },
+                                  "scaleX": { "type": "number" },
+                                  "scaleY": { "type": "number" },
+                                  "alpha": { "type": "number", "minimum": 0, "maximum": 1 }
+                                }
+                              },
+                              "easing": {
+                                "type": "string",
+                                "description": "GSAP easing function name"
+                              },
+                              "repeat": {
+                                "type": "number",
+                                "minimum": 0,
+                                "default": 0,
+                                "description": "Number of times to repeat animation"
+                              },
+                              "repeatDelay": {
+                                "type": "number",
+                                "minimum": 0,
+                                "default": 0,
+                                "description": "Delay between repeats in seconds"
+                              },
+                              "yoyo": {
+                                "type": "boolean",
+                                "default": false,
+                                "description": "Whether animation plays backwards after completion"
+                              },
+                              "yoyoReturnEasing": {
+                                "type": "string",
+                                "description": "Easing for yoyo return animation"
+                              },
+                              "stagger": {
+                                "type": "number",
+                                "minimum": 0,
+                                "description": "Delay between each element in group animation"
+                              },
+                              "staggerFrom": {
+                                "type": "string",
+                                "enum": ["start", "end", "center"],
+                                "description": "Direction of stagger effect"
+                              },
+                              "staggerEase": {
+                                "type": "string",
+                                "description": "Easing for stagger effect"
+                              }
+                            },
+                            "required": ["id", "displayName", "type", "startTime", "duration", "properties"]
+                          }
+                        }
+                      },
+                      "required": ["id", "name", "elementIds", "x", "y", "animations"]
+                    }
+                  },
+                  "timeline": {
+                    "type": "object",
+                    "description": "Timeline data for the scene",
+                    "properties": {
+                      "scale": {
+                        "type": "number",
+                        "minimum": 10,
+                        "maximum": 1000,
+                        "default": 100,
+                        "description": "Timeline scale (pixels per second)"
+                      },
+                      "duration": {
+                        "type": "number",
+                        "minimum": 1,
+                        "maximum": 120,
+                        "default": 10,
+                        "description": "Total timeline duration in seconds"
+                      },
+                      "currentTime": {
+                        "type": "number",
+                        "minimum": 0,
+                        "default": 0,
+                        "description": "Current playback time in seconds"
+                      },
+                      "animationStates": {
+                        "type": "object",
+                        "description": "Cached animation state data for performance",
+                        "additionalProperties": {
+                          "type": "object",
+                          "properties": {
+                            "baseDuration": {
+                              "type": "number",
+                              "minimum": 0.1,
+                              "description": "Base animation duration"
+                            },
+                            "repeat": {
+                              "type": "number",
+                              "minimum": 0,
+                              "description": "Number of repeats"
+                            },
+                            "repeatDelay": {
+                              "type": "number",
+                              "minimum": 0,
+                              "description": "Delay between repeats"
+                            },
+                            "yoyo": {
+                              "type": "boolean",
+                              "description": "Whether animation yoyos"
+                            },
+                            "effectiveDuration": {
+                              "type": "number",
+                              "minimum": 0.1,
+                              "description": "Calculated effective duration including repeats"
+                            },
+                            "effectiveEndTime": {
+                              "type": "number",
+                              "minimum": 0,
+                              "description": "Calculated effective end time"
+                            }
+                          },
+                          "required": ["baseDuration", "effectiveDuration", "effectiveEndTime"]
+                        }
+                      }
+                    },
+                    "required": ["scale", "duration", "currentTime", "animationStates"]
+                  }
+                },
+                "required": ["elements", "groups", "timeline"]
+              }
+            },
+            "required": ["sceneId", "sceneName", "sceneCanvas"]
+          }
+        }
+      },
+      "required": ["dimensions", "scenes"]
+    }
+  },
+  "required": ["name", "title", "mainState"],
+  "additionalProperties": false
+}

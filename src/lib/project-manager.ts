@@ -1,12 +1,10 @@
 import {
   ProjectData,
-  LegacyProjectData,
   Scene,
   ProjectValidationError,
   ProjectLoadOptions,
   ProjectSaveOptions,
   ProjectMetadata,
-  isLegacyProject,
   MAX_SCENE_DURATION
 } from '@/types/project';
 import { ToolType } from '@/types/tool';
@@ -99,7 +97,7 @@ export class ProjectManager {
   }
 
   /**
-   * Load project from JSON string (handles both legacy and scene-based formats)
+   * Load project from JSON string (scene-based format only)
    */
   async loadProject(jsonData: string, options: ProjectLoadOptions = {}): Promise<void> {
     const {
@@ -112,14 +110,12 @@ export class ProjectManager {
     try {
       const rawData = JSON.parse(jsonData);
 
-      // Check if this is a legacy project and migrate if needed
-      let projectData: ProjectData;
-      if (isLegacyProject(rawData)) {
-
-        projectData = this.migrateLegacyProject(rawData);
-      } else {
-        projectData = rawData as ProjectData;
+      // Validate that the project uses the current schema format
+      if (!rawData.scenes || !Array.isArray(rawData.scenes) || rawData.scenes.length === 0) {
+        throw new Error('Invalid project format: missing scenes array');
       }
+
+      const projectData = rawData as ProjectData;
 
       // Validate the data
       const validationErrors = this.validateProjectData(projectData);
@@ -131,7 +127,6 @@ export class ProjectManager {
       const migratedData = migrateVersion ? this.migrateProjectData(projectData) : projectData;
 
       if (validateOnly) {
-
         return;
       }
 
@@ -426,32 +421,7 @@ export class ProjectManager {
     return errors;
   }
 
-  /**
-   * Migrate legacy project (v1.x) to scene-based format (v2.x)
-   */
-  private migrateLegacyProject(legacyData: LegacyProjectData): ProjectData {
 
-
-    // Create a single scene from the legacy project data
-    const defaultSceneId = 'scene-1';
-    const scene: Scene = {
-      id: defaultSceneId,
-      name: 'Scene 1',
-      canvas: legacyData.canvas,
-      timeline: legacyData.timeline,
-      ui: legacyData.ui,
-    };
-
-    return {
-      version: this.currentVersion,
-      metadata: {
-        ...legacyData.metadata,
-        modifiedAt: new Date().toISOString()
-      },
-      scenes: [scene],
-      activeSceneId: defaultSceneId,
-    };
-  }
 
   /**
    * Migrate project data from older versions
