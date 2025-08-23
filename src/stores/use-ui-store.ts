@@ -104,7 +104,7 @@ interface KeyboardShortcut {
 export type NavKey = 'video' | 'scenes' | 'uploads' | 'ai' | 'text' | 'animations' | 'tools' | 'components' | 'audio' | 'timeline' | 'reset';
 
 // Right sidebar keys
-export type RightPanelKey = 'properties' | 'animations' | 'layers' | 'lock';
+export type RightPanelKey = 'properties' | 'animations' | 'layers' | 'lock' | 'scenes';
 
 interface NavigationState {
   activeNav: NavKey | null; // sticks after click

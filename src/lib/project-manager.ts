@@ -147,121 +147,185 @@ export class ProjectManager {
   }
 
   /**
-   * Load project data into all stores (scene-based)
+   * Load project data into the application (scene-based format)
    */
-  private async loadIntoStores(
-    projectData: ProjectData,
-    options: { skipUI: boolean; skipSelection: boolean }
-  ): Promise<void> {
-    const { skipUI, skipSelection } = options;
+  loadProjectData(data: ProjectData, options: ProjectLoadOptions = {}): void {
+    const {
+      skipUI = false,
+      skipSelection = false,
+      skipTimeline = false
+    } = options;
 
-    // 1. Sync scene store with project data
-    const sceneStore = useSceneStore.getState();
+    try {
+      // Validate project data
+      const validationErrors = this.validateProjectData(data);
+      if (validationErrors.length > 0) {
+        const errorMessage = validationErrors.map(e => `${e.field}: ${e.message}`).join(', ');
+        throw new Error(`Project validation failed: ${errorMessage}`);
+      }
 
-    // Update the scene cache with loaded data
-    for (const scene of projectData.scenes) {
-      this.sceneDataCache.set(scene.id, scene);
-    }
+      // Get the active scene
+      const activeScene = data.scenes.find(s => s.id === data.activeSceneId);
+      if (!activeScene) {
+        throw new Error(`Active scene ${data.activeSceneId} not found in project data`);
+      }
 
-    // Load all scenes into the scene store (this also sets the active scene)
-    sceneStore.loadScenes(
-      projectData.scenes.map(scene => ({
+      // 1. Update scene store with all scene information
+      const sceneStore = useSceneStore.getState();
+      const sceneInfos = data.scenes.map(scene => ({
         id: scene.id,
         name: scene.name,
-        lastModified: new Date().toISOString() // Use current timestamp for lastModified
-      })),
-      projectData.activeSceneId
-    );
+        lastModified: scene.lastModified || new Date().toISOString()
+      }));
+      sceneStore.loadScenes(sceneInfos, data.activeSceneId);
 
-    // Get the active scene data
-    const activeScene = projectData.scenes.find(s => s.id === projectData.activeSceneId) || projectData.scenes[0];
-    if (!activeScene) {
-      throw new Error('No scenes found in project data');
-    }
+      // 2. Cache all scene data for future scene switching
+      data.scenes.forEach(scene => {
+        this.sceneDataCache.set(scene.id, scene);
+      });
 
-    // 2. Clear existing state
-    useCanvasStore.getState().clearCanvas();
-    useSelectionStore.getState().clearSelections();
+      // 3. Load active scene data into canvas store
+      const canvasStore = useCanvasStore.getState();
+      canvasStore.loadSceneData(activeScene.id, activeScene.canvas.elements, activeScene.canvas.groups);
 
-    // 3. Load canvas data from active scene - create fresh copies
-    const canvasStore = useCanvasStore.getState();
-    const freshElements = activeScene.canvas.elements.map(element => ({
-      ...element,
-      animations: element.animations.map(anim => ({ ...anim }))
-    }));
-    const freshGroups = activeScene.canvas.groups.map(group => ({
-      ...group,
-      animations: group.animations.map(anim => ({ ...anim }))
-    }));
-    canvasStore.setElements(freshElements);
-    canvasStore.setGroups(freshGroups);
-
-    // 4. Load timeline state from active scene
-    const timelineStore = useTimelineStore.getState();
-
-    // Use the store's loadProjectData method to properly handle Immer state updates
-    timelineStore.loadProjectData({
-      elements: freshElements,
-      groups: freshGroups,
-      animationStates: activeScene.timeline.animationStates,
-      scale: activeScene.timeline.scale,
-      duration: activeScene.timeline.duration,
-      currentTime: activeScene.timeline.currentTime,
-    });
-
-    // 5. Load UI state from active scene (optional)
-    if (!skipUI && activeScene.ui) {
-      const uiStore = useUIStore.getState();
-
-      // Panel state
-      uiStore.setLeftPanelWidth(activeScene.ui.panelState.leftPanelWidth);
-      uiStore.setRightPanelWidth(activeScene.ui.panelState.rightPanelWidth);
-      uiStore.setTimelineHeight(activeScene.ui.panelState.timelineHeight);
-
-      if (activeScene.ui.panelState.isTimelineCollapsed !== uiStore.panels.isTimelineCollapsed) {
-        uiStore.toggleTimelineCollapse();
+      // 4. Load active scene timeline data
+      if (!skipTimeline) {
+        const timelineStore = useTimelineStore.getState();
+        timelineStore.loadSceneTimeline(activeScene.id, {
+          elements: activeScene.canvas.elements,
+          groups: activeScene.canvas.groups,
+          animationStates: activeScene.timeline.animationStates,
+          scale: activeScene.timeline.scale,
+          duration: activeScene.timeline.duration,
+          currentTime: activeScene.timeline.currentTime,
+        });
       }
 
-      // Tool state
-      uiStore.setActiveTool(activeScene.ui.toolState.activeTool as ToolType);
-      if (activeScene.ui.toolState.isPathMode !== uiStore.tools.isPathMode) {
-        uiStore.togglePathMode();
-      }
+      // 5. Load UI state from active scene (optional)
+      if (!skipUI && activeScene.ui) {
+        const uiStore = useUIStore.getState();
 
-      // Canvas size state (restore from canvas.canvasSize if available)
-      if (activeScene.canvas.canvasSize) {
-        if (activeScene.canvas.canvasSize.currentSizeId === 'custom' && activeScene.canvas.canvasSize.customSize) {
-          uiStore.setCustomCanvasSize(
-            activeScene.canvas.canvasSize.customSize.width,
-            activeScene.canvas.canvasSize.customSize.height
-          );
-        } else {
-          uiStore.setCanvasSize(activeScene.canvas.canvasSize.currentSizeId);
+        // Panel state
+        uiStore.setLeftPanelWidth(activeScene.ui.panelState.leftPanelWidth);
+        uiStore.setRightPanelWidth(activeScene.ui.panelState.rightPanelWidth);
+        uiStore.setTimelineHeight(activeScene.ui.panelState.timelineHeight);
+
+        if (activeScene.ui.panelState.isTimelineCollapsed !== uiStore.panels.isTimelineCollapsed) {
+          uiStore.toggleTimelineCollapse();
+        }
+
+        // Tool state
+        uiStore.setActiveTool(activeScene.ui.toolState.activeTool as ToolType);
+        if (activeScene.ui.toolState.isPathMode !== uiStore.tools.isPathMode) {
+          uiStore.togglePathMode();
+        }
+
+        // Canvas size state (restore from canvas.canvasSize if available)
+        if (activeScene.canvas.canvasSize) {
+          if (activeScene.canvas.canvasSize.currentSizeId === 'custom' && activeScene.canvas.canvasSize.customSize) {
+            uiStore.setCustomCanvasSize(
+              activeScene.canvas.canvasSize.customSize.width,
+              activeScene.canvas.canvasSize.customSize.height
+            );
+          } else {
+            uiStore.setCanvasSize(activeScene.canvas.canvasSize.currentSizeId);
+          }
         }
       }
-    }
 
-    // 6. Restore selections from active scene (after elements are loaded)
-    if (!skipSelection && activeScene.ui) {
-      const selectionStore = useSelectionStore.getState();
+      // 6. Restore selections from active scene (after elements are loaded)
+      if (!skipSelection && activeScene.ui) {
+        const selectionStore = useSelectionStore.getState();
 
-      const elementsToSelect = freshElements.filter(el =>
-        activeScene.ui.selectedElements.includes(el.id)
-      );
+        const elementsToSelect = activeScene.canvas.elements.filter(el =>
+          activeScene.ui.selectedElements.includes(el.id)
+        );
 
-      if (elementsToSelect.length > 0) {
-        selectionStore.select(elementsToSelect);
+        if (elementsToSelect.length > 0) {
+          selectionStore.select(elementsToSelect);
+        }
+
+        // Note: Group selection will be handled automatically by the selection store
+        // when elements in a group are selected
       }
 
-      // Note: Group selection will be handled automatically by the selection store
-      // when elements in a group are selected
-    }
+      // 7. Rebuild timeline (with a small delay to ensure everything is ready)
+      if (!skipTimeline) {
+        setTimeout(() => {
+          const timelineStore = useTimelineStore.getState();
+          timelineStore.updateTracks();
+          timelineStore.buildGSAPTimeline();
+        }, 100);
+      }
 
-    // 7. Rebuild timeline (with a small delay to ensure everything is ready)
-    setTimeout(() => {
-      timelineStore.updateTracks();
-      timelineStore.buildGSAPTimeline();
-    }, 100);
+      console.log(`Project loaded successfully with ${data.scenes.length} scenes, active scene: ${activeScene.name}`);
+
+    } catch (error) {
+      console.error('Failed to load project data:', error);
+      throw new Error(`Load failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Switch to a different scene within the current project
+   */
+  switchToScene(sceneId: string): void {
+    try {
+      const sceneStore = useSceneStore.getState();
+      const canvasStore = useCanvasStore.getState();
+      const timelineStore = useTimelineStore.getState();
+
+      // Get the scene data from cache
+      const sceneData = this.sceneDataCache.get(sceneId);
+      if (!sceneData) {
+        throw new Error(`Scene ${sceneId} data not found in cache`);
+      }
+
+      // Save current scene data before switching
+      const currentSceneId = sceneStore.activeSceneId;
+      if (currentSceneId) {
+        const currentCanvasData = canvasStore.saveCurrentSceneData();
+        const currentTimelineData = timelineStore.saveCurrentSceneTimeline();
+        
+        // Cache the current scene data
+        this.sceneDataCache.set(currentSceneId, {
+          ...sceneData,
+          canvas: {
+            elements: currentCanvasData.elements,
+            groups: currentCanvasData.groups,
+            dimensions: { width: 1920, height: 1080 },
+            canvasSize: { currentSizeId: 'fhd', customSize: null }
+          },
+          timeline: currentTimelineData,
+          lastModified: new Date().toISOString()
+        });
+      }
+
+      // Switch to the new scene
+      sceneStore.setActiveScene(sceneId);
+      canvasStore.setCurrentScene(sceneId);
+      timelineStore.setCurrentScene(sceneId);
+
+      // Load the new scene data
+      canvasStore.loadSceneData(sceneId, sceneData.canvas.elements, sceneData.canvas.groups);
+      timelineStore.loadSceneTimeline(sceneId, {
+        elements: sceneData.canvas.elements,
+        groups: sceneData.canvas.groups,
+        animationStates: sceneData.timeline.animationStates,
+        scale: sceneData.timeline.scale,
+        duration: sceneData.timeline.duration,
+        currentTime: sceneData.timeline.currentTime,
+      });
+
+      // Update scene modified timestamp
+      sceneStore.updateSceneModified(sceneId);
+
+      console.log(`Switched to scene: ${sceneData.name}`);
+
+    } catch (error) {
+      console.error('Failed to switch scene:', error);
+      throw new Error(`Scene switch failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   /**
@@ -556,51 +620,6 @@ export class ProjectManager {
     } catch (error) {
       console.error('Failed to duplicate scene:', error);
       return null;
-    }
-  }
-
-  /**
-   * Switch to a different scene
-   */
-  async switchScene(sceneId: string): Promise<void> {
-    const sceneStore = useSceneStore.getState();
-    const currentSceneId = sceneStore.getActiveSceneId();
-
-    if (currentSceneId === sceneId) {
-      return;
-    }
-
-    try {
-      // Save current scene state to cache
-      this.saveCurrentSceneToCache();
-
-      // Find the target scene in cache
-      const targetScene = this.sceneDataCache.get(sceneId);
-      if (!targetScene) {
-        console.error(`Scene ${sceneId} not found in cache`);
-        return;
-      }
-
-      // Create project data with target scene as active
-      const projectData: ProjectData = {
-        version: this.currentVersion,
-        metadata: {
-          name: `Project with ${sceneStore.getScenes().length} scenes`,
-          createdAt: new Date().toISOString(),
-          modifiedAt: new Date().toISOString(),
-          description: `Multi-scene project`,
-        },
-        scenes: this.getAllScenes(),
-        activeSceneId: sceneId,
-      };
-
-      // Load the project data (this will switch to the target scene)
-      await this.loadProject(JSON.stringify(projectData), { skipUI: false, skipSelection: false });
-
-
-    } catch (error) {
-      console.error('Failed to switch scene:', error);
-      throw new Error(`Failed to switch to scene ${sceneId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

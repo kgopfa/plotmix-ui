@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { produce } from 'immer';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useTimelineStore } from '@/stores/use-timeline-store';
+import { useSceneStore } from '@/stores/use-scene-store';
 import { DiffPatcher } from 'jsondiffpatch';
 import { apiClient } from '@/lib/api-client';
 import { useUIStore } from '@/stores/use-ui-store';
@@ -77,13 +78,92 @@ export const useProjectStore = create<ProjectStore>()(
       set(produce((state: ProjectStore) => {
         state.baselineMainState = deepCopy;
       }));
+      
+      // If the baseline includes scene data, update the scene store
+      if (stateObj && 'scenes' in stateObj && 'activeSceneId' in stateObj) {
+        const sceneStore = useSceneStore.getState();
+        const scenesData = (stateObj as any).scenes?.map((scene: any) => ({
+          id: scene.id,
+          name: scene.name,
+          lastModified: scene.lastModified || new Date().toISOString()
+        })) || [];
+        
+        if (scenesData.length > 0) {
+          sceneStore.loadScenes(scenesData, (stateObj as any).activeSceneId || 'scene-1');
+        }
+      }
     },
 
     getCurrentMainState: () => {
       const canvas = useCanvasStore.getState();
       const timeline = useTimelineStore.getState();
+      const sceneStore = useSceneStore.getState();
 
-      return {
+      // Get current scene data
+      const currentScene = {
+        id: sceneStore.activeSceneId || 'scene-1',
+        name: sceneStore.getSceneById(sceneStore.activeSceneId || 'scene-1')?.name || 'Scene 1',
+        lastModified: new Date().toISOString(),
+        canvas: {
+          elements: canvas.elements,
+          groups: canvas.groups,
+          dimensions: { width: 1920, height: 1080 },
+          canvasSize: {
+            currentSizeId: 'fhd',
+            customSize: null
+          }
+        },
+        timeline: {
+          scale: timeline.ui.scale,
+          duration: timeline.playback.totalDuration,
+          currentTime: timeline.playback.currentTime,
+          animationStates: Object.fromEntries(timeline.animationStates as unknown as Iterable<readonly [PropertyKey, unknown]>),
+        },
+        ui: {
+          zoom: 1,
+          selectedElements: [],
+          selectedGroups: [],
+          panelState: {
+            leftPanelVisible: true,
+            rightPanelVisible: true,
+            leftPanelWidth: 320,
+            rightPanelWidth: 320,
+            timelineHeight: 240,
+            isTimelineCollapsed: true,
+          },
+          toolState: {
+            activeTool: 'select',
+            isPathMode: false,
+            showPaths: true,
+          }
+        }
+      };
+
+      // Build complete project state with all scenes
+      const projectState = {
+        scenes: sceneStore.getScenes().map(sceneInfo => {
+          if (sceneInfo.id === sceneStore.activeSceneId) {
+            return currentScene;
+          }
+          // For other scenes, we'd need to get them from the project manager cache
+          // For now, return basic info - this will be populated when scenes are loaded
+          return {
+            id: sceneInfo.id,
+            name: sceneInfo.name,
+            lastModified: sceneInfo.lastModified,
+            canvas: { elements: [], groups: [], dimensions: { width: 1920, height: 1080 }, canvasSize: { currentSizeId: 'fhd', customSize: null } },
+            timeline: { scale: 1, duration: 10, currentTime: 0, animationStates: {} },
+            ui: {
+              zoom: 1,
+              selectedElements: [],
+              selectedGroups: [],
+              panelState: { leftPanelVisible: true, rightPanelVisible: true, leftPanelWidth: 320, rightPanelWidth: 320, timelineHeight: 240, isTimelineCollapsed: true },
+              toolState: { activeTool: 'select', isPathMode: false, showPaths: true }
+            }
+          };
+        }),
+        activeSceneId: sceneStore.activeSceneId || 'scene-1',
+        // Legacy support - keep the old structure for backward compatibility
         elements: canvas.elements,
         groups: canvas.groups,
         timeline: {
@@ -93,6 +173,8 @@ export const useProjectStore = create<ProjectStore>()(
           animationStates: Object.fromEntries(timeline.animationStates as unknown as Iterable<readonly [PropertyKey, unknown]>),
         },
       };
+
+      return projectState;
     },
 
     getDiffFromBaseline: () => {

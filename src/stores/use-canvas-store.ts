@@ -4,11 +4,13 @@ import { useShallow } from 'zustand/react/shallow';
 import { AnimatedCanvasObject, CanvasGroup, ElementAnimation } from '@/types/canvas';
 import { useSelectionStore } from './use-selection-store';
 import { useProjectStore } from './use-project-store';
+import { useSceneStore } from './use-scene-store';
 
 interface CanvasState {
-  // Core state
+  // Core state - now scene-based
   elements: AnimatedCanvasObject[];
   groups: CanvasGroup[];
+  currentSceneId: string | null;
   
   // Loading and optimistic update state
   isLoading: boolean;
@@ -19,8 +21,8 @@ interface CanvasState {
   
   // History for undo/redo (future enhancement)
   history: {
-    past: Array<{ elements: AnimatedCanvasObject[]; groups: CanvasGroup[] }>;
-    future: Array<{ elements: AnimatedCanvasObject[]; groups: CanvasGroup[] }>;
+    past: Array<{ elements: AnimatedCanvasObject[]; groups: CanvasGroup[]; sceneId: string }>;
+    future: Array<{ elements: AnimatedCanvasObject[]; groups: CanvasGroup[]; sceneId: string }>;
   };
   
   // Clipboard for copy/paste operations
@@ -31,6 +33,11 @@ interface CanvasState {
 }
 
 interface CanvasActions {
+  // Scene management
+  setCurrentScene: (sceneId: string) => void;
+  loadSceneData: (sceneId: string, elements: AnimatedCanvasObject[], groups: CanvasGroup[]) => void;
+  saveCurrentSceneData: () => { sceneId: string; elements: AnimatedCanvasObject[]; groups: CanvasGroup[] };
+  
   // Element operations
   addElement: (element: AnimatedCanvasObject) => void;
   updateElement: (id: string, updates: Partial<AnimatedCanvasObject>) => void;
@@ -66,14 +73,14 @@ interface CanvasActions {
   removeElementAnimation: (elementId: string, animationId: string) => void;
   addGroupAnimation: (groupId: string, animation: ElementAnimation) => void;
   updateGroupAnimation: (groupId: string, animationId: string, updates: Partial<ElementAnimation>) => void;
-      removeGroupAnimation: (groupId: string, animationId: string) => void;
+  removeGroupAnimation: (groupId: string, animationId: string) => void;
     
-    // Bulk operations
-    updateMultipleElements: (updates: Array<{ id: string; updates: Partial<AnimatedCanvasObject> }>) => void;
-    moveMultipleElements: (movements: Array<{ id: string; x: number; y: number }>) => void;
+  // Bulk operations
+  updateMultipleElements: (updates: Array<{ id: string; updates: Partial<AnimatedCanvasObject> }>) => void;
+  moveMultipleElements: (movements: Array<{ id: string; x: number; y: number }>) => void;
     
-    // Curve operations
-    updateLineControlPoint: (id: string, controlPoint: { x: number; y: number }) => void;
+  // Curve operations
+  updateLineControlPoint: (id: string, controlPoint: { x: number; y: number }) => void;
   
   // Clipboard operations
   copyElements: (elementIds: string[]) => void;
@@ -135,6 +142,7 @@ export const useCanvasStore = create<CanvasStore>()(
     // Initial state
     elements: [],
     groups: [],
+    currentSceneId: null,
     isLoading: false,
     pendingOperations: new Set(),
     canvasRef: null,
@@ -145,6 +153,30 @@ export const useCanvasStore = create<CanvasStore>()(
     clipboard: {
       elements: [],
       groups: []
+    },
+
+    // Scene management
+    setCurrentScene: (sceneId) => {
+      set({ currentSceneId: sceneId });
+      // Clear elements and groups when switching scenes
+      set({ elements: [], groups: [] });
+      // Optionally, load scene data here if it's stored in the scene store
+      // For now, we'll rely on loadSceneData to populate
+    },
+
+    loadSceneData: (sceneId, elements, groups) => {
+      set({ currentSceneId: sceneId, elements: elements, groups: groups });
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
+    },
+
+    saveCurrentSceneData: () => {
+      const sceneId = get().currentSceneId;
+      if (!sceneId) {
+        console.warn('No current scene ID to save data for.');
+        return { sceneId: '', elements: [], groups: [] };
+      }
+      return { sceneId, elements: get().elements, groups: get().groups };
     },
 
     // Element operations
@@ -929,7 +961,8 @@ export const useCanvasStore = create<CanvasStore>()(
       set(produce((state) => {
         const snapshot = {
           elements: JSON.parse(JSON.stringify(state.elements)),
-          groups: JSON.parse(JSON.stringify(state.groups))
+          groups: JSON.parse(JSON.stringify(state.groups)),
+          sceneId: state.currentSceneId || '' // Include sceneId in snapshot
         };
         state.history.past.push(snapshot);
         state.history.future = []; // Clear future when new action is performed
@@ -946,13 +979,15 @@ export const useCanvasStore = create<CanvasStore>()(
         if (state.history.past.length > 0) {
           const current = {
             elements: JSON.parse(JSON.stringify(state.elements)),
-            groups: JSON.parse(JSON.stringify(state.groups))
+            groups: JSON.parse(JSON.stringify(state.groups)),
+            sceneId: state.currentSceneId || '' // Include sceneId in snapshot
           };
           state.history.future.unshift(current);
           
           const previous = state.history.past.pop()!;
           state.elements = previous.elements;
           state.groups = previous.groups;
+          state.currentSceneId = previous.sceneId; // Restore sceneId
         }
       }));
       
@@ -965,13 +1000,15 @@ export const useCanvasStore = create<CanvasStore>()(
         if (state.history.future.length > 0) {
           const current = {
             elements: JSON.parse(JSON.stringify(state.elements)),
-            groups: JSON.parse(JSON.stringify(state.groups))
+            groups: JSON.parse(JSON.stringify(state.groups)),
+            sceneId: state.currentSceneId || '' // Include sceneId in snapshot
           };
           state.history.past.push(current);
           
           const next = state.history.future.shift()!;
           state.elements = next.elements;
           state.groups = next.groups;
+          state.currentSceneId = next.sceneId; // Restore sceneId
         }
       }));
       

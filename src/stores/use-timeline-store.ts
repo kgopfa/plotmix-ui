@@ -53,6 +53,7 @@ interface TimelineStoreState {
   tracks: TimelineTrackData[];
   elements: AnimatedCanvasObject[];
   groups: CanvasGroup[];
+  currentSceneId: string | null;
   
   // Playback state
   playback: PlaybackState;
@@ -81,6 +82,11 @@ interface TimelineStoreState {
 }
 
 interface TimelineStoreActions {
+  // Scene management
+  setCurrentScene: (sceneId: string) => void;
+  loadSceneTimeline: (sceneId: string, timelineData: any) => void;
+  saveCurrentSceneTimeline: () => any;
+  
   // Playback controls
   play: () => void;
   pause: () => void;
@@ -197,6 +203,7 @@ export const useTimelineStore = create<TimelineStore>()(
       tracks: [],
       elements: [],
       groups: [],
+      currentSceneId: null,
       playback: initialPlaybackState,
       ui: initialUIState,
       timeManager: TimeManager.getInstance(),
@@ -210,6 +217,74 @@ export const useTimelineStore = create<TimelineStore>()(
       isLoading: false,
       error: null,
       animationStates: new Map(),
+
+      // Scene management
+      setCurrentScene: (sceneId: string) => {
+        set(produce((state) => {
+          state.currentSceneId = sceneId;
+        }));
+      },
+
+      loadSceneTimeline: (sceneId: string, timelineData: any) => {
+        set(produce((state) => {
+          state.currentSceneId = sceneId;
+          // For now, we'll just set the elements and groups.
+          // In a real app, you'd deserialize the timelineData into tracks, elements, groups.
+          state.elements = timelineData.elements || [];
+          state.groups = timelineData.groups || [];
+          // Clear and reload animation states for the loaded scene
+          state.animationStates.clear();
+          state.elements.forEach((element: AnimatedCanvasObject) => {
+            element.animations.forEach((animation: ElementAnimation) => {
+              const effectiveDuration = calculateEffectiveDuration(animation);
+              state.animationStates.set(animation.id, {
+                baseDuration: animation.duration,
+                repeat: animation.repeat,
+                repeatDelay: animation.repeatDelay,
+                yoyo: animation.yoyo,
+                effectiveDuration,
+                effectiveEndTime: animation.startTime + effectiveDuration
+              });
+            });
+          });
+          state.groups.forEach((group: CanvasGroup) => {
+            group.animations.forEach((animation: ElementAnimation) => {
+              const effectiveDuration = calculateEffectiveDuration(animation);
+              state.animationStates.set(animation.id, {
+                baseDuration: animation.duration,
+                repeat: animation.repeat,
+                repeatDelay: animation.repeatDelay,
+                yoyo: animation.yoyo,
+                effectiveDuration,
+                effectiveEndTime: animation.startTime + effectiveDuration
+              });
+            });
+          });
+        }));
+        get().updateTracks();
+        try { useProjectStore.getState().scheduleAutosave(); } catch {}
+      },
+
+      saveCurrentSceneTimeline: () => {
+        const sceneId = get().currentSceneId;
+        if (!sceneId) {
+          console.warn('Cannot save timeline: no scene ID set.');
+          return;
+        }
+
+        const timelineData = {
+          elements: get().elements,
+          groups: get().groups,
+          animationStates: Object.fromEntries(get().animationStates.entries()),
+          scale: get().ui.scale,
+          duration: get().playback.totalDuration,
+          currentTime: get().playback.currentTime,
+        };
+
+        // In a real app, you'd save this data to a file or database
+        console.log(`Saving timeline for scene ${sceneId}:`, timelineData);
+        // For now, we'll just log it
+      },
 
       // Playback controls
       play: () => {

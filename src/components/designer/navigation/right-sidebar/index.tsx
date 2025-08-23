@@ -5,11 +5,12 @@ import {
   SwatchBook,
   VectorSquare,
   Layers,
+  Clapperboard,
 } from 'lucide-react';
 import { useActiveRightPanel, useSetActiveRightPanel } from '@/stores/use-ui-store';
 
 // Navigation item type for right sidebar
-type RightNavKey = 'properties' | 'animations' | 'layers';
+type RightNavKey = 'properties' | 'animations' | 'layers' | 'scenes';
 interface RightNavItem {
   name: string;
   key: RightNavKey;
@@ -45,6 +46,14 @@ const navigation: RightNavItem[] = [
     color: 'text-red-600',
     hoverColor: 'hover:bg-red-50 hover:text-red-700',
     activeColor: 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30'
+  },
+  { 
+    name: 'Scenes', 
+    key: 'scenes', 
+    icon: Clapperboard,
+    color: 'text-zinc-600',
+    hoverColor: 'hover:bg-zinc-50 hover:text-zinc-700',
+    activeColor: 'bg-gradient-to-r from-zinc-500 to-zinc-600 text-white shadow-lg shadow-zinc-500/30'
   },
 ];
 

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { devtools, subscribeWithSelector } from 'zustand/middleware';
+import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 
 interface SceneInfo {
   id: string;
@@ -7,9 +8,49 @@ interface SceneInfo {
   lastModified: string;
 }
 
+interface SceneData {
+  id: string;
+  name: string;
+  lastModified: string;
+  canvas: {
+    elements: AnimatedCanvasObject[];
+    groups: CanvasGroup[];
+    dimensions: { width: number; height: number };
+    canvasSize: {
+      currentSizeId: string;
+      customSize?: { width: number; height: number } | null;
+    };
+  };
+  timeline: {
+    scale: number;
+    duration: number;
+    currentTime: number;
+    animationStates: Record<string, any>;
+  };
+  ui: {
+    zoom: number;
+    selectedElements: string[];
+    selectedGroups: string[];
+    panelState: {
+      leftPanelVisible: boolean;
+      rightPanelVisible: boolean;
+      leftPanelWidth: number;
+      rightPanelWidth: number;
+      timelineHeight: number;
+      isTimelineCollapsed: boolean;
+    };
+    toolState: {
+      activeTool: string;
+      isPathMode: boolean;
+      showPaths: boolean;
+    };
+  };
+}
+
 export interface SceneState {
   activeSceneId: string | null;
   scenes: SceneInfo[];
+  sceneDataCache: Map<string, SceneData>; // Cache for scene data
   
   // Actions
   setActiveScene: (sceneId: string) => void;
@@ -22,6 +63,11 @@ export interface SceneState {
   getSceneById: (sceneId: string) => SceneInfo | undefined;
   updateSceneModified: (sceneId: string) => void;
   loadScenes: (scenesData: Array<{ id: string; name: string; lastModified?: string }>, activeSceneId: string) => void;
+  
+  // Scene data management
+  cacheSceneData: (sceneId: string, data: SceneData) => void;
+  getCachedSceneData: (sceneId: string) => SceneData | undefined;
+  clearSceneDataCache: () => void;
 }
 
 const DEFAULT_SCENE_ID = 'scene-1';
@@ -199,6 +245,19 @@ export const useSceneStore = create<SceneState>()(
           
 
         },
+        
+        // Scene data management
+        cacheSceneData: (sceneId: string, data: SceneData) => {
+          set(state => ({
+            sceneDataCache: state.sceneDataCache.set(sceneId, data)
+          }));
+        },
+        getCachedSceneData: (sceneId: string) => {
+          return get().sceneDataCache.get(sceneId);
+        },
+        clearSceneDataCache: () => {
+          set({ sceneDataCache: new Map() });
+        },
       }),
       {
         name: 'scene-store',
@@ -222,6 +281,9 @@ export const useGetScenes = () => useSceneStore(state => state.getScenes);
 export const useGetSceneById = () => useSceneStore(state => state.getSceneById);
 export const useUpdateSceneModified = () => useSceneStore(state => state.updateSceneModified);
 export const useLoadScenes = () => useSceneStore(state => state.loadScenes);
+export const useCacheSceneData = () => useSceneStore(state => state.cacheSceneData);
+export const useGetCachedSceneData = () => useSceneStore(state => state.getCachedSceneData);
+export const useClearSceneDataCache = () => useSceneStore(state => state.clearSceneDataCache);
 
 // Legacy hook for backwards compatibility - but avoid using this
 export const useSceneActions = () => ({

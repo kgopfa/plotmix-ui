@@ -14,6 +14,10 @@ export interface ProjectData {
     currentTime: number;
     animationStates: Record<string, any>;
   };
+  currentScene?: {
+    id: string;
+    name: string;
+  };
 }
 
 /**
