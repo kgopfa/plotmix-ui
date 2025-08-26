@@ -29,7 +29,9 @@ export const useSnappingPersistence = () => {
         },
       };
 
+      console.log('Saving snapping preferences:', preferences);
       await apiClient.post('/api/projects/preferences', { preferences });
+      console.log('Snapping preferences saved successfully');
     } catch (error) {
       console.error('Failed to save snapping preferences:', error);
     }
@@ -37,15 +39,22 @@ export const useSnappingPersistence = () => {
 
   // Load snapping preferences from backend configuration
   const loadSnappingPreferences = useCallback((configuration: Record<string, unknown>) => {
+    console.log('Loading snapping preferences from configuration:', configuration);
+    
     const editor = configuration?.editor as Record<string, unknown> | undefined;
-    if (!editor || !editor.snapping) return;
+    if (!editor || !editor.snapping) {
+      console.log('No editor or snapping configuration found, using defaults');
+      return;
+    }
 
     const { snapping } = editor;
+    console.log('Found snapping configuration:', snapping);
 
     // Load grid snapping settings
     if (snapping && typeof snapping === 'object' && 'grid' in snapping) {
       const grid = (snapping as Record<string, unknown>).grid as Record<string, unknown>;
       if (grid) {
+        console.log('Loading grid config:', grid);
         updateGridConfig({
           enabled: (grid.enabled as boolean) ?? true,
           visible: (grid.visible as boolean) ?? true,
@@ -59,6 +68,7 @@ export const useSnappingPersistence = () => {
     if (snapping && typeof snapping === 'object' && 'elements' in snapping) {
       const elements = (snapping as Record<string, unknown>).elements as Record<string, unknown>;
       if (elements) {
+        console.log('Loading element snap config:', elements);
         updateElementSnapConfig({
           enabled: (elements.enabled as boolean) ?? true,
           snapThreshold: (elements.snapThreshold as number) ?? 10,

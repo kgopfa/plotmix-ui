@@ -23,10 +23,10 @@ export interface UseGridSnappingReturn {
 }
 
 export const useGridSnapping = (initialConfig?: Partial<GridConfig>): UseGridSnappingReturn => {
-  const [gridConfig, setGridConfigState] = useState<GridConfig>({
+  const [gridConfig, setGridConfigState] = useState<GridConfig>(() => ({
     ...DEFAULT_GRID_CONFIG,
     ...initialConfig,
-  });
+  }));
   
   const [isSnapTemporarilyDisabled, setIsSnapTemporarilyDisabled] = useState(false);
   const keydownListenerRef = useRef<((e: KeyboardEvent) => void) | null>(null);
@@ -54,10 +54,10 @@ export const useGridSnapping = (initialConfig?: Partial<GridConfig>): UseGridSna
 
     return () => {
       if (keydownListenerRef.current) {
-        document.removeEventListener('keydown', keydownListenerRef.current);
+        document.removeEventListener('keydown', handleKeyDown);
       }
       if (keyupListenerRef.current) {
-        document.removeEventListener('keyup', keyupListenerRef.current);
+        document.removeEventListener('keyup', handleKeyUp);
       }
     };
   }, []);

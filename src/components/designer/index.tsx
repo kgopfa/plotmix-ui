@@ -24,6 +24,7 @@ import { useCanvasDimensions } from '@/hooks/use-canvas-dimensions';
 import { useTimelineIntegration } from '@/hooks/use-timeline-integration';
 import { useElementSnapping } from '@/hooks/use-element-snapping';
 import { useGridSnapping } from '@/hooks/use-grid-snapping';
+import type { SnapGuide } from '@/utils/element-snapping';
 import { useElementBoundsCache } from '@/hooks/use-element-bounds-cache';
 import { usePanelResize } from '@/hooks/use-panel-resize';
 import { useImageUpload } from '@/hooks/use-image-upload';
@@ -192,25 +193,48 @@ export default function Designer() {
     snapThreshold: stableElementSnapConfig.snapThreshold
   });
 
-  // Use UI store snapping state instead of local hooks
-  const {
-    snapElement,
-    currentGuides,
-    setCurrentGuides,
-    clearGuides: clearElementSnapGuides,
-    isSnapTemporarilyDisabled: isElementSnapDisabled
-  } = useElementSnapping(stableElementSnapHookConfig);
+  // Use UI store snapping state directly instead of local hooks
+  // This avoids infinite re-renders and ensures proper state synchronization
+  const snapElement = useCallback((
+    element: AnimatedCanvasObject,
+    allElements: AnimatedCanvasObject[]
+  ): { x: number; y: number; guides: SnapGuide[] } => {
+    // Check if element snapping is enabled
+    if (!stableElementSnapConfig.enabled || snappingState.isElementSnapTemporarilyDisabled) {
+      return { x: element.x, y: element.y, guides: [] };
+    }
 
-  // Grid snapping functionality - use UI store state
-  const {
-    snapPoint: gridSnapPoint,
-    isSnapTemporarilyDisabled: isGridSnapDisabled
-  } = useGridSnapping({
-    size: stableGridConfig.size,
-    enabled: stableGridConfig.enabled,
-    visible: stableGridConfig.visible,
-    snapThreshold: stableGridConfig.snapThreshold
-  });
+    // Import the applyElementSnapping function directly
+    const { applyElementSnapping } = require('@/utils/element-snapping');
+    
+    // Use regular snapping
+    const result = applyElementSnapping(
+      element, 
+      allElements, 
+      stableElementSnapConfig.snapThreshold, 
+      stableElementSnapConfig.enableSpacing, 
+      stableElementSnapConfig.enableDistribution, 
+      canvasBounds
+    );
+    
+    return result;
+  }, [stableElementSnapConfig, snappingState.isElementSnapTemporarilyDisabled, canvasBounds]);
+
+  // Grid snapping functionality - use store state directly
+  const gridSnapPoint = useCallback((
+    point: { x: number; y: number }, 
+    event?: { shiftKey?: boolean }
+  ): { x: number; y: number } => {
+    // Check if grid snapping is enabled
+    if (!stableGridConfig.enabled || snappingState.isGridSnapTemporarilyDisabled) {
+      return point;
+    }
+
+    // Import the smartSnapPointToGrid function directly
+    const { smartSnapPointToGrid } = require('@/utils/grid-utils');
+    
+    return smartSnapPointToGrid(point, stableGridConfig);
+  }, [stableGridConfig, snappingState.isGridSnapTemporarilyDisabled]);
 
   // Memoize snapPoint to prevent infinite re-renders
   const snapPoint = useCallback((point: { x: number; y: number }, event?: { shiftKey?: boolean }) => {
@@ -279,7 +303,10 @@ export default function Designer() {
   
   // Grid and snap configuration - now properly integrated
   const gridConfig = stableGridConfig;
-  const snapGuides = currentGuides;
+  
+  // Local state for snap guides since they're not in the store
+  const [snapGuides, setSnapGuides] = useState<SnapGuide[]>([]);
+  const clearSnapGuides = useCallback(() => setSnapGuides([]), []);
 
   // Force a center on mount/size changes using the exposed ref method
   useEffect(() => {
@@ -311,10 +338,10 @@ export default function Designer() {
       const { updateElement } = useCanvasStore.getState();
       updateElement(id, updates);
     },
-    onSnapElement: snapElement,
-    onSnapPoint: snapPoint,
-    onSetSnapGuides: setCurrentGuides,
-    onClearSnapGuides: clearElementSnapGuides,
+          onSnapElement: snapElement,
+      onSnapPoint: snapPoint,
+      onSetSnapGuides: setSnapGuides,
+      onClearSnapGuides: clearSnapGuides,
   });
 
   // Set up global event listeners for dragging
@@ -482,10 +509,10 @@ export default function Designer() {
     timelineManager.setTrackData(canvasObjects, groups);
   }, [canvasObjects, groups, timelineManager]);
 
-  // Clear snap guides when element selection changes or drag ends
-  useEffect(() => {
-    clearElementSnapGuides();
-  }, [selectedObjects, clearElementSnapGuides]);
+      // Clear snap guides when element selection changes or drag ends
+    useEffect(() => {
+      clearSnapGuides();
+    }, [selectedObjects, clearSnapGuides]);
 
   // Handle polygon closure when isClosingShape becomes true
   useEffect(() => {
@@ -609,7 +636,7 @@ export default function Designer() {
     addPathToAnimation,
     togglePathMode,
     setAnimationTarget,
-    clearElementSnapGuides
+    clearElementSnapGuides: clearSnapGuides
   });
 
   // Use a ref to track if we're currently dragging to avoid expensive operations
@@ -1091,10 +1118,10 @@ export default function Designer() {
           handleGroupSelectionDragStart={handleGroupSelectionDragStart}
           isElementInCustomOrPolygonGroup={isElementInCustomOrPolygonGroup}
           // Snapping handlers
-          onSnapElement={snapElement}
-          onSnapPoint={snapPoint}
-          onSetSnapGuides={setCurrentGuides}
-          onClearSnapGuides={clearElementSnapGuides}
+                      onSnapElement={snapElement}
+            onSnapPoint={snapPoint}
+            onSetSnapGuides={setSnapGuides}
+            onClearSnapGuides={clearSnapGuides}
           // Deselection handler for empty area clicks
           onEmptyAreaClick={() => {
             // Deselect all elements when clicking in empty area
@@ -1108,7 +1135,7 @@ export default function Designer() {
             // Handle group context menu
           }}
           shiftKey={shiftKey}
-          isSnappingEnabled={stableElementSnapConfig.enabled && !isElementSnapDisabled}
+          isSnappingEnabled={stableElementSnapConfig.enabled && !snappingState.isElementSnapTemporarilyDisabled}
           gridConfig={stableGridConfig}
         />
 

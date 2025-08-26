@@ -323,6 +323,9 @@ const defaultKeyboardShortcuts: KeyboardShortcut[] = [
 ];
 
 export const useUIStore = create<UIStore>((set, get) => {
+  // Debug: Log store creation
+  console.log('UI Store created with default snapping state:', defaultSnappingState);
+  
   // Load persisted state from localStorage
   const loadPersistedState = () => {
     if (typeof window === 'undefined') return {};
@@ -544,14 +547,18 @@ export const useUIStore = create<UIStore>((set, get) => {
 
   // Snapping Actions
   updateGridConfig: (config: Partial<GridConfig>) => {
+    console.log('Updating grid config:', config);
     set(produce((state) => {
       Object.assign(state.snapping.gridConfig, config);
+      console.log('Grid config updated, new state:', state.snapping.gridConfig);
     }));
   },
 
   updateElementSnapConfig: (config: Partial<ElementSnappingConfig>) => {
+    console.log('Updating element snap config:', config);
     set(produce((state) => {
       Object.assign(state.snapping.elementSnapConfig, config);
+      console.log('Element snap config updated, new state:', state.snapping.elementSnapConfig);
     }));
   },
 
@@ -860,7 +867,10 @@ export const useUIStore = create<UIStore>((set, get) => {
 // Selector hooks for specific parts of the UI state
 export const usePanelState = () => useUIStore((state) => state.panels);
 export const useToolState = () => useUIStore((state) => state.tools);
-export const useSnappingState = () => useUIStore((state) => state.snapping);
+export const useSnappingState = () => useUIStore((state) => {
+  console.log('useSnappingState accessed, current state:', state.snapping);
+  return state.snapping;
+});
 export const useCanvasState = () => useUIStore((state) => state.canvas);
 export const useUserPreferences = () => useUIStore((state) => state.preferences);
 export const useNavigationState = () => useUIStore((state) => state.navigation);

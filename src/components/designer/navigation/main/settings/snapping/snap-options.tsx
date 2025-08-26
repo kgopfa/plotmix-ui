@@ -44,6 +44,20 @@ export const SnappingOptions: React.FC<SnappingOptionsProps> = ({
           <path d="M3 3H5V5H3V3ZM7 3H9V5H7V3ZM11 3H13V5H11V3ZM15 3H17V5H15V3ZM19 3H21V5H19V3ZM3 7H5V9H3V7ZM7 7H9V9H7V7ZM11 7H13V9H11V7ZM15 7H17V9H15V7ZM19 7H21V9H19V7ZM3 11H5V13H3V11ZM7 11H9V13H7V11ZM11 11H13V9H11V11ZM15 11H17V13H15V11ZM19 11H21V13H19V11ZM3 15H5V17H3V15ZM7 15H9V17H7V15ZM11 15H13V17H11V15ZM15 15H17V17H15V15ZM19 15H21V17H19V17ZM3 19H5V21H3V19ZM7 19H9V21H7V19ZM11 19H13V21H11V19ZM15 19H17V21H15V19ZM19 19H21V21H19V19Z" fill="currentColor"/>
         </svg>
         Snapping Options
+        <button
+          className="ml-auto px-2 py-1 text-xs bg-green-500 text-white rounded"
+          onClick={() => {
+            console.log('SnappingOptions test - current config:', {
+              gridConfig,
+              elementSnapConfig,
+              isGridSnapTemporarilyDisabled,
+              isElementSnapTemporarilyDisabled
+            });
+          }}
+          title="Test snapping options"
+        >
+          Test
+        </button>
       </div>
       
       {/* Grid Section (visibility toggle removed) */}
