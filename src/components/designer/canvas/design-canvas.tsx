@@ -94,7 +94,7 @@ interface DesignCanvasProps {
 export const DesignCanvas = (props: DesignCanvasProps) => {
   // Get isPlaying state directly from timeline store
   const isPlaying = useTimelineStore(state => state.playback.isPlaying);
-  
+
   // Get selection store functions
   const { selectGroup } = useSelectionStore();
 
@@ -155,7 +155,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
       x: worldCenterX + centerX,
       y: worldCenterY + centerY
     };
-    
+
     return position;
   }, [worldCenterX, worldCenterY, centerX, centerY]);
 
@@ -249,7 +249,6 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
       eventMode="static"
       sortableChildren={true}
       data-pixi-container="design-canvas"
-      hitArea={new Rectangle(-canvasFrameWidth / 2, -canvasFrameHeight / 2, canvasFrameWidth, canvasFrameHeight)}
       ref={(container) => {
         containerRef.current = container;
         props.mainCanvasContainerRef.current = container;
@@ -279,15 +278,15 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           // Also check for group hits
           const hitGroup = props.groups.find(group => {
             if (group.visible === false || group.isDefaultGroup) return false;
-            
+
             const groupElements = props.elements.filter(el => el.groupId === group.id && el.visible !== false);
             if (groupElements.length === 0) return false;
-            
+
             // Calculate group bounds
             let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-            
+
             const isPolygonGroup = group.type === 'polygon' || groupElements.every(el => el.type === 'line');
-            
+
             groupElements.forEach(el => {
               if (isPolygonGroup && el.type === 'line' && el.lineOptions?.points) {
                 const { start, end } = el.lineOptions.points;
@@ -300,20 +299,20 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                 const right = el.x + el.width / 2;
                 const top = el.y - el.height / 2;
                 const bottom = el.y + el.height / 2;
-                
+
                 minX = Math.min(minX, left);
                 minY = Math.min(minY, top);
                 maxX = Math.max(maxX, right);
                 maxY = Math.max(maxY, bottom);
               }
             });
-            
+
             return e.global.x >= minX && e.global.x <= maxX && e.global.y >= minY && e.global.y <= maxY;
           });
 
           // Check if any group is currently selected
-          const hasSelectedGroups = props.groups.some(group => 
-            !group.isDefaultGroup && props.selectedIds.some(id => 
+          const hasSelectedGroups = props.groups.some(group =>
+            !group.isDefaultGroup && props.selectedIds.some(id =>
               props.elements.find(el => el.id === id)?.groupId === group.id
             )
           );
@@ -368,15 +367,15 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           // Also check for group hits
           const hitGroup = props.groups.find(group => {
             if (group.visible === false || group.isDefaultGroup) return false;
-            
+
             const groupElements = props.elements.filter(el => el.groupId === group.id && el.visible !== false);
             if (groupElements.length === 0) return false;
-            
+
             // Calculate group bounds
             let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-            
+
             const isPolygonGroup = group.type === 'polygon' || groupElements.every(el => el.type === 'line');
-            
+
             groupElements.forEach(el => {
               if (isPolygonGroup && el.type === 'line' && el.lineOptions?.points) {
                 const { start, end } = el.lineOptions.points;
@@ -389,20 +388,20 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                 const right = el.x + el.width / 2;
                 const top = el.y - el.height / 2;
                 const bottom = el.y + el.height / 2;
-                
+
                 minX = Math.min(minX, left);
                 minY = Math.min(minY, top);
                 maxX = Math.max(maxX, right);
                 maxY = Math.max(maxY, bottom);
               }
             });
-            
+
             return e.global.x >= minX && e.global.x <= maxX && e.global.y >= minY && e.global.y <= maxY;
           });
 
           // Check if any group is currently selected
-          const hasSelectedGroups = props.groups.some(group => 
-            !group.isDefaultGroup && props.selectedIds.some(id => 
+          const hasSelectedGroups = props.groups.some(group =>
+            !group.isDefaultGroup && props.selectedIds.some(id =>
               props.elements.find(el => el.id === id)?.groupId === group.id
             )
           );
@@ -440,7 +439,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           .filter((el: AnimatedCanvasObject) => el.groupId === group.id && (el.visible !== false));
 
         // Check if this group is selected
-        const isGroupSelected = selectedIds.some(id => 
+        const isGroupSelected = selectedIds.some(id =>
           groupElements.some(el => el.id === id)
         );
 
@@ -457,7 +456,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
             cursor={tool === 'select' ? 'move' : 'default'}
             onPointerDown={tool === 'select' ? (e: FederatedPointerEvent) => {
               e.stopPropagation();
-              
+
               // Check if this is a right-click for context menu
               if (e.button === 2) {
                 if (props.onGroupContextMenu) {
@@ -465,14 +464,14 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                 }
                 return;
               }
-              
+
               // Handle group selection - same approach as timeline
               const isMultiSelect = (e.nativeEvent && 'metaKey' in e.nativeEvent) ?
                 (e.nativeEvent.metaKey || e.nativeEvent.ctrlKey) : false;
-              
+
               // Select the group directly (same as timeline)
               selectGroup(group, isMultiSelect);
-              
+
               // Handle dragging if the group is already selected
               if (isGroupSelected && props.handleGroupSelectionDragStart) {
                 // Create a virtual group element for dragging
@@ -493,7 +492,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                   animations: [],
                   zIndex: Math.max(...groupElements.map((el: AnimatedCanvasObject) => el.zIndex || 0))
                 };
-                
+
                 props.handleGroupSelectionDragStart(virtualGroupElement, e.global.x, e.global.y, elements);
               }
             } : undefined}
@@ -508,10 +507,10 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                   g.clear();
                   // Calculate group bounds for hit area
                   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-                  
+
                   // Check if this is a polygon group (all elements are lines)
                   const isPolygonGroup = group.type === 'polygon' || groupElements.every(el => el.type === 'line');
-                  
+
                   groupElements.forEach(el => {
                     if (isPolygonGroup && el.type === 'line' && el.lineOptions?.points) {
                       // For polygon groups, use the actual line endpoints
@@ -526,19 +525,19 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                       const right = el.x + el.width / 2;
                       const top = el.y - el.height / 2;
                       const bottom = el.y + el.height / 2;
-                      
+
                       minX = Math.min(minX, left);
                       minY = Math.min(minY, top);
                       maxX = Math.max(maxX, right);
                       maxY = Math.max(maxY, bottom);
                     }
                   });
-                  
+
                   const groupWidth = maxX - minX;
                   const groupHeight = maxY - minY;
                   const groupCenterX = (minX + maxX) / 2;
                   const groupCenterY = (minY + maxY) / 2;
-                  
+
                   // Draw transparent hit area
                   g.rect(
                     groupCenterX - group.x - groupWidth / 2,
@@ -553,7 +552,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                 cursor="move"
                 onPointerDown={(e: FederatedPointerEvent) => {
                   e.stopPropagation();
-                  
+
                   // Check if this is a right-click for context menu
                   if (e.button === 2) {
                     if (props.onGroupContextMenu) {
@@ -561,14 +560,14 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                     }
                     return;
                   }
-                  
+
                   // Handle group selection
                   const isMultiSelect = (e.nativeEvent && 'metaKey' in e.nativeEvent) ?
                     (e.nativeEvent.metaKey || e.nativeEvent.ctrlKey) : false;
-                  
+
                   // Select the group directly (same as timeline)
                   selectGroup(group, isMultiSelect);
-                  
+
                   // Handle dragging if the group is already selected
                   if (isGroupSelected && props.handleGroupSelectionDragStart) {
                     // Create a virtual group element for dragging
@@ -589,13 +588,13 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                       animations: [],
                       zIndex: Math.max(...groupElements.map((el: AnimatedCanvasObject) => el.zIndex || 0))
                     };
-                    
+
                     props.handleGroupSelectionDragStart(virtualGroupElement, e.global.x, e.global.y, elements);
                   }
                 }}
               />
             )}
-            
+
             {/* Render elements as children of the group container */}
             {groupElements.map((el: AnimatedCanvasObject) => {
               // Calculate element position relative to group center
@@ -667,15 +666,15 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
       {!isPlaying && groups.filter(group => (group.visible !== false) && !group.isDefaultGroup).map((group) => {
         const groupElements = elements.filter((el: AnimatedCanvasObject) => el.groupId === group.id && (el.visible !== false));
         const isGroupSelected = selectedIds.some(id => groupElements.some(el => el.id === id));
-        
+
         if (!isGroupSelected) return null;
-        
+
         // Calculate group bounds
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        
+
         // Check if this is a polygon group (all elements are lines)
         const isPolygonGroup = group.type === 'polygon' || groupElements.every(el => el.type === 'line');
-        
+
         groupElements.forEach(el => {
           if (isPolygonGroup && el.type === 'line' && el.lineOptions?.points) {
             // For polygon groups, use the actual line endpoints
@@ -690,19 +689,19 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
             const right = el.x + el.width / 2;
             const top = el.y - el.height / 2;
             const bottom = el.y + el.height / 2;
-            
+
             minX = Math.min(minX, left);
             minY = Math.min(minY, top);
             maxX = Math.max(maxX, right);
             maxY = Math.max(maxY, bottom);
           }
         });
-        
+
         const groupWidth = maxX - minX;
         const groupHeight = maxY - minY;
         const groupCenterX = (minX + maxX) / 2;
         const groupCenterY = (minY + maxY) / 2;
-        
+
         // Create virtual group element for outline
         const virtualGroupElement: AnimatedCanvasObject = {
           id: `group-outline-${group.id}`,
@@ -721,7 +720,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           animations: [],
           cornerRadius: 0
         };
-        
+
         return (
           <React.Fragment key={`group-outline-${group.id}`}>
             <pixiContainer
@@ -735,7 +734,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                 scaleFactor={canvasScaleFactor.current}
               />
             </pixiContainer>
-            
+
             {/* Resize handles for group */}
             <ResizeHandle
               elementX={groupCenterX}
@@ -787,16 +786,16 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         })
         .map((el: AnimatedCanvasObject) => {
           // Handle all element types consistently, including SVGs
-                  return (
-          <pixiContainer
-            key={el.id}
-            x={el.x}
-            y={el.y}
-            pivot={{ x: 0, y: 0 }}
-            alpha={el.opacity ?? 1}
-            zIndex={el.zIndex || 0}
-            interactive={tool === 'select' || tool === 'draw'}
-            eventMode={tool === 'select' || tool === 'draw' ? 'dynamic' : 'none'}
+          return (
+            <pixiContainer
+              key={el.id}
+              x={el.x}
+              y={el.y}
+              pivot={{ x: 0, y: 0 }}
+              alpha={el.opacity ?? 1}
+              zIndex={el.zIndex || 0}
+              interactive={tool === 'select' || tool === 'draw'}
+              eventMode={tool === 'select' || tool === 'draw' ? 'dynamic' : 'none'}
               hitArea={getHitArea(el)}
               rotation={el.rotation || 0}
               onPointerDown={tool === 'select' || tool === 'draw' ? (e: FederatedPointerEvent) => {
@@ -850,11 +849,11 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                 }
                 return true; // Show outline for ungrouped elements
               })() && (
-                <ElementSelect
-                  element={el}
-                  scaleFactor={canvasScaleFactor.current}
-                />
-              )}
+                  <ElementSelect
+                    element={el}
+                    scaleFactor={canvasScaleFactor.current}
+                  />
+                )}
 
               {/* Show center highlight when in path mode and this element is the animation target */}
               {isPathMode && animationTarget && animationTarget.elementId === el.id && (
@@ -968,20 +967,20 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           }
           return false;
         });
-        
+
         // If all selected elements are part of the same group, don't show group selection outline
         // (groups will show their own group selection outlines)
         if (selectedGroupIds.size === 1 && elementsInGroups.length === selectedIds.length) {
           return null;
         }
-        
+
         // Get the selected elements
         const selectedElements = selectedIds
           .map(id => elements.find(el => el.id === id))
           .filter((el): el is AnimatedCanvasObject => el !== undefined);
-        
+
         if (selectedElements.length === 0) return null;
-        
+
         return (
           <pixiContainer zIndex={2002}>
             <GroupSelection
