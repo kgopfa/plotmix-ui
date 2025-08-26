@@ -249,6 +249,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
       eventMode="static"
       sortableChildren={true}
       data-pixi-container="design-canvas"
+      hitArea={new Rectangle(-canvasFrameWidth / 2, -canvasFrameHeight / 2, canvasFrameWidth, canvasFrameHeight)}
       ref={(container) => {
         containerRef.current = container;
         props.mainCanvasContainerRef.current = container;
@@ -260,8 +261,13 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           return;
         }
 
+        // For creation tools (rectangle, circle, triangle, arc, text, line, simpleLine, polygon), always call canvas click handler
+        if (['rectangle', 'circle', 'triangle', 'arc', 'text', 'line', 'simpleLine', 'polygon'].includes(props.tool)) {
+          props.handleCanvasClick(e);
+          return;
+        }
+
         // Only check for hit elements when using select tool
-        // For creation tools, elements are non-interactive so we can always create shapes
         if (props.tool === 'select') {
           const hitElement = props.elements.find(element => {
             const shapeRef = props.shapeRefs.current[element.id];
@@ -321,9 +327,6 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           if (!hitElement && !hitGroup && !hasSelectedGroups) {
             props.handleCanvasClick(e);
           }
-        } else {
-          // For creation tools, always call canvas click handler since elements are non-interactive
-          props.handleCanvasClick(e);
         }
       }}
       onPointerMove={(e: FederatedPointerEvent) => {
