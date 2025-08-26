@@ -6,6 +6,7 @@ import { useSceneStore } from '@/stores/use-scene-store';
 import { DiffPatcher } from 'jsondiffpatch';
 import { apiClient } from '@/lib/api-client';
 import { useUIStore } from '@/stores/use-ui-store';
+import { isAutosaveEnabled, getConfig } from '@/lib/config';
 
 type SaveStatus = 'idle' | 'saving' | 'success' | 'error';
 
@@ -55,7 +56,7 @@ export const useProjectStore = create<ProjectStore>()(
     lastSavedAt: null,
       saveStatus: 'idle',
       autosaveTimer: null,
-      autosaveDelayMs: 1200,
+      autosaveDelayMs: getConfig('autosave').delayMs,
 
     setProjectInfo: (info) => {
       set(produce((state: ProjectStore) => {
@@ -320,6 +321,11 @@ export const useProjectStore = create<ProjectStore>()(
     },
 
     scheduleAutosave: () => {
+      // Check if auto-save is enabled in config
+      if (!isAutosaveEnabled()) {
+        return;
+      }
+      
       const { autosaveTimer, autosaveDelayMs } = get();
       if (autosaveTimer) {
         clearTimeout(autosaveTimer as unknown as number);
@@ -352,7 +358,7 @@ export const useProjectStore = create<ProjectStore>()(
     // Re-enable autosave with default delay
     enableAutosave: () => {
       set(produce((state: ProjectStore) => {
-        state.autosaveDelayMs = 1200; // Restore default delay
+        state.autosaveDelayMs = getConfig('autosave').delayMs; // Restore default delay from config
       }));
     },
 
