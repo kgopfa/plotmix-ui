@@ -184,17 +184,26 @@ export const useElementPointerHandlers = ({
   const handleElementPointerMove = useCallback((e: FederatedPointerEvent) => {
     if (!dragStartRef.current) return;
 
-    const { id } = dragStartRef.current;
+    const { id, x: startX, y: startY } = dragStartRef.current;
     const currentX = e.global.x;
     const currentY = e.global.y;
 
-    // Start dragging immediately on first mouse movement (no threshold)
+    // Calculate the distance moved from the start point
+    const deltaX = Math.abs(currentX - startX);
+    const deltaY = Math.abs(currentY - startY);
+    const totalDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
     
-    // Start dragging immediately (no threshold check)
+    // Only start dragging if the mouse has moved more than the threshold
+    // This prevents accidental dragging from tiny hand movements or system events
+    const DRAG_THRESHOLD = 3; // 3 pixels threshold
+    
+    if (totalDistance < DRAG_THRESHOLD) {
+      return; // Don't start dragging yet
+    }
+
+    // Start dragging after threshold is met
     const element = elements.find(el => el.id === id);
     if (!element) return;
-
-
 
     // Start dragging
     if (selectedIds.length > 1 && selectedIds.includes(id)) {
