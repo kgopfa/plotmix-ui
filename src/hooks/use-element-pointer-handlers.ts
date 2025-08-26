@@ -1,7 +1,8 @@
 import { useCallback, useRef } from 'react';
-import type { FederatedPointerEvent } from 'pixi.js';
+import type { FederatedPointerEvent, Container } from 'pixi.js';
 import type { AnimatedCanvasObject } from '@/types/canvas';
 import type { ViewportWrapper } from '@/components/designer/viewport/viewport-wrapper';
+import { convertPointerEventToDesignCanvasCoords } from '@/utils/coordinate-utils';
 
 interface UseElementPointerHandlersProps {
   tool: string;
@@ -44,22 +45,19 @@ export const useElementPointerHandlers = ({
   const textClickTimeRef = useRef<Map<string, number>>(new Map());
   const dragStartRef = useRef<{ id: string; x: number; y: number; isMultiSelect: boolean } | null>(null);
 
-  // Helper function to convert PIXI coordinates to the same coordinate system used by dragging
-  const convertToDragCoordinates = useCallback((pixiX: number, pixiY: number) => {
-    if (viewportRef?.current && canvasPosition) {
-      // Convert PIXI world coordinates to viewport world coordinates
-      const viewportWorldPos = viewportRef.current.toWorld(pixiX, pixiY);
-      
-      // Convert to canvas-relative coordinates (same system as dragging logic)
-      const canvasX = viewportWorldPos.x - canvasPosition.x;
-      const canvasY = viewportWorldPos.y - canvasPosition.y;
-      
-      return { x: canvasX, y: canvasY };
+  // Use the EXACT same coordinate system as element placement
+  const convertToDragCoordinates = useCallback((e: FederatedPointerEvent) => {
+    // Use the EXACT same approach as element placement
+    const designCanvasContainer = e.currentTarget as unknown as Container;
+    if (!designCanvasContainer) {
+      console.warn('Design canvas container not found in drag event');
+      return { x: 0, y: 0 };
     }
     
-    // Fallback to PIXI coordinates if viewport not available
-    return { x: pixiX, y: pixiY };
-  }, [viewportRef, canvasPosition]);
+    // Use the EXACT same coordinate conversion as element placement
+    const localPos = convertPointerEventToDesignCanvasCoords(e, designCanvasContainer);
+    return localPos;
+  }, []);
 
   // Helper function to calculate zoom-aware offset
   const calculateZoomAwareOffset = useCallback((dragCoords: { x: number; y: number }, element: AnimatedCanvasObject) => {
@@ -206,7 +204,7 @@ export const useElementPointerHandlers = ({
         if (!selectedElement) return { id: selectedId, offsetX: 0, offsetY: 0 };
         
         // Convert coordinates to the same system used by dragging logic
-        const dragCoords = convertToDragCoordinates(currentX, currentY);
+        const dragCoords = convertToDragCoordinates(e);
         // Use zoom-aware offset calculation
         const offset = calculateZoomAwareOffset(dragCoords, selectedElement);
         return {
@@ -217,13 +215,13 @@ export const useElementPointerHandlers = ({
       });
       
       // Convert coordinates for the main element - offset should be distance from mouse to element center
-      const dragCoords = convertToDragCoordinates(currentX, currentY);
+      const dragCoords = convertToDragCoordinates(e);
       // Use zoom-aware offset calculation for main element
       const mainOffset = calculateZoomAwareOffset(dragCoords, element);
       startDragging(id, mainOffset.offsetX, mainOffset.offsetY, true, offsets);
     } else {
       // Single element drag - offset should be distance from mouse to element center
-      const dragCoords = convertToDragCoordinates(currentX, currentY);
+      const dragCoords = convertToDragCoordinates(e);
       // Use zoom-aware offset calculation
       const offset = calculateZoomAwareOffset(dragCoords, element);
       startDragging(id, offset.offsetX, offset.offsetY);

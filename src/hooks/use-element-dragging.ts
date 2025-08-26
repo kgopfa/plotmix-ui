@@ -114,15 +114,24 @@ export const useElementDragging = ({
         // Convert mouse coordinates to viewport world coordinates
         const worldPos = viewportRef.current.toWorld(e.clientX, e.clientY);
         
-        // Convert world coordinates to canvas-relative coordinates
-        // Use the actual canvas position if provided, otherwise fall back to cache
+        // Get the canvas container position from the viewport (same as element placement)
+        const canvasContainer = viewportRef.current.children.find(child => 
+          (child as any).data?.['data-pixi-container'] === 'design-canvas'
+        );
+        
+        if (canvasContainer) {
+          // Use the same calculation as element placement: worldPos - container.x
+          const canvasX = worldPos.x - canvasContainer.x;
+          const canvasY = worldPos.y - canvasContainer.y;
+          return { worldX: canvasX, worldY: canvasY };
+        }
+        
+        // Fallback to calculated position if container not found
         const canvasOffsetX = canvasPosition ? canvasPosition.x : (cache.worldCenterX + cache.centerX);
         const canvasOffsetY = canvasPosition ? canvasPosition.y : (cache.worldCenterY + cache.centerY);
         
         const canvasX = worldPos.x - canvasOffsetX;
         const canvasY = worldPos.y - canvasOffsetY;
-        
-
         
         return { worldX: canvasX, worldY: canvasY };
       } catch (error) {
@@ -203,8 +212,11 @@ export const useElementDragging = ({
       const newX = worldX - elementDragOffset.x;
       const newY = worldY - elementDragOffset.y;
 
+      // Use store update function for immediate visual feedback
+      // This updates the element position without triggering full re-renders
+      updateElement(draggingId, { x: newX, y: newY });
 
-
+      // Show snap guides if snapping is enabled
       if (onSnapElement && onSetSnapGuides) {
         // Create a temporary element with the new position for snapping calculation
         const tempElement = { ...element, x: newX, y: newY };
@@ -222,12 +234,6 @@ export const useElementDragging = ({
         } else {
           onSetSnapGuides([]);
         }
-
-        // Use snapped position
-        onElementDragEnd(draggingId, snapResult.x, snapResult.y);
-      } else {
-        // Fallback to non-snapped dragging
-        onElementDragEnd(draggingId, newX, newY);
       }
     }
   }, [draggingId, isDraggingGroup, groupDragOffsets, onGroupDrag, elements, draggingEndpoint, onLineEndpointDrag, elementDragOffset, onElementDragEnd, onSnapElement, onSnapPoint, onSetSnapGuides, getOptimizedCoordinates, canvasZoom]);
@@ -235,6 +241,9 @@ export const useElementDragging = ({
   // Global pointer up handler for element dragging
   const handleGlobalPointerUp = useCallback(() => {
     if (draggingId) {
+      // Dragging ended - element position is already updated in the store
+      // No need to call onElementDragEnd since we used updateElement during dragging
+
       setDraggingId(null);
       setElementDragOffset(null);
       setDraggingEndpoint(null);
