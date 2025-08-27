@@ -369,7 +369,6 @@ export const useTimelineStore = create<TimelineStore>()(
         
         // Skip if elements are empty (might be in transition)
         if (!elements || elements.length === 0) {
-          console.warn('Timeline Store: Skipping updateTracks - no elements available');
           return;
         }
         
