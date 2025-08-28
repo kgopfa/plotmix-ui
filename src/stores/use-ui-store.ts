@@ -863,6 +863,13 @@ export const useToolState = () => useUIStore((state) => state.tools);
 export const useSnappingState = () => useUIStore((state) => state.snapping);
 export const useCanvasState = () => useUIStore((state) => state.canvas);
 export const useUserPreferences = () => useUIStore((state) => state.preferences);
+export const usePreferencesActions = () => useUIStore((state) => ({
+  updatePreferences: state.updatePreferences,
+  addRecentFile: state.addRecentFile,
+  removeRecentFile: state.removeRecentFile,
+  updateKeyboardShortcut: state.updateKeyboardShortcut,
+  resetPreferences: state.resetPreferences,
+}));
 export const useNavigationState = () => useUIStore((state) => state.navigation);
 export const useActiveNav = () => useUIStore((state) => state.navigation.activeNav);
 export const useHoverNav = () => useUIStore((state) => state.navigation.hoverNav);
