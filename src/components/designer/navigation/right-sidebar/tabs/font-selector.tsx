@@ -16,7 +16,7 @@ export function FontSelector({ value, onChange, className = '' }: FontSelectorPr
   // Get current font name from family string
   const getCurrentFontName = (fontFamily: string): string => {
     const font = FONT_CATEGORIES.flatMap(cat => cat.fonts).find(f => f.family === fontFamily);
-    return font ? font.name : fontFamily.split(',')[0].trim();
+    return font ? font.name : fontFamily?.split(',')[0]?.trim();
   };
 
   // Filter fonts based on search and category

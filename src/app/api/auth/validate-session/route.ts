@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const token = authHeader.split(' ')[1];
+    const token = authHeader?.split(' ')[1];
     const payload = await verifyJWT(token);
 
     if (!payload) {

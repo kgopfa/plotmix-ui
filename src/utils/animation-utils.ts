@@ -104,7 +104,7 @@ export function updateAnimationDisplayNames(animations: ElementAnimation[]): Ele
   const typeCounts: Record<string, number> = {};
   
   return animations.map(animation => {
-    const baseType = animation.displayName.split('-')[0];
+    const baseType = animation.displayName?.split('-')[0];
     typeCounts[baseType] = (typeCounts[baseType] || 0) + 1;
     
     return {
