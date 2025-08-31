@@ -733,6 +733,15 @@ export const useTimelineStore = create<TimelineStore>()(
       buildGSAPTimeline: () => {
         const { elements, groups, gsapManager } = get();
         gsapManager.buildAnimationTimeline(elements, groups);
+        
+        // Update the total duration based on the actual timeline duration
+        // This ensures the timeline doesn't stop prematurely when group animations end
+        const timelineDuration = gsapManager.getTimelineDuration();
+        if (timelineDuration > 0) {
+          set(produce((state) => {
+            state.playback.totalDuration = Math.max(10, timelineDuration);
+          }));
+        }
       },
 
       // Timeline operations
@@ -1038,28 +1047,33 @@ export const useTimelineStore = create<TimelineStore>()(
             animations: group.animations.map(anim => ({ ...anim }))
           }));
           
-          // Clear and reload animation states
+          // Clear and reload animation states with proper validation
           state.animationStates.clear();
-          Object.entries(data.animationStates).forEach(([key, value]) => {
-            // Create a fresh copy to avoid frozen object issues
-            state.animationStates.set(key, {
-              baseDuration: value.baseDuration,
-              repeat: value.repeat,
-              repeatDelay: value.repeatDelay,
-              yoyo: value.yoyo,
-              effectiveDuration: value.effectiveDuration,
-              effectiveEndTime: value.effectiveEndTime,
+          if (data.animationStates && typeof data.animationStates === 'object') {
+            Object.entries(data.animationStates).forEach(([key, value]) => {
+              if (value && typeof value === 'object') {
+                // Create a fresh copy to avoid frozen object issues
+                state.animationStates.set(key, {
+                  baseDuration: value.baseDuration || 1,
+                  repeat: value.repeat || 0,
+                  repeatDelay: value.repeatDelay || 0,
+                  yoyo: value.yoyo || false,
+                  effectiveDuration: value.effectiveDuration || value.baseDuration || 1,
+                  effectiveEndTime: value.effectiveEndTime || 0,
+                });
+              }
             });
-          });
+          }
           
           // Update timeline UI
-          state.ui.scale = data.scale;
-          state.playback.totalDuration = data.duration;
-          state.playback.currentTime = data.currentTime;
+          state.ui.scale = data.scale || 1;
+          state.playback.totalDuration = data.duration || 10;
+          state.playback.currentTime = data.currentTime || 0;
         }));
         
         // Update tracks and rebuild timeline
-        get().updateTracks();
+        // Note: Don't call updateTracks() here since elements/groups are already set
+        // Just rebuild the GSAP timeline directly
         get().buildGSAPTimeline();
       },
     })
