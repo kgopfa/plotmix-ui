@@ -1243,6 +1243,113 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
           </div>
         )
       }
+
+      {/* Code Editor Properties */}
+      {
+        (localElement.type === 'code-editor') && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+              <h4 className="font-semibold text-blue-400 text-sm">Code Editor Properties</h4>
+            </div>
+
+            <div className="space-y-3">
+              {/* Line Numbers Toggle */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={localElement.showLineNumbers || false}
+                  onChange={e => updateLocalProperty('showLineNumbers', e.target.checked)}
+                  className="rounded border-gray-300 focus:ring-2 focus:ring-blue-500"
+                />
+                <span className="text-sm font-medium text-gray-700">Show Line Numbers</span>
+              </div>
+
+              {/* Language Selection */}
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-semibold text-blue-400">Language</span>
+                <Listbox value={localElement.language || 'javascript'} onChange={(value) => updateLocalProperty('language', value)}>
+                  <div className="relative">
+                    <ListboxButton className="grid w-full cursor-default grid-cols-1 rounded-lg bg-white py-1.5 pr-2 pl-3 text-left text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600 text-sm">
+                      <span className="col-start-1 row-start-1 truncate pr-6">{localElement.language || 'javascript'}</span>
+                      <ChevronsUpDown
+                        aria-hidden="true"
+                        className="col-start-1 row-start-1 size-4 self-center justify-self-end text-gray-500"
+                      />
+                    </ListboxButton>
+
+                    <ListboxOptions
+                      transition
+                      className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white py-1 text-sm shadow-lg ring-1 ring-black/5 focus:outline-hidden data-leave:transition data-leave:duration-100 data-leave:ease-in data-closed:data-leave:opacity-0"
+                    >
+                      {['javascript', 'typescript', 'go', 'python', 'java', 'cpp', 'csharp', 'php', 'ruby', 'swift', 'rust'].map((lang) => (
+                        <ListboxOption
+                          key={lang}
+                          value={lang}
+                          className="group relative cursor-default py-2 pr-4 pl-8 text-gray-600 select-none data-focus:bg-blue-600 data-focus:text-white data-focus:outline-hidden"
+                        >
+                          <span className="block truncate font-normal group-data-selected:font-semibold">{lang}</span>
+
+                          <span className="absolute inset-y-0 left-0 flex items-center pl-1.5 text-blue-600 group-not-data-selected:hidden group-data-focus:text-white">
+                            <Check aria-hidden="true" className="size-4" />
+                          </span>
+                        </ListboxOption>
+                      ))}
+                    </ListboxOptions>
+                  </div>
+                </Listbox>
+              </label>
+
+              {/* Theme Selection */}
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-semibold text-blue-400">Theme</span>
+                <Listbox value={localElement.syntaxTheme || 'light'} onChange={(value) => updateLocalProperty('syntaxTheme', value)}>
+                  <div className="relative">
+                    <ListboxButton className="grid w-full cursor-default grid-cols-1 rounded-lg bg-white py-1.5 pr-2 pl-3 text-left text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600 text-sm">
+                      <span className="col-start-1 row-start-1 truncate pr-6">{localElement.syntaxTheme || 'light'}</span>
+                      <ChevronsUpDown
+                        aria-hidden="true"
+                        className="col-start-1 row-start-1 size-4 self-center justify-self-end text-gray-500"
+                      />
+                    </ListboxButton>
+
+                    <ListboxOptions
+                      transition
+                      className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white py-1 text-sm shadow-lg ring-1 ring-black/5 focus:outline-hidden data-leave:transition data-leave:duration-100 data-leave:ease-in data-closed:data-leave:opacity-0"
+                    >
+                      {['light', 'dark'].map((theme) => (
+                        <ListboxOption
+                          key={theme}
+                          value={theme}
+                          className="group relative cursor-default py-2 pr-4 pl-8 text-gray-600 select-none data-focus:bg-blue-600 data-focus:text-white data-focus:outline-hidden"
+                        >
+                          <span className="block truncate font-normal group-data-selected:font-semibold">{theme}</span>
+
+                          <span className="absolute inset-y-0 left-0 flex items-center pl-1.5 text-blue-600 group-not-data-selected:hidden group-data-focus:text-white">
+                            <Check aria-hidden="true" className="size-4" />
+                          </span>
+                        </ListboxOption>
+                      ))}
+                    </ListboxOptions>
+                  </div>
+                </Listbox>
+              </label>
+
+              {/* Tab Size */}
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-semibold text-blue-400">Tab Size</span>
+                <input
+                  type="number"
+                  value={localElement.tabSize || 2}
+                  onChange={e => updateLocalProperty('tabSize', Number(e.target.value))}
+                  min={1}
+                  max={8}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                />
+              </label>
+            </div>
+          </div>
+        )
+      }
     </div >
   );
 } 

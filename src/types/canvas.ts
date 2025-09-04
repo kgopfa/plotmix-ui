@@ -103,7 +103,7 @@ export interface BaseAnimationConfig {
 export interface AnimatedCanvasObject {
   id: string;
   name: string;
-  type: 'rectangle' | 'circle' | 'triangle' | 'arc' | 'line' | 'path' | 'image' | 'text' | 'polygon';
+  type: 'rectangle' | 'circle' | 'triangle' | 'arc' | 'line' | 'path' | 'image' | 'text' | 'code-editor' | 'polygon';
   x: number;
   y: number;
   width: number;
@@ -175,6 +175,12 @@ export interface AnimatedCanvasObject {
   wordWrap?: boolean;
   wordWrapWidth?: number;
   groupId?: string;
+  // Code editor specific properties
+  language?: string; // Programming language for syntax highlighting
+  syntaxTheme?: 'dark' | 'light'; // Theme for syntax highlighting
+  showLineNumbers?: boolean; // Whether to show line numbers
+  showLineHighlight?: boolean; // Whether to highlight current line
+  tabSize?: number; // Number of spaces per tab
   // Parent-child relationship
   parent?: string | null; // ID of parent element or group
 }

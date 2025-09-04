@@ -8,7 +8,7 @@ const generateId = () => {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
 };
 
-type ShapeType = 'rectangle' | 'circle' | 'triangle' | 'arc' | 'line' | 'path' | 'image' | 'text' | 'polygon';
+type ShapeType = 'rectangle' | 'circle' | 'triangle' | 'arc' | 'line' | 'path' | 'image' | 'text' | 'code-editor' | 'polygon';
 
 interface BaseObjectProps {
   x: number;
@@ -362,6 +362,50 @@ function createText(props: BaseObjectProps): AnimatedCanvasObject {
   };
 }
 
+function createCodeEditor(props: BaseObjectProps): AnimatedCanvasObject {
+  const width = props.width || 600; // Wider default for code
+  const height = 400; // Taller default for code
+
+  return {
+    ...generateCommonAttributes('code-editor', props),
+    type: 'code-editor',
+    width,
+    height,
+    x: props.x,
+    y: props.y,
+    fill: '#1e1e1e', // Dark background like VS Code
+    stroke: '#3c3c3c', // Subtle border
+    strokeWidth: 1,
+    text: props.text || '// Your code here\nfunction hello() {\n  console.log("Hello, World!");\n}',
+    fontSize: 14, // Smaller font for code
+    fontFamily: 'Monaco, Consolas, "Courier New", monospace', // Code editor fonts
+    fontWeight: '400',
+    fontStyle: 'normal',
+    textAlign: 'left',
+    lineHeight: 1.5,
+    // Code editor specific properties
+    language: 'javascript',
+    syntaxTheme: 'dark',
+    showLineNumbers: true,
+    showLineHighlight: true,
+    tabSize: 2,
+    // Rich text properties
+    textStroke: undefined,
+    textStrokeWidth: 0,
+    textStrokeJoin: 'round',
+    textDropShadow: undefined,
+    textGradient: undefined,
+    letterSpacing: 0,
+    wordWrap: true,
+    wordWrapWidth: width,
+    lineOptions: undefined,
+    pivotX: width / 2,
+    pivotY: height / 2,
+    isAnimationPath: props.isPath || false,
+    cornerRadius: 0,
+  };
+}
+
 export function createNewObject(
   type: ShapeType,
   x: number,
@@ -399,6 +443,8 @@ export function createNewObject(
       return createImage(props);
     case 'text':
       return createText(props);
+    case 'code-editor':
+      return createCodeEditor(props);
     case 'polygon':
       return createPolygon({ ...props, polygonPoints });
     default:

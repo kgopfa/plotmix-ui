@@ -254,9 +254,9 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
     }
 
     // Handle other creation tools (non-line tools)
-    if (['rectangle', 'circle', 'triangle', 'arc', 'text'].includes(activeTool)) {
+    if (['rectangle', 'circle', 'triangle', 'arc', 'text', 'code-editor'].includes(activeTool)) {
       const newElement = createNewObject(
-        activeTool as 'rectangle' | 'circle' | 'triangle' | 'arc' | 'text', 
+        activeTool as 'rectangle' | 'circle' | 'triangle' | 'arc' | 'text' | 'code-editor', 
         snappedPos.x, 
         snappedPos.y, 
         canvasObjects,
@@ -265,12 +265,12 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
         undefined, // imageData
         undefined, // width
         undefined, // height
-        activeTool === 'text' ? 'Double click text to edit' : undefined, // text
+        (activeTool === 'text' || activeTool === 'code-editor') ? 'Double click text to edit' : undefined, // text
         undefined, // startPoint
         undefined, // endPoint
         undefined, // lineType
-        activeTool === 'text' ? selectedFont : undefined, // fontFamily
-        activeTool === 'text' ? selectedFontWeight : undefined // fontWeight
+        (activeTool === 'text' || activeTool === 'code-editor') ? selectedFont : undefined, // fontFamily
+        (activeTool === 'text' || activeTool === 'code-editor') ? selectedFontWeight : undefined // fontWeight
       );
       
       // If in path mode, mark it as a path

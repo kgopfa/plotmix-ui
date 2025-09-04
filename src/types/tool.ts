@@ -9,4 +9,5 @@ export type ToolType =
   | 'polygon'
   | 'draw' 
   | 'image'
-  | 'text'; 
+  | 'text'
+  | 'code-editor'; 

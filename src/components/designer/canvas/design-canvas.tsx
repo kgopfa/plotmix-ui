@@ -4,6 +4,7 @@ import { SnapGuides } from './snap-guides';
 import { GridOverlay } from './grid-overlay';
 import { LinePreview } from '../helpers/line-preview';
 import { RichTextRenderer } from '../helpers/rich-text-renderer';
+import { CodeEditorRenderer } from '../helpers/code-editor-renderer';
 import type { SnapGuide } from '../../../utils/element-snapping';
 import type { FederatedPointerEvent } from 'pixi.js';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
@@ -643,6 +644,10 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                   {el.type === 'text' && (
                     <RichTextRenderer key={`group-text-${el.id}`} element={el} isEditing={editingTextId === el.id} />
                   )}
+                  {/* Render code editor elements */}
+                  {el.type === 'code-editor' && (
+                    <CodeEditorRenderer key={`group-code-editor-${el.id}`} element={el} isEditing={editingTextId === el.id} />
+                  )}
 
                   {/* Show hover outline when hovered but not selected */}
                   {!isPlaying && hoveredId === el.id && !selectedIds.includes(el.id) && !isElementInCustomOrPolygonGroup(el) && (
@@ -832,6 +837,10 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
               {/* Render text separately for text elements (keep visible during editing, but non-interactive) */}
               {el.type === 'text' && (
                 <RichTextRenderer key={`ungrouped-text-${el.id}`} element={el} isEditing={editingTextId === el.id} />
+              )}
+              {/* Render code editor elements */}
+              {el.type === 'code-editor' && (
+                <CodeEditorRenderer key={`ungrouped-code-editor-${el.id}`} element={el} isEditing={editingTextId === el.id} />
               )}
 
               {/* Show hover outline when hovered but not selected */}
