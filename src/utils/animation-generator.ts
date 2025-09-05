@@ -221,7 +221,7 @@ export function generateAnimationConfig(
     }
 
     const fillColor = animation.properties.fillColor ?? element.fill;
-    const newChild = createShapeGraphics(element, fillColor);
+    const newChild = createShapeGraphics(element, fillColor, target);
     newChild.alpha = 0;
     target.addChild(newChild);
 

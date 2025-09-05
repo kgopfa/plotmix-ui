@@ -132,6 +132,7 @@ export interface AnimatedCanvasObject {
     controlPoint?: {x: number, y: number}; // Optional control point for curved lines
     arrow: boolean;
     dotted: boolean;
+    animatedDots?: boolean; // Flag to enable animated dots for dotted lines
     isCurved?: boolean; // Flag to indicate if line is curved vs straight
   };
   pathPoints?: Array<{x: number, y: number}>;

@@ -638,7 +638,10 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                     }
                   }}
                 >
-                  <pixiGraphics draw={(g) => drawShape(g, el)} />
+                  <pixiGraphics draw={(g) => {
+                    const container = shapeRefs.current[el.id] as Container;
+                    drawShape(g, el, container);
+                  }} />
 
                   {/* Render text separately for text elements (keep visible during editing, but non-interactive) */}
                   {el.type === 'text' && (
@@ -832,7 +835,10 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                 }
               }}
             >
-              <pixiGraphics draw={(g) => drawShape(g, el)} />
+              <pixiGraphics draw={(g) => {
+                const container = shapeRefs.current[el.id] as Container;
+                drawShape(g, el, container);
+              }} />
 
               {/* Render text separately for text elements (keep visible during editing, but non-interactive) */}
               {el.type === 'text' && (
