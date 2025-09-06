@@ -262,6 +262,7 @@ function createLine(props: BaseObjectProps & { startPoint?: { x: number; y: numb
   };
 }
 
+
 function createPath(props: BaseObjectProps): AnimatedCanvasObject {
   if (!props.pathPoints || props.pathPoints.length < 2) {
     throw new Error('Path must have at least 2 points');

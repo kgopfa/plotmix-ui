@@ -30,7 +30,7 @@ interface ToolState {
   } | null;
   showPaths: boolean;
   pendingImageData: string | null;
-  lineType: 'straight' | 'curved';
+  lineType: 'straight' | 'curved' | 'animated';
   selectedFont: string; // Currently selected font for text creation
   selectedFontWeight: string; // Currently selected font weight for text creation
 }
@@ -152,7 +152,7 @@ interface UIActions {
   setAnimationTarget: (target: { animationId: string; elementId: string } | null) => void;
   toggleShowPaths: () => void;
   setPendingImageData: (data: string | null) => void;
-  setLineType: (lineType: 'straight' | 'curved') => void;
+  setLineType: (lineType: 'straight' | 'curved' | 'animated') => void;
   setSelectedFont: (fontFamily: string) => void;
   setSelectedFontWeight: (fontWeight: string) => void;
   
@@ -500,7 +500,7 @@ export const useUIStore = create<UIStore>((set, get) => {
     }));
   },
 
-  setLineType: (lineType: 'straight' | 'curved') => {
+  setLineType: (lineType: 'straight' | 'curved' | 'animated') => {
     set(produce((state) => {
       state.tools.lineType = lineType;
     }));

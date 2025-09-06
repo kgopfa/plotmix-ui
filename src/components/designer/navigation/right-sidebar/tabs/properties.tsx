@@ -11,7 +11,7 @@ import {
 import { ColorPicker } from './color-picker';
 import { FontSelector } from './font-selector';
 import { GradientPicker } from './gradient-picker';
-import { Weight, SquareRoundCorner, ChevronsUpDown, Check, X } from 'lucide-react';
+import { Weight, SquareRoundCorner, ChevronsUpDown, Check, X, Zap } from 'lucide-react';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react';
 import { useSetActiveRightPanel } from '@/stores/use-ui-store';
 
@@ -305,28 +305,41 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
               </div>
 
               <div className="space-y-3">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={localElement.lineOptions?.dotted ?? false}
-                    onChange={e => updateLineOptions({ dotted: e.target.checked })}
-                    className="rounded border-gray-300 focus:ring-2 focus:ring-orange-500"
-                  />
-                  <span className="text-sm font-medium text-gray-700">Dotted line</span>
-                </label>
+                {/* Check if this is an animated line (both dotted and animatedDots are true) */}
+                {!(localElement.lineOptions?.dotted && localElement.lineOptions?.animatedDots) && (
+                  <>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={localElement.lineOptions?.dotted ?? false}
+                        onChange={e => updateLineOptions({ dotted: e.target.checked })}
+                        className="rounded border-gray-300 focus:ring-2 focus:ring-orange-500"
+                      />
+                      <span className="text-sm font-medium text-gray-700">Dotted line</span>
+                    </label>
 
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={localElement.lineOptions?.animatedDots ?? false}
-                    onChange={e => updateLineOptions({ animatedDots: e.target.checked })}
-                    className="rounded border-gray-300 focus:ring-2 focus:ring-orange-500"
-                  />
-                  <span className="text-sm font-medium text-gray-700">Animated dots</span>
-                </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={localElement.lineOptions?.animatedDots ?? false}
+                        onChange={e => updateLineOptions({ animatedDots: e.target.checked })}
+                        className="rounded border-gray-300 focus:ring-2 focus:ring-orange-500"
+                      />
+                      <span className="text-sm font-medium text-gray-700">Animated dots</span>
+                    </label>
+                  </>
+                )}
 
-                {/* Only show arrow option for straight lines */}
-                {!localElement.lineOptions?.isCurved && (
+                {/* Show animated line indicator when both dotted and animatedDots are true */}
+                {localElement.lineOptions?.dotted && localElement.lineOptions?.animatedDots && (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+                    <Zap className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-700">Animated Line</span>
+                  </div>
+                )}
+
+                {/* Only show arrow option for straight lines and non-animated lines */}
+                {!localElement.lineOptions?.isCurved && !(localElement.lineOptions?.dotted && localElement.lineOptions?.animatedDots) && (
                   <label className="flex items-center gap-2">
                     <input
                       type="checkbox"

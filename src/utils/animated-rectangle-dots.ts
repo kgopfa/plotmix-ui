@@ -16,6 +16,9 @@ export class AnimatedRectangleDots {
   private options: AnimatedRectangleDotsOptions;
   private timeline: gsap.core.Timeline;
   private isPlaying: boolean = false;
+  private pathPoints: Array<{ x: number; y: number }> = [];
+  private pathLength: number = 0;
+  private spawnInterval: number = 0;
 
   constructor(options: AnimatedRectangleDotsOptions) {
     this.options = options;
@@ -31,8 +34,9 @@ export class AnimatedRectangleDots {
     end: { x: number; y: number }
   ): void {
     this.clearDots();
-    this.createDotsAlongPath([start, end]);
-    this.setupAnimation();
+    this.pathPoints = [start, end];
+    this.calculatePathLength();
+    this.setupContinuousAnimation();
   }
 
   /**
@@ -57,39 +61,46 @@ export class AnimatedRectangleDots {
       points.push({ x, y });
     }
     
-    this.createDotsAlongPath(points);
-    this.setupAnimation();
+    this.pathPoints = points;
+    this.calculatePathLength();
+    this.setupContinuousAnimation();
   }
 
   /**
-   * Create dots along a path of points
+   * Calculate the total length of the path
    */
-  private createDotsAlongPath(points: Array<{ x: number; y: number }>): void {
-    if (points.length < 2) return;
-
-    // Calculate total path length
-    let totalLength = 0;
-    for (let i = 0; i < points.length - 1; i++) {
-      const dx = points[i + 1].x - points[i].x;
-      const dy = points[i + 1].y - points[i].y;
-      totalLength += Math.sqrt(dx * dx + dy * dy);
+  private calculatePathLength(): void {
+    this.pathLength = 0;
+    for (let i = 0; i < this.pathPoints.length - 1; i++) {
+      const dx = this.pathPoints[i + 1].x - this.pathPoints[i].x;
+      const dy = this.pathPoints[i + 1].y - this.pathPoints[i].y;
+      this.pathLength += Math.sqrt(dx * dx + dy * dy);
     }
+  }
 
-    // Calculate number of dots based on spacing
-    const numDots = Math.floor(totalLength / this.options.spacing);
-    if (numDots === 0) return;
-
-    // Create dots along the path
-    for (let i = 0; i < numDots; i++) {
-      const targetDistance = i * this.options.spacing;
-      const positionAndAngle = this.getPositionAndAngleAlongPath(points, targetDistance);
-      
-      if (positionAndAngle) {
-        const dot = this.createDot(positionAndAngle.x, positionAndAngle.y, positionAndAngle.angle);
-        this.dots.push(dot);
-        this.container.addChild(dot);
-      }
+  /**
+   * Create a single moving dot
+   */
+  private createMovingDot(): Graphics {
+    const dot = new Graphics();
+    
+    // Draw a small rectangle
+    const halfSize = this.options.dotSize / 2;
+    dot.rect(-halfSize, -halfSize, this.options.dotSize, this.options.dotSize);
+    dot.fill({
+      color: this.options.color,
+      alpha: this.options.alpha
+    });
+    
+    // Position at the start of the path
+    const startPosition = this.getPositionAndAngleAlongPath(this.pathPoints, 0);
+    if (startPosition) {
+      dot.x = startPosition.x;
+      dot.y = startPosition.y;
+      dot.rotation = startPosition.angle;
     }
+    
+    return dot;
   }
 
   /**
@@ -146,32 +157,102 @@ export class AnimatedRectangleDots {
   }
 
   /**
-   * Set up the animation timeline
+   * Set up continuous animation with moving dots
    */
-  private setupAnimation(): void {
+  private setupContinuousAnimation(): void {
     this.timeline.clear();
     
-    // Animate each dot with a stagger effect
-    this.dots.forEach((dot, index) => {
-      // Start each dot with a slight delay for flowing effect
-      const delay = index * 0.1;
-      
-      this.timeline.to(dot, {
-        alpha: 0,
-        duration: 0.3,
-        ease: 'none'
-      }, delay);
-      
-      this.timeline.to(dot, {
-        alpha: this.options.alpha,
-        duration: 0.3,
-        ease: 'none'
-      }, delay + 0.3);
-    });
+    if (this.pathLength === 0) return;
     
-    // Repeat infinitely
-    this.timeline.repeat(-1);
+    // Create a continuous stream by spawning dots at regular intervals
+    this.createContinuousStream();
   }
+
+  /**
+   * Create a continuous stream of dots
+   */
+  private createContinuousStream(): void {
+    // Calculate the time interval between spawning new dots
+    // This ensures consistent spacing: if a dot travels the full path in animationSpeed seconds,
+    // and we want spacing between dots, then spawn interval = spacing/pathLength * animationSpeed
+    this.spawnInterval = (this.options.spacing / this.pathLength) * this.options.animationSpeed;
+    
+    // Create the first dot immediately
+    this.spawnDot();
+    
+    // Then spawn dots at regular intervals
+    this.timeline.to({}, {
+      duration: this.spawnInterval,
+      repeat: -1,
+      onRepeat: () => {
+        this.spawnDot();
+      }
+    });
+  }
+
+  /**
+   * Spawn a new dot and animate it along the path
+   */
+  private spawnDot(): void {
+    const dot = this.createMovingDot();
+    this.dots.push(dot);
+    this.container.addChild(dot);
+    
+    // Create a separate timeline for this dot
+    const dotTimeline = gsap.timeline();
+    
+    // Create a proxy object to track this dot's progress
+    const proxy = { progress: 0 };
+    
+    // Animate the dot along the entire path
+    dotTimeline.to(proxy, {
+      progress: 1,
+      duration: this.options.animationSpeed,
+      ease: 'none',
+      onUpdate: () => {
+        const distance = proxy.progress * this.pathLength;
+        const position = this.getPositionAndAngleAlongPath(this.pathPoints, distance);
+        
+        if (position) {
+          dot.x = position.x;
+          dot.y = position.y;
+          dot.rotation = position.angle;
+        }
+      },
+      onComplete: () => {
+        // Remove the dot when it reaches the end
+        this.removeDot(dot);
+      }
+    });
+  }
+
+  /**
+   * Get the current spacing between dots
+   */
+  getCurrentSpacing(): number {
+    return this.options.spacing;
+  }
+
+  /**
+   * Set the spacing between dots (will restart animation)
+   */
+  setSpacing(spacing: number): void {
+    this.options.spacing = spacing;
+    this.setupContinuousAnimation();
+  }
+
+  /**
+   * Remove a dot from the animation
+   */
+  private removeDot(dot: Graphics): void {
+    const index = this.dots.indexOf(dot);
+    if (index > -1) {
+      this.dots.splice(index, 1);
+    }
+    this.container.removeChild(dot);
+    dot.destroy();
+  }
+
 
   /**
    * Clear all dots
@@ -216,7 +297,7 @@ export class AnimatedRectangleDots {
    */
   setAnimationSpeed(speed: number): void {
     this.options.animationSpeed = speed;
-    this.setupAnimation();
+    this.setupContinuousAnimation();
   }
 
   /**
@@ -238,7 +319,7 @@ export class AnimatedRectangleDots {
       dot.rotation = currentRotation; // Restore rotation
     });
     
-    this.setupAnimation();
+    this.setupContinuousAnimation();
   }
 
   /**

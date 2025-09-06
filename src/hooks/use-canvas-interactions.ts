@@ -127,8 +127,11 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
           
           if (clickDistance <= snapThreshold) { // Within snap threshold of start point - close the polygon
             // Create the final closing line from current position to the origin
+            // For animated lines, pass 'straight' to createNewObject but enable dotted/animated after
+            const createLineType = lineType === 'animated' ? 'straight' : lineType;
+            
             const finalLine = createNewObject(
-              'line', 
+              'line',
               0, 0, // Position will be calculated in createLine
               canvasObjects,
               undefined, // pathPoints
@@ -139,8 +142,14 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
               undefined, // text
               lineStartPoint!, // Start from current line start point
               endPoint, // End at the constrained or original point
-              lineType
+              createLineType
             );
+            
+            // If lineType is 'animated', enable dotted and animated dots
+            if (lineType === 'animated' && finalLine.lineOptions) {
+              finalLine.lineOptions.dotted = true;
+              finalLine.lineOptions.animatedDots = true;
+            }
             
             // If in path mode, mark it as a path
             if (isPathMode) {
@@ -197,6 +206,9 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
           return;
         }
         
+        // For animated lines, pass 'straight' to createNewObject but enable dotted/animated after
+        const createLineType = lineType === 'animated' ? 'straight' : lineType;
+        
         const newElement = createNewObject(
           'line', 
           0, 0, // Position will be calculated in createLine
@@ -209,8 +221,14 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
           undefined, // text
           startPoint,
           endPoint,
-          lineType
+          createLineType
         );
+        
+        // If lineType is 'animated', enable dotted and animated dots
+        if (lineType === 'animated' && newElement.lineOptions) {
+          newElement.lineOptions.dotted = true;
+          newElement.lineOptions.animatedDots = true;
+        }
         
         // If in path mode, mark it as a path
         if (isPathMode) {
@@ -226,7 +244,7 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
           // Set the end point as the new start point for the next line
           setLineStartPoint(endPoint);
         } else {
-          // For simpleLine, complete the line and exit
+          // For simpleLine and animatedLine, complete the line and exit
           setLineStartPoint(null);
           setActiveTool('select');
           setMaskPos(null);

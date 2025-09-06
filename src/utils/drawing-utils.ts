@@ -66,8 +66,8 @@ function handleAnimatedRectangleDots(shape: AnimatedCanvasObject, container: Con
       color: colorNum,
       alpha,
       dotSize: Math.max(4, Math.min(width * 2, 8)), // Dot size based on line width
-      spacing: Math.max(12, width * 3), // Spacing based on line width
-      animationSpeed: 1.0
+      spacing: Math.max(16, width * 4), // Increased spacing for better uniformity
+      animationSpeed: 3.0 // Slower animation speed
     });
     
     if (isCurved && controlPoint) {
@@ -274,8 +274,8 @@ export const drawDottedLine = (
         color,
         alpha,
         dotSize: Math.max(4, Math.min(width * 2, 8)),
-        spacing: Math.max(12, width * 3),
-        animationSpeed: 1.0
+        spacing: Math.max(16, width * 4), // Increased spacing for better uniformity
+        animationSpeed: 3.0 // Slower animation speed
       });
       
       animatedDotsInstance.createLine(start, end);
@@ -347,8 +347,8 @@ export const drawDottedCurve = (
         color,
         alpha,
         dotSize: Math.max(4, Math.min(width * 2, 8)),
-        spacing: Math.max(12, width * 3),
-        animationSpeed: 1.0
+        spacing: Math.max(16, width * 4), // Increased spacing for better uniformity
+        animationSpeed: 3.0 // Slower animation speed
       });
       
       animatedDotsInstance.createCurve(start, controlPoint, end);
@@ -567,6 +567,7 @@ function drawElement(graphics: Graphics, shape: AnimatedCanvasObject, container?
         }
       }
       break;
+
 
     case 'path':
       if (shape.pathPoints && shape.pathPoints.length > 1) {

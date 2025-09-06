@@ -1,7 +1,7 @@
 import React from 'react';
-import { Minus, Waves } from 'lucide-react';
+import { Minus, Waves, Zap } from 'lucide-react';
 
-export type LineType = 'straight' | 'curved';
+export type LineType = 'straight' | 'curved' | 'animated';
 
 interface LineToolMiniToolbarProps {
   isVisible: boolean;
@@ -35,18 +35,31 @@ export const LineToolMiniToolbar: React.FC<LineToolMiniToolbarProps> = ({
         <span>Straight</span>
       </button>
       
-              <button
-          onClick={() => onLineTypeChange('curved')}
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ease-out ${
-            currentLineType === 'curved'
-              ? 'bg-blue-500 text-white shadow-md'
-              : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-          }`}
-          title="Curved Line"
-        >
-          <Waves className="w-4 h-4" />
-          <span>Curved</span>
-        </button>
+      <button
+        onClick={() => onLineTypeChange('curved')}
+        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ease-out ${
+          currentLineType === 'curved'
+            ? 'bg-blue-500 text-white shadow-md'
+            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+        }`}
+        title="Curved Line"
+      >
+        <Waves className="w-4 h-4" />
+        <span>Curved</span>
+      </button>
+      
+      <button
+        onClick={() => onLineTypeChange('animated')}
+        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ease-out ${
+          currentLineType === 'animated'
+            ? 'bg-blue-500 text-white shadow-md'
+            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+        }`}
+        title="Animated Line"
+      >
+        <Zap className="w-4 h-4" />
+        <span>Animated</span>
+      </button>
     </div>
   );
 };
