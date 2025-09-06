@@ -14,7 +14,6 @@ import { Graphics, Container } from 'pixi.js';
 import { PropertiesPanel } from './navigation/right-sidebar/properties-panel';
 import { AnimationsPanel } from './navigation/right-sidebar/animations-panel';
 import { LayersTab } from './navigation/right-sidebar/tabs/layers-tab';
-import { ScenesTab } from './navigation/right-sidebar/tabs/scenes-tab';
 import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager';
 import { Timeline } from './timeline';
 import { MaskOverlay } from './helpers/mask-overlay';
@@ -1038,9 +1037,9 @@ export default function Designer() {
   }, []);
 
   // Timeline should shift when any tab with content panels is active (not toggle buttons or compact tabs)
-  // Include: scenes, uploads, ai, video, text, animations, layers, components
+  // Include: uploads, ai, video, text, animations, layers, components
   // Exclude: tools (compact), audio (toggle), timeline (toggle)
-  const tabsWithPanels = ['scenes', 'uploads', 'ai', 'video', 'text', 'animations', 'layers', 'components'];
+  const tabsWithPanels = ['uploads', 'ai', 'video', 'text', 'animations', 'layers', 'components'];
   const timelineLeftOffset = 80 + (panelState.leftPanelVisible && activeNav && tabsWithPanels.includes(activeNav) ? panelState.leftPanelWidth + 8 : 0);
 
   return (
@@ -1190,10 +1189,9 @@ export default function Designer() {
 
         {/* Floating Right Panel - Content */}
         {(() => {
-          // Show right panel when there's a selection or when layers/scenes is explicitly selected
+          // Show right panel when there's a selection or when layers is explicitly selected
           const shouldShow = panelState.rightPanelVisible && activeRightPanel && !isPlaying && (
             activeRightPanel === 'layers' || 
-            activeRightPanel === 'scenes' ||
             (hasSelection && (activeRightPanel === 'properties' || activeRightPanel === 'animations'))
           );
           return shouldShow;
@@ -1221,9 +1219,6 @@ export default function Designer() {
               )}
               { activeRightPanel === 'layers' && (
                 <LayersTab />
-              )}
-              { activeRightPanel === 'scenes' && (
-                <ScenesTab />
               )}
             </div>
           </>

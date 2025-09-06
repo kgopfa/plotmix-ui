@@ -44,26 +44,41 @@ export default function DesignerPage() {
         loadSnappingPreferences(project.configuration as Record<string, unknown>);
       }
       
-      const mainState = (project.mainState as { scenes?: unknown[] }) || {};
+      const mainState = (project.mainState as { 
+        scenes?: unknown[]; 
+        elements?: unknown[]; 
+        groups?: unknown[]; 
+        timeline?: unknown; 
+      }) || {};
       setBaseline(mainState);
 
       // Hydrate canvas and timeline stores from mainState
       const canvasStore = useCanvasStore.getState();
       const timelineStore = useTimelineStore.getState();
       
-      // Validate and extract data from new schema format
-      if (!mainState.scenes || !Array.isArray(mainState.scenes) || mainState.scenes.length === 0) {
-        throw new Error('Invalid project format: missing scenes array');
-      }
+      let rawElements: unknown[] = [];
+      let rawGroups: unknown[] = [];
+      let timeline: unknown = {};
       
-      const firstScene = mainState.scenes[0] as any;
-      if (!firstScene?.sceneCanvas) {
-        throw new Error('Invalid project format: missing sceneCanvas in first scene');
+      // Support both new multi-scene format and legacy single-scene format
+      if (mainState.scenes && Array.isArray(mainState.scenes) && mainState.scenes.length > 0) {
+        // New multi-scene format
+        const firstScene = mainState.scenes[0] as any;
+        if (!firstScene?.sceneCanvas) {
+          throw new Error('Invalid project format: missing sceneCanvas in first scene');
+        }
+        
+        rawElements = Array.isArray(firstScene.sceneCanvas.elements) ? firstScene.sceneCanvas.elements : [];
+        rawGroups = Array.isArray(firstScene.sceneCanvas.groups) ? firstScene.sceneCanvas.groups : [];
+        timeline = firstScene.timeline || {};
+      } else if (mainState.elements || mainState.groups) {
+        // Legacy single-scene format: mainState: {elements, groups}
+        rawElements = Array.isArray(mainState.elements) ? mainState.elements : [];
+        rawGroups = Array.isArray(mainState.groups) ? mainState.groups : [];
+        timeline = mainState.timeline || {};
+      } else {
+        throw new Error('Invalid project format: missing scenes array or elements/groups');
       }
-      
-      const rawElements = Array.isArray(firstScene.sceneCanvas.elements) ? firstScene.sceneCanvas.elements : [];
-      const rawGroups = Array.isArray(firstScene.sceneCanvas.groups) ? firstScene.sceneCanvas.groups : [];
-      const timeline = firstScene.timeline || {};
 
       // Sanitize to ensure required fields exist
       const sanitizedElements = rawElements.map((el: unknown) => ({

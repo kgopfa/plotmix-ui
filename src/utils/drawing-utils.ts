@@ -73,7 +73,9 @@ function handleAnimatedRectangleDots(shape: AnimatedCanvasObject, container: Con
   const endX = end.x - shape.x;
   const endY = end.y - shape.y;
   
-  const cacheKey = `animated-dots-${shape.id}-${startX}-${startY}-${endX}-${endY}-${colorNum}-${width}`;
+  // Include control point in cache key for curved lines to ensure proper caching
+  const controlPointKey = isCurved && controlPoint ? `-${controlPoint.x - shape.x}-${controlPoint.y - shape.y}` : '';
+  const cacheKey = `animated-dots-${shape.id}-${startX}-${startY}-${endX}-${endY}${controlPointKey}-${colorNum}-${width}`;
   
   let animatedDotsInstance = animatedRectangleDotsCache.get(cacheKey);
   
@@ -561,30 +563,39 @@ function drawElement(graphics: Graphics, shape: AnimatedCanvasObject, container?
         const endX = smoothLinePosition(end.x - shape.x);
         const endY = smoothLinePosition(end.y - shape.y);
         
-        if (isCurved && controlPoint) {
-          // Draw curved line using bezier curves
-          const controlX = smoothLinePosition(controlPoint.x - shape.x);
-          const controlY = smoothLinePosition(controlPoint.y - shape.y);
-          graphics
-            .moveTo(startX, startY)
-            .quadraticCurveTo(controlX, controlY, endX, endY);
-        } else {
-          // Draw true straight line - check if it should be dotted
-          if (shape.lineOptions.dotted) {
-            // Convert color to number format for drawDottedLine
-            const colorNum = typeof shape.stroke === 'string' ? parseColor(shape.stroke) : (shape.stroke || parseColor(shape.fill || '#000000'));
-            const width = shape.strokeWidth || 2;
-            const alpha = (shape.strokeOpacity ?? shape.opacity ?? 1);
-            
-            // If animated dots are enabled and container is provided, don't draw anything in graphics
-            // The animated line will be handled separately
-            if (shape.lineOptions.animatedDots && container) {
-              // Don't draw anything in graphics - the animated line will be added to container
-              return;
+        // Check if line should be dotted (applies to both curved and straight lines)
+        if (shape.lineOptions.dotted) {
+          // Convert color to number format for drawDottedLine
+          const colorNum = typeof shape.stroke === 'string' ? parseColor(shape.stroke) : (shape.stroke || parseColor(shape.fill || '#000000'));
+          const width = shape.strokeWidth || 2;
+          const alpha = (shape.strokeOpacity ?? shape.opacity ?? 1);
+          
+          // If animated dots are enabled and container is provided, don't draw anything in graphics
+          // The animated line will be handled separately
+          if (shape.lineOptions.animatedDots && container) {
+            // Don't draw anything in graphics - the animated line will be added to container
+            return;
+          } else {
+            // Draw dotted line - check if it's curved or straight
+            if (isCurved && controlPoint) {
+              const controlX = smoothLinePosition(controlPoint.x - shape.x);
+              const controlY = smoothLinePosition(controlPoint.y - shape.y);
+              drawDottedCurve(graphics, { x: startX, y: startY }, { x: controlX, y: controlY }, { x: endX, y: endY }, colorNum, width, alpha, [10, 5], true, false, undefined);
             } else {
               drawDottedLine(graphics, { x: startX, y: startY }, { x: endX, y: endY }, colorNum, width, alpha, [10, 5], true, false, undefined);
             }
+          }
+        } else {
+          // Draw solid line - check if it's curved or straight
+          if (isCurved && controlPoint) {
+            // Draw curved line using bezier curves
+            const controlX = smoothLinePosition(controlPoint.x - shape.x);
+            const controlY = smoothLinePosition(controlPoint.y - shape.y);
+            graphics
+              .moveTo(startX, startY)
+              .quadraticCurveTo(controlX, controlY, endX, endY);
           } else {
+            // Draw straight line
             graphics
               .moveTo(startX, startY)
               .lineTo(endX, endY);

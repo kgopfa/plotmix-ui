@@ -77,27 +77,74 @@ export const useProjectStore = create<ProjectStore>()(
     },
 
     setBaseline: (stateObj) => {
-      // Validate that the state object has scenes
-      if (!stateObj || !stateObj.scenes || !Array.isArray(stateObj.scenes)) {
-        console.error('Invalid mainState format: missing scenes array');
+      if (!stateObj) {
+        console.error('Invalid mainState format: null or undefined state');
         return;
       }
       
-      // Convert old canvas structure to new sceneCanvas structure if needed
-      const convertedState = {
-        ...stateObj,
-        scenes: stateObj.scenes.map((scene: any) => {
-          // If scene has old 'canvas' structure, convert to 'sceneCanvas'
-          if (scene.canvas && !scene.sceneCanvas) {
-            return {
-              ...scene,
-              sceneCanvas: scene.canvas,
-              canvas: undefined // Remove old structure
-            };
-          }
-          return scene;
-        })
-      };
+      let convertedState: any;
+      
+      // Support both new multi-scene format and legacy single-scene format
+      if (stateObj.scenes && Array.isArray(stateObj.scenes)) {
+        // New multi-scene format
+        convertedState = {
+          ...stateObj,
+          scenes: stateObj.scenes.map((scene: any) => {
+            // If scene has old 'canvas' structure, convert to 'sceneCanvas'
+            if (scene.canvas && !scene.sceneCanvas) {
+              return {
+                ...scene,
+                sceneCanvas: scene.canvas,
+                canvas: undefined // Remove old structure
+              };
+            }
+            return scene;
+          })
+        };
+      } else if (stateObj.elements || stateObj.groups) {
+        // Legacy single-scene format: convert to new format
+        convertedState = {
+          scenes: [{
+            id: 'scene-1',
+            name: 'Scene 1',
+            lastModified: new Date().toISOString(),
+            sceneCanvas: {
+              elements: Array.isArray(stateObj.elements) ? stateObj.elements : [],
+              groups: Array.isArray(stateObj.groups) ? stateObj.groups : [],
+              dimensions: { width: 1920, height: 1080 },
+              canvasSize: { currentSizeId: 'fhd', customSize: null }
+            },
+            timeline: stateObj.timeline || {
+              scale: 1,
+              duration: 10,
+              currentTime: 0,
+              animationStates: {}
+            },
+            ui: {
+              zoom: 1,
+              selectedElements: [],
+              selectedGroups: [],
+              panelState: {
+                leftPanelVisible: true,
+                rightPanelVisible: true,
+                leftPanelWidth: 320,
+                rightPanelWidth: 320,
+                timelineHeight: 240,
+                isTimelineCollapsed: true
+              },
+              toolState: {
+                activeTool: 'select',
+                isPathMode: false,
+                showPaths: true
+              }
+            }
+          }],
+          activeSceneId: 'scene-1'
+        };
+      } else {
+        console.error('Invalid mainState format: missing scenes array or elements/groups');
+        return;
+      }
       
       const deepCopy = JSON.parse(JSON.stringify(convertedState));
       set(produce((state: ProjectStore) => {
