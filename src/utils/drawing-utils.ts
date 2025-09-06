@@ -222,28 +222,48 @@ export const updateShadowForContainer = (container: PIXI.Container, element: Ani
   }
 };
 
-export const drawArrowhead = (
+export const drawTriangleArrow = (
   graphics: Graphics,
   tipPoint: { x: number; y: number },
   fromPoint: { x: number; y: number },
-  color: number
+  color: number,
+  fillColor?: number
 ) => {
   const angle = Math.atan2(tipPoint.y - fromPoint.y, tipPoint.x - fromPoint.x);
-  const arrowSize = 10;
+  const triangleSize = 12; // Slightly larger than the old arrow for better visibility
+  
+  // Calculate triangle points relative to the tip point
+  const baseDistance = triangleSize * 0.8; // Distance from tip to base
+  const baseWidth = triangleSize * 0.6; // Width of the triangle base
+  
+  // Calculate the three points of the triangle
+  const tip = tipPoint;
+  const baseLeft = {
+    x: tipPoint.x - baseDistance * Math.cos(angle) - (baseWidth / 2) * Math.cos(angle - Math.PI / 2),
+    y: tipPoint.y - baseDistance * Math.sin(angle) - (baseWidth / 2) * Math.sin(angle - Math.PI / 2)
+  };
+  const baseRight = {
+    x: tipPoint.x - baseDistance * Math.cos(angle) + (baseWidth / 2) * Math.cos(angle - Math.PI / 2),
+    y: tipPoint.y - baseDistance * Math.sin(angle) + (baseWidth / 2) * Math.sin(angle - Math.PI / 2)
+  };
 
+  // Draw the triangle
   graphics
-    .fill({ color })
-    .moveTo(tipPoint.x, tipPoint.y)
-    .lineTo(
-      tipPoint.x - arrowSize * Math.cos(angle - Math.PI / 6),
-      tipPoint.y - arrowSize * Math.sin(angle - Math.PI / 6)
-    )
-    .lineTo(
-      tipPoint.x - arrowSize * Math.cos(angle + Math.PI / 6),
-      tipPoint.y - arrowSize * Math.sin(angle + Math.PI / 6)
-    )
+    .fill({ color: fillColor || color })
+    .moveTo(tip.x, tip.y)
+    .lineTo(baseLeft.x, baseLeft.y)
+    .lineTo(baseRight.x, baseRight.y)
     .closePath()
     .fill();
+    
+  // Add a subtle stroke for better definition
+  graphics
+    .stroke({ color, width: 1 })
+    .moveTo(tip.x, tip.y)
+    .lineTo(baseLeft.x, baseLeft.y)
+    .lineTo(baseRight.x, baseRight.y)
+    .closePath()
+    .stroke();
 };
 
 export const drawSmoothLine = (
@@ -484,9 +504,40 @@ export const drawLine = (
       }
     }
 
-  // Only draw arrows for straight lines
-  if (shape.lineOptions.arrow && !shape.lineOptions.isCurved) {
-    drawArrowhead(graphics, end, start, color);
+  // Draw triangle arrow for both straight and curved lines
+  if (shape.lineOptions.arrow) {
+    // For curved lines, we need to calculate the tangent at the end point
+    if (shape.lineOptions.isCurved && hasControl) {
+      const controlPoint = {
+        x: smoothLinePosition(shape.lineOptions.controlPoint!.x - shape.x),
+        y: smoothLinePosition(shape.lineOptions.controlPoint!.y - shape.y)
+      };
+      
+      // Calculate the tangent direction at the end point of the curve
+      // For a quadratic curve: B(t) = (1-t)²P₀ + 2(1-t)tP₁ + t²P₂
+      // The derivative at t=1 gives us the tangent direction at the end point
+      // B'(1) = 2(P₂ - P₁) where P₂ is end, P₁ is control, P₀ is start
+      const tangentX = 2 * (end.x - controlPoint.x);
+      const tangentY = 2 * (end.y - controlPoint.y);
+      const tangentLength = Math.sqrt(tangentX * tangentX + tangentY * tangentY);
+      
+      if (tangentLength > 0) {
+        // Normalize the tangent vector
+        const normalizedTangentX = tangentX / tangentLength;
+        const normalizedTangentY = tangentY / tangentLength;
+        
+        // Create a point slightly back along the tangent for the "from" point
+        const fromPoint = {
+          x: end.x - normalizedTangentX * 20,
+          y: end.y - normalizedTangentY * 20
+        };
+        
+        drawTriangleArrow(graphics, end, fromPoint, color);
+      }
+    } else {
+      // For straight lines, use the simple approach
+      drawTriangleArrow(graphics, end, start, color);
+    }
   }
 };
 

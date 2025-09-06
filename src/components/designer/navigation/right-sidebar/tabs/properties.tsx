@@ -331,31 +331,7 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                 </label>
               </div>
 
-              {/* Curve Control Section - only show checkbox for straight lines */}
               <div className="space-y-3">
-                {!localElement.lineOptions?.isCurved && (
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={localElement.lineOptions?.isCurved ?? true}
-                      onChange={e => {
-                        const isCurved = e.target.checked;
-                        const updatedLineOptions = {
-                          ...localElement.lineOptions!,
-                          isCurved,
-                          // If switching to curved and no control point exists, create one at midpoint
-                          controlPoint: isCurved && !localElement.lineOptions?.controlPoint ? {
-                            x: (localElement.lineOptions!.points.start.x + localElement.lineOptions!.points.end.x) / 2,
-                            y: (localElement.lineOptions!.points.start.y + localElement.lineOptions!.points.end.y) / 2
-                          } : localElement.lineOptions?.controlPoint
-                        };
-                        updateLineOptions(updatedLineOptions);
-                      }}
-                      className="rounded border-gray-300 focus:ring-2 focus:ring-orange-500"
-                    />
-                    <span className="text-sm font-medium text-gray-700">Curved line</span>
-                  </label>
-                )}
 
                 {/* Control Point Coordinates - only show for curved lines */}
                 {localElement.lineOptions?.isCurved && localElement.lineOptions?.controlPoint && (
@@ -490,29 +466,30 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
               </div>
 
               <div className="space-y-3">
-                {/* Check if this is an animated line (both dotted and animatedDots are true) */}
-                {!(localElement.lineOptions?.dotted && localElement.lineOptions?.animatedDots) && (
-                  <>
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={localElement.lineOptions?.dotted ?? false}
-                        onChange={e => updateLineOptions({ dotted: e.target.checked })}
-                        className="rounded border-gray-300 focus:ring-2 focus:ring-orange-500"
-                      />
-                      <span className="text-sm font-medium text-gray-700">Dotted line</span>
-                    </label>
+                {/* Always show dotted line option */}
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={localElement.lineOptions?.dotted ?? false}
+                    onChange={e => updateLineOptions({ dotted: e.target.checked })}
+                    className="rounded border-gray-300 focus:ring-2 focus:ring-orange-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Dotted line</span>
+                </label>
 
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={localElement.lineOptions?.animatedDots ?? false}
-                        onChange={e => updateLineOptions({ animatedDots: e.target.checked })}
-                        className="rounded border-gray-300 focus:ring-2 focus:ring-orange-500"
-                      />
-                      <span className="text-sm font-medium text-gray-700">Animated dots</span>
-                    </label>
-                  </>
+                {/* Only show animated dots for curved lines or lines that already have animated properties */}
+                {((localElement.lineOptions?.isCurved) || 
+                  (localElement.lineOptions?.animatedDots)) && 
+                 !(localElement.lineOptions?.dotted && localElement.lineOptions?.animatedDots) && (
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={localElement.lineOptions?.animatedDots ?? false}
+                      onChange={e => updateLineOptions({ animatedDots: e.target.checked })}
+                      className="rounded border-gray-300 focus:ring-2 focus:ring-orange-500"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Animated dots</span>
+                  </label>
                 )}
 
                 {/* Show animated rectangle properties when both dotted and animatedDots are true */}
@@ -565,8 +542,8 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                   </div>
                 )}
 
-                {/* Only show arrow option for straight lines and non-animated lines */}
-                {!localElement.lineOptions?.isCurved && !(localElement.lineOptions?.dotted && localElement.lineOptions?.animatedDots) && (
+                {/* Show arrow head option for all lines (straight and curved) except animated lines */}
+                {!(localElement.lineOptions?.dotted && localElement.lineOptions?.animatedDots) && (
                   <label className="flex items-center gap-2">
                     <input
                       type="checkbox"
@@ -574,7 +551,7 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                       onChange={e => updateLineOptions({ arrow: e.target.checked })}
                       className="rounded border-gray-300 focus:ring-2 focus:ring-orange-500"
                     />
-                    <span className="text-sm font-medium text-gray-700">Show arrow</span>
+                    <span className="text-sm font-medium text-gray-700">Arrow head</span>
                   </label>
                 )}
               </div>

@@ -4,7 +4,6 @@ import { useShallow } from 'zustand/react/shallow';
 import { AnimatedCanvasObject, CanvasGroup, ElementAnimation } from '@/types/canvas';
 import { useSelectionStore } from './use-selection-store';
 import { useProjectStore } from './use-project-store';
-import { useSceneStore } from './use-scene-store';
 
 interface CanvasState {
   // Core state - now scene-based

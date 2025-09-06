@@ -217,33 +217,13 @@ export const useSceneStore = create<SceneState>()(
         },
         
         updateSceneModified: (sceneId: string) => {
-          const { scenes } = get();
-          const sceneIndex = scenes.findIndex(s => s.id === sceneId);
-          
-          if (sceneIndex !== -1) {
-            const updatedScenes = [...scenes];
-            updatedScenes[sceneIndex] = {
-              ...updatedScenes[sceneIndex],
-              lastModified: new Date().toISOString()
-            };
-            
-            set({ scenes: updatedScenes });
-          }
+          // No-op: Single scene mode doesn't need scene modification tracking
+          // This prevents the problematic diff generation with scenes[0].lastModified
         },
         
         loadScenes: (scenesData: Array<{ id: string; name: string; lastModified?: string }>, activeSceneId: string) => {
-          const loadedScenes: SceneInfo[] = scenesData.map(scene => ({
-            id: scene.id,
-            name: scene.name,
-            lastModified: scene.lastModified || new Date().toISOString()
-          }));
-          
-          set({
-            scenes: loadedScenes,
-            activeSceneId: activeSceneId
-          });
-          
-
+          // No-op: Single scene mode doesn't need scene loading
+          // This prevents multi-scene data from being loaded
         },
         
         // Scene data management

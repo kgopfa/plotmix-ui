@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { produce } from 'immer';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useTimelineStore } from '@/stores/use-timeline-store';
-import { useSceneStore } from '@/stores/use-scene-store';
 import { DiffPatcher } from 'jsondiffpatch';
 import { apiClient } from '@/lib/api-client';
 import { useUIStore } from '@/stores/use-ui-store';
@@ -82,165 +81,33 @@ export const useProjectStore = create<ProjectStore>()(
         return;
       }
       
-      let convertedState: any;
-      
-      // Support both new multi-scene format and legacy single-scene format
-      if (stateObj.scenes && Array.isArray(stateObj.scenes)) {
-        // New multi-scene format
-        convertedState = {
-          ...stateObj,
-          scenes: stateObj.scenes.map((scene: any) => {
-            // If scene has old 'canvas' structure, convert to 'sceneCanvas'
-            if (scene.canvas && !scene.sceneCanvas) {
-              return {
-                ...scene,
-                sceneCanvas: scene.canvas,
-                canvas: undefined // Remove old structure
-              };
-            }
-            return scene;
-          })
-        };
-      } else if (stateObj.elements || stateObj.groups) {
-        // Legacy single-scene format: convert to new format
-        convertedState = {
-          scenes: [{
-            id: 'scene-1',
-            name: 'Scene 1',
-            lastModified: new Date().toISOString(),
-            sceneCanvas: {
-              elements: Array.isArray(stateObj.elements) ? stateObj.elements : [],
-              groups: Array.isArray(stateObj.groups) ? stateObj.groups : [],
-              dimensions: { width: 1920, height: 1080 },
-              canvasSize: { currentSizeId: 'fhd', customSize: null }
-            },
-            timeline: stateObj.timeline || {
-              scale: 1,
-              duration: 10,
-              currentTime: 0,
-              animationStates: {}
-            },
-            ui: {
-              zoom: 1,
-              selectedElements: [],
-              selectedGroups: [],
-              panelState: {
-                leftPanelVisible: true,
-                rightPanelVisible: true,
-                leftPanelWidth: 320,
-                rightPanelWidth: 320,
-                timelineHeight: 240,
-                isTimelineCollapsed: true
-              },
-              toolState: {
-                activeTool: 'select',
-                isPathMode: false,
-                showPaths: true
-              }
-            }
-          }],
-          activeSceneId: 'scene-1'
-        };
-      } else {
-        console.error('Invalid mainState format: missing scenes array or elements/groups');
+      // Only support single-scene format: mainState: {elements, groups, timeline}
+      if (!stateObj.elements && !stateObj.groups) {
+        console.error('Invalid mainState format: missing elements/groups');
         return;
       }
       
-      const deepCopy = JSON.parse(JSON.stringify(convertedState));
+      const deepCopy = JSON.parse(JSON.stringify(stateObj));
       set(produce((state: ProjectStore) => {
         state.baselineMainState = deepCopy;
       }));
-      
-      // Update the scene store with scene data
-      if (convertedState && 'scenes' in convertedState && 'activeSceneId' in convertedState) {
-        const sceneStore = useSceneStore.getState();
-        const scenesData = convertedState.scenes?.map((scene: any) => ({
-          id: scene.id,
-          name: scene.name,
-          lastModified: scene.lastModified || new Date().toISOString()
-        })) || [];
-        
-        if (scenesData.length > 0) {
-          const activeSceneId = typeof convertedState.activeSceneId === 'string' ? convertedState.activeSceneId : 'scene-1';
-          sceneStore.loadScenes(scenesData, activeSceneId);
-        }
-      }
     },
 
     getCurrentMainState: () => {
       const canvas = useCanvasStore.getState();
       const timeline = useTimelineStore.getState();
-      const sceneStore = useSceneStore.getState();
 
-      // Get current scene data
-      const currentScene = {
-        id: sceneStore.activeSceneId || 'scene-1',
-        name: sceneStore.getSceneById(sceneStore.activeSceneId || 'scene-1')?.name || 'Scene 1',
-        lastModified: new Date().toISOString(),
-        sceneCanvas: {
-          elements: canvas.elements,
-          groups: canvas.groups,
-          dimensions: { width: 1920, height: 1080 },
-          canvasSize: {
-            currentSizeId: 'fhd',
-            customSize: null
-          }
-        },
+      // Return single-scene format: mainState: {elements, groups, timeline}
+      return {
+        elements: canvas.elements,
+        groups: canvas.groups,
         timeline: {
           scale: timeline.ui.scale,
           duration: timeline.playback.totalDuration,
           currentTime: timeline.playback.currentTime,
           animationStates: Object.fromEntries(timeline.animationStates as unknown as Iterable<readonly [PropertyKey, unknown]>),
-        },
-        ui: {
-          zoom: 1,
-          selectedElements: [],
-          selectedGroups: [],
-          panelState: {
-            leftPanelVisible: true,
-            rightPanelVisible: true,
-            leftPanelWidth: 320,
-            rightPanelWidth: 320,
-            timelineHeight: 240,
-            isTimelineCollapsed: true,
-          },
-          toolState: {
-            activeTool: 'select',
-            isPathMode: false,
-            showPaths: true,
-          }
         }
       };
-
-      // Build complete project state with all scenes
-      const projectState = {
-        scenes: sceneStore.getScenes().map(sceneInfo => {
-          if (sceneInfo.id === sceneStore.activeSceneId) {
-            return currentScene;
-          }
-          // For other scenes, we'd need to get them from the project manager cache
-          // For now, return basic info - this will be populated when scenes are loaded
-          return {
-            id: sceneInfo.id,
-            name: sceneInfo.name,
-            lastModified: sceneInfo.lastModified,
-            sceneCanvas: { elements: [], groups: [], dimensions: { width: 1920, height: 1080 }, canvasSize: { currentSizeId: 'fhd', customSize: null } },
-            timeline: { scale: 1, duration: 10, currentTime: 0, animationStates: {} },
-            ui: {
-              zoom: 1,
-              selectedElements: [],
-              selectedGroups: [],
-              panelState: { leftPanelVisible: true, rightPanelVisible: true, leftPanelWidth: 320, rightPanelWidth: 320, timelineHeight: 240, isTimelineCollapsed: true },
-              toolState: { activeTool: 'select', isPathMode: false, showPaths: true }
-            }
-          };
-        }),
-        activeSceneId: sceneStore.activeSceneId || 'scene-1',
-      };
-
-
-
-      return projectState;
     },
 
     getDiffFromBaseline: () => {
