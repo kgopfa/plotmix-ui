@@ -331,6 +331,162 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                 </label>
               </div>
 
+              {/* Curve Control Section */}
+              <div className="space-y-3">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={localElement.lineOptions?.isCurved ?? true}
+                    onChange={e => {
+                      const isCurved = e.target.checked;
+                      const updatedLineOptions = {
+                        ...localElement.lineOptions!,
+                        isCurved,
+                        // If switching to curved and no control point exists, create one at midpoint
+                        controlPoint: isCurved && !localElement.lineOptions?.controlPoint ? {
+                          x: (localElement.lineOptions!.points.start.x + localElement.lineOptions!.points.end.x) / 2,
+                          y: (localElement.lineOptions!.points.start.y + localElement.lineOptions!.points.end.y) / 2
+                        } : localElement.lineOptions?.controlPoint
+                      };
+                      updateLineOptions(updatedLineOptions);
+                    }}
+                    className="rounded border-gray-300 focus:ring-2 focus:ring-orange-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Curved line</span>
+                </label>
+
+                {/* Control Point Coordinates - only show for curved lines */}
+                {localElement.lineOptions?.isCurved && localElement.lineOptions?.controlPoint && (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <label className="flex flex-col gap-1">
+                        <span className="text-xs font-semibold text-orange-400">Control X</span>
+                        <input
+                          type="number"
+                          value={Math.round(localElement.lineOptions.controlPoint.x)}
+                          onChange={e => {
+                            const newX = Number(e.target.value);
+                            const updatedLineOptions = {
+                              ...localElement.lineOptions!,
+                              controlPoint: {
+                                ...localElement.lineOptions!.controlPoint!,
+                                x: newX
+                              }
+                            };
+                            updateLineOptions(updatedLineOptions);
+                          }}
+                          className="block w-full grow rounded-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-orange-600"
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1">
+                        <span className="text-xs font-semibold text-orange-400">Control Y</span>
+                        <input
+                          type="number"
+                          value={Math.round(localElement.lineOptions.controlPoint.y)}
+                          onChange={e => {
+                            const newY = Number(e.target.value);
+                            const updatedLineOptions = {
+                              ...localElement.lineOptions!,
+                              controlPoint: {
+                                ...localElement.lineOptions!.controlPoint!,
+                                y: newY
+                              }
+                            };
+                            updateLineOptions(updatedLineOptions);
+                          }}
+                          className="block w-full grow rounded-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-orange-600"
+                        />
+                      </label>
+                    </div>
+                    
+                    {/* Curve Intensity Slider */}
+                    <div>
+                      <label className="block text-xs font-medium text-orange-400 mb-1">Curve Intensity</label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="200"
+                        value={(() => {
+                          if (!localElement.lineOptions?.controlPoint) return 0;
+                          const { start, end } = localElement.lineOptions.points;
+                          const { controlPoint } = localElement.lineOptions;
+                          
+                          // Calculate distance from control point to straight line
+                          const lineLength = Math.sqrt((end.x - start.x) ** 2 + (end.y - start.y) ** 2);
+                          if (lineLength === 0) return 0;
+                          
+                          // Calculate perpendicular distance from control point to line
+                          const A = end.y - start.y;
+                          const B = start.x - end.x;
+                          const C = end.x * start.y - start.x * end.y;
+                          const distance = Math.abs(A * controlPoint.x + B * controlPoint.y + C) / Math.sqrt(A * A + B * B);
+                          
+                          // Convert to percentage (0-200%)
+                          return Math.min(200, Math.round((distance / lineLength) * 200));
+                        })()}
+                        onChange={e => {
+                          const intensity = Number(e.target.value) / 100; // Convert to 0-2 multiplier
+                          const { start, end } = localElement.lineOptions!.points;
+                          
+                          // Calculate midpoint of straight line
+                          const midX = (start.x + end.x) / 2;
+                          const midY = (start.y + end.y) / 2;
+                          
+                          // Calculate perpendicular direction from line
+                          const lineAngle = Math.atan2(end.y - start.y, end.x - start.x);
+                          const perpAngle = lineAngle + Math.PI / 2;
+                          
+                          // Calculate line length for scaling
+                          const lineLength = Math.sqrt((end.x - start.x) ** 2 + (end.y - start.y) ** 2);
+                          
+                          // Position control point perpendicular to line at desired intensity
+                          const newControlPoint = {
+                            x: midX + Math.cos(perpAngle) * lineLength * intensity * 0.5,
+                            y: midY + Math.sin(perpAngle) * lineLength * intensity * 0.5
+                          };
+                          
+                          const updatedLineOptions = {
+                            ...localElement.lineOptions!,
+                            controlPoint: newControlPoint
+                          };
+                          updateLineOptions(updatedLineOptions);
+                        }}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                        style={{
+                          background: `linear-gradient(to right, #f97316 0%, #f97316 ${(() => {
+                            if (!localElement.lineOptions?.controlPoint) return 0;
+                            const { start, end } = localElement.lineOptions.points;
+                            const { controlPoint } = localElement.lineOptions;
+                            const lineLength = Math.sqrt((end.x - start.x) ** 2 + (end.y - start.y) ** 2);
+                            if (lineLength === 0) return 0;
+                            const A = end.y - start.y;
+                            const B = start.x - end.x;
+                            const C = end.x * start.y - start.x * end.y;
+                            const distance = Math.abs(A * controlPoint.x + B * controlPoint.y + C) / Math.sqrt(A * A + B * B);
+                            return Math.min(100, (distance / lineLength) * 100);
+                          })()}%, #e5e7eb ${(() => {
+                            if (!localElement.lineOptions?.controlPoint) return 0;
+                            const { start, end } = localElement.lineOptions.points;
+                            const { controlPoint } = localElement.lineOptions;
+                            const lineLength = Math.sqrt((end.x - start.x) ** 2 + (end.y - start.y) ** 2);
+                            if (lineLength === 0) return 0;
+                            const A = end.y - start.y;
+                            const B = start.x - end.x;
+                            const C = end.x * start.y - start.x * end.y;
+                            const distance = Math.abs(A * controlPoint.x + B * controlPoint.y + C) / Math.sqrt(A * A + B * B);
+                            return Math.min(100, (distance / lineLength) * 100);
+                          })()}%, #e5e7eb 100%)`
+                        }}
+                      />
+                      <div className="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>Straight</span>
+                        <span>Maximum Curve</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="space-y-3">
                 {/* Check if this is an animated line (both dotted and animatedDots are true) */}
                 {!(localElement.lineOptions?.dotted && localElement.lineOptions?.animatedDots) && (

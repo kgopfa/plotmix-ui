@@ -26,18 +26,41 @@ const HoverOutline: React.FC<HoverOutlineProps> = ({ element }) => {
       const halfSize = ENDPOINT_SIZE / 2;
       
       // Calculate line bounding box (just around the line itself)
-      const minX = Math.min(startX, endX);
-      const maxX = Math.max(startX, endX);
-      const minY = Math.min(startY, endY);
-      const maxY = Math.max(startY, endY);
+      let minX = Math.min(startX, endX);
+      let maxX = Math.max(startX, endX);
+      let minY = Math.min(startY, endY);
+      let maxY = Math.max(startY, endY);
+      
+      // Include control point in bounding box calculation if it exists
+      if (element.lineOptions.isCurved && element.lineOptions.controlPoint) {
+        const controlX = element.lineOptions.controlPoint.x - element.x;
+        const controlY = element.lineOptions.controlPoint.y - element.y;
+        minX = Math.min(minX, controlX);
+        maxX = Math.max(maxX, controlX);
+        minY = Math.min(minY, controlY);
+        maxY = Math.max(maxY, controlY);
+      }
       
       // Draw hover rectangle around the line (without extending to handles, more transparent than selection)
       graphics.rect(minX, minY, maxX - minX, maxY - minY);
       graphics.stroke({ width: 1, color: 0x74b9ff, alpha: 0.3 });
       
       // Draw the actual line for visual reference (subtle)
-      graphics.moveTo(startX, startY).lineTo(endX, endY);
-      graphics.stroke({ width: 1, color: 0x74b9ff, alpha: 0.5 });
+      if (element.lineOptions.isCurved && element.lineOptions.controlPoint) {
+        // Draw curved line using bezier curves
+        graphics.moveTo(startX, startY);
+        graphics.quadraticCurveTo(
+          element.lineOptions.controlPoint.x - element.x,
+          element.lineOptions.controlPoint.y - element.y,
+          endX,
+          endY
+        );
+        graphics.stroke({ width: 1, color: 0x74b9ff, alpha: 0.5 });
+      } else {
+        // Draw true straight line using lineTo
+        graphics.moveTo(startX, startY).lineTo(endX, endY);
+        graphics.stroke({ width: 1, color: 0x74b9ff, alpha: 0.5 });
+      }
       
       // Draw endpoint markers (square handles like resize handles, more subtle than selection) - positioned to extend outside the hover rectangle
       // Start point - square handle (subtle blue)
