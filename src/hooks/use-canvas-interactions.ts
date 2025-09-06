@@ -152,6 +152,7 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
               // Set default animated rectangle properties
               finalLine.lineOptions.animatedGap = 20;
               finalLine.lineOptions.animatedColor = finalLine.stroke || '#000000';
+              finalLine.lineOptions.animatedOpacity = 1.0;
               finalLine.lineOptions.animatedLength = 8;
               finalLine.lineOptions.animatedThickness = 4;
             }
@@ -236,6 +237,7 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
           // Set default animated rectangle properties
           newElement.lineOptions.animatedGap = 20;
           newElement.lineOptions.animatedColor = newElement.stroke || '#000000';
+          newElement.lineOptions.animatedOpacity = 1.0;
           newElement.lineOptions.animatedLength = 8;
           newElement.lineOptions.animatedThickness = 4;
         }

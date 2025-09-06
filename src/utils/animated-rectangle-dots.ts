@@ -11,6 +11,7 @@ interface AnimatedRectangleDotsOptions {
   animationSpeed: number;
   // Animated rectangle properties
   animatedColor?: string; // Color of the animated rectangles
+  animatedOpacity?: number; // Opacity of the animated rectangles (0-1)
   animatedLength?: number; // Length of the rectangles
   animatedThickness?: number; // Thickness/width of the rectangles
 }
@@ -101,6 +102,7 @@ export class AnimatedRectangleDots {
     const length = this.options.animatedLength || this.options.dotSize;
     const thickness = this.options.animatedThickness || this.options.dotSize;
     const color = this.options.animatedColor ? this.hexToNumber(this.options.animatedColor) : this.options.color;
+    const alpha = this.options.animatedOpacity !== undefined ? this.options.animatedOpacity : this.options.alpha;
     
     // Draw a rectangle with custom dimensions
     const halfLength = length / 2;
@@ -108,7 +110,7 @@ export class AnimatedRectangleDots {
     dot.rect(-halfLength, -halfThickness, length, thickness);
     dot.fill({
       color: color,
-      alpha: this.options.alpha
+      alpha: alpha
     });
     
     // Position at the start of the path
@@ -163,6 +165,7 @@ export class AnimatedRectangleDots {
     const length = this.options.animatedLength || this.options.dotSize;
     const thickness = this.options.animatedThickness || this.options.dotSize;
     const color = this.options.animatedColor ? this.hexToNumber(this.options.animatedColor) : this.options.color;
+    const alpha = this.options.animatedOpacity !== undefined ? this.options.animatedOpacity : this.options.alpha;
     
     // Draw a rectangle with custom dimensions
     const halfLength = length / 2;
@@ -170,7 +173,7 @@ export class AnimatedRectangleDots {
     dot.rect(-halfLength, -halfThickness, length, thickness);
     dot.fill({
       color: color,
-      alpha: this.options.alpha
+      alpha: alpha
     });
     
     // Position and rotate the dot
@@ -362,6 +365,7 @@ export class AnimatedRectangleDots {
       const length = this.options.animatedLength || this.options.dotSize;
       const thickness = this.options.animatedThickness || this.options.dotSize;
       const color = this.options.animatedColor ? this.hexToNumber(this.options.animatedColor) : this.options.color;
+      const alpha = this.options.animatedOpacity !== undefined ? this.options.animatedOpacity : this.options.alpha;
       
       // Draw a rectangle with custom dimensions
       const halfLength = length / 2;
@@ -369,7 +373,7 @@ export class AnimatedRectangleDots {
       dot.rect(-halfLength, -halfThickness, length, thickness);
       dot.fill({
         color: color,
-        alpha: this.options.alpha
+        alpha: alpha
       });
       dot.rotation = currentRotation; // Restore rotation
     });

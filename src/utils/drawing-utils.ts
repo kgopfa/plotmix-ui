@@ -88,6 +88,7 @@ function handleAnimatedRectangleDots(shape: AnimatedCanvasObject, container: Con
       animationSpeed: 3.0, // Slower animation speed
       // Animated rectangle properties
       animatedColor: shape.lineOptions?.animatedColor,
+      animatedOpacity: shape.lineOptions?.animatedOpacity,
       animatedLength: shape.lineOptions?.animatedLength,
       animatedThickness: shape.lineOptions?.animatedThickness
     });

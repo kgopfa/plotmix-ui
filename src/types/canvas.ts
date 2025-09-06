@@ -137,6 +137,7 @@ export interface AnimatedCanvasObject {
     // Animated rectangle properties
     animatedGap?: number; // Gap between rectangles in pixels
     animatedColor?: string; // Color of the animated rectangles
+    animatedOpacity?: number; // Opacity of the animated rectangles (0-1)
     animatedLength?: number; // Length of the rectangles
     animatedThickness?: number; // Thickness/width of the rectangles
   };
