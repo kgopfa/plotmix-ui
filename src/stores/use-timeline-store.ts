@@ -455,7 +455,6 @@ export const useTimelineStore = create<TimelineStore>()(
         
         // Skip if elements are empty (might be in transition)
         if (!elements || elements.length === 0) {
-          console.warn('Timeline Store: Skipping updateTracks - no elements available');
           return;
         }
         
@@ -852,6 +851,15 @@ export const useTimelineStore = create<TimelineStore>()(
       buildGSAPTimeline: () => {
         const { elements, groups, gsapManager } = get();
         gsapManager.buildAnimationTimeline(elements, groups);
+        
+        // Update the total duration based on the actual timeline duration
+        // This ensures the timeline doesn't stop prematurely when group animations end
+        const timelineDuration = gsapManager.getTimelineDuration();
+        if (timelineDuration > 0) {
+          set(produce((state) => {
+            state.playback.totalDuration = Math.max(10, timelineDuration);
+          }));
+        }
       },
 
       // Timeline operations
@@ -1157,7 +1165,7 @@ export const useTimelineStore = create<TimelineStore>()(
             animations: group.animations.map(anim => ({ ...anim }))
           }));
           
-          // Clear and reload animation states
+          // Clear and reload animation states with proper validation
           state.animationStates.clear();
           
           // First, load animation states from project data if available
@@ -1210,13 +1218,14 @@ export const useTimelineStore = create<TimelineStore>()(
           });
           
           // Update timeline UI
-          state.ui.scale = data.scale;
-          state.playback.totalDuration = data.duration;
-          state.playback.currentTime = data.currentTime;
+          state.ui.scale = data.scale || 1;
+          state.playback.totalDuration = data.duration || 10;
+          state.playback.currentTime = data.currentTime || 0;
         }));
         
         // Update tracks and rebuild timeline
-        get().updateTracks();
+        // Note: Don't call updateTracks() here since elements/groups are already set
+        // Just rebuild the GSAP timeline directly
         get().buildGSAPTimeline();
       },
     })

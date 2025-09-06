@@ -46,7 +46,7 @@ export async function middleware(request: NextRequest) {
 
     try {
       const { payload } = await jwtVerify(token, new TextEncoder().encode(secret))
-      const projectIdFromPath = request.nextUrl.pathname.split('/')[2]
+      const projectIdFromPath = request.nextUrl.pathname?.split('/')[2]
       const tokenProjectId = (payload as Record<string, unknown>)?.projectId as string | undefined
 
       if (!tokenProjectId || tokenProjectId !== projectIdFromPath) {
@@ -75,7 +75,7 @@ export async function middleware(request: NextRequest) {
 
     try {
       const { payload } = await jwtVerify(token, new TextEncoder().encode(secret))
-      const projectIdFromPath = request.nextUrl.pathname.split('/')[2]
+      const projectIdFromPath = request.nextUrl.pathname?.split('/')[2]
       const tokenProjectId = (payload as Record<string, unknown>)?.projectId as string | undefined
 
       if (!tokenProjectId || tokenProjectId !== projectIdFromPath) {

@@ -1,11 +1,11 @@
 import React from 'react';
-import { Text, TextStyle, FillGradient, Color } from 'pixi.js';
+import { Text as pixiText, TextStyle, Color, FillGradient } from 'pixi.js';
 import { extend } from '@pixi/react';
-import type { AnimatedCanvasObject } from '@/types/canvas';
 import { useFontLoading } from '@/hooks/use-font-loading';
+import type { AnimatedCanvasObject } from '@/types/canvas';
 
 // Extend PIXI components for React
-extend({ Text });
+extend({ Text: pixiText });
 
 interface RichTextRendererProps {
   element: AnimatedCanvasObject;
@@ -19,31 +19,13 @@ export const RichTextRenderer: React.FC<RichTextRendererProps> = ({ element, isE
     return null;
   }
 
-  // If fonts aren't loaded yet, show a loading state or fallback
+  // If fonts aren't loaded yet, don't render anything
   if (!fontsLoaded) {
-    return (
-      <pixiText
-        text={element.text}
-        style={new TextStyle({
-          fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-          fontSize: element.fontSize || 36,
-          fontWeight: '400',
-          fontStyle: 'normal',
-          fill: '#666666',
-        })}
-        anchor={{ x: 0, y: 0.5 }}
-        x={-element.width / 2}
-        y={0}
-        interactive={!isEditing}
-        eventMode={!isEditing ? 'dynamic' : 'none'}
-      />
-    );
+    return null;
   }
 
-  // Check if the requested font is available, fallback to Tailwind font-sans stack if not
-  const fontFamily = availableFonts.includes(element.fontFamily || '') 
-    ? element.fontFamily 
-    : 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+  // Only use the exact font that was selected, no fallbacks
+  const fontFamily = element.fontFamily;
 
   const isValidHex = (v: unknown): v is string => typeof v === 'string' && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v.trim());
   const toSafeColorNumber = (v: unknown, fallback: string = '#000000') => {

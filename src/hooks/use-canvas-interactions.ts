@@ -127,8 +127,11 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
           
           if (clickDistance <= snapThreshold) { // Within snap threshold of start point - close the polygon
             // Create the final closing line from current position to the origin
+            // For animated lines, pass 'straight' to createNewObject but enable dotted/animated after
+            const createLineType = lineType === 'animated' ? 'straight' : lineType;
+            
             const finalLine = createNewObject(
-              'line', 
+              'line',
               0, 0, // Position will be calculated in createLine
               canvasObjects,
               undefined, // pathPoints
@@ -139,8 +142,20 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
               undefined, // text
               lineStartPoint!, // Start from current line start point
               endPoint, // End at the constrained or original point
-              lineType
+              createLineType
             );
+            
+            // If lineType is 'animated', enable dotted and animated dots
+            if (lineType === 'animated' && finalLine.lineOptions) {
+              finalLine.lineOptions.dotted = true;
+              finalLine.lineOptions.animatedDots = true;
+              // Set default animated rectangle properties
+              finalLine.lineOptions.animatedGap = 20;
+              finalLine.lineOptions.animatedColor = finalLine.stroke || '#000000';
+              finalLine.lineOptions.animatedOpacity = 1.0;
+              finalLine.lineOptions.animatedLength = 8;
+              finalLine.lineOptions.animatedThickness = 4;
+            }
             
             // If in path mode, mark it as a path
             if (isPathMode) {
@@ -197,6 +212,9 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
           return;
         }
         
+        // For animated lines, pass 'straight' to createNewObject but enable dotted/animated after
+        const createLineType = lineType === 'animated' ? 'straight' : lineType;
+        
         const newElement = createNewObject(
           'line', 
           0, 0, // Position will be calculated in createLine
@@ -209,8 +227,20 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
           undefined, // text
           startPoint,
           endPoint,
-          lineType
+          createLineType
         );
+        
+        // If lineType is 'animated', enable dotted and animated dots
+        if (lineType === 'animated' && newElement.lineOptions) {
+          newElement.lineOptions.dotted = true;
+          newElement.lineOptions.animatedDots = true;
+          // Set default animated rectangle properties
+          newElement.lineOptions.animatedGap = 20;
+          newElement.lineOptions.animatedColor = newElement.stroke || '#000000';
+          newElement.lineOptions.animatedOpacity = 1.0;
+          newElement.lineOptions.animatedLength = 8;
+          newElement.lineOptions.animatedThickness = 4;
+        }
         
         // If in path mode, mark it as a path
         if (isPathMode) {
@@ -226,7 +256,7 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
           // Set the end point as the new start point for the next line
           setLineStartPoint(endPoint);
         } else {
-          // For simpleLine, complete the line and exit
+          // For simpleLine and animatedLine, complete the line and exit
           setLineStartPoint(null);
           setActiveTool('select');
           setMaskPos(null);
@@ -254,9 +284,9 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
     }
 
     // Handle other creation tools (non-line tools)
-    if (['rectangle', 'circle', 'triangle', 'arc', 'text'].includes(activeTool)) {
+    if (['rectangle', 'circle', 'triangle', 'arc', 'text', 'code-editor'].includes(activeTool)) {
       const newElement = createNewObject(
-        activeTool as 'rectangle' | 'circle' | 'triangle' | 'arc' | 'text', 
+        activeTool as 'rectangle' | 'circle' | 'triangle' | 'arc' | 'text' | 'code-editor', 
         snappedPos.x, 
         snappedPos.y, 
         canvasObjects,
@@ -265,12 +295,12 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
         undefined, // imageData
         undefined, // width
         undefined, // height
-        activeTool === 'text' ? 'Double click text to edit' : undefined, // text
+        (activeTool === 'text' || activeTool === 'code-editor') ? 'Double click text to edit' : undefined, // text
         undefined, // startPoint
         undefined, // endPoint
         undefined, // lineType
-        activeTool === 'text' ? selectedFont : undefined, // fontFamily
-        activeTool === 'text' ? selectedFontWeight : undefined // fontWeight
+        (activeTool === 'text' || activeTool === 'code-editor') ? selectedFont : undefined, // fontFamily
+        (activeTool === 'text' || activeTool === 'code-editor') ? selectedFontWeight : undefined // fontWeight
       );
       
       // If in path mode, mark it as a path

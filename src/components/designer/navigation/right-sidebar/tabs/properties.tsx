@@ -6,12 +6,13 @@ import {
 import {
   calculateLineLength,
   calculateNorthAngle,
-  updateLineFromLengthAndNorthAngle
+  updateLineFromLengthAndNorthAngle,
+  clearAnimatedRectangleDotsCacheForShape
 } from '@/utils/drawing-utils';
 import { ColorPicker } from './color-picker';
 import { FontSelector } from './font-selector';
 import { GradientPicker } from './gradient-picker';
-import { Weight, SquareRoundCorner, ChevronsUpDown, Check, X } from 'lucide-react';
+import { Weight, SquareRoundCorner, ChevronsUpDown, Check, X, Zap } from 'lucide-react';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react';
 import { useSetActiveRightPanel } from '@/stores/use-ui-store';
 
@@ -31,8 +32,10 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
   const [isDirty, setIsDirty] = useState<Record<string, boolean>>({});
   const [showFillColorPicker, setShowFillColorPicker] = useState(false);
   const [showStrokeColorPicker, setShowStrokeColorPicker] = useState(false);
+  const [showAnimatedColorPicker, setShowAnimatedColorPicker] = useState(false);
   const fillColorTriggerRef = useRef<HTMLDivElement>(null);
   const strokeColorTriggerRef = useRef<HTMLDivElement>(null);
+  const animatedColorTriggerRef = useRef<HTMLDivElement>(null);
   const setActiveRightPanel = useSetActiveRightPanel();
 
   // Local input state for color fields with validation
@@ -44,6 +47,8 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
   const [shadowHexError, setShadowHexError] = useState<boolean>(false);
   const [textStrokeHex, setTextStrokeHex] = useState<string>('');
   const [textStrokeHexError, setTextStrokeHexError] = useState<boolean>(false);
+  const [animatedHex, setAnimatedHex] = useState<string>('');
+  const [animatedHexError, setAnimatedHexError] = useState<boolean>(false);
 
   const sanitizeHexInput = (raw: string) => raw.replace(/#/g, '').replace(/[^0-9A-Fa-f]/g, '').slice(0, 6).toUpperCase();
   const isValidHex = (hex: string) => /^[0-9A-F]{6}$/.test(hex);
@@ -72,6 +77,10 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
     const initTextStroke = (selectedElement.textStroke || '#000000').replace('#', '').toUpperCase();
     setTextStrokeHex(initTextStroke);
     setTextStrokeHexError(!isValidHex(initTextStroke));
+
+    const initAnimated = (selectedElement.lineOptions?.animatedColor || selectedElement.stroke || '#000000').replace('#', '').toUpperCase();
+    setAnimatedHex(initAnimated);
+    setAnimatedHexError(!isValidHex(initAnimated));
   }, [selectedElement]);
 
   // Batch updates to the parent component
@@ -120,6 +129,24 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
 
   // Helper for line options updates
   const updateLineOptions = (updates: Partial<NonNullable<AnimatedCanvasObject['lineOptions']>>) => {
+    setLocalElement(prev => ({
+      ...prev,
+      lineOptions: {
+        ...prev.lineOptions!,
+        ...updates,
+        // Ensure controlPoint and isCurved are preserved when updating other properties
+        controlPoint: updates.controlPoint ?? prev.lineOptions!.controlPoint,
+        isCurved: updates.isCurved ?? prev.lineOptions!.isCurved ?? true
+      }
+    }));
+    setIsDirty(prev => ({ ...prev, lineOptions: true }));
+  };
+
+  // Helper for animated rectangle properties updates (clears cache for real-time updates)
+  const updateAnimatedProperties = (updates: Partial<NonNullable<AnimatedCanvasObject['lineOptions']>>) => {
+    // Clear the cache for this shape to force recreation with new properties
+    clearAnimatedRectangleDotsCacheForShape(localElement.id);
+    
     setLocalElement(prev => ({
       ...prev,
       lineOptions: {
@@ -304,19 +331,242 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                 </label>
               </div>
 
+              {/* Curve Control Section - only show checkbox for straight lines */}
               <div className="space-y-3">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={localElement.lineOptions?.dotted ?? false}
-                    onChange={e => updateLineOptions({ dotted: e.target.checked })}
-                    className="rounded border-gray-300 focus:ring-2 focus:ring-orange-500"
-                  />
-                  <span className="text-sm font-medium text-gray-700">Dotted line</span>
-                </label>
-
-                {/* Only show arrow option for straight lines */}
                 {!localElement.lineOptions?.isCurved && (
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={localElement.lineOptions?.isCurved ?? true}
+                      onChange={e => {
+                        const isCurved = e.target.checked;
+                        const updatedLineOptions = {
+                          ...localElement.lineOptions!,
+                          isCurved,
+                          // If switching to curved and no control point exists, create one at midpoint
+                          controlPoint: isCurved && !localElement.lineOptions?.controlPoint ? {
+                            x: (localElement.lineOptions!.points.start.x + localElement.lineOptions!.points.end.x) / 2,
+                            y: (localElement.lineOptions!.points.start.y + localElement.lineOptions!.points.end.y) / 2
+                          } : localElement.lineOptions?.controlPoint
+                        };
+                        updateLineOptions(updatedLineOptions);
+                      }}
+                      className="rounded border-gray-300 focus:ring-2 focus:ring-orange-500"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Curved line</span>
+                  </label>
+                )}
+
+                {/* Control Point Coordinates - only show for curved lines */}
+                {localElement.lineOptions?.isCurved && localElement.lineOptions?.controlPoint && (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <label className="flex flex-col gap-1">
+                        <span className="text-xs font-semibold text-orange-400">Control X</span>
+                        <input
+                          type="number"
+                          value={Math.round(localElement.lineOptions.controlPoint.x)}
+                          onChange={e => {
+                            const newX = Number(e.target.value);
+                            const updatedLineOptions = {
+                              ...localElement.lineOptions!,
+                              controlPoint: {
+                                ...localElement.lineOptions!.controlPoint!,
+                                x: newX
+                              }
+                            };
+                            updateLineOptions(updatedLineOptions);
+                          }}
+                          className="block w-full grow rounded-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-orange-600"
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1">
+                        <span className="text-xs font-semibold text-orange-400">Control Y</span>
+                        <input
+                          type="number"
+                          value={Math.round(localElement.lineOptions.controlPoint.y)}
+                          onChange={e => {
+                            const newY = Number(e.target.value);
+                            const updatedLineOptions = {
+                              ...localElement.lineOptions!,
+                              controlPoint: {
+                                ...localElement.lineOptions!.controlPoint!,
+                                y: newY
+                              }
+                            };
+                            updateLineOptions(updatedLineOptions);
+                          }}
+                          className="block w-full grow rounded-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-orange-600"
+                        />
+                      </label>
+                    </div>
+                    
+                    {/* Curve Intensity Slider */}
+                    <div>
+                      <label className="block text-xs font-medium text-orange-400 mb-1">Curve Intensity</label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="200"
+                        value={(() => {
+                          if (!localElement.lineOptions?.controlPoint) return 0;
+                          const { start, end } = localElement.lineOptions.points;
+                          const { controlPoint } = localElement.lineOptions;
+                          
+                          // Calculate distance from control point to straight line
+                          const lineLength = Math.sqrt((end.x - start.x) ** 2 + (end.y - start.y) ** 2);
+                          if (lineLength === 0) return 0;
+                          
+                          // Calculate perpendicular distance from control point to line
+                          const A = end.y - start.y;
+                          const B = start.x - end.x;
+                          const C = end.x * start.y - start.x * end.y;
+                          const distance = Math.abs(A * controlPoint.x + B * controlPoint.y + C) / Math.sqrt(A * A + B * B);
+                          
+                          // Convert to percentage (0-200%)
+                          return Math.min(200, Math.round((distance / lineLength) * 200));
+                        })()}
+                        onChange={e => {
+                          const intensity = Number(e.target.value) / 100; // Convert to 0-2 multiplier
+                          const { start, end } = localElement.lineOptions!.points;
+                          
+                          // Calculate midpoint of straight line
+                          const midX = (start.x + end.x) / 2;
+                          const midY = (start.y + end.y) / 2;
+                          
+                          // Calculate perpendicular direction from line
+                          const lineAngle = Math.atan2(end.y - start.y, end.x - start.x);
+                          const perpAngle = lineAngle + Math.PI / 2;
+                          
+                          // Calculate line length for scaling
+                          const lineLength = Math.sqrt((end.x - start.x) ** 2 + (end.y - start.y) ** 2);
+                          
+                          // Position control point perpendicular to line at desired intensity
+                          const newControlPoint = {
+                            x: midX + Math.cos(perpAngle) * lineLength * intensity * 0.5,
+                            y: midY + Math.sin(perpAngle) * lineLength * intensity * 0.5
+                          };
+                          
+                          const updatedLineOptions = {
+                            ...localElement.lineOptions!,
+                            controlPoint: newControlPoint
+                          };
+                          updateLineOptions(updatedLineOptions);
+                        }}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                        style={{
+                          background: `linear-gradient(to right, #f97316 0%, #f97316 ${(() => {
+                            if (!localElement.lineOptions?.controlPoint) return 0;
+                            const { start, end } = localElement.lineOptions.points;
+                            const { controlPoint } = localElement.lineOptions;
+                            const lineLength = Math.sqrt((end.x - start.x) ** 2 + (end.y - start.y) ** 2);
+                            if (lineLength === 0) return 0;
+                            const A = end.y - start.y;
+                            const B = start.x - end.x;
+                            const C = end.x * start.y - start.x * end.y;
+                            const distance = Math.abs(A * controlPoint.x + B * controlPoint.y + C) / Math.sqrt(A * A + B * B);
+                            return Math.min(100, (distance / lineLength) * 100);
+                          })()}%, #e5e7eb ${(() => {
+                            if (!localElement.lineOptions?.controlPoint) return 0;
+                            const { start, end } = localElement.lineOptions.points;
+                            const { controlPoint } = localElement.lineOptions;
+                            const lineLength = Math.sqrt((end.x - start.x) ** 2 + (end.y - start.y) ** 2);
+                            if (lineLength === 0) return 0;
+                            const A = end.y - start.y;
+                            const B = start.x - end.x;
+                            const C = end.x * start.y - start.x * end.y;
+                            const distance = Math.abs(A * controlPoint.x + B * controlPoint.y + C) / Math.sqrt(A * A + B * B);
+                            return Math.min(100, (distance / lineLength) * 100);
+                          })()}%, #e5e7eb 100%)`
+                        }}
+                      />
+                      <div className="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>Straight</span>
+                        <span>Maximum Curve</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                {/* Check if this is an animated line (both dotted and animatedDots are true) */}
+                {!(localElement.lineOptions?.dotted && localElement.lineOptions?.animatedDots) && (
+                  <>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={localElement.lineOptions?.dotted ?? false}
+                        onChange={e => updateLineOptions({ dotted: e.target.checked })}
+                        className="rounded border-gray-300 focus:ring-2 focus:ring-orange-500"
+                      />
+                      <span className="text-sm font-medium text-gray-700">Dotted line</span>
+                    </label>
+
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={localElement.lineOptions?.animatedDots ?? false}
+                        onChange={e => updateLineOptions({ animatedDots: e.target.checked })}
+                        className="rounded border-gray-300 focus:ring-2 focus:ring-orange-500"
+                      />
+                      <span className="text-sm font-medium text-gray-700">Animated dots</span>
+                    </label>
+                  </>
+                )}
+
+                {/* Show animated rectangle properties when both dotted and animatedDots are true */}
+                {localElement.lineOptions?.dotted && localElement.lineOptions?.animatedDots && (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+                      <Zap className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-700">Animated Rectangles</span>
+                    </div>
+                    
+                    {/* Gap between rectangles */}
+                    <label className="flex flex-col gap-1">
+                      <span className="text-xs font-semibold text-blue-400">Gap</span>
+                      <input
+                        type="number"
+                        min="5"
+                        max="100"
+                        value={localElement.lineOptions?.animatedGap || 20}
+                        onChange={e => updateAnimatedProperties({ animatedGap: parseInt(e.target.value) || 20 })}
+                        className="block w-full grow rounded-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600"
+                      />
+                    </label>
+                    
+                    
+                    {/* Rectangle length */}
+                    <label className="flex flex-col gap-1">
+                      <span className="text-xs font-semibold text-blue-400">Length</span>
+                      <input
+                        type="number"
+                        min="2"
+                        max="50"
+                        value={localElement.lineOptions?.animatedLength || 8}
+                        onChange={e => updateAnimatedProperties({ animatedLength: parseInt(e.target.value) || 8 })}
+                        className="block w-full grow rounded-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600"
+                      />
+                    </label>
+                    
+                    {/* Rectangle thickness */}
+                    <label className="flex flex-col gap-1">
+                      <span className="text-xs font-semibold text-blue-400">Thickness</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="20"
+                        value={localElement.lineOptions?.animatedThickness || 4}
+                        onChange={e => updateAnimatedProperties({ animatedThickness: parseInt(e.target.value) || 4 })}
+                        className="block w-full grow rounded-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600"
+                      />
+                    </label>
+                  </div>
+                )}
+
+                {/* Only show arrow option for straight lines and non-animated lines */}
+                {!localElement.lineOptions?.isCurved && !(localElement.lineOptions?.dotted && localElement.lineOptions?.animatedDots) && (
                   <label className="flex items-center gap-2">
                     <input
                       type="checkbox"
@@ -389,86 +639,150 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
         </div>
 
         <div className="space-y-3">
-          <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold text-purple-400">Fill</span>
-            <div className="flex relative">
-              <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-purple-500 outline-1 -outline-offset-1 outline-gray-300">
-                <div
-                  ref={fillColorTriggerRef}
-                  className="w-4 h-4 rounded border border-gray-300 cursor-pointer hover:scale-110 transition-transform"
-                  style={
-                    (localElement.fill === 'none')
-                      ? {
-                          backgroundImage: `linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)`,
-                          backgroundSize: '8px 8px',
-                          backgroundPosition: '0 0, 0 4px, 4px -4px, -4px 0px'
-                        }
-                      : { backgroundColor: localElement.fill || '#ffffff' }
-                  }
-                  onClick={() => setShowFillColorPicker(!showFillColorPicker)}
+          {/* Show Fill only for non-animated lines */}
+          {!(localElement.lineOptions?.dotted && localElement.lineOptions?.animatedDots) && (
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-semibold text-purple-400">Fill</span>
+              <div className="flex relative">
+                <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-purple-500 outline-1 -outline-offset-1 outline-gray-300">
+                  <div
+                    ref={fillColorTriggerRef}
+                    className="w-4 h-4 rounded border border-gray-300 cursor-pointer hover:scale-110 transition-transform"
+                    style={
+                      (localElement.fill === 'none')
+                        ? {
+                            backgroundImage: `linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)`,
+                            backgroundSize: '8px 8px',
+                            backgroundPosition: '0 0, 0 4px, 4px -4px, -4px 0px'
+                          }
+                        : { backgroundColor: localElement.fill || '#ffffff' }
+                    }
+                    onClick={() => setShowFillColorPicker(!showFillColorPicker)}
+                  />
+                </div>
+                <input
+                  type="text"
+                  value={fillHex}
+                  onChange={e => {
+                    const hex = sanitizeHexInput(e.target.value);
+                    setFillHex(hex);
+                    const valid = isValidHex(hex);
+                    setFillHexError(!valid);
+                    if (valid) {
+                      updateLocalProperty('fill', '#' + hex);
+                    }
+                  }}
+                  className={`-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 ${fillHexError ? 'outline-red-500 focus:outline-red-600' : 'outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-purple-600'} uppercase`}
+                  placeholder="FFFFFF"
                 />
-              </div>
-              <input
-                type="text"
-                value={fillHex}
-                onChange={e => {
-                  const hex = sanitizeHexInput(e.target.value);
-                  setFillHex(hex);
-                  const valid = isValidHex(hex);
-                  setFillHexError(!valid);
-                  if (valid) {
-                    updateLocalProperty('fill', '#' + hex);
-                  }
-                }}
-                className={`-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 ${fillHexError ? 'outline-red-500 focus:outline-red-600' : 'outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-purple-600'} uppercase`}
-                placeholder="FFFFFF"
-              />
-              <ColorPicker
-                value={localElement.fill || '#ffffff'}
-                onChange={(color) => {
-                  updateLocalProperty('fill', color);
-                  if (color === 'none') {
+                <ColorPicker
+                  value={localElement.fill || '#ffffff'}
+                  onChange={(color) => {
+                    updateLocalProperty('fill', color);
+                    if (color === 'none') {
+                      setFillHex('');
+                      setFillHexError(false);
+                    } else {
+                      const next = color.replace('#', '').toUpperCase();
+                      setFillHex(next);
+                      setFillHexError(!isValidHex(next));
+                    }
+                  }}
+                  isOpen={showFillColorPicker}
+                  onClose={() => setShowFillColorPicker(false)}
+                  triggerRef={fillColorTriggerRef}
+                  allowNone
+                  onClear={() => {
+                    updateLocalProperty('fill', 'none');
                     setFillHex('');
                     setFillHexError(false);
-                  } else {
+                  }}
+                  isNone={localElement.fill === 'none'}
+                />
+              </div>
+            </label>
+          )}
+
+          {/* Show animated rectangle color for animated lines */}
+          {localElement.lineOptions?.dotted && localElement.lineOptions?.animatedDots && (
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-semibold text-purple-400">Color</span>
+              <div className="flex relative">
+                <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-purple-500 outline-1 -outline-offset-1 outline-gray-300">
+                  <div
+                    ref={animatedColorTriggerRef}
+                    className="w-4 h-4 rounded border border-gray-300 cursor-pointer hover:scale-110 transition-transform"
+                    style={{ backgroundColor: localElement.lineOptions?.animatedColor || localElement.stroke || '#000000' }}
+                    onClick={() => setShowAnimatedColorPicker(!showAnimatedColorPicker)}
+                  />
+                </div>
+                <input
+                  type="text"
+                  value={animatedHex}
+                  onChange={e => {
+                    const hex = sanitizeHexInput(e.target.value);
+                    setAnimatedHex(hex);
+                    const valid = isValidHex(hex);
+                    setAnimatedHexError(!valid);
+                    if (valid) {
+                      updateAnimatedProperties({ animatedColor: '#' + hex });
+                    }
+                  }}
+                  className={`-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 ${animatedHexError ? 'outline-red-500 focus:outline-red-600' : 'outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-purple-600'} uppercase`}
+                  placeholder="000000"
+                />
+                <ColorPicker
+                  value={localElement.lineOptions?.animatedColor || localElement.stroke || '#000000'}
+                  onChange={(color) => {
+                    updateAnimatedProperties({ animatedColor: color });
                     const next = color.replace('#', '').toUpperCase();
-                    setFillHex(next);
-                    setFillHexError(!isValidHex(next));
-                  }
-                }}
-                isOpen={showFillColorPicker}
-                onClose={() => setShowFillColorPicker(false)}
-                triggerRef={fillColorTriggerRef}
-                allowNone
-                onClear={() => {
-                  updateLocalProperty('fill', 'none');
-                  setFillHex('');
-                  setFillHexError(false);
-                }}
-                isNone={localElement.fill === 'none'}
+                    setAnimatedHex(next);
+                    setAnimatedHexError(!isValidHex(next));
+                  }}
+                  isOpen={showAnimatedColorPicker}
+                  onClose={() => setShowAnimatedColorPicker(false)}
+                  triggerRef={animatedColorTriggerRef}
+                />
+              </div>
+            </label>
+          )}
+
+          {/* Show animated rectangle opacity for animated lines */}
+          {localElement.lineOptions?.dotted && localElement.lineOptions?.animatedDots && (
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-semibold text-purple-400">Opacity</span>
+              <input
+                type="number"
+                value={localElement.lineOptions?.animatedOpacity ?? 1}
+                onChange={e => updateAnimatedProperties({ animatedOpacity: Number(e.target.value) })}
+                min={0}
+                max={1}
+                step={0.1}
+                className="block w-full grow rounded-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-purple-600"
               />
-            </div>
-          </label>
+            </label>
+          )}
 
-          {/* Removed Fill Opacity control; use single opacity and 'none' fill via picker */}
-
-          <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold text-purple-400">Opacity</span>
-            <input
-              type="number"
-              value={localElement.opacity ?? 1}
-              onChange={e => updateLocalProperty('opacity', Number(e.target.value))}
-              min={0}
-              max={1}
-              step={0.1}
-              className="block w-full grow rounded-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-purple-600"
-            />
-          </label>
+          {/* Show regular opacity for non-animated lines */}
+          {!(localElement.lineOptions?.dotted && localElement.lineOptions?.animatedDots) && (
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-semibold text-purple-400">Opacity</span>
+              <input
+                type="number"
+                value={localElement.opacity ?? 1}
+                onChange={e => updateLocalProperty('opacity', Number(e.target.value))}
+                min={0}
+                max={1}
+                step={0.1}
+                className="block w-full grow rounded-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-purple-600"
+              />
+            </label>
+          )}
         </div>
       </div>
 
-      {/* Stroke Properties - hide for text elements since they use textStroke instead */}
-      {localElement.type !== 'text' && (
+      {/* Stroke Properties - hide for text elements since they use textStroke instead, and hide for animated lines since they use animated rectangle color */}
+      {localElement.type !== 'text' && !(localElement.lineOptions?.dotted && localElement.lineOptions?.animatedDots) && (
         <div className="space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
             <h4 className="font-semibold text-indigo-600 text-sm">Stroke</h4>
@@ -584,8 +898,9 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
       </div>
       )}
 
-      {/* Shadow Properties - for all elements */}
-      <div className="space-y-4">
+      {/* Shadow Properties - hide for animated lines since they don't support shadows */}
+      {!(localElement.lineOptions?.dotted && localElement.lineOptions?.animatedDots) && (
+        <div className="space-y-4">
         <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
           <h4 className="font-semibold text-amber-600 text-sm">Shadow</h4>
         </div>
@@ -721,7 +1036,7 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
           )}
         </div>
       </div>
-
+      )}
 
       {/* Text Properties */}
       {
@@ -1239,6 +1554,113 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                   onRemove={() => updateLocalProperty('textGradient', undefined)}
                 />
               </div>
+            </div>
+          </div>
+        )
+      }
+
+      {/* Code Editor Properties */}
+      {
+        (localElement.type === 'code-editor') && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+              <h4 className="font-semibold text-blue-400 text-sm">Code Editor Properties</h4>
+            </div>
+
+            <div className="space-y-3">
+              {/* Line Numbers Toggle */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={localElement.showLineNumbers || false}
+                  onChange={e => updateLocalProperty('showLineNumbers', e.target.checked)}
+                  className="rounded border-gray-300 focus:ring-2 focus:ring-blue-500"
+                />
+                <span className="text-sm font-medium text-gray-700">Show Line Numbers</span>
+              </div>
+
+              {/* Language Selection */}
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-semibold text-blue-400">Language</span>
+                <Listbox value={localElement.language || 'javascript'} onChange={(value) => updateLocalProperty('language', value)}>
+                  <div className="relative">
+                    <ListboxButton className="grid w-full cursor-default grid-cols-1 rounded-lg bg-white py-1.5 pr-2 pl-3 text-left text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600 text-sm">
+                      <span className="col-start-1 row-start-1 truncate pr-6">{localElement.language || 'javascript'}</span>
+                      <ChevronsUpDown
+                        aria-hidden="true"
+                        className="col-start-1 row-start-1 size-4 self-center justify-self-end text-gray-500"
+                      />
+                    </ListboxButton>
+
+                    <ListboxOptions
+                      transition
+                      className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white py-1 text-sm shadow-lg ring-1 ring-black/5 focus:outline-hidden data-leave:transition data-leave:duration-100 data-leave:ease-in data-closed:data-leave:opacity-0"
+                    >
+                      {['javascript', 'typescript', 'go', 'python', 'java', 'cpp', 'csharp', 'php', 'ruby', 'swift', 'rust'].map((lang) => (
+                        <ListboxOption
+                          key={lang}
+                          value={lang}
+                          className="group relative cursor-default py-2 pr-4 pl-8 text-gray-600 select-none data-focus:bg-blue-600 data-focus:text-white data-focus:outline-hidden"
+                        >
+                          <span className="block truncate font-normal group-data-selected:font-semibold">{lang}</span>
+
+                          <span className="absolute inset-y-0 left-0 flex items-center pl-1.5 text-blue-600 group-not-data-selected:hidden group-data-focus:text-white">
+                            <Check aria-hidden="true" className="size-4" />
+                          </span>
+                        </ListboxOption>
+                      ))}
+                    </ListboxOptions>
+                  </div>
+                </Listbox>
+              </label>
+
+              {/* Theme Selection */}
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-semibold text-blue-400">Theme</span>
+                <Listbox value={localElement.syntaxTheme || 'light'} onChange={(value) => updateLocalProperty('syntaxTheme', value)}>
+                  <div className="relative">
+                    <ListboxButton className="grid w-full cursor-default grid-cols-1 rounded-lg bg-white py-1.5 pr-2 pl-3 text-left text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600 text-sm">
+                      <span className="col-start-1 row-start-1 truncate pr-6">{localElement.syntaxTheme || 'light'}</span>
+                      <ChevronsUpDown
+                        aria-hidden="true"
+                        className="col-start-1 row-start-1 size-4 self-center justify-self-end text-gray-500"
+                      />
+                    </ListboxButton>
+
+                    <ListboxOptions
+                      transition
+                      className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white py-1 text-sm shadow-lg ring-1 ring-black/5 focus:outline-hidden data-leave:transition data-leave:duration-100 data-leave:ease-in data-closed:data-leave:opacity-0"
+                    >
+                      {['light', 'dark'].map((theme) => (
+                        <ListboxOption
+                          key={theme}
+                          value={theme}
+                          className="group relative cursor-default py-2 pr-4 pl-8 text-gray-600 select-none data-focus:bg-blue-600 data-focus:text-white data-focus:outline-hidden"
+                        >
+                          <span className="block truncate font-normal group-data-selected:font-semibold">{theme}</span>
+
+                          <span className="absolute inset-y-0 left-0 flex items-center pl-1.5 text-blue-600 group-not-data-selected:hidden group-data-focus:text-white">
+                            <Check aria-hidden="true" className="size-4" />
+                          </span>
+                        </ListboxOption>
+                      ))}
+                    </ListboxOptions>
+                  </div>
+                </Listbox>
+              </label>
+
+              {/* Tab Size */}
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-semibold text-blue-400">Tab Size</span>
+                <input
+                  type="number"
+                  value={localElement.tabSize || 2}
+                  onChange={e => updateLocalProperty('tabSize', Number(e.target.value))}
+                  min={1}
+                  max={8}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                />
+              </label>
             </div>
           </div>
         )

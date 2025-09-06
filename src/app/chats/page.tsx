@@ -80,7 +80,7 @@ export default function ChatsPage() {
               <button
                 type="button"
                 onClick={() => setShowDeleteSelectedModal(true)}
-                className="inline-flex items-center gap-x-2 px-3 py-2 text-xs font-bold rounded-lg border border-red-200 bg-red-600 text-white hover:bg-red-700"
+                className="inline-flex items-center gap-x-2 h-9 px-4 py-2 text-sm font-semibold rounded-lg text-white bg-gradient-to-r from-red-800 to-pink-800 hover:from-red-900 hover:to-pink-900"
               >
                 Delete Selected
               </button>

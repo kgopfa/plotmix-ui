@@ -569,7 +569,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       const ids = new Set<string>();
       props.selectedIds.forEach(id => {
         const el = props.elements.find(e => e.id === id);
-        if (el && el.type === 'text') ids.add(id);
+        if (el && (el.type === 'text' || el.type === 'code-editor')) ids.add(id);
       });
       return Array.from(ids);
     }, [props.selectedIds, props.elements, overlayRerenderTick]);
@@ -682,7 +682,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
                     }}
                   >
                     <Pencil className="w-3.5 h-3.5" />
-                    Edit text
+                    {props.elements.find(e => e.id === id)?.type === 'code-editor' ? 'Edit code' : 'Edit text'}
                   </button>
                   <div className="h-4 w-px bg-gray-200/80" />
                   <button
@@ -715,6 +715,10 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
           const viewportW = typeof window !== 'undefined' ? window.innerWidth : 0;
           const rawLeft = bounds.x;
           const left = Math.max(8, Math.min(rawLeft, Math.max(8, viewportW - width - 8)));
+          
+          const editingElement = props.elements.find(e => e.id === activeEditingTextId);
+          const isCodeEditor = editingElement?.type === 'code-editor';
+          
           return (
             <div
               key={`text-editor-${activeEditingTextId}`}
@@ -722,11 +726,13 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
               style={{ top: `${top}px`, left: `${left}px`, width: `${width}px` }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="bg-white/95 backdrop-blur-sm border border-gray-200/60 rounded-xl shadow-xl p-2.5">
+              <div className={`${isCodeEditor ? 'bg-gray-900/95 border-gray-700/60' : 'bg-white/95 border-gray-200/60'} backdrop-blur-sm border rounded-xl shadow-xl p-2.5`}>
                 <div className="flex items-center justify-between pb-1">
-                  <span className="text-xs tracking-wide text-gray-500">Edit text</span>
+                  <span className={`text-xs tracking-wide ${isCodeEditor ? 'text-gray-400' : 'text-gray-500'}`}>
+                    {isCodeEditor ? 'Edit code' : 'Edit text'}
+                  </span>
                   <button
-                    className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                    className={`p-1 rounded-md ${isCodeEditor ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-800' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
                     onMouseDown={(e) => { e.preventDefault(); commitTextEdit(false); }}
                     title="Cancel"
                   >
@@ -735,7 +741,11 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
                 </div>
                 <textarea
                   autoFocus
-                  className="w-full text-sm text-gray-800 outline-none resize-vertical rounded-md border border-gray-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-300 p-2 bg-white/90"
+                  className={`w-full text-sm outline-none resize-vertical rounded-md border focus:border-blue-400 focus:ring-1 focus:ring-blue-300 p-2 ${
+                    isCodeEditor 
+                      ? 'text-gray-200 border-gray-600 bg-gray-800/90 font-mono' 
+                      : 'text-gray-800 border-gray-200 bg-white/90'
+                  }`}
                   rows={Math.min(6, Math.max(2, Math.round((bounds.height || 40) / 18)))}
                   value={activeEditingValue}
                   onChange={(e) => setActiveEditingValue(e.target.value)}
@@ -749,10 +759,33 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
                     }
                   }}
                   onBlur={() => commitTextEdit(true)}
+                  style={{
+                    fontFamily: isCodeEditor ? 'Monaco, Consolas, "Courier New", monospace' : 'inherit',
+                    fontSize: isCodeEditor ? `${editingElement?.fontSize || 14}px` : 'inherit',
+                    lineHeight: '1.5',
+                  }}
                 />
                 <div className="flex justify-end gap-2 mt-2">
-                  <button className="px-2.5 py-1 text-xs rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50" onMouseDown={(e) => { e.preventDefault(); commitTextEdit(false); }}>Cancel</button>
-                  <button className="px-3 py-1.5 text-xs rounded-md text-white bg-gradient-to-r from-purple-500 to-purple-600 shadow-md shadow-purple-500/30 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95" onMouseDown={(e) => { e.preventDefault(); commitTextEdit(true); }}>Save</button>
+                  <button 
+                    className={`px-2.5 py-1 text-xs rounded-md border ${
+                      isCodeEditor 
+                        ? 'border-gray-600 text-gray-300 hover:bg-gray-800' 
+                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`} 
+                    onMouseDown={(e) => { e.preventDefault(); commitTextEdit(false); }}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    className={`px-3 py-1.5 text-xs rounded-md text-white shadow-md transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 ${
+                      isCodeEditor 
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 shadow-blue-500/30' 
+                        : 'bg-gradient-to-r from-purple-500 to-purple-600 shadow-purple-500/30'
+                    }`} 
+                    onMouseDown={(e) => { e.preventDefault(); commitTextEdit(true); }}
+                  >
+                    Save
+                  </button>
                 </div>
               </div>
             </div>

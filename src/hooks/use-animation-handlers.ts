@@ -34,7 +34,7 @@ export function useAnimationHandlers(
   }, [selectedElement, selectedElement?.animations]);
 
   const getAnimationProperty = (path: string, value: string | number): Partial<AnimatableProperties> => {
-    const parts = path.split('.');
+    const parts = path?.split('.');
     const propertyKey = parts[1] as keyof AnimatableProperties;
     
     // Handle numeric properties vs string properties
@@ -143,7 +143,7 @@ export function useAnimationHandlers(
         return { 
           ...anim, 
           type: newType,
-          id: `${newType}-${animationId.split('-')[1]}`,
+          id: `${newType}-${animationId?.split('-')[1]}`,
           displayName: generateAnimationDisplayName(newType, localAnimations),
           properties: defaultProperties[newType]
         };

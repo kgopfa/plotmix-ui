@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { testFonts, FONTS_TO_TEST } from '@/utils/font-utils';
 
 interface FontLoadingState {
   fontsLoaded: boolean;
@@ -10,7 +11,7 @@ interface FontLoadingState {
 export const useFontLoading = (): FontLoadingState => {
   const [fontsLoaded, setFontsLoaded] = useState(false);
   const [loadingFonts, setLoadingFonts] = useState(true);
-  const [availableFonts, setAvailableFonts] = useState<string[]>(['Arial']);
+  const [availableFonts, setAvailableFonts] = useState<string[]>([]);
 
   const loadFonts = useCallback(async () => {
     if (fontsLoaded) return; // Don't reload if already loaded
@@ -42,7 +43,7 @@ export const useFontLoading = (): FontLoadingState => {
         { name: 'Angelia-Beauty', file: 'Angelia-Beauty.ttf' }
       ];
 
-      // Load all fonts concurrently and wait for completion
+      // Load all custom fonts concurrently and wait for completion
       const fontPromises = [
         ...otfFonts.map(async (font) => {
           try {
@@ -66,16 +67,37 @@ export const useFontLoading = (): FontLoadingState => {
         })
       ];
 
-      // Wait for all fonts to load
+      // Wait for all custom fonts to load
       const loadedFonts = await Promise.all(fontPromises);
       const successfulFonts = loadedFonts.filter(name => name !== null);
 
-      // Update available fonts list
-      setAvailableFonts(['Arial', ...successfulFonts]);
+      // Test all fonts in batches to avoid overwhelming the browser
+      const batchSize = 10;
+      const availableSystemFonts: string[] = [];
+      
+      for (let i = 0; i < FONTS_TO_TEST.length; i += batchSize) {
+        const batch = FONTS_TO_TEST.slice(i, i + batchSize);
+        const availableBatch = testFonts(batch);
+        availableSystemFonts.push(...availableBatch);
+        
+        // Small delay between batches to prevent browser freezing
+        if (i + batchSize < FONTS_TO_TEST.length) {
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+      }
+
+      // Combine all available fonts - no fallbacks
+      const allAvailableFonts = [...successfulFonts, ...availableSystemFonts];
+      
+      // Remove duplicates
+      const uniqueFonts = [...new Set(allAvailableFonts)];
+      
+      setAvailableFonts(uniqueFonts);
       setFontsLoaded(true);
       setLoadingFonts(false);
       
     } catch (error) {
+      console.error('Error loading fonts:', error);
       setLoadingFonts(false);
     }
   }, [fontsLoaded]);

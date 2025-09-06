@@ -103,7 +103,7 @@ export interface BaseAnimationConfig {
 export interface AnimatedCanvasObject {
   id: string;
   name: string;
-  type: 'rectangle' | 'circle' | 'triangle' | 'arc' | 'line' | 'path' | 'image' | 'text' | 'polygon';
+  type: 'rectangle' | 'circle' | 'triangle' | 'arc' | 'line' | 'path' | 'image' | 'text' | 'code-editor' | 'polygon';
   x: number;
   y: number;
   width: number;
@@ -132,7 +132,14 @@ export interface AnimatedCanvasObject {
     controlPoint?: {x: number, y: number}; // Optional control point for curved lines
     arrow: boolean;
     dotted: boolean;
+    animatedDots?: boolean; // Flag to enable animated dots for dotted lines
     isCurved?: boolean; // Flag to indicate if line is curved vs straight
+    // Animated rectangle properties
+    animatedGap?: number; // Gap between rectangles in pixels
+    animatedColor?: string; // Color of the animated rectangles
+    animatedOpacity?: number; // Opacity of the animated rectangles (0-1)
+    animatedLength?: number; // Length of the rectangles
+    animatedThickness?: number; // Thickness/width of the rectangles
   };
   pathPoints?: Array<{x: number, y: number}>;
   imageData?: string;
@@ -175,6 +182,12 @@ export interface AnimatedCanvasObject {
   wordWrap?: boolean;
   wordWrapWidth?: number;
   groupId?: string;
+  // Code editor specific properties
+  language?: string; // Programming language for syntax highlighting
+  syntaxTheme?: 'dark' | 'light'; // Theme for syntax highlighting
+  showLineNumbers?: boolean; // Whether to show line numbers
+  showLineHighlight?: boolean; // Whether to highlight current line
+  tabSize?: number; // Number of spaces per tab
   // Parent-child relationship
   parent?: string | null; // ID of parent element or group
 }

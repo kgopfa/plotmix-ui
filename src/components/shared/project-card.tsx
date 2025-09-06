@@ -62,7 +62,7 @@ export function ProjectCard({ project, onClick, variant = 'default' }: ProjectCa
               <span className={`font-semibold text-white ${
                 isCompact ? 'text-xs' : 'text-xs'
               }`}>
-                {project.author.split(' ').map(n => n[0]).join('')}
+                {project.author?.split(' ').map(n => n[0]).join('')}
               </span>
             </div>
             <span className={`text-gray-600 text-xs`}>

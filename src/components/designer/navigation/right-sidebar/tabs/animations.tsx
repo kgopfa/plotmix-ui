@@ -197,7 +197,7 @@ export function AnimationsTab({
 
       if (field.includes('.')) {
         // Handle nested properties (e.g., 'properties.rotation')
-        const [parent, child] = field.split('.');
+        const [parent, child] = field?.split('.');
         const parentKey = parent as keyof ElementAnimation;
         const parentValue = anim[parentKey];
 

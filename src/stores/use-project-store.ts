@@ -321,18 +321,24 @@ export const useProjectStore = create<ProjectStore>()(
     },
 
     scheduleAutosave: () => {
-      // Check if auto-save is enabled in config
-      if (!isAutosaveEnabled()) {
-        return;
+      // Check if auto-save is enabled from environment variable
+      const autoSaveEnabled = process.env.NEXT_PUBLIC_AUTOSAVE_ENABLED !== 'false';
+      if (!autoSaveEnabled) {
+        return; // Don't schedule auto-save if it's disabled
       }
-      
-      const { autosaveTimer, autosaveDelayMs } = get();
+
+      const { autosaveTimer } = get();
       if (autosaveTimer) {
         clearTimeout(autosaveTimer as unknown as number);
       }
+      
+      // Use the interval from UI preferences, with fallback to default
+      const uiStore = useUIStore.getState();
+      const intervalMs = (uiStore.preferences.autoSaveInterval || 30) * 1000;
+      
       const timerId = setTimeout(() => {
         get().persistIfDirty('Autosave edits');
-      }, autosaveDelayMs) as unknown as number;
+      }, intervalMs) as unknown as number;
       set(produce((state: ProjectStore) => {
         state.autosaveTimer = timerId;
       }));

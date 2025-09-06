@@ -24,6 +24,12 @@ export const TextTab: React.FC = () => {
     tool: 'text' as const,
   };
 
+  const codeEditorTools = {
+    name: 'Add a code editor',
+    icon: <Type className="w-4 h-4 text-green-600" />,
+    tool: 'code-editor' as const,
+  };
+
   // Font showcase data with sample text similar to Photoshop effects
   const fontShowcase = [
     {
@@ -119,8 +125,12 @@ export const TextTab: React.FC = () => {
     }
   ];
 
-  const handleToolSelect = (tool: 'text') => {
+  const handleToolSelect = (tool: 'text' | 'code-editor') => {
     setActiveTool(tool);
+  };
+
+  const handleCodeEditorSelect = () => {
+    setActiveTool('code-editor');
   };
 
   const handleFontPresetSelect = (fontFamily: string) => {
@@ -182,6 +192,15 @@ export const TextTab: React.FC = () => {
               <div className="flex items-center justify-center gap-3">
                 <span className="text-xl">{textTools.icon}</span>
                 <div className="font-medium text-sm text-gray-900">{textTools.name}</div>
+              </div>
+            </button>
+            <button
+              onClick={handleCodeEditorSelect}
+              className={`w-full p-4 rounded-xl text-center border border-gray-200 transition-all duration-200 ease-out transform hover:scale-[1.02] hover:bg-green-50 ${activeTool === codeEditorTools.tool}`}
+            >
+              <div className="flex items-center justify-center gap-3">
+                <span className="text-xl">{codeEditorTools.icon}</span>
+                <div className="font-medium text-sm text-gray-900">{codeEditorTools.name}</div>
               </div>
             </button>
           </div>

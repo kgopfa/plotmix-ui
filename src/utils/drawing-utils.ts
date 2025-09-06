@@ -1,11 +1,32 @@
-import { Graphics, Texture } from 'pixi.js';
+import { Graphics, Texture, Container } from 'pixi.js';
 import { DropShadowFilter } from 'pixi-filters';
 import { AnimationPath } from '@/utils/animation-path';
+import { AnimatedRectangleDots } from '@/utils/animated-rectangle-dots';
 import type { AnimatedCanvasObject } from '@/types/canvas';
 import * as PIXI from 'pixi.js';
 
 // Cache for loaded image textures to prevent reloading during drag operations
 const imageTextureCache = new Map<string, Texture>();
+
+// Cache for animated rectangle dots to prevent recreation during interactions
+const animatedRectangleDotsCache = new Map<string, AnimatedRectangleDots>();
+
+// Function to clear animated rectangle dots cache for a specific shape
+export const clearAnimatedRectangleDotsCacheForShape = (shapeId: string): void => {
+  const keysToDelete: string[] = [];
+  for (const [key, value] of animatedRectangleDotsCache.entries()) {
+    if (key.includes(shapeId)) {
+      keysToDelete.push(key);
+    }
+  }
+  keysToDelete.forEach(key => {
+    const instance = animatedRectangleDotsCache.get(key);
+    if (instance) {
+      instance.destroy();
+    }
+    animatedRectangleDotsCache.delete(key);
+  });
+};
 
 // Utility function to calculate the correct width for an equilateral triangle based on height
 export const calculateEquilateralTriangleWidth = (height: number): number => {
@@ -22,6 +43,79 @@ export function clearImageTextureCache() {
     }
   });
   imageTextureCache.clear();
+}
+
+// Function to clear animated rectangle dots cache (useful for memory management)
+export function clearAnimatedRectangleDotsCache() {
+  animatedRectangleDotsCache.forEach(animatedRectangleDots => {
+    if (animatedRectangleDots && !animatedRectangleDots.getContainer().destroyed) {
+      animatedRectangleDots.destroy();
+    }
+  });
+  animatedRectangleDotsCache.clear();
+}
+
+// Function to handle animated rectangle dots for line elements
+function handleAnimatedRectangleDots(shape: AnimatedCanvasObject, container: Container): void {
+  if (!shape.lineOptions?.points) return;
+
+  const { start, end } = shape.lineOptions.points;
+  const { controlPoint, isCurved } = shape.lineOptions;
+  
+  // Convert color to number format
+  const colorNum = typeof shape.stroke === 'string' ? parseColor(shape.stroke) : (shape.stroke || parseColor(shape.fill || '#000000'));
+  const width = shape.strokeWidth || 2;
+  const alpha = (shape.strokeOpacity ?? shape.opacity ?? 1);
+  
+  // Calculate relative positions
+  const startX = start.x - shape.x;
+  const startY = start.y - shape.y;
+  const endX = end.x - shape.x;
+  const endY = end.y - shape.y;
+  
+  const cacheKey = `animated-dots-${shape.id}-${startX}-${startY}-${endX}-${endY}-${colorNum}-${width}`;
+  
+  let animatedDotsInstance = animatedRectangleDotsCache.get(cacheKey);
+  
+  if (!animatedDotsInstance) {
+    animatedDotsInstance = new AnimatedRectangleDots({
+      width,
+      color: colorNum,
+      alpha,
+      dotSize: Math.max(4, Math.min(width * 2, 8)), // Dot size based on line width
+      spacing: Math.max(16, width * 4), // Increased spacing for better uniformity
+      gap: shape.lineOptions?.animatedGap || 20, // Use configured gap or default
+      animationSpeed: 3.0, // Slower animation speed
+      // Animated rectangle properties
+      animatedColor: shape.lineOptions?.animatedColor,
+      animatedOpacity: shape.lineOptions?.animatedOpacity,
+      animatedLength: shape.lineOptions?.animatedLength,
+      animatedThickness: shape.lineOptions?.animatedThickness
+    });
+    
+    if (isCurved && controlPoint) {
+      const controlX = controlPoint.x - shape.x;
+      const controlY = controlPoint.y - shape.y;
+      animatedDotsInstance.createCurve(
+        { x: startX, y: startY },
+        { x: controlX, y: controlY },
+        { x: endX, y: endY }
+      );
+    } else {
+      animatedDotsInstance.createLine(
+        { x: startX, y: startY },
+        { x: endX, y: endY }
+      );
+    }
+    
+    animatedDotsInstance.play();
+    animatedRectangleDotsCache.set(cacheKey, animatedDotsInstance);
+  }
+  
+  // Add to container if not already added
+  if (!container.children.includes(animatedDotsInstance.getContainer())) {
+    container.addChild(animatedDotsInstance.getContainer());
+  }
 }
 
 export const parseColor = (color: string | number | undefined): number => {
@@ -183,11 +277,43 @@ export const drawDottedLine = (
   width: number,
   alpha: number,
   dashPattern: [number, number] = [10, 5],
-  shouldClear: boolean = true
+  shouldClear: boolean = true,
+  animatedDots?: boolean,
+  container?: Container
 ) => {
   if (shouldClear) {
     graphics.clear();
   }
+
+  // If animated dots are enabled and container is provided, create animated rectangle dots
+  if (animatedDots && container) {
+    const cacheKey = `animated-dots-${start.x}-${start.y}-${end.x}-${end.y}-${color}-${width}`;
+    
+    let animatedDotsInstance = animatedRectangleDotsCache.get(cacheKey);
+    
+    if (!animatedDotsInstance) {
+      animatedDotsInstance = new AnimatedRectangleDots({
+        width,
+        color,
+        alpha,
+        dotSize: Math.max(4, Math.min(width * 2, 8)),
+        spacing: Math.max(16, width * 4), // Increased spacing for better uniformity
+        gap: 20, // Default gap for non-shape animated lines
+        animationSpeed: 3.0 // Slower animation speed
+      });
+      
+      animatedDotsInstance.createLine(start, end);
+      animatedDotsInstance.play();
+      
+      animatedRectangleDotsCache.set(cacheKey, animatedDotsInstance);
+      container.addChild(animatedDotsInstance.getContainer());
+    }
+    
+    // Don't draw regular dotted line when animated dots are enabled
+    return;
+  }
+
+  // Regular dotted line using AnimationPath
   new AnimationPath(graphics, { dash: dashPattern, width, color, alpha })
     .moveTo(start.x, start.y)
     .lineTo(end.x, end.y);
@@ -225,10 +351,40 @@ export const drawDottedCurve = (
   width: number,
   alpha: number,
   dashPattern: [number, number] = [10, 5],
-  shouldClear: boolean = true
+  shouldClear: boolean = true,
+  animatedDots?: boolean,
+  container?: Container
 ) => {
   if (shouldClear) {
     graphics.clear();
+  }
+
+  // If animated dots are enabled and container is provided, create animated rectangle dots
+  if (animatedDots && container) {
+    const cacheKey = `animated-curve-dots-${start.x}-${start.y}-${controlPoint.x}-${controlPoint.y}-${end.x}-${end.y}-${color}-${width}`;
+    
+    let animatedDotsInstance = animatedRectangleDotsCache.get(cacheKey);
+    
+    if (!animatedDotsInstance) {
+      animatedDotsInstance = new AnimatedRectangleDots({
+        width,
+        color,
+        alpha,
+        dotSize: Math.max(4, Math.min(width * 2, 8)),
+        spacing: Math.max(16, width * 4), // Increased spacing for better uniformity
+        gap: 20, // Default gap for non-shape animated lines
+        animationSpeed: 3.0 // Slower animation speed
+      });
+      
+      animatedDotsInstance.createCurve(start, controlPoint, end);
+      animatedDotsInstance.play();
+      
+      animatedRectangleDotsCache.set(cacheKey, animatedDotsInstance);
+      container.addChild(animatedDotsInstance.getContainer());
+    }
+    
+    // Don't draw regular dotted curve when animated dots are enabled
+    return;
   }
   
   // For dotted curves, we'll approximate with line segments
@@ -263,10 +419,12 @@ export const drawLine = (
       points?: { start: { x: number; y: number }; end: { x: number; y: number } };
       controlPoint?: { x: number; y: number };
       dotted?: boolean;
+      animatedDots?: boolean;
       arrow?: boolean;
       isCurved?: boolean;
     };
-  }
+  },
+  container?: Container
 ) => {
   if (shape.type !== 'line' || !shape.lineOptions?.points) return;
 
@@ -300,14 +458,14 @@ export const drawLine = (
     };
     
     if (shape.lineOptions.dotted) {
-      drawDottedCurve(graphics, start, controlPoint, end, color, width, alpha);
+      drawDottedCurve(graphics, start, controlPoint, end, color, width, alpha, [10, 5], true, shape.lineOptions.animatedDots, container);
     } else {
       drawSmoothCurve(graphics, start, controlPoint, end, color, width, alpha);
     }
       } else {
       // True straight line - check if it should be dotted
       if (shape.lineOptions.dotted) {
-        drawDottedLine(graphics, start, end, color, width, alpha);
+        drawDottedLine(graphics, start, end, color, width, alpha, [10, 5], true, shape.lineOptions.animatedDots, container);
       } else {
         graphics
           .clear()
@@ -330,7 +488,7 @@ export const drawLine = (
   }
 };
 
-function drawElement(graphics: Graphics, shape: AnimatedCanvasObject) {
+function drawElement(graphics: Graphics, shape: AnimatedCanvasObject, container?: Container) {
   switch (shape.type) {
     case 'rectangle':
       // Draw rectangle centered around origin with pixel-aligned coordinates
@@ -417,7 +575,15 @@ function drawElement(graphics: Graphics, shape: AnimatedCanvasObject) {
             const colorNum = typeof shape.stroke === 'string' ? parseColor(shape.stroke) : (shape.stroke || parseColor(shape.fill || '#000000'));
             const width = shape.strokeWidth || 2;
             const alpha = (shape.strokeOpacity ?? shape.opacity ?? 1);
-            drawDottedLine(graphics, { x: startX, y: startY }, { x: endX, y: endY }, colorNum, width, alpha);
+            
+            // If animated dots are enabled and container is provided, don't draw anything in graphics
+            // The animated line will be handled separately
+            if (shape.lineOptions.animatedDots && container) {
+              // Don't draw anything in graphics - the animated line will be added to container
+              return;
+            } else {
+              drawDottedLine(graphics, { x: startX, y: startY }, { x: endX, y: endY }, colorNum, width, alpha, [10, 5], true, false, undefined);
+            }
           } else {
             graphics
               .moveTo(startX, startY)
@@ -426,6 +592,7 @@ function drawElement(graphics: Graphics, shape: AnimatedCanvasObject) {
         }
       }
       break;
+
 
     case 'path':
       if (shape.pathPoints && shape.pathPoints.length > 1) {
@@ -451,12 +618,12 @@ function drawElement(graphics: Graphics, shape: AnimatedCanvasObject) {
   }
 }
 
-function drawShapeAsPath(graphics: Graphics, shape: AnimatedCanvasObject) {
+function drawShapeAsPath(graphics: Graphics, shape: AnimatedCanvasObject, container?: Container) {
   const grayColor = 0xD3D3D3;
 
   if (shape.type === 'line' || shape.type === 'path') {
     graphics.clear(); // Make sure to clear before drawing
-    drawElement(graphics, shape);
+    drawElement(graphics, shape, container);
     const dashLine = new AnimationPath(graphics, {
       dash: [5, 3],
       width: 2,
@@ -561,11 +728,11 @@ function drawShapeAsPath(graphics: Graphics, shape: AnimatedCanvasObject) {
   }
 }
 
-export function createShapeGraphics(shape: AnimatedCanvasObject, color?: string | number): Graphics {
+export function createShapeGraphics(shape: AnimatedCanvasObject, color?: string | number, container?: Container): Graphics {
   const graphics = new Graphics();
 
   if (shape.isAnimationPath) {
-    drawShapeAsPath(graphics, shape);
+    drawShapeAsPath(graphics, shape, container);
     return graphics;
   }
 
@@ -584,7 +751,7 @@ export function createShapeGraphics(shape: AnimatedCanvasObject, color?: string 
   }
 
   if (shape.type === 'line' || shape.type === 'path') {
-    drawElement(graphics, shape);
+    drawElement(graphics, shape, container);
     // For path and line, use stroke if a valid stroke is provided
     if (shape.stroke && shape.stroke !== 'none') {
       graphics.stroke({
@@ -597,7 +764,7 @@ export function createShapeGraphics(shape: AnimatedCanvasObject, color?: string 
       });
     }
   } else if (shape.type === 'polygon') {
-    drawElement(graphics, shape);
+    drawElement(graphics, shape, container);
     if (shape.fill !== 'none') {
       graphics.fill({ color: fillColor, alpha: shape.opacity ?? 1 });
     }
@@ -613,7 +780,7 @@ export function createShapeGraphics(shape: AnimatedCanvasObject, color?: string 
       });
     }
   } else {
-    drawElement(graphics, shape);
+    drawElement(graphics, shape, container);
     if (shape.fill !== 'none') {
       graphics.fill({ color: fillColor, alpha: shape.opacity ?? 1 });
     }
@@ -622,10 +789,16 @@ export function createShapeGraphics(shape: AnimatedCanvasObject, color?: string 
   return graphics;
 }
 
-export function drawShape(graphics: Graphics, shape: AnimatedCanvasObject) {
+export function drawShape(graphics: Graphics, shape: AnimatedCanvasObject, container?: Container) {
   graphics.clear();
 
   processImage(graphics, shape);
+
+  // Handle animated rectangle dots separately for line elements
+  if (shape.type === 'line' && shape.lineOptions?.dotted && shape.lineOptions?.animatedDots && container) {
+    handleAnimatedRectangleDots(shape, container);
+    return; // Don't draw regular graphics for animated lines
+  }
 
   if (shape.isAnimationPath) {
     // For path elements, use a gray dotted line style
@@ -654,7 +827,9 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasObject) {
           2,
           0.7, // Slightly transparent
           [5, 3], // Smaller dash pattern for path elements
-          false // Don't clear graphics since we already cleared at the start
+          false, // Don't clear graphics since we already cleared at the start
+          false, // No animated dots for path elements
+          undefined // No container for path elements
         );
 
         // Don't add regular stroke - it overwrites the dotted line
@@ -696,7 +871,7 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasObject) {
       }
     } else {
       // For other shapes (rectangle, circle, triangle), use dotted stroke and semi-transparent fill
-      drawElement(graphics, shape);
+      drawElement(graphics, shape, container);
       graphics.fill({
         color: shape.fill,
         alpha: 0.15 // Very transparent fill
@@ -808,10 +983,10 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasObject) {
     }
   } else {
     if (shape.type === 'line') {
-      drawLine(graphics, shape);
+      drawLine(graphics, shape, container);
     } else {
       const width = shape.type === 'path' ? 2 : 1;
-      drawElement(graphics, shape);
+      drawElement(graphics, shape, container);
 
       if (shape.type !== 'path' && shape.fill !== 'none') {
         graphics.fill({ color: shape.fill, alpha: shape.opacity ?? 1 });

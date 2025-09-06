@@ -80,6 +80,43 @@ export class GSAPTimelineManager {
   }
 
   /**
+   * Calculate the total duration needed for the timeline
+   * This ensures the timeline includes all animations, not just the first ones
+   */
+  private calculateTotalTimelineDuration(elements: AnimatedCanvasObject[], groups?: CanvasGroup[]): number {
+    let maxEndTime = 0;
+    
+    // Check element animations
+    elements.forEach((element) => {
+      if (element.isAnimationPath || !element.animations || element.animations.length === 0) {
+        return;
+      }
+      
+      element.animations.forEach((animation) => {
+        const endTime = animation.startTime + animation.duration;
+        maxEndTime = Math.max(maxEndTime, endTime);
+      });
+    });
+    
+    // Check group animations
+    if (groups) {
+      groups.forEach((group) => {
+        if (!group.isDefaultGroup && group.animations && group.animations.length > 0) {
+          group.animations.forEach((animation) => {
+            const endTime = animation.startTime + animation.duration;
+            maxEndTime = Math.max(maxEndTime, endTime);
+          });
+        }
+      });
+    }
+    
+    // Ensure minimum duration and add buffer for smooth playback
+    const totalDuration = Math.max(5, maxEndTime + 1); // Add 1 second buffer
+    
+    return totalDuration;
+  }
+
+  /**
    * Build animation timeline with performance monitoring
    */
   buildAnimationTimeline(elements: AnimatedCanvasObject[], groups?: CanvasGroup[]) {
@@ -138,6 +175,10 @@ export class GSAPTimelineManager {
           });
         }
       }
+
+      // Set the timeline duration to ensure all animations can complete
+      const totalDuration = this.calculateTotalTimelineDuration(elements, groups);
+      this.timeline.duration(totalDuration);
 
       this.timeline.pause(0);
 
@@ -1242,6 +1283,13 @@ export class GSAPTimelineManager {
         ease: config.ease,
       }, config.startTime + (segmentDuration * index));
     });
+  }
+
+  /**
+   * Get the current timeline duration
+   */
+  getTimelineDuration(): number {
+    return this.timeline.duration();
   }
 
   /**

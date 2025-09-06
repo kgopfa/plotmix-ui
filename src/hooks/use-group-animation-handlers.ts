@@ -56,13 +56,13 @@ export function useGroupAnimationHandlers(
         return { 
           ...anim, 
           type: newType,
-          id: `${newType}-${animationId.split('-')[1]}`,
+          id: `${newType}-${animationId?.split('-')[1]}`,
           displayName: generateAnimationDisplayName(newType, localGroupAnimations),
           properties: defaultProperties
         };
       } else if (field.includes('.')) {
         // Handle nested properties (e.g., 'properties.x')
-        const [parent, child] = field.split('.');
+        const [parent, child] = field?.split('.');
         const parentKey = parent as keyof ElementAnimation;
         const parentValue = anim[parentKey];
         
@@ -130,7 +130,7 @@ export function useGroupAnimationHandlers(
     // Create a copy with a new ID, display name, and slightly offset start time
     const duplicatedAnimation: ElementAnimation = {
       ...originalAnimation,
-      id: `${originalAnimation.type}-${Date.now()}`,
+      id: `${originalAnimation.type}-${Date.now().toString()}`,
       displayName: generateAnimationDisplayName(originalAnimation.type, localGroupAnimations),
       startTime: originalAnimation.startTime + originalAnimation.duration + 0.1 // Offset to avoid overlap
     };
