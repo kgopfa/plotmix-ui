@@ -134,6 +134,11 @@ export interface AnimatedCanvasObject {
     dotted: boolean;
     animatedDots?: boolean; // Flag to enable animated dots for dotted lines
     isCurved?: boolean; // Flag to indicate if line is curved vs straight
+    // Animated rectangle properties
+    animatedGap?: number; // Gap between rectangles in pixels
+    animatedColor?: string; // Color of the animated rectangles
+    animatedLength?: number; // Length of the rectangles
+    animatedThickness?: number; // Thickness/width of the rectangles
   };
   pathPoints?: Array<{x: number, y: number}>;
   imageData?: string;

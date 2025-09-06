@@ -7,12 +7,18 @@ interface AnimatedRectangleDotsOptions {
   alpha: number;
   dotSize: number;
   spacing: number;
+  gap: number; // Gap between rectangles in pixels
   animationSpeed: number;
+  // Animated rectangle properties
+  animatedColor?: string; // Color of the animated rectangles
+  animatedLength?: number; // Length of the rectangles
+  animatedThickness?: number; // Thickness/width of the rectangles
 }
 
 export class AnimatedRectangleDots {
   private container: Container;
   private dots: Graphics[] = [];
+  private dotTimelineMap: Map<Graphics, gsap.core.Timeline> = new Map(); // Map dots to their timelines
   private options: AnimatedRectangleDotsOptions;
   private timeline: gsap.core.Timeline;
   private isPlaying: boolean = false;
@@ -79,16 +85,29 @@ export class AnimatedRectangleDots {
   }
 
   /**
+   * Convert hex color string to number
+   */
+  private hexToNumber(hex: string): number {
+    return parseInt(hex.replace('#', ''), 16);
+  }
+
+  /**
    * Create a single moving dot
    */
   private createMovingDot(): Graphics {
     const dot = new Graphics();
     
-    // Draw a small rectangle
-    const halfSize = this.options.dotSize / 2;
-    dot.rect(-halfSize, -halfSize, this.options.dotSize, this.options.dotSize);
+    // Use animated properties if available, otherwise fall back to defaults
+    const length = this.options.animatedLength || this.options.dotSize;
+    const thickness = this.options.animatedThickness || this.options.dotSize;
+    const color = this.options.animatedColor ? this.hexToNumber(this.options.animatedColor) : this.options.color;
+    
+    // Draw a rectangle with custom dimensions
+    const halfLength = length / 2;
+    const halfThickness = thickness / 2;
+    dot.rect(-halfLength, -halfThickness, length, thickness);
     dot.fill({
-      color: this.options.color,
+      color: color,
       alpha: this.options.alpha
     });
     
@@ -140,11 +159,17 @@ export class AnimatedRectangleDots {
   private createDot(x: number, y: number, angle: number): Graphics {
     const dot = new Graphics();
     
-    // Draw a small rectangle
-    const halfSize = this.options.dotSize / 2;
-    dot.rect(-halfSize, -halfSize, this.options.dotSize, this.options.dotSize);
+    // Use animated properties if available, otherwise fall back to defaults
+    const length = this.options.animatedLength || this.options.dotSize;
+    const thickness = this.options.animatedThickness || this.options.dotSize;
+    const color = this.options.animatedColor ? this.hexToNumber(this.options.animatedColor) : this.options.color;
+    
+    // Draw a rectangle with custom dimensions
+    const halfLength = length / 2;
+    const halfThickness = thickness / 2;
+    dot.rect(-halfLength, -halfThickness, length, thickness);
     dot.fill({
-      color: this.options.color,
+      color: color,
       alpha: this.options.alpha
     });
     
@@ -173,9 +198,10 @@ export class AnimatedRectangleDots {
    */
   private createContinuousStream(): void {
     // Calculate the time interval between spawning new dots
-    // This ensures consistent spacing: if a dot travels the full path in animationSpeed seconds,
-    // and we want spacing between dots, then spawn interval = spacing/pathLength * animationSpeed
-    this.spawnInterval = (this.options.spacing / this.pathLength) * this.options.animationSpeed;
+    // Use the gap parameter for consistent spacing between rectangles
+    // If a dot travels the full path in animationSpeed seconds,
+    // and we want gap pixels between dots, then spawn interval = gap/pathLength * animationSpeed
+    this.spawnInterval = (this.options.gap / this.pathLength) * this.options.animationSpeed;
     
     // Create the first dot immediately
     this.spawnDot();
@@ -200,6 +226,7 @@ export class AnimatedRectangleDots {
     
     // Create a separate timeline for this dot
     const dotTimeline = gsap.timeline();
+    this.dotTimelineMap.set(dot, dotTimeline); // Track this timeline
     
     // Create a proxy object to track this dot's progress
     const proxy = { progress: 0 };
@@ -249,6 +276,14 @@ export class AnimatedRectangleDots {
     if (index > -1) {
       this.dots.splice(index, 1);
     }
+    
+    // Kill the dot's timeline before removing the dot
+    const dotTimeline = this.dotTimelineMap.get(dot);
+    if (dotTimeline) {
+      dotTimeline.kill();
+      this.dotTimelineMap.delete(dot);
+    }
+    
     this.container.removeChild(dot);
     dot.destroy();
   }
@@ -258,6 +293,10 @@ export class AnimatedRectangleDots {
    * Clear all dots
    */
   private clearDots(): void {
+    // Kill all dot timelines before destroying dots
+    this.dotTimelineMap.forEach(timeline => timeline.kill());
+    this.dotTimelineMap.clear();
+    
     this.dots.forEach(dot => dot.destroy());
     this.dots = [];
     this.container.removeChildren();
@@ -301,6 +340,14 @@ export class AnimatedRectangleDots {
   }
 
   /**
+   * Set gap between rectangles
+   */
+  setGap(gap: number): void {
+    this.options.gap = gap;
+    this.setupContinuousAnimation();
+  }
+
+  /**
    * Update dot properties
    */
   updateOptions(options: Partial<AnimatedRectangleDotsOptions>): void {
@@ -310,10 +357,18 @@ export class AnimatedRectangleDots {
     this.dots.forEach(dot => {
       const currentRotation = dot.rotation;
       dot.clear();
-      const halfSize = this.options.dotSize / 2;
-      dot.rect(-halfSize, -halfSize, this.options.dotSize, this.options.dotSize);
+      
+      // Use animated properties if available, otherwise fall back to defaults
+      const length = this.options.animatedLength || this.options.dotSize;
+      const thickness = this.options.animatedThickness || this.options.dotSize;
+      const color = this.options.animatedColor ? this.hexToNumber(this.options.animatedColor) : this.options.color;
+      
+      // Draw a rectangle with custom dimensions
+      const halfLength = length / 2;
+      const halfThickness = thickness / 2;
+      dot.rect(-halfLength, -halfThickness, length, thickness);
       dot.fill({
-        color: this.options.color,
+        color: color,
         alpha: this.options.alpha
       });
       dot.rotation = currentRotation; // Restore rotation
@@ -333,8 +388,13 @@ export class AnimatedRectangleDots {
    * Destroy the animated dots and clean up resources
    */
   destroy(): void {
+    // Kill the main timeline
     this.timeline.kill();
+    
+    // Clear all dots (which also kills their individual timelines)
     this.clearDots();
+    
+    // Destroy the container
     this.container.destroy();
   }
 }

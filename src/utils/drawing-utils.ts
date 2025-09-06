@@ -11,6 +11,23 @@ const imageTextureCache = new Map<string, Texture>();
 // Cache for animated rectangle dots to prevent recreation during interactions
 const animatedRectangleDotsCache = new Map<string, AnimatedRectangleDots>();
 
+// Function to clear animated rectangle dots cache for a specific shape
+export const clearAnimatedRectangleDotsCacheForShape = (shapeId: string): void => {
+  const keysToDelete: string[] = [];
+  for (const [key, value] of animatedRectangleDotsCache.entries()) {
+    if (key.includes(shapeId)) {
+      keysToDelete.push(key);
+    }
+  }
+  keysToDelete.forEach(key => {
+    const instance = animatedRectangleDotsCache.get(key);
+    if (instance) {
+      instance.destroy();
+    }
+    animatedRectangleDotsCache.delete(key);
+  });
+};
+
 // Utility function to calculate the correct width for an equilateral triangle based on height
 export const calculateEquilateralTriangleWidth = (height: number): number => {
   // For an equilateral triangle, if h is height, then side length = 2h/√3
@@ -67,7 +84,12 @@ function handleAnimatedRectangleDots(shape: AnimatedCanvasObject, container: Con
       alpha,
       dotSize: Math.max(4, Math.min(width * 2, 8)), // Dot size based on line width
       spacing: Math.max(16, width * 4), // Increased spacing for better uniformity
-      animationSpeed: 3.0 // Slower animation speed
+      gap: shape.lineOptions?.animatedGap || 20, // Use configured gap or default
+      animationSpeed: 3.0, // Slower animation speed
+      // Animated rectangle properties
+      animatedColor: shape.lineOptions?.animatedColor,
+      animatedLength: shape.lineOptions?.animatedLength,
+      animatedThickness: shape.lineOptions?.animatedThickness
     });
     
     if (isCurved && controlPoint) {
@@ -275,6 +297,7 @@ export const drawDottedLine = (
         alpha,
         dotSize: Math.max(4, Math.min(width * 2, 8)),
         spacing: Math.max(16, width * 4), // Increased spacing for better uniformity
+        gap: 20, // Default gap for non-shape animated lines
         animationSpeed: 3.0 // Slower animation speed
       });
       
@@ -348,6 +371,7 @@ export const drawDottedCurve = (
         alpha,
         dotSize: Math.max(4, Math.min(width * 2, 8)),
         spacing: Math.max(16, width * 4), // Increased spacing for better uniformity
+        gap: 20, // Default gap for non-shape animated lines
         animationSpeed: 3.0 // Slower animation speed
       });
       

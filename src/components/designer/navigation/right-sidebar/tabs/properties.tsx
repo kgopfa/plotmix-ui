@@ -6,7 +6,8 @@ import {
 import {
   calculateLineLength,
   calculateNorthAngle,
-  updateLineFromLengthAndNorthAngle
+  updateLineFromLengthAndNorthAngle,
+  clearAnimatedRectangleDotsCacheForShape
 } from '@/utils/drawing-utils';
 import { ColorPicker } from './color-picker';
 import { FontSelector } from './font-selector';
@@ -31,8 +32,10 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
   const [isDirty, setIsDirty] = useState<Record<string, boolean>>({});
   const [showFillColorPicker, setShowFillColorPicker] = useState(false);
   const [showStrokeColorPicker, setShowStrokeColorPicker] = useState(false);
+  const [showAnimatedColorPicker, setShowAnimatedColorPicker] = useState(false);
   const fillColorTriggerRef = useRef<HTMLDivElement>(null);
   const strokeColorTriggerRef = useRef<HTMLDivElement>(null);
+  const animatedColorTriggerRef = useRef<HTMLDivElement>(null);
   const setActiveRightPanel = useSetActiveRightPanel();
 
   // Local input state for color fields with validation
@@ -44,6 +47,8 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
   const [shadowHexError, setShadowHexError] = useState<boolean>(false);
   const [textStrokeHex, setTextStrokeHex] = useState<string>('');
   const [textStrokeHexError, setTextStrokeHexError] = useState<boolean>(false);
+  const [animatedHex, setAnimatedHex] = useState<string>('');
+  const [animatedHexError, setAnimatedHexError] = useState<boolean>(false);
 
   const sanitizeHexInput = (raw: string) => raw.replace(/#/g, '').replace(/[^0-9A-Fa-f]/g, '').slice(0, 6).toUpperCase();
   const isValidHex = (hex: string) => /^[0-9A-F]{6}$/.test(hex);
@@ -72,6 +77,10 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
     const initTextStroke = (selectedElement.textStroke || '#000000').replace('#', '').toUpperCase();
     setTextStrokeHex(initTextStroke);
     setTextStrokeHexError(!isValidHex(initTextStroke));
+
+    const initAnimated = (selectedElement.lineOptions?.animatedColor || selectedElement.stroke || '#000000').replace('#', '').toUpperCase();
+    setAnimatedHex(initAnimated);
+    setAnimatedHexError(!isValidHex(initAnimated));
   }, [selectedElement]);
 
   // Batch updates to the parent component
@@ -120,6 +129,24 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
 
   // Helper for line options updates
   const updateLineOptions = (updates: Partial<NonNullable<AnimatedCanvasObject['lineOptions']>>) => {
+    setLocalElement(prev => ({
+      ...prev,
+      lineOptions: {
+        ...prev.lineOptions!,
+        ...updates,
+        // Ensure controlPoint and isCurved are preserved when updating other properties
+        controlPoint: updates.controlPoint ?? prev.lineOptions!.controlPoint,
+        isCurved: updates.isCurved ?? prev.lineOptions!.isCurved ?? true
+      }
+    }));
+    setIsDirty(prev => ({ ...prev, lineOptions: true }));
+  };
+
+  // Helper for animated rectangle properties updates (clears cache for real-time updates)
+  const updateAnimatedProperties = (updates: Partial<NonNullable<AnimatedCanvasObject['lineOptions']>>) => {
+    // Clear the cache for this shape to force recreation with new properties
+    clearAnimatedRectangleDotsCacheForShape(localElement.id);
+    
     setLocalElement(prev => ({
       ...prev,
       lineOptions: {
@@ -330,11 +357,94 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                   </>
                 )}
 
-                {/* Show animated line indicator when both dotted and animatedDots are true */}
+                {/* Show animated rectangle properties when both dotted and animatedDots are true */}
                 {localElement.lineOptions?.dotted && localElement.lineOptions?.animatedDots && (
-                  <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
-                    <Zap className="w-4 h-4 text-blue-600" />
-                    <span className="text-sm font-medium text-blue-700">Animated Line</span>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+                      <Zap className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-700">Animated Rectangles</span>
+                    </div>
+                    
+                    {/* Gap between rectangles */}
+                    <label className="flex flex-col gap-1">
+                      <span className="text-xs font-semibold text-blue-400">Gap</span>
+                      <input
+                        type="number"
+                        min="5"
+                        max="100"
+                        value={localElement.lineOptions?.animatedGap || 20}
+                        onChange={e => updateAnimatedProperties({ animatedGap: parseInt(e.target.value) || 20 })}
+                        className="block w-full grow rounded-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600"
+                      />
+                    </label>
+                    
+                    {/* Rectangle color */}
+                    <div className="flex flex-col gap-1">
+                      <span className="text-xs font-semibold text-blue-400">Color</span>
+                      <div className="flex relative">
+                        <div className="flex shrink-0 items-center rounded-l-md bg-white px-3 text-sm text-blue-500 outline-1 -outline-offset-1 outline-gray-300">
+                          <div
+                            ref={animatedColorTriggerRef}
+                            className="w-4 h-4 rounded border border-gray-300 cursor-pointer hover:scale-110 transition-transform"
+                            style={{ backgroundColor: localElement.lineOptions?.animatedColor || localElement.stroke || '#000000' }}
+                            onClick={() => setShowAnimatedColorPicker(!showAnimatedColorPicker)}
+                          />
+                        </div>
+                        <input
+                          type="text"
+                          value={animatedHex}
+                          onChange={e => {
+                            const hex = sanitizeHexInput(e.target.value);
+                            setAnimatedHex(hex);
+                            const valid = isValidHex(hex);
+                            setAnimatedHexError(!valid);
+                            if (valid) {
+                              updateAnimatedProperties({ animatedColor: '#' + hex });
+                            }
+                          }}
+                          className={`-ml-px block w-full grow rounded-r-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 ${animatedHexError ? 'outline-red-500 focus:outline-red-600' : 'outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600'} uppercase`}
+                          placeholder="000000"
+                        />
+                        <ColorPicker
+                          value={localElement.lineOptions?.animatedColor || localElement.stroke || '#000000'}
+                          onChange={(color) => {
+                            updateAnimatedProperties({ animatedColor: color });
+                            const next = color.replace('#', '').toUpperCase();
+                            setAnimatedHex(next);
+                            setAnimatedHexError(!isValidHex(next));
+                          }}
+                          isOpen={showAnimatedColorPicker}
+                          onClose={() => setShowAnimatedColorPicker(false)}
+                          triggerRef={animatedColorTriggerRef}
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Rectangle length */}
+                    <label className="flex flex-col gap-1">
+                      <span className="text-xs font-semibold text-blue-400">Length</span>
+                      <input
+                        type="number"
+                        min="2"
+                        max="50"
+                        value={localElement.lineOptions?.animatedLength || 8}
+                        onChange={e => updateAnimatedProperties({ animatedLength: parseInt(e.target.value) || 8 })}
+                        className="block w-full grow rounded-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600"
+                      />
+                    </label>
+                    
+                    {/* Rectangle thickness */}
+                    <label className="flex flex-col gap-1">
+                      <span className="text-xs font-semibold text-blue-400">Thickness</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="20"
+                        value={localElement.lineOptions?.animatedThickness || 4}
+                        onChange={e => updateAnimatedProperties({ animatedThickness: parseInt(e.target.value) || 4 })}
+                        className="block w-full grow rounded-md bg-white px-3 py-1.5 text-sm text-gray-600 outline-1 -outline-offset-1 outline-gray-300 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600"
+                      />
+                    </label>
                   </div>
                 )}
 

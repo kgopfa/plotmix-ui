@@ -149,6 +149,11 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
             if (lineType === 'animated' && finalLine.lineOptions) {
               finalLine.lineOptions.dotted = true;
               finalLine.lineOptions.animatedDots = true;
+              // Set default animated rectangle properties
+              finalLine.lineOptions.animatedGap = 20;
+              finalLine.lineOptions.animatedColor = finalLine.stroke || '#000000';
+              finalLine.lineOptions.animatedLength = 8;
+              finalLine.lineOptions.animatedThickness = 4;
             }
             
             // If in path mode, mark it as a path
@@ -228,6 +233,11 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
         if (lineType === 'animated' && newElement.lineOptions) {
           newElement.lineOptions.dotted = true;
           newElement.lineOptions.animatedDots = true;
+          // Set default animated rectangle properties
+          newElement.lineOptions.animatedGap = 20;
+          newElement.lineOptions.animatedColor = newElement.stroke || '#000000';
+          newElement.lineOptions.animatedLength = 8;
+          newElement.lineOptions.animatedThickness = 4;
         }
         
         // If in path mode, mark it as a path
