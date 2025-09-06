@@ -82,10 +82,10 @@ export class AnimatedRectangleDots {
     // Create dots along the path
     for (let i = 0; i < numDots; i++) {
       const targetDistance = i * this.options.spacing;
-      const position = this.getPositionAlongPath(points, targetDistance);
+      const positionAndAngle = this.getPositionAndAngleAlongPath(points, targetDistance);
       
-      if (position) {
-        const dot = this.createDot(position.x, position.y);
+      if (positionAndAngle) {
+        const dot = this.createDot(positionAndAngle.x, positionAndAngle.y, positionAndAngle.angle);
         this.dots.push(dot);
         this.container.addChild(dot);
       }
@@ -93,9 +93,9 @@ export class AnimatedRectangleDots {
   }
 
   /**
-   * Get position along path at a specific distance
+   * Get position and angle along path at a specific distance
    */
-  private getPositionAlongPath(points: Array<{ x: number; y: number }>, targetDistance: number): { x: number; y: number } | null {
+  private getPositionAndAngleAlongPath(points: Array<{ x: number; y: number }>, targetDistance: number): { x: number; y: number; angle: number } | null {
     let currentDistance = 0;
     
     for (let i = 0; i < points.length - 1; i++) {
@@ -108,9 +108,12 @@ export class AnimatedRectangleDots {
       if (currentDistance + segmentLength >= targetDistance) {
         // Position is in this segment
         const segmentProgress = (targetDistance - currentDistance) / segmentLength;
+        const angle = Math.atan2(dy, dx); // Calculate angle of the line segment
+        
         return {
           x: start.x + dx * segmentProgress,
-          y: start.y + dy * segmentProgress
+          y: start.y + dy * segmentProgress,
+          angle: angle
         };
       }
       
@@ -121,9 +124,9 @@ export class AnimatedRectangleDots {
   }
 
   /**
-   * Create a single dot (small rectangle)
+   * Create a single dot (small rectangle) with rotation
    */
-  private createDot(x: number, y: number): Graphics {
+  private createDot(x: number, y: number, angle: number): Graphics {
     const dot = new Graphics();
     
     // Draw a small rectangle
@@ -134,9 +137,10 @@ export class AnimatedRectangleDots {
       alpha: this.options.alpha
     });
     
-    // Position the dot
+    // Position and rotate the dot
     dot.x = x;
     dot.y = y;
+    dot.rotation = angle;
     
     return dot;
   }
@@ -221,8 +225,9 @@ export class AnimatedRectangleDots {
   updateOptions(options: Partial<AnimatedRectangleDotsOptions>): void {
     this.options = { ...this.options, ...options };
     
-    // Update existing dots
+    // Update existing dots (preserve rotation)
     this.dots.forEach(dot => {
+      const currentRotation = dot.rotation;
       dot.clear();
       const halfSize = this.options.dotSize / 2;
       dot.rect(-halfSize, -halfSize, this.options.dotSize, this.options.dotSize);
@@ -230,6 +235,7 @@ export class AnimatedRectangleDots {
         color: this.options.color,
         alpha: this.options.alpha
       });
+      dot.rotation = currentRotation; // Restore rotation
     });
     
     this.setupAnimation();
