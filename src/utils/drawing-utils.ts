@@ -467,13 +467,14 @@ export const drawLine = (
     y: smoothLinePosition(shape.lineOptions.points.end.y - shape.y)
   };
 
-  // Use provided control point when valid, otherwise fall back to midpoint for curved lines
+  // Check if this is a curved line (has control point or is marked as curved)
   const hasControl = !!shape.lineOptions.controlPoint &&
     typeof shape.lineOptions.controlPoint.x === 'number' &&
     typeof shape.lineOptions.controlPoint.y === 'number';
   
-  // For straight lines, we don't need a control point
-  if (shape.lineOptions.isCurved && hasControl) {
+  const isCurved = shape.lineOptions.isCurved || hasControl;
+  
+  if (isCurved && hasControl) {
     const controlPoint = {
       x: smoothLinePosition(shape.lineOptions.controlPoint!.x - shape.x),
       y: smoothLinePosition(shape.lineOptions.controlPoint!.y - shape.y)
@@ -484,25 +485,25 @@ export const drawLine = (
     } else {
       drawSmoothCurve(graphics, start, controlPoint, end, color, width, alpha);
     }
-      } else {
-      // True straight line - check if it should be dotted
-      if (shape.lineOptions.dotted) {
-        drawDottedLine(graphics, start, end, color, width, alpha, [10, 5], true, shape.lineOptions.animatedDots, container);
-      } else {
-        graphics
-          .clear()
-          .moveTo(start.x, start.y)
-          .lineTo(end.x, end.y)
-          .stroke({ 
-            color, 
-            width, 
-            alpha,
-            alignment: 0.5, // Center the stroke on the path for consistent appearance
-            cap: 'round',    // Smooth rounded line caps
-            join: 'round'    // Smooth rounded line joins
-          });
-      }
+  } else {
+    // True straight line - check if it should be dotted
+    if (shape.lineOptions.dotted) {
+      drawDottedLine(graphics, start, end, color, width, alpha, [10, 5], true, shape.lineOptions.animatedDots, container);
+    } else {
+      graphics
+        .clear()
+        .moveTo(start.x, start.y)
+        .lineTo(end.x, end.y)
+        .stroke({ 
+          color, 
+          width, 
+          alpha,
+          alignment: 0.5, // Center the stroke on the path for consistent appearance
+          cap: 'round',    // Smooth rounded line caps
+          join: 'round'    // Smooth rounded line joins
+        });
     }
+  }
 
   // Draw triangle arrow for both straight and curved lines
   if (shape.lineOptions.arrow) {

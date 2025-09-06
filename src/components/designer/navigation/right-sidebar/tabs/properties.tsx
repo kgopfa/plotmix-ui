@@ -542,18 +542,16 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                   </div>
                 )}
 
-                {/* Show arrow head option for all lines (straight and curved) except animated lines */}
-                {!(localElement.lineOptions?.dotted && localElement.lineOptions?.animatedDots) && (
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={localElement.lineOptions?.arrow ?? false}
-                      onChange={e => updateLineOptions({ arrow: e.target.checked })}
-                      className="rounded border-gray-300 focus:ring-2 focus:ring-orange-500"
-                    />
-                    <span className="text-sm font-medium text-gray-700">Arrow head</span>
-                  </label>
-                )}
+                {/* Show arrow head option for all line types */}
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={localElement.lineOptions?.arrow ?? false}
+                    onChange={e => updateLineOptions({ arrow: e.target.checked })}
+                    className="rounded border-gray-300 focus:ring-2 focus:ring-orange-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Arrow head</span>
+                </label>
               </div>
             </div>
           </div>
