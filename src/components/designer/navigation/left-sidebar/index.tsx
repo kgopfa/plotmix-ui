@@ -30,7 +30,7 @@ import { ClearCanvasDialog } from '../../panels/clear-canvas-dialog';
 
 type NavItem = {
   name: string;
-  key: 'video' | 'scenes' | 'uploads' | 'ai' | 'text' | 'tools' | 'components' | 'audio' | 'timeline' | 'reset';
+  key: 'video' | 'uploads' | 'ai' | 'text' | 'tools' | 'components' | 'audio' | 'timeline' | 'reset';
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   color: string;
   hoverColor: string;

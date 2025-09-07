@@ -81,9 +81,14 @@ export const useProjectStore = create<ProjectStore>()(
         return;
       }
       
-      // Only support single-scene format: mainState: {elements, groups, timeline}
-      if (!stateObj.elements && !stateObj.groups) {
-        console.error('Invalid mainState format: missing elements/groups');
+      // Allow empty mainState for new projects, or single-scene format: mainState: {elements, groups, timeline}
+      const hasElements = Array.isArray(stateObj.elements);
+      const hasGroups = Array.isArray(stateObj.groups);
+      const isEmpty = !hasElements && !hasGroups;
+      
+      // Only reject if it has invalid structure (non-array elements/groups)
+      if (!isEmpty && !hasElements && !hasGroups) {
+        console.error('Invalid mainState format: elements/groups must be arrays when present');
         return;
       }
       

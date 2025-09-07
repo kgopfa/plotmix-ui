@@ -45,7 +45,6 @@ export default function DesignerPage() {
       }
       
       const mainState = (project.mainState as { 
-        scenes?: unknown[]; 
         elements?: unknown[]; 
         groups?: unknown[]; 
         timeline?: unknown; 
@@ -56,29 +55,10 @@ export default function DesignerPage() {
       const canvasStore = useCanvasStore.getState();
       const timelineStore = useTimelineStore.getState();
       
-      let rawElements: unknown[] = [];
-      let rawGroups: unknown[] = [];
-      let timeline: unknown = {};
-      
-      // Support both new multi-scene format and legacy single-scene format
-      if (mainState.scenes && Array.isArray(mainState.scenes) && mainState.scenes.length > 0) {
-        // New multi-scene format
-        const firstScene = mainState.scenes[0] as any;
-        if (!firstScene?.sceneCanvas) {
-          throw new Error('Invalid project format: missing sceneCanvas in first scene');
-        }
-        
-        rawElements = Array.isArray(firstScene.sceneCanvas.elements) ? firstScene.sceneCanvas.elements : [];
-        rawGroups = Array.isArray(firstScene.sceneCanvas.groups) ? firstScene.sceneCanvas.groups : [];
-        timeline = firstScene.timeline || {};
-      } else if (mainState.elements || mainState.groups) {
-        // Legacy single-scene format: mainState: {elements, groups}
-        rawElements = Array.isArray(mainState.elements) ? mainState.elements : [];
-        rawGroups = Array.isArray(mainState.groups) ? mainState.groups : [];
-        timeline = mainState.timeline || {};
-      } else {
-        throw new Error('Invalid project format: missing scenes array or elements/groups');
-      }
+      // Single-scene format: mainState: {elements, groups, timeline}
+      const rawElements = Array.isArray(mainState.elements) ? mainState.elements : [];
+      const rawGroups = Array.isArray(mainState.groups) ? mainState.groups : [];
+      const timeline = mainState.timeline || {};
 
       // Sanitize to ensure required fields exist
       const sanitizedElements = rawElements.map((el: unknown) => ({
@@ -106,10 +86,10 @@ export default function DesignerPage() {
       timelineStore.loadProjectData({
         elements,
         groups,
-        animationStates: (timeline.animationStates as Record<string, AnimationState>) || {},
-        scale: typeof timeline.scale === 'number' ? timeline.scale : 1,
-        duration: typeof timeline.duration === 'number' ? timeline.duration : 10,
-        currentTime: typeof timeline.currentTime === 'number' ? timeline.currentTime : 0,
+        animationStates: ((timeline as any)?.animationStates as Record<string, AnimationState>) || {},
+        scale: typeof (timeline as any)?.scale === 'number' ? (timeline as any).scale : 1,
+        duration: typeof (timeline as any)?.duration === 'number' ? (timeline as any).duration : 10,
+        currentTime: typeof (timeline as any)?.currentTime === 'number' ? (timeline as any).currentTime : 0,
       });
       // Capture baseline after stores are hydrated
       captureBaseline();

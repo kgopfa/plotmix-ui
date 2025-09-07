@@ -63,20 +63,15 @@ export interface ProjectUI {
   };
 }
 
-export interface Scene {
-  id: string;
-  name: string;
-  sceneCanvas: ProjectCanvas;  // Changed from 'canvas' to 'sceneCanvas'
-  timeline: ProjectTimeline;
-  ui: ProjectUI;
-}
-
-// Current project structure (version 2.x) - scene-based
+// Single-scene project structure
 export interface ProjectData {
   version: string;
-  metadata: ProjectMetadata;
-  scenes: Scene[];
-  activeSceneId: string;
+  name?: string;
+  title?: string;
+  elements: import('@/types/canvas').AnimatedCanvasObject[];
+  groups: import('@/types/canvas').CanvasGroup[];
+  timeline: ProjectTimeline;
+  ui?: ProjectUI;
 }
 
 export interface ProjectValidationError {
