@@ -3,6 +3,8 @@
 import React, { forwardRef, useImperativeHandle, useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { Application, extend, type ApplicationRef } from '@pixi/react';
 import { Container, Graphics } from 'pixi.js';
+import { createRobustPIXIApplication, WebGLErrorHandler } from '@/lib/webgl-error-handler';
+import { PIXIErrorBoundary } from '@/components/shared/pixi-error-boundary';
 import { DesignCanvas } from './canvas/design-canvas';
 import { Pencil, X } from 'lucide-react';
 import { Viewport, ViewportWrapper, centerOnDesign, zoomToFit, resetZoom } from './viewport';
@@ -617,15 +619,23 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
           e.stopPropagation();
         }}
       >
-        <Application
-          ref={appRef}
-          width={dimensions.width}
-          height={dimensions.height}
-          backgroundColor={props.appBackgroundColor ?? 0xF1F5F9}
-          antialias={true}
-          resolution={typeof window !== 'undefined' ? window.devicePixelRatio || 2 : 2}
-          autoDensity={true}
+        <PIXIErrorBoundary
+          onError={(error, errorInfo) => {
+            console.error('PIXI Application Error:', error, errorInfo);
+          }}
+          onRecovery={() => {
+            console.log('PIXI Application recovered from error');
+          }}
         >
+          <Application
+            ref={appRef}
+            width={dimensions.width}
+            height={dimensions.height}
+            backgroundColor={props.appBackgroundColor ?? 0xF1F5F9}
+            antialias={true}
+            resolution={typeof window !== 'undefined' ? window.devicePixelRatio || 2 : 2}
+            autoDensity={true}
+          >
           <Viewport
             screenWidth={dimensions.width}
             screenHeight={dimensions.height}
@@ -647,7 +657,8 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
               viewportRef={viewportRef}
             />
           </Viewport>
-        </Application>
+          </Application>
+        </PIXIErrorBoundary>
 
         {/* Edit buttons for text elements (hover or selected) */}
         {editButtonTargets.map((id) => {

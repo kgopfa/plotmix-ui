@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Designer from '@/components/designer';
+import { WebGLSupportChecker } from '@/components/shared/webgl-support-checker';
 import { apiClient } from '@/lib/api-client';
 import { useProjectStore } from '@/stores/use-project-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
@@ -148,12 +149,19 @@ export default function DesignerPage() {
           </button>
         </div>
       ) : (
-        <>
+        <WebGLSupportChecker
+          onWebGLNotSupported={() => {
+            console.warn('WebGL not supported, user will see fallback UI');
+          }}
+          onWebGLSupported={() => {
+            console.log('WebGL supported, proceeding with PIXI.js');
+          }}
+        >
           <div className="absolute top-4 left-4 z-50 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 text-sm text-gray-600">
             Editing: {contentId}
           </div>
           <Designer />
-        </>
+        </WebGLSupportChecker>
       )}
     </div>
   );

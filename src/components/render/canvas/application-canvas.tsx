@@ -3,6 +3,8 @@
 import React, { forwardRef, useImperativeHandle, useRef, useEffect, useState } from 'react';
 import { Application, extend, type ApplicationRef } from '@pixi/react';
 import { Container, Graphics } from 'pixi.js';
+import { createRobustPIXIApplication, WebGLErrorHandler } from '@/lib/webgl-error-handler';
+import { PIXIErrorBoundary } from '@/components/shared/pixi-error-boundary';
 import { DesignCanvas } from './design-canvas';
 import { Viewport, ViewportWrapper, centerOnDesign, zoomToFit, resetZoom } from '@/components/designer/viewport';
 import { useCanvasState } from '@/stores/use-ui-store';
@@ -221,15 +223,23 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
         ref={canvasContainerRef}
         className="absolute inset-0 bg-slate-100 canvas-area"
       >
-        <Application
-          ref={appRef}
-          width={dimensions.width}
-          height={dimensions.height}
-          backgroundColor={props.appBackgroundColor ?? 0xF1F5F9}
-          antialias={true}
-          resolution={typeof window !== 'undefined' ? window.devicePixelRatio || 2 : 2}
-          autoDensity={true}
+        <PIXIErrorBoundary
+          onError={(error, errorInfo) => {
+            console.error('Render PIXI Application Error:', error, errorInfo);
+          }}
+          onRecovery={() => {
+            console.log('Render PIXI Application recovered from error');
+          }}
         >
+          <Application
+            ref={appRef}
+            width={dimensions.width}
+            height={dimensions.height}
+            backgroundColor={props.appBackgroundColor ?? 0xF1F5F9}
+            antialias={true}
+            resolution={typeof window !== 'undefined' ? window.devicePixelRatio || 2 : 2}
+            autoDensity={true}
+          >
           <Viewport
             screenWidth={dimensions.width}
             screenHeight={dimensions.height}
@@ -245,7 +255,8 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
               dimensions={dimensions}
             />
           </Viewport>
-        </Application>
+          </Application>
+        </PIXIErrorBoundary>
       </div>
     );
   }

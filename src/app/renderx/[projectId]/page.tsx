@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import { WebGLSupportChecker } from '@/components/shared/webgl-support-checker';
 import gsap from 'gsap';
 
 import { useProjectStore } from '@/stores/use-project-store';
@@ -327,8 +328,9 @@ export default function RenderXPage() {
   }, [projectId, fps, width, height]);
 
   return (
-    <div style={{ width, height, margin: 0, padding: 0, overflow: 'hidden', background: '#fff' }}>
-      <ApplicationCanvas
+    <WebGLSupportChecker>
+      <div style={{ width, height, margin: 0, padding: 0, overflow: 'hidden', background: '#fff' }}>
+        <ApplicationCanvas
         ref={appRef}
         dimensions={{ width, height }}
         // Canvas data
@@ -359,8 +361,9 @@ export default function RenderXPage() {
         isElementInCustomOrPolygonGroup={() => false}
         shiftKey={false}
         isSnappingEnabled={false}
-      />
-    </div>
+        />
+      </div>
+    </WebGLSupportChecker>
   );
 }
 
