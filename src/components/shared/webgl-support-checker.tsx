@@ -89,13 +89,14 @@ export function WebGLSupportChecker({
     return () => window.removeEventListener('focus', handleFocus);
   }, [onWebGLNotSupported, onWebGLSupported]);
 
-  // Show loading state while checking
+  // Show loading state while checking - use same 3-dot pattern as the rest of the app
   if (supportState.isChecking) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Checking graphics support...</p>
+      <div className="h-screen w-screen flex items-center justify-center bg-slate-100">
+        <div className="flex space-x-1">
+          <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+          <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+          <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
         </div>
       </div>
     );
