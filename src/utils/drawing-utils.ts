@@ -222,19 +222,109 @@ export const updateShadowForContainer = (container: PIXI.Container, element: Ani
   }
 };
 
+// Helper function to draw triangle arrow for a shape
+const drawTriangleArrowForShape = (graphics: Graphics, shape: AnimatedCanvasObject) => {
+  if (!shape.lineOptions?.points) return;
+  
+  const color = parseColor(shape.stroke || shape.fill);
+  // For animated lines, use the animated thickness if available, otherwise use stroke width
+  let lineWidth = shape.lineOptions?.animatedThickness || shape.strokeWidth || 2;
+  
+  // For animated dots specifically, make the triangle 2px wider and base scale with thickness
+  let baseWidthMultiplier = 1;
+  if (shape.lineOptions?.dotted && shape.lineOptions?.animatedDots) {
+    lineWidth += 2;
+    // Scale base width with animated thickness (default thickness is 2, so 1.3x for default)
+    const animatedThickness = shape.lineOptions?.animatedThickness || 2;
+    baseWidthMultiplier = 1 + (animatedThickness * 0.15); // 15% per thickness unit
+  }
+  
+  const start = {
+    x: smoothLinePosition(shape.lineOptions.points.start.x - shape.x),
+    y: smoothLinePosition(shape.lineOptions.points.start.y - shape.y)
+  };
+  const end = {
+    x: smoothLinePosition(shape.lineOptions.points.end.x - shape.x),
+    y: smoothLinePosition(shape.lineOptions.points.end.y - shape.y)
+  };
+  
+  // Check if this is a curved line
+  const hasControl = !!shape.lineOptions.controlPoint &&
+    typeof shape.lineOptions.controlPoint.x === 'number' &&
+    typeof shape.lineOptions.controlPoint.y === 'number';
+  
+  const isCurved = shape.lineOptions.isCurved || hasControl;
+  
+  if (isCurved && hasControl) {
+    const controlPoint = {
+      x: smoothLinePosition(shape.lineOptions.controlPoint!.x - shape.x),
+      y: smoothLinePosition(shape.lineOptions.controlPoint!.y - shape.y)
+    };
+    
+    // Calculate the tangent direction at the end point of the curve
+    const tangentX = 2 * (end.x - controlPoint.x);
+    const tangentY = 2 * (end.y - controlPoint.y);
+    const tangentLength = Math.sqrt(tangentX * tangentX + tangentY * tangentY);
+    
+    if (tangentLength > 0) {
+      // Normalize the tangent vector
+      const normalizedTangentX = tangentX / tangentLength;
+      const normalizedTangentY = tangentY / tangentLength;
+      
+      // Push the arrow tip outward beyond the line end
+      const arrowExtension = 12; // Distance to extend the arrow beyond the line
+      const tipPoint = {
+        x: end.x + normalizedTangentX * arrowExtension,
+        y: end.y + normalizedTangentY * arrowExtension
+      };
+      
+      // Create a point slightly back along the tangent for the "from" point
+      const fromPoint = {
+        x: end.x - normalizedTangentX * 10,
+        y: end.y - normalizedTangentY * 10
+      };
+      
+      drawTriangleArrow(graphics, tipPoint, fromPoint, color, undefined, lineWidth, baseWidthMultiplier);
+    }
+  } else {
+    // For straight lines, calculate direction and push arrow outward
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const lineLength = Math.sqrt(dx * dx + dy * dy);
+    
+    if (lineLength > 0) {
+      // Normalize the direction vector
+      const normalizedDx = dx / lineLength;
+      const normalizedDy = dy / lineLength;
+      
+      // Push the arrow tip outward beyond the line end
+      const arrowExtension = 12; // Distance to extend the arrow beyond the line
+      const tipPoint = {
+        x: end.x + normalizedDx * arrowExtension,
+        y: end.y + normalizedDy * arrowExtension
+      };
+      
+      drawTriangleArrow(graphics, tipPoint, start, color, undefined, lineWidth, baseWidthMultiplier);
+    }
+  }
+};
+
 export const drawTriangleArrow = (
   graphics: Graphics,
   tipPoint: { x: number; y: number },
   fromPoint: { x: number; y: number },
   color: number,
-  fillColor?: number
+  fillColor?: number,
+  lineWidth: number = 2,
+  baseWidthMultiplier: number = 1
 ) => {
   const angle = Math.atan2(tipPoint.y - fromPoint.y, tipPoint.x - fromPoint.x);
-  const triangleSize = 12; // Slightly larger than the old arrow for better visibility
+  // Scale triangle size based on line width, with a minimum size
+  const triangleSize = Math.max(8, Math.min(20, lineWidth * 4)); // Scale with line width, clamped between 8-20
   
   // Calculate triangle points relative to the tip point
   const baseDistance = triangleSize * 0.8; // Distance from tip to base
-  const baseWidth = triangleSize * 0.6; // Width of the triangle base
+  const baseWidth = triangleSize * 0.6 * baseWidthMultiplier; // Width of the triangle base with multiplier
   
   // Calculate the three points of the triangle
   const tip = tipPoint;
@@ -533,11 +623,11 @@ export const drawLine = (
           y: end.y - normalizedTangentY * 20
         };
         
-        drawTriangleArrow(graphics, end, fromPoint, color);
+        drawTriangleArrow(graphics, end, fromPoint, color, 4, width);
       }
     } else {
       // For straight lines, use the simple approach
-      drawTriangleArrow(graphics, end, start, color);
+      drawTriangleArrow(graphics, end, start, color, 4, width);
     }
   }
 };
@@ -860,6 +950,12 @@ export function drawShape(graphics: Graphics, shape: AnimatedCanvasObject, conta
   // Handle animated rectangle dots separately for line elements
   if (shape.type === 'line' && shape.lineOptions?.dotted && shape.lineOptions?.animatedDots && container) {
     handleAnimatedRectangleDots(shape, container);
+    
+    // Still draw arrow head if enabled
+    if (shape.lineOptions.arrow) {
+      drawTriangleArrowForShape(graphics, shape);
+    }
+    
     return; // Don't draw regular graphics for animated lines
   }
 
