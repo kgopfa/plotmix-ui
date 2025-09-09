@@ -78,15 +78,6 @@ export function WebGLSupportChecker({
 
     // Check immediately
     checkWebGLSupport();
-
-    // Also check on window focus (in case WebGL was disabled/enabled)
-    const handleFocus = () => {
-      setSupportState(prev => ({ ...prev, isChecking: true }));
-      setTimeout(checkWebGLSupport, 100);
-    };
-
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
   }, [onWebGLNotSupported, onWebGLSupported]);
 
   // Show loading state while checking - use same 3-dot pattern as the rest of the app
