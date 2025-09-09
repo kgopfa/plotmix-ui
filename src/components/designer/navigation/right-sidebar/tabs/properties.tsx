@@ -1636,6 +1636,19 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
                 />
               </label>
+
+              {/* Font Size */}
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-semibold text-blue-400">Font Size</span>
+                <input
+                  type="number"
+                  value={localElement.fontSize || 14}
+                  onChange={e => updateLocalProperty('fontSize', Number(e.target.value))}
+                  min={8}
+                  max={32}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
+                />
+              </label>
             </div>
           </div>
         )

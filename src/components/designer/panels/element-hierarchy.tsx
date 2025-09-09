@@ -116,7 +116,8 @@ export function ElementHierarchy({
       'line': '—',
       'path': '〰️',
       'image': '🖼️',
-      'text': '📝'
+      'text': '📝',
+      'code-editor': '💻'
     };
     return iconMap[shapeType] || '◻️';
   };

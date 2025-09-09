@@ -60,6 +60,7 @@ function generateCommonAttributes(
     path: 'Path',
     image: 'Image',
     text: 'Text',
+    'code-editor': 'Code Editor',
     polygon: 'Polygon'
   };
 

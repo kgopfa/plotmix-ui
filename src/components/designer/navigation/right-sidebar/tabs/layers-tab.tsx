@@ -1,5 +1,5 @@
 import { useEffect, FC, useState, useRef } from 'react';
-import { Eye, EyeOff, Square, Circle, Type, Image as ImageIcon, Minus, Folder, ChevronDown, ChevronRight, X } from 'lucide-react';
+import { Eye, EyeOff, Square, Circle, Type, Image as ImageIcon, Minus, Folder, ChevronDown, ChevronRight, X, Code } from 'lucide-react';
 import Image from 'next/image';
 import { useCanvasElements, useCanvasGroups, useCanvasOperations } from '@/stores/use-canvas-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
@@ -71,6 +71,7 @@ const getElementIcon = (type: string) => {
     case 'rectangle': return Square;
     case 'circle': return Circle;
     case 'text': return Type;
+    case 'code-editor': return Code;
     case 'image': return ImageIcon;
     case 'line':
     case 'simpleLine': return Minus;
