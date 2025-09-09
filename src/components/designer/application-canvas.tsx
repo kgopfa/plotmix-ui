@@ -137,11 +137,15 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       }
     }, []);
 
-    // Re-center canvas when dimensions change
+    // Re-center canvas when dimensions change (debounced to prevent flickering)
     useEffect(() => {
       if (viewportRef.current && dimensions.width > 0 && dimensions.height > 0) {
-        // Use responsive centering based on new screen dimensions
-        centerOnDesign(viewportRef.current, dimensions.width, dimensions.height, canvasWidth, canvasHeight);
+        const timeoutId = setTimeout(() => {
+          // Use responsive centering based on new screen dimensions
+          centerOnDesign(viewportRef.current, dimensions.width, dimensions.height, canvasWidth, canvasHeight);
+        }, 50); // Small delay to debounce rapid changes
+
+        return () => clearTimeout(timeoutId);
       }
     }, [dimensions.width, dimensions.height, canvasWidth, canvasHeight]);
 
@@ -323,24 +327,6 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
 
     // Initialize viewport to center on the actual design canvas container position
     // Delay to ensure PIXI application, viewport world, and container refs are mounted
-    useEffect(() => {
-      if (!viewportRef.current) return;
-      const vp = viewportRef.current;
-      const run = () => {
-        const main = props.mainCanvasContainerRef.current;
-        if (main) {
-          vp.moveCenter(main.x, main.y);
-        } else {
-          centerOnDesign(vp, dimensions.width, dimensions.height, canvasWidth, canvasHeight);
-        }
-      };
-      const rafId = requestAnimationFrame(() => {
-        run();
-        // Fallback: run once more after a brief delay in case textures/layout settle late
-        setTimeout(run, 50);
-      });
-      return () => cancelAnimationFrame(rafId);
-    }, [canvasWidth, canvasHeight, dimensions.width, dimensions.height, props.mainCanvasContainerRef]);
 
     // Listen for viewport zoom changes and sync back to store (attach after ref is ready)
     useEffect(() => {

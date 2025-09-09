@@ -307,15 +307,19 @@ export default function Designer() {
   const [snapGuides, setSnapGuides] = useState<SnapGuide[]>([]);
   const clearSnapGuides = useCallback(() => setSnapGuides([]), []);
 
-  // Force a center on mount/size changes using the exposed ref method
+  // Force a center on mount/size changes using the exposed ref method (debounced)
   useEffect(() => {
     if (!fullscreenCanvasRef.current) return;
-    const run = () => fullscreenCanvasRef.current?.centerOnDesign();
-    const raf = requestAnimationFrame(() => {
-      run();
-      setTimeout(run, 50);
-    });
-    return () => cancelAnimationFrame(raf);
+    const timeoutId = setTimeout(() => {
+      const run = () => fullscreenCanvasRef.current?.centerOnDesign();
+      const raf = requestAnimationFrame(() => {
+        run();
+        setTimeout(run, 50);
+      });
+      return () => cancelAnimationFrame(raf);
+    }, 50); // Debounce to prevent rapid updates during width changes
+
+    return () => clearTimeout(timeoutId);
   }, [dimensions.width, dimensions.height, canvasWidth, canvasHeight]);
 
   // Element dragging functionality

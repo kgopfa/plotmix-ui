@@ -109,11 +109,15 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       }
     }, []);
 
-    // Re-center canvas when dimensions change
+    // Re-center canvas when dimensions change (debounced to prevent flickering)
     useEffect(() => {
       if (viewportRef.current && dimensions.width > 0 && dimensions.height > 0) {
-        // Use responsive centering based on new screen dimensions
-        centerOnDesign(viewportRef.current, dimensions.width, dimensions.height, canvasWidth, canvasHeight);
+        const timeoutId = setTimeout(() => {
+          // Use responsive centering based on new screen dimensions
+          centerOnDesign(viewportRef.current, dimensions.width, dimensions.height, canvasWidth, canvasHeight);
+        }, 50); // Small delay to debounce rapid changes
+
+        return () => clearTimeout(timeoutId);
       }
     }, [dimensions.width, dimensions.height, canvasWidth, canvasHeight]);
 
@@ -161,15 +165,8 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
           // viewportRef.current.moveCenter(0, 0);
         }
       }
-    }, [canvasZoom, canvasWidth, canvasHeight]);
+    }, [canvasZoom]);
 
-    // Initialize viewport to center on design canvas with responsive positioning
-    useEffect(() => {
-      if (viewportRef.current) {
-        // Use responsive centering based on screen dimensions
-        centerOnDesign(viewportRef.current, dimensions.width, dimensions.height, canvasWidth, canvasHeight);
-      }
-    }, [canvasWidth, canvasHeight, dimensions.width, dimensions.height]);
 
     // Listen for viewport zoom changes and sync back to timeline
     useEffect(() => {
