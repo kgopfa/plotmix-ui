@@ -47,6 +47,7 @@ export default function Designer() {
   const {
     setCanvasObjects,
     setGroups,
+    moveGroup,
   } = useCanvasMigration();
 
   // Use Zustand store for selection state
@@ -752,6 +753,21 @@ export default function Designer() {
     prop: string,
     value: string | number | boolean | ElementAnimation[]
   ) => {
+    // Handle position changes by calling the canvas store's moveGroup function
+    if (prop === 'x' || prop === 'y') {
+      const currentGroup = groups.find(g => g.id === groupId);
+      if (currentGroup) {
+        const newPosition = {
+          x: prop === 'x' ? value as number : currentGroup.x,
+          y: prop === 'y' ? value as number : currentGroup.y
+        };
+        // Use the canvas store's moveGroup function which properly moves all elements
+        moveGroup(groupId, newPosition);
+      }
+      return;
+    }
+
+    // Handle other properties through local state
     setGroups(prevGroups => {
       const updatedGroups = prevGroups.map(group => {
         if (group.id === groupId) {
@@ -759,10 +775,6 @@ export default function Designer() {
             return { ...group, animations: value as ElementAnimation[] };
           } else if (prop === 'name') {
             return { ...group, name: value as string };
-          } else if (prop === 'x') {
-            return { ...group, x: value as number };
-          } else if (prop === 'y') {
-            return { ...group, y: value as number };
           } else if (prop === 'rotation') {
             return { ...group, rotation: value as number };
           } else if (prop === 'opacity') {
