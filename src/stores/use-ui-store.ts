@@ -190,6 +190,9 @@ interface UIActions {
   setCustomCanvasSize: (width: number, height: number) => void;
   addCanvasSize: (size: CanvasSize) => void;
   removeCanvasSize: (sizeId: string) => void;
+  // Multi-scene support
+  setCanvasDimensions: (dimensions: { width: number; height: number }) => void;
+  getCanvasDimensions: () => { width: number; height: number };
   setCanvasZoom: (zoom: number) => void;
   
   // Uploaded Files Actions
@@ -761,6 +764,24 @@ export const useUIStore = create<UIStore>((set, get) => {
         state.canvas.currentSizeId = state.canvas.availableSizes[0].id;
       }
     }));
+  },
+
+  // Multi-scene canvas dimensions support
+  setCanvasDimensions: (dimensions: { width: number; height: number }) => {
+    set(produce((state) => {
+      // Set as custom size to support arbitrary dimensions from multi-scene projects
+      state.canvas.customSize = dimensions;
+      state.canvas.currentSizeId = 'custom';
+    }));
+  },
+
+  getCanvasDimensions: () => {
+    const state = get();
+    if (state.canvas.customSize) {
+      return state.canvas.customSize;
+    }
+    const currentSize = state.canvas.availableSizes.find(s => s.id === state.canvas.currentSizeId);
+    return currentSize ? { width: currentSize.width, height: currentSize.height } : { width: 1920, height: 1080 };
   },
 
   setCanvasZoom: (zoom: number) => {

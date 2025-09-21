@@ -6,6 +6,7 @@ import { DiffPatcher } from 'jsondiffpatch';
 import { apiClient } from '@/lib/api-client';
 import { useUIStore } from '@/stores/use-ui-store';
 import { isAutosaveEnabled, getConfig } from '@/lib/config';
+import type { ProjectScene, ProjectDimensions, MultiSceneProjectData } from '@/types/project';
 
 type SaveStatus = 'idle' | 'saving' | 'success' | 'error';
 
@@ -22,6 +23,10 @@ interface ProjectStoreState extends ProjectInfo {
   saveStatus: SaveStatus;
   autosaveTimer: number | null;
   autosaveDelayMs: number;
+  // Multi-scene support
+  scenes: ProjectScene[];
+  dimensions: ProjectDimensions | null;
+  currentSceneIndex: number;
 }
 
 interface ProjectStoreActions {
@@ -40,6 +45,15 @@ interface ProjectStoreActions {
   forceFullSave: () => Promise<boolean>;
   checkStateDiff: (stateToCheck: Record<string, unknown>) => boolean;
   getStateDiff: (stateToCheck: Record<string, unknown>) => Record<string, unknown> | null;
+  // Multi-scene actions
+  setScenes: (scenes: ProjectScene[], dimensions: ProjectDimensions) => void;
+  addScene: (scene: ProjectScene) => void;
+  removeScene: (sceneId: string) => void;
+  updateScene: (sceneId: string, updates: Partial<ProjectScene>) => void;
+  switchToScene: (sceneIndex: number) => void;
+  getCurrentScene: () => ProjectScene | null;
+  getSceneCount: () => number;
+  getDimensions: () => ProjectDimensions | null;
 }
 
 type ProjectStore = ProjectStoreState & ProjectStoreActions;
@@ -53,9 +67,13 @@ export const useProjectStore = create<ProjectStore>()(
     version: '1.0.0',
     baselineMainState: null,
     lastSavedAt: null,
-      saveStatus: 'idle',
-      autosaveTimer: null,
-      autosaveDelayMs: getConfig('autosave').delayMs,
+    saveStatus: 'idle',
+    autosaveTimer: null,
+    autosaveDelayMs: getConfig('autosave').delayMs,
+    // Multi-scene initial state
+    scenes: [],
+    dimensions: null,
+    currentSceneIndex: 0,
 
     setProjectInfo: (info) => {
       set(produce((state: ProjectStore) => {
@@ -81,37 +99,83 @@ export const useProjectStore = create<ProjectStore>()(
         return;
       }
       
-      // Allow empty mainState for new projects, or single-scene format: mainState: {elements, groups, timeline}
-      const hasElements = Array.isArray(stateObj.elements);
-      const hasGroups = Array.isArray(stateObj.groups);
-      const isEmpty = !hasElements && !hasGroups;
+      // BREAKING CHANGE: Only accept new multi-scene format
+      const hasNewFormat = stateObj.dimensions && Array.isArray(stateObj.scenes);
+      const hasLegacyFormat = Array.isArray(stateObj.elements) && Array.isArray(stateObj.groups);
       
-      // Only reject if it has invalid structure (non-array elements/groups)
-      if (!isEmpty && !hasElements && !hasGroups) {
-        console.error('Invalid mainState format: elements/groups must be arrays when present');
+      if (hasLegacyFormat && !hasNewFormat) {
+        throw new Error(
+          'LEGACY FORMAT DETECTED: This project uses the old single-scene format. ' +
+          'Expected new multi-scene format: { dimensions: {...}, scenes: [...] }. ' +
+          'Legacy format is no longer supported.'
+        );
+      }
+      
+      if (!hasNewFormat) {
+        console.error('Invalid mainState format: Expected {dimensions, scenes} structure');
         return;
       }
       
       const deepCopy = JSON.parse(JSON.stringify(stateObj));
       set(produce((state: ProjectStore) => {
         state.baselineMainState = deepCopy;
+        // Also update internal scene state
+        if (deepCopy.dimensions) {
+          state.dimensions = deepCopy.dimensions;
+        }
+        if (Array.isArray(deepCopy.scenes)) {
+          state.scenes = deepCopy.scenes;
+        }
       }));
     },
 
     getCurrentMainState: () => {
       const canvas = useCanvasStore.getState();
       const timeline = useTimelineStore.getState();
+      const { scenes, dimensions, currentSceneIndex } = get();
 
-      // Return single-scene format: mainState: {elements, groups, timeline}
-      return {
-        elements: canvas.elements,
-        groups: canvas.groups,
-        timeline: {
-          scale: timeline.ui.scale,
-          duration: timeline.playback.totalDuration,
-          currentTime: timeline.playback.currentTime,
-          animationStates: Object.fromEntries(timeline.animationStates as unknown as Iterable<readonly [PropertyKey, unknown]>),
+      // Return NEW multi-scene format: {dimensions, scenes}
+      const currentScene = scenes[currentSceneIndex];
+      if (!currentScene) {
+        // Fallback: create a default scene from current canvas state
+        return {
+          dimensions: dimensions || { width: 1920, height: 1080 },
+          scenes: [{
+            sceneId: 'scene-1',
+            sceneName: 'Scene 1',
+            sceneCanvas: {
+              elements: canvas.elements,
+              groups: canvas.groups,
+              timeline: {
+                scale: timeline.ui.scale,
+                duration: timeline.playback.totalDuration,
+                currentTime: timeline.playback.currentTime,
+                animationStates: Object.fromEntries(timeline.animationStates as unknown as Iterable<readonly [PropertyKey, unknown]>) as Record<string, any>,
+              }
+            }
+          }]
+        };
+      }
+
+      // Update current scene with latest canvas/timeline state
+      const updatedScenes = [...scenes];
+      updatedScenes[currentSceneIndex] = {
+        ...currentScene,
+        sceneCanvas: {
+          elements: canvas.elements,
+          groups: canvas.groups,
+          timeline: {
+            scale: timeline.ui.scale,
+            duration: timeline.playback.totalDuration,
+            currentTime: timeline.playback.currentTime,
+            animationStates: Object.fromEntries(timeline.animationStates as unknown as Iterable<readonly [PropertyKey, unknown]>) as Record<string, any>,
+          }
         }
+      };
+
+      return {
+        dimensions: dimensions || { width: 1920, height: 1080 },
+        scenes: updatedScenes
       };
     },
 
@@ -364,6 +428,85 @@ export const useProjectStore = create<ProjectStore>()(
       }
       
       return delta || null;
+    },
+
+    // Multi-scene actions
+    setScenes: (scenes, dimensions) => {
+      set(produce((state: ProjectStore) => {
+        state.scenes = scenes;
+        state.dimensions = dimensions;
+        state.currentSceneIndex = 0;
+      }));
+    },
+
+    addScene: (scene) => {
+      set(produce((state: ProjectStore) => {
+        state.scenes.push(scene);
+      }));
+    },
+
+    removeScene: (sceneId) => {
+      set(produce((state: ProjectStore) => {
+        const index = state.scenes.findIndex(s => s.sceneId === sceneId);
+        if (index !== -1) {
+          state.scenes.splice(index, 1);
+          // Adjust current scene index if needed
+          if (state.currentSceneIndex >= state.scenes.length) {
+            state.currentSceneIndex = Math.max(0, state.scenes.length - 1);
+          }
+        }
+      }));
+    },
+
+    updateScene: (sceneId, updates) => {
+      set(produce((state: ProjectStore) => {
+        const index = state.scenes.findIndex(s => s.sceneId === sceneId);
+        if (index !== -1) {
+          Object.assign(state.scenes[index], updates);
+        }
+      }));
+    },
+
+    switchToScene: (sceneIndex) => {
+      const { scenes } = get();
+      if (sceneIndex >= 0 && sceneIndex < scenes.length) {
+        set(produce((state: ProjectStore) => {
+          state.currentSceneIndex = sceneIndex;
+        }));
+        
+        // Load the scene data into canvas and timeline stores
+        const scene = scenes[sceneIndex];
+        const canvasStore = useCanvasStore.getState();
+        const timelineStore = useTimelineStore.getState();
+        
+        canvasStore.loadSceneData(
+          scene.sceneId,
+          scene.sceneCanvas.elements,
+          scene.sceneCanvas.groups
+        );
+        
+        timelineStore.loadProjectData({
+          elements: scene.sceneCanvas.elements,
+          groups: scene.sceneCanvas.groups,
+          animationStates: scene.sceneCanvas.timeline.animationStates || {},
+          scale: scene.sceneCanvas.timeline.scale || 1,
+          duration: scene.sceneCanvas.timeline.duration || 10,
+          currentTime: scene.sceneCanvas.timeline.currentTime || 0,
+        });
+      }
+    },
+
+    getCurrentScene: () => {
+      const { scenes, currentSceneIndex } = get();
+      return scenes[currentSceneIndex] || null;
+    },
+
+    getSceneCount: () => {
+      return get().scenes.length;
+    },
+
+    getDimensions: () => {
+      return get().dimensions;
     }
   })
 );

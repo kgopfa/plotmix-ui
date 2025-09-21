@@ -24,6 +24,23 @@ export interface ProjectMetadata {
   tags?: string[];
 }
 
+export interface ProjectDimensions {
+  width: number;
+  height: number;
+}
+
+export interface SceneCanvas {
+  elements: AnimatedCanvasObject[];
+  groups: CanvasGroup[];
+  timeline: ProjectTimeline;
+}
+
+export interface ProjectScene {
+  sceneId: string;
+  sceneName: string;
+  sceneCanvas: SceneCanvas;
+}
+
 export interface ProjectCanvas {
   elements: AnimatedCanvasObject[];
   groups: CanvasGroup[];
@@ -63,7 +80,17 @@ export interface ProjectUI {
   };
 }
 
-// Single-scene project structure
+// Multi-scene project structure (NEW)
+export interface MultiSceneProjectData {
+  version: string;
+  name?: string;
+  title?: string;
+  dimensions: ProjectDimensions;
+  scenes: ProjectScene[];
+  ui?: ProjectUI;
+}
+
+// Single-scene project structure (LEGACY - will cause errors)
 export interface ProjectData {
   version: string;
   name?: string;

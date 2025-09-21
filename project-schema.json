@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "PlotMix Project Schema",
-  "description": "Complete schema for PlotMix animation projects with backend-produced structure",
+  "title": "PlotMix Multi-Scene Project Schema",
+  "description": "Complete schema for PlotMix multi-scene animation projects",
   "type": "object",
   "properties": {
     "name": {
@@ -21,28 +21,24 @@
       "description": "Project description",
       "maxLength": 1000
     },
-    "mainState": {
+    "dimensions": {
       "type": "object",
-      "description": "Main project state containing dimensions and scenes",
+      "description": "Canvas dimensions shared across all scenes",
       "properties": {
-        "dimensions": {
-          "type": "object",
-          "description": "Canvas dimensions shared across all scenes",
-          "properties": {
-            "width": {
-              "type": "number",
-              "minimum": 1,
-              "description": "Canvas width in pixels"
-            },
-            "height": {
-              "type": "number",
-              "minimum": 1,
-              "description": "Canvas height in pixels"
-            }
-          },
-          "required": ["width", "height"]
+        "width": {
+          "type": "number",
+          "minimum": 1,
+          "description": "Canvas width in pixels"
         },
-        "scenes": {
+        "height": {
+          "type": "number",
+          "minimum": 1,
+          "description": "Canvas height in pixels"
+        }
+      },
+      "required": ["width", "height"]
+    },
+    "scenes": {
           "type": "array",
           "description": "Array of scenes in the project",
           "minItems": 1,
@@ -781,10 +777,7 @@
             "required": ["sceneId", "sceneName", "sceneCanvas"]
           }
         }
-      },
-      "required": ["dimensions", "scenes"]
-    }
   },
-  "required": ["name", "title", "mainState"],
+  "required": ["name", "title", "dimensions", "scenes"],
   "additionalProperties": false
 }
