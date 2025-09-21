@@ -3,7 +3,6 @@
 import { useEffect, useRef } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { WebGLSupportChecker } from '@/components/shared/webgl-support-checker';
 import gsap from 'gsap';
 
 import { useProjectStore } from '@/stores/use-project-store';
@@ -60,16 +59,16 @@ export default function RenderXPage() {
   // Minimal required no-op handlers with correct types
   const handleCanvasPointerDown = (e: FederatedPointerEvent) => { void e; };
   const handleCanvasPointerMove = (e: FederatedPointerEvent) => { void e; };
-  const handlePointerUp = () => {};
+  const handlePointerUp = () => { };
   const handleCanvasClick = (e: FederatedPointerEvent) => { void e; };
-  
+
 
   useEffect(() => {
     // Align the logical design-canvas size to requested render dimensions
     try {
       const ui = useUIStore.getState();
       ui.setCustomCanvasSize(width, height);
-    } catch {}
+    } catch { }
 
     // Link the PIXI canvas to the GSAP timeline manager so it can find targets
     setCanvasRef(appRef as React.RefObject<TimelineCanvasRef | null>);
@@ -167,7 +166,7 @@ export default function RenderXPage() {
           gsap.ticker.wake();
           pixiApp?.ticker?.start();
           const { play } = useTimelineStore.getState();
-          try { play(); } catch {}
+          try { play(); } catch { }
         } else {
           // Headless recording mode: sleep GSAP and stop Pixi ticker for manual seeking
           gsap.ticker.sleep();
@@ -195,7 +194,7 @@ export default function RenderXPage() {
             }
 
             // Also set global timeline time in case some tweens were registered there
-            try { tl.pause(t, false); } catch {}
+            try { tl.pause(t, false); } catch { }
 
             const after = sampleId ? (shapeRefs.current as Record<string, any>)[sampleId]?.x : undefined;
             // eslint-disable-next-line no-console
@@ -244,7 +243,7 @@ export default function RenderXPage() {
           } else {
             tl.pause(0, false);
           }
-        } catch {}
+        } catch { }
         pixiApp?.render?.();
 
         // Ensure viewport centers on the actual design container and fits it
@@ -267,7 +266,7 @@ export default function RenderXPage() {
             viewport.moveCenter(main.x, main.y);
           }
           pixiApp?.render?.();
-        } catch {}
+        } catch { }
 
         // Expose a global crop rect calculator for server-side screenshot clipping
         try {
@@ -311,7 +310,7 @@ export default function RenderXPage() {
           // Back-compat alias if needed
           // @ts-expect-error - attach to global for puppeteer
           globalThis.__getDesignClip__ = compute;
-        } catch {}
+        } catch { }
 
         globalThis.__renderInfo__ = { width, height, fps, duration };
         globalThis.__renderReady__ = true;
@@ -328,9 +327,8 @@ export default function RenderXPage() {
   }, [projectId, fps, width, height]);
 
   return (
-    <WebGLSupportChecker>
-      <div style={{ width, height, margin: 0, padding: 0, overflow: 'hidden', background: '#fff' }}>
-        <ApplicationCanvas
+    <div style={{ width, height, margin: 0, padding: 0, overflow: 'hidden', background: '#fff' }}>
+      <ApplicationCanvas
         ref={appRef}
         dimensions={{ width, height }}
         // Canvas data
@@ -361,9 +359,8 @@ export default function RenderXPage() {
         isElementInCustomOrPolygonGroup={() => false}
         shiftKey={false}
         isSnappingEnabled={false}
-        />
-      </div>
-    </WebGLSupportChecker>
+      />
+    </div>
   );
 }
 

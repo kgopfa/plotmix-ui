@@ -3,8 +3,6 @@
 import React, { forwardRef, useImperativeHandle, useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { Application, extend, type ApplicationRef } from '@pixi/react';
 import { Container, Graphics } from 'pixi.js';
-import { createRobustPIXIApplication, WebGLErrorHandler } from '@/lib/webgl-error-handler';
-import { PIXIErrorBoundary } from '@/components/shared/pixi-error-boundary';
 import { DesignCanvas } from './canvas/design-canvas';
 import { Pencil, X } from 'lucide-react';
 import { Viewport, ViewportWrapper, centerOnDesign, zoomToFit, resetZoom } from './viewport';
@@ -234,11 +232,11 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
             Math.pow(touch2.clientX - touch1.clientX, 2) +
             Math.pow(touch2.clientY - touch1.clientY, 2)
           );
-          
+
           if (initialDistance > 0) {
             const scale = currentDistance / initialDistance;
             const newZoom = initialZoom * scale;
-            
+
             // Update the store directly for pinch gestures
             if (Math.abs(newZoom - (viewportRef.current?.scale.x ?? 1)) > 0.01) {
               setCanvasZoom(newZoom);
@@ -267,10 +265,10 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
     // Add a robust zoom monitoring mechanism
     useEffect(() => {
       let monitoringInterval: NodeJS.Timeout | null = null;
-      
+
       const startMonitoring = () => {
         if (monitoringInterval) return;
-        
+
         monitoringInterval = setInterval(() => {
           const viewport = viewportRef.current;
           if (viewport && Math.abs(viewport.scale.x - canvasZoom) > 0.001) {
@@ -289,7 +287,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       // Start monitoring when viewport is ready
       if (viewportRef.current) {
         startMonitoring();
-        
+
         // Log initial viewport state once
         const viewport = viewportRef.current;
       } else {
@@ -346,7 +344,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       const attach = () => {
         vp = viewportRef.current;
         if (!vp) return false;
-        
+
         // Listen for all zoom-related events
         vp.on('zoomed', () => {
           handleZoomChange();
@@ -354,7 +352,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
         vp.on('zoomed-end', () => {
           handleZoomChange();
         });
-        
+
         // Also listen for pinch and other gesture events that might affect zoom
         vp.on('pinch', () => {
           handleZoomChange();
@@ -362,12 +360,12 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
         vp.on('pinch-end', () => {
           handleZoomChange();
         });
-        
+
         // Listen for scale changes directly
         vp.on('scale', () => {
           handleZoomChange();
         });
-        
+
         // Use a more aggressive approach - also check zoom on any viewport change
         vp.on('moved', () => {
           handleZoomChange();
@@ -375,14 +373,14 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
         vp.on('frame-end', () => {
           handleZoomChange();
         });
-        
+
         // Add a more frequent check for pinch gestures
         intervalId = setInterval(() => {
           if (vp && vp.scale.x !== lastKnownZoom) {
             handleZoomChange();
           }
         }, 16); // Check every 16ms (60fps) for very responsive pinch detection
-        
+
         attached = true;
         return true;
       };
@@ -605,23 +603,15 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
           e.stopPropagation();
         }}
       >
-        <PIXIErrorBoundary
-          onError={(error, errorInfo) => {
-            console.error('PIXI Application Error:', error, errorInfo);
-          }}
-          onRecovery={() => {
-            console.log('PIXI Application recovered from error');
-          }}
+        <Application
+          ref={appRef}
+          width={dimensions.width}
+          height={dimensions.height}
+          backgroundColor={props.appBackgroundColor ?? 0xF1F5F9}
+          antialias={true}
+          resolution={typeof window !== 'undefined' ? window.devicePixelRatio || 2 : 2}
+          autoDensity={true}
         >
-          <Application
-            ref={appRef}
-            width={dimensions.width}
-            height={dimensions.height}
-            backgroundColor={props.appBackgroundColor ?? 0xF1F5F9}
-            antialias={true}
-            resolution={typeof window !== 'undefined' ? window.devicePixelRatio || 2 : 2}
-            autoDensity={true}
-          >
           <Viewport
             screenWidth={dimensions.width}
             screenHeight={dimensions.height}
@@ -643,8 +633,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
               viewportRef={viewportRef}
             />
           </Viewport>
-          </Application>
-        </PIXIErrorBoundary>
+        </Application>
 
         {/* Edit buttons for text elements (hover or selected) */}
         {editButtonTargets.map((id) => {
@@ -712,10 +701,10 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
           const viewportW = typeof window !== 'undefined' ? window.innerWidth : 0;
           const rawLeft = bounds.x;
           const left = Math.max(8, Math.min(rawLeft, Math.max(8, viewportW - width - 8)));
-          
+
           const editingElement = props.elements.find(e => e.id === activeEditingTextId);
           const isCodeEditor = editingElement?.type === 'code-editor';
-          
+
           return (
             <div
               key={`text-editor-${activeEditingTextId}`}
@@ -738,11 +727,10 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
                 </div>
                 <textarea
                   autoFocus
-                  className={`w-full text-sm outline-none resize-vertical rounded-md border focus:border-blue-400 focus:ring-1 focus:ring-blue-300 p-2 ${
-                    isCodeEditor 
-                      ? 'text-gray-200 border-gray-600 bg-gray-800/90 font-mono' 
+                  className={`w-full text-sm outline-none resize-vertical rounded-md border focus:border-blue-400 focus:ring-1 focus:ring-blue-300 p-2 ${isCodeEditor
+                      ? 'text-gray-200 border-gray-600 bg-gray-800/90 font-mono'
                       : 'text-gray-800 border-gray-200 bg-white/90'
-                  }`}
+                    }`}
                   rows={Math.min(6, Math.max(2, Math.round((bounds.height || 40) / 18)))}
                   value={activeEditingValue}
                   onChange={(e) => setActiveEditingValue(e.target.value)}
@@ -763,22 +751,20 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
                   }}
                 />
                 <div className="flex justify-end gap-2 mt-2">
-                  <button 
-                    className={`px-2.5 py-1 text-xs rounded-md border ${
-                      isCodeEditor 
-                        ? 'border-gray-600 text-gray-300 hover:bg-gray-800' 
+                  <button
+                    className={`px-2.5 py-1 text-xs rounded-md border ${isCodeEditor
+                        ? 'border-gray-600 text-gray-300 hover:bg-gray-800'
                         : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`} 
+                      }`}
                     onMouseDown={(e) => { e.preventDefault(); commitTextEdit(false); }}
                   >
                     Cancel
                   </button>
-                  <button 
-                    className={`px-3 py-1.5 text-xs rounded-md text-white shadow-md transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 ${
-                      isCodeEditor 
-                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 shadow-blue-500/30' 
+                  <button
+                    className={`px-3 py-1.5 text-xs rounded-md text-white shadow-md transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 ${isCodeEditor
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 shadow-blue-500/30'
                         : 'bg-gradient-to-r from-purple-500 to-purple-600 shadow-purple-500/30'
-                    }`} 
+                      }`}
                     onMouseDown={(e) => { e.preventDefault(); commitTextEdit(true); }}
                   >
                     Save
