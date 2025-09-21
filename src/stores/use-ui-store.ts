@@ -104,7 +104,7 @@ interface KeyboardShortcut {
 export type NavKey = 'video' | 'scenes' | 'uploads' | 'ai' | 'text' | 'animations' | 'tools' | 'components' | 'audio' | 'timeline' | 'reset';
 
 // Right sidebar keys
-export type RightPanelKey = 'properties' | 'animations' | 'layers' | 'lock';
+export type RightPanelKey = 'properties' | 'animations' | 'layers' | 'scenes' | 'lock';
 
 interface NavigationState {
   activeNav: NavKey | null; // sticks after click
@@ -326,9 +326,6 @@ const defaultKeyboardShortcuts: KeyboardShortcut[] = [
 ];
 
 export const useUIStore = create<UIStore>((set, get) => {
-  // Debug: Log store creation
-  console.log('UI Store created with default snapping state:', defaultSnappingState);
-  
   // Load persisted state from localStorage
   const loadPersistedState = () => {
     if (typeof window === 'undefined') return {};

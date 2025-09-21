@@ -5,11 +5,12 @@ import {
   SwatchBook,
   VectorSquare,
   Layers,
+  Film,
 } from 'lucide-react';
 import { useActiveRightPanel, useSetActiveRightPanel } from '@/stores/use-ui-store';
 
 // Navigation item type for right sidebar
-type RightNavKey = 'properties' | 'animations' | 'layers';
+type RightNavKey = 'properties' | 'animations' | 'layers' | 'scenes';
 interface RightNavItem {
   name: string;
   key: RightNavKey;
@@ -45,6 +46,14 @@ const navigation: RightNavItem[] = [
     color: 'text-red-600',
     hoverColor: 'hover:bg-red-50 hover:text-red-700',
     activeColor: 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30'
+  },
+  { 
+    name: 'Scenes', 
+    key: 'scenes', 
+    icon: Film,
+    color: 'text-green-600',
+    hoverColor: 'hover:bg-green-50 hover:text-green-700',
+    activeColor: 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30'
   },
 ];
 
