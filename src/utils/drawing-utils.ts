@@ -745,8 +745,6 @@ function drawElement(graphics: Graphics, shape: AnimatedCanvasObject, container?
         }
       }
       break;
-
-
     case 'path':
       if (shape.pathPoints && shape.pathPoints.length > 1) {
         const firstPoint = shape.pathPoints[0];
@@ -760,10 +758,10 @@ function drawElement(graphics: Graphics, shape: AnimatedCanvasObject, container?
 
     case 'polygon':
       if (shape.polygonOptions?.points && shape.polygonOptions.points.length > 2) {
-        // Convert polygon points to relative coordinates (relative to shape center)
+        // Polygon points are already stored as relative coordinates
         const points = shape.polygonOptions.points.map(point => ({
-          x: roundToPixel(point.x - shape.x),
-          y: roundToPixel(point.y - shape.y)
+          x: roundToPixel(point.x),
+          y: roundToPixel(point.y)
         }));
         graphics.poly(points);
       }

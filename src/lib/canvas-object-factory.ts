@@ -196,6 +196,12 @@ function createPolygon(props: BaseObjectProps & { polygonPoints?: Array<{ x: num
   const centerX = (minX + maxX) / 2;
   const centerY = (minY + maxY) / 2;
 
+  // Convert polygon points to relative coordinates (relative to center)
+  const relativePoints = props.polygonPoints.map(point => ({
+    x: point.x - centerX,
+    y: point.y - centerY
+  }));
+
   // Create polygon without automatic group assignment to prevent empty groups
   const commonAttrs = generateCommonAttributes('polygon', props);
   return {
@@ -209,7 +215,7 @@ function createPolygon(props: BaseObjectProps & { polygonPoints?: Array<{ x: num
     pivotX: width / 2,
     pivotY: height / 2,
     polygonOptions: {
-      points: props.polygonPoints,
+      points: relativePoints, // Store as relative coordinates
       isClosed: true,
     },
     isAnimationPath: props.isPath || false,
