@@ -36,6 +36,9 @@ export const LinePreview: React.FC<LinePreviewProps> = ({
   const lineType = useUIStore((state) => state.tools.lineType);
   const elementSnapConfig = useUIStore((state) => state.snapping.elementSnapConfig);
   
+  // For polygon drawing (line tool), always use smooth lines regardless of lineType setting
+  const effectiveLineType = tool === 'line' ? 'smooth' : lineType;
+  
   // Only render when we have the necessary data for line preview
   if (!(tool === 'line' || tool === 'simpleLine') || !lineStartPoint || !mousePos) {
     return null;
@@ -114,7 +117,7 @@ export const LinePreview: React.FC<LinePreviewProps> = ({
           g.clear();
 
           // Draw preview line based on line type
-          if (lineType === 'curved') {
+          if (effectiveLineType === 'curved') {
             // Draw curved preview line
             const controlPoint = {
               x: (lineStartPoint.x + snapToPoint.x) / 2,

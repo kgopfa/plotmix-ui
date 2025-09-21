@@ -127,8 +127,9 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
           
           if (clickDistance <= snapThreshold) { // Within snap threshold of start point - close the polygon
             // Create the final closing line from current position to the origin
+            // For polygon drawing (line tool), always use smooth lines regardless of global lineType setting
             // For animated lines, pass 'straight' to createNewObject but enable dotted/animated after
-            const createLineType = lineType === 'animated' ? 'straight' : lineType;
+            const createLineType = activeTool === 'line' ? 'straight' : (lineType === 'animated' ? 'straight' : lineType);
             
             const finalLine = createNewObject(
               'line',
@@ -212,8 +213,9 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
           return;
         }
         
+        // For polygon drawing (line tool), always use smooth lines regardless of global lineType setting
         // For animated lines, pass 'straight' to createNewObject but enable dotted/animated after
-        const createLineType = lineType === 'animated' ? 'straight' : lineType;
+        const createLineType = activeTool === 'line' ? 'straight' : (lineType === 'animated' ? 'straight' : lineType);
         
         const newElement = createNewObject(
           'line', 
