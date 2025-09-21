@@ -94,6 +94,8 @@ interface TimelineStoreActions {
   seek: (time: number) => void;
   seekToTime: (time: number) => void;
   setPlaybackSpeed: (speed: number) => void;
+  getGlobalTime: () => number;
+  getTotalProjectDuration: () => number;
   
   // Timeline data management
   setElements: (elements: AnimatedCanvasObject[]) => void;
@@ -197,7 +199,7 @@ const initialUIState: TimelineUIState = {
   gridSize: 1, // 1 second grid
 };
 
-export const useTimelineStore = create<TimelineStore>()(
+export const useTimelineStore: any = create<TimelineStore>()(
   (set, get) => ({
       // Initial state
       tracks: [],
@@ -307,6 +309,8 @@ export const useTimelineStore = create<TimelineStore>()(
 
       stop: () => {
         const { timeManager, gsapManager } = get();
+        const projectStore = useProjectStore.getState();
+        
         set(produce((state) => {
           state.playback.isPlaying = false;
           state.playback.isPaused = false;
@@ -320,27 +324,131 @@ export const useTimelineStore = create<TimelineStore>()(
         } else {
           gsapManager.handlePlayback(false, () => {});
         }
+        
+        // Reset to first scene when stopping
+        if (projectStore.currentSceneIndex !== 0) {
+          projectStore.switchToScene(0);
+        }
       },
 
       seek: (time: number) => {
         const { gsapManager } = get();
-        const clampedTime = Math.max(0, Math.min(time, get().playback.totalDuration));
+        const projectStore = useProjectStore.getState();
+        const allScenes = projectStore.scenes;
         
-        set(produce((state) => {
-          state.playback.currentTime = clampedTime;
-        }));
+        // Calculate which scene this time belongs to
+        let targetSceneIndex = 0;
+        let accumulatedTime = 0;
+        let sceneLocalTime = time;
         
-        // Use the robust seek method for all time updates to ensure proper visual state
-        gsapManager.seekToTime(clampedTime);
-        
-        // If seeking to time 0, ensure we're in a stopped state
-        if (clampedTime === 0) {
-          set(produce((state) => {
-            state.playback.isPlaying = false;
-            state.playback.isPaused = false;
-            state.playback.isStopped = true;
-          }));
+        for (let i = 0; i < allScenes.length; i++) {
+          const sceneDuration = allScenes[i].sceneCanvas.timeline?.duration || 10;
+          
+          if (accumulatedTime + sceneDuration > time) {
+            targetSceneIndex = i;
+            sceneLocalTime = time - accumulatedTime;
+            break;
+          }
+          
+          accumulatedTime += sceneDuration;
+          
+          // If this is the last scene, stay on it
+          if (i === allScenes.length - 1) {
+            targetSceneIndex = i;
+            sceneLocalTime = Math.min(time - accumulatedTime, sceneDuration);
+          }
         }
+        
+        // Switch to target scene if different from current
+        const currentSceneIndex = projectStore.currentSceneIndex;
+        if (targetSceneIndex !== currentSceneIndex) {
+          try {
+            // Stop current playback
+            const wasPlaying = get().playback.isPlaying;
+            if (wasPlaying) {
+              get().pause();
+            }
+            
+            // Switch scene
+            projectStore.switchToScene(targetSceneIndex);
+            
+            // Wait for scene switch to complete, then seek within the scene
+            setTimeout(() => {
+              const newTimelineStore = useTimelineStore.getState();
+              
+              // Update local time within the scene
+              const clampedSceneTime = Math.max(0, sceneLocalTime);
+              newTimelineStore.set(produce((state: TimelineStoreState & TimelineStoreActions & TimelineStoreActionsExtended) => {
+                state.playback.currentTime = clampedSceneTime;
+              }));
+              
+              // Use the robust seek method for all time updates to ensure proper visual state
+              newTimelineStore.gsapManager.seekToTime(clampedSceneTime);
+              
+              // If seeking to time 0, ensure we're in a stopped state
+              if (time === 0) {
+                newTimelineStore.set(produce((state: TimelineStoreState & TimelineStoreActions & TimelineStoreActionsExtended) => {
+                  state.playback.isPlaying = false;
+                  state.playback.isPaused = false;
+                  state.playback.isStopped = true;
+                }));
+              }
+              
+              // Resume playback if it was playing
+              if (wasPlaying) {
+                newTimelineStore.play();
+              }
+            }, 50);
+            
+          } catch (error) {
+            console.error('Error seeking across scenes:', error);
+          }
+        } else {
+          // Seeking within current scene
+          const clampedTime = Math.max(0, sceneLocalTime);
+          
+          set(produce((state) => {
+            state.playback.currentTime = clampedTime;
+          }));
+          
+          // Use the robust seek method for all time updates to ensure proper visual state
+          gsapManager.seekToTime(clampedTime);
+          
+          // If seeking to time 0, ensure we're in a stopped state
+          if (time === 0) {
+            set(produce((state) => {
+              state.playback.isPlaying = false;
+              state.playback.isPaused = false;
+              state.playback.isStopped = true;
+            }));
+          }
+        }
+      },
+
+      // Helper function to get current global time across all scenes
+      getGlobalTime: () => {
+        const { playback } = get();
+        const projectStore = useProjectStore.getState();
+        const allScenes = projectStore.scenes;
+        const currentSceneIndex = projectStore.currentSceneIndex;
+        
+        // Calculate accumulated time from previous scenes
+        let accumulatedTime = 0;
+        for (let i = 0; i < currentSceneIndex; i++) {
+          accumulatedTime += allScenes[i].sceneCanvas.timeline?.duration || 10;
+        }
+        
+        return accumulatedTime + playback.currentTime;
+      },
+
+      // Helper function to get total project duration
+      getTotalProjectDuration: (): number => {
+        const projectStore = useProjectStore.getState();
+        const allScenes = projectStore.scenes;
+        
+        return allScenes.reduce((total: number, scene: any) => {
+          return total + (scene.sceneCanvas.timeline?.duration || 10);
+        }, 0);
       },
 
       /**
@@ -799,31 +907,73 @@ export const useTimelineStore = create<TimelineStore>()(
 
       syncWithTimeManager: (timeState: TimeManagerState) => {
         const { playback, timeManager, gsapManager } = get();
-        const totalDuration = playback.totalDuration;
+        const projectStore = useProjectStore.getState();
+        const currentScene = projectStore.getCurrentScene();
+        const allScenes = projectStore.scenes;
+        const currentSceneIndex = projectStore.currentSceneIndex;
+        
+        // Calculate total project duration across all scenes
+        const totalProjectDuration = allScenes.reduce((total, scene) => {
+          return total + (scene.sceneCanvas.timeline?.duration || 10);
+        }, 0);
+        
+        // Calculate current scene's position in the overall timeline
+        let sceneStartTime = 0;
+        for (let i = 0; i < currentSceneIndex; i++) {
+          sceneStartTime += allScenes[i].sceneCanvas.timeline?.duration || 10;
+        }
+        
+        const currentSceneDuration = currentScene?.sceneCanvas.timeline?.duration || 10;
+        const globalTime = sceneStartTime + timeState.elapsedTime;
 
-        // First, clamp the reported time to total duration
-        const clampedTime = Math.max(0, Math.min(timeState.elapsedTime, totalDuration));
+        // First, clamp the reported time to current scene duration for local playback
+        const clampedTime = Math.max(0, Math.min(timeState.elapsedTime, currentSceneDuration));
 
         set(produce((state) => {
           state.playback.isPlaying = timeState.isPlaying;
-          state.playback.isPaused = !timeState.isPlaying && state.playback.currentTime > 0;
-          state.playback.isStopped = !timeState.isPlaying && state.playback.currentTime === 0;
+          state.playback.isPaused = !timeState.isPlaying && globalTime > 0;
+          state.playback.isStopped = !timeState.isPlaying && globalTime === 0;
           state.playback.currentTime = clampedTime;
+          state.playback.totalDuration = totalProjectDuration; // Update to show total project duration
         }));
 
-        // If we've reached or exceeded the scene cap, pause everything exactly at the cap
-        if (timeState.elapsedTime >= totalDuration) {
-          // Pause tickers
-          try { timeManager.pause(); } catch {}
-          try { gsapManager.handlePlayback(false, () => {}); } catch {}
+        // Check if current scene has ended and we need to transition to next scene
+        if (timeState.elapsedTime >= currentSceneDuration) {
+          const nextSceneIndex = currentSceneIndex + 1;
+          
+          if (nextSceneIndex < allScenes.length) {
+            // Switch to next scene and continue playing
+            try {
+              // Stop current scene playback
+              timeManager.pause();
+              gsapManager.handlePlayback(false, () => {});
+              
+              // Switch to next scene
+              projectStore.switchToScene(nextSceneIndex);
+              
+              // Reset timeline to beginning of new scene and continue playing
+              setTimeout(() => {
+                const newTimelineStore = useTimelineStore.getState();
+                newTimelineStore.seek(0);
+                newTimelineStore.play();
+              }, 50); // Small delay to ensure scene switch is complete
+              
+            } catch (error) {
+              console.error('Error transitioning to next scene:', error);
+            }
+          } else {
+            // Reached end of all scenes, pause everything
+            try { timeManager.pause(); } catch {}
+            try { gsapManager.handlePlayback(false, () => {}); } catch {}
 
-          // Reflect paused-at-end UI state
-          set(produce((state) => {
-            state.playback.isPlaying = false;
-            state.playback.isPaused = true;
-            state.playback.isStopped = false;
-            state.playback.currentTime = totalDuration;
-          }));
+            // Reflect paused-at-end UI state
+            set(produce((state) => {
+              state.playback.isPlaying = false;
+              state.playback.isPaused = true;
+              state.playback.isStopped = false;
+              state.playback.currentTime = currentSceneDuration;
+            }));
+          }
         }
       },
 
@@ -1220,7 +1370,7 @@ export const useTimelineStore = create<TimelineStore>()(
 
 // Selector hooks for optimized access to specific parts of the store
 export const useTimelinePlayback = () => {
-  return useTimelineStore(useShallow((state) => ({
+  return useTimelineStore(useShallow((state: any) => ({
     playback: state.playback,
     play: state.play,
     pause: state.pause,
@@ -1232,7 +1382,7 @@ export const useTimelinePlayback = () => {
 };
 
 export const useTimelineUI = () => {
-  return useTimelineStore(useShallow((state) => ({
+  return useTimelineStore(useShallow((state: any) => ({
     ui: state.ui,
     setScale: state.setScale,
     setScrollPosition: state.setScrollPosition,
@@ -1249,7 +1399,7 @@ export const useTimelineUI = () => {
 };
 
 export const useTimelineTracks = () => {
-  return useTimelineStore(useShallow((state) => ({
+  return useTimelineStore(useShallow((state: any) => ({
     tracks: state.tracks,
     elements: state.elements,
     groups: state.groups,
@@ -1264,7 +1414,7 @@ export const useTimelineTracks = () => {
 };
 
 export const useTimelineAnimations = () => {
-  return useTimelineStore(useShallow((state) => {
+  return useTimelineStore(useShallow((state: any) => {
     return {
       addAnimation: state.addAnimation,
       updateAnimation: state.updateAnimation,
@@ -1277,7 +1427,7 @@ export const useTimelineAnimations = () => {
 };
 
 export const useTimelineSync = () => {
-  return useTimelineStore(useShallow((state) => ({
+  return useTimelineStore(useShallow((state: any) => ({
     initializeSubscriptions: state.initializeSubscriptions,
     cleanupSubscriptions: state.cleanupSubscriptions,
     buildGSAPTimeline: state.buildGSAPTimeline,
@@ -1289,7 +1439,7 @@ export const useTimelineSync = () => {
 };
 
 export const useTimelineOperations = () => {
-  return useTimelineStore(useShallow((state) => ({
+  return useTimelineStore(useShallow((state: any) => ({
     exportTimeline: state.exportTimeline,
     importTimeline: state.importTimeline,
     resetTimeline: state.resetTimeline,

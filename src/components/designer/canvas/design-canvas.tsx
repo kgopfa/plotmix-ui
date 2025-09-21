@@ -94,7 +94,7 @@ interface DesignCanvasProps {
 
 export const DesignCanvas = (props: DesignCanvasProps) => {
   // Get isPlaying state directly from timeline store
-  const isPlaying = useTimelineStore(state => state.playback.isPlaying);
+  const isPlaying = useTimelineStore((state: any) => state.playback.isPlaying);
 
   // Get selection store functions
   const { selectGroup } = useSelectionStore();

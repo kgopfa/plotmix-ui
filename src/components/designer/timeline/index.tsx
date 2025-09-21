@@ -22,17 +22,19 @@ export function Timeline() {
   );
 
   // Get timeline state and actions
-  const { playback, ui: timelineUI, getEffectiveDuration, setScale } = useTimelineStore(
-    useShallow((state) => ({
+  const { playback, ui: timelineUI, getEffectiveDuration, setScale, getTotalProjectDuration, getGlobalTime } = useTimelineStore(
+    useShallow((state: any) => ({
       playback: state.playback,
       ui: state.ui,
       getEffectiveDuration: state.getEffectiveDuration,
-      setScale: state.setScale
+      setScale: state.setScale,
+      getTotalProjectDuration: state.getTotalProjectDuration,
+      getGlobalTime: state.getGlobalTime
     }))
   );
 
   const { play, pause, stop, updateAnimation } = useTimelineStore(
-    useShallow((state) => ({
+    useShallow((state: any) => ({
       play: state.play,
       pause: state.pause,
       stop: state.stop,
@@ -209,16 +211,20 @@ export function Timeline() {
     return tracks;
   }, [elements, groups, expandedElements, isSelected, isGroupSelected]);
 
-  // Memoize ruler ticks for performance
-  const rulerTicks = useMemo(() =>
-    Array.from({ length: 121 }).map((_, i) => ({
+  // Calculate total project duration for ruler
+  const totalProjectDuration = getTotalProjectDuration();
+  const globalTime = getGlobalTime();
+  
+  // Memoize ruler ticks for performance - now shows total project duration
+  const rulerTicks = useMemo(() => {
+    const duration = Math.max(totalProjectDuration, 10); // Minimum 10 seconds
+    return Array.from({ length: Math.ceil(duration) + 1 }).map((_, i) => ({
       index: i,
       isMajor: i % 5 === 0,
       left: i * timelineUI.scale,
       time: formatTime(i)
-    })),
-    [timelineUI.scale]
-  );
+    }));
+  }, [timelineUI.scale, totalProjectDuration]);
 
   return (
     <div
@@ -243,7 +249,7 @@ export function Timeline() {
             <Square size={24} stroke="#dd7be0" />
           </button>
           <div className="text-sm font-mono text-gray-700 w-32 bg-white/60 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/30">
-            {formatTime(playback.currentTime)}
+            {formatTime(globalTime)}
           </div>
         </div>
 
@@ -271,7 +277,7 @@ export function Timeline() {
       }`}>
           <div
             className="relative w-max"
-            style={{ width: `${timelineUI.scale * 120 + 128}px` }} // 128 = w-32 name column
+            style={{ width: `${timelineUI.scale * Math.max(totalProjectDuration, 10) + 128}px` }} // 128 = w-32 name column, use total project duration
             ref={scrollContainerRef}
             onScroll={handleScroll}
           >
@@ -303,7 +309,7 @@ export function Timeline() {
                 element={track.item}
                 trackType={track.type}
                 scale={timelineUI.scale}
-                currentTime={playback.currentTime}
+                currentTime={globalTime}
                 isSelected={track.isSelected}
                 onAnimationChange={track.type === 'group'
                   ? handleGroupAnimationChange

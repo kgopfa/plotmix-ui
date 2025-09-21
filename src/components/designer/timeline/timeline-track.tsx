@@ -21,7 +21,7 @@ import {
 
 const MAX_DURATION_SECONDS = 120;
 const PIXELS_PER_SECOND = 100;
-const TIMELINE_WIDTH = MAX_DURATION_SECONDS * PIXELS_PER_SECOND;
+// Timeline width will be calculated dynamically based on total project duration
 
 type TimelineItem = AnimatedCanvasObject | CanvasGroup;
 
@@ -188,7 +188,7 @@ export function TimelineTrack({
       {/* Track Content */}
       <div
         className="flex-1 relative h-full"
-        style={{ width: `${TIMELINE_WIDTH}px` }}
+        style={{ minWidth: `${scale * 120}px` }} // Dynamic width based on scale and minimum duration
         onClick={handleTrackClick}
       >
         {/* Optional internal ticks (could be removed since ruler handles it) */}

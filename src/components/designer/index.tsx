@@ -111,7 +111,7 @@ export default function Designer() {
   const [shiftKey, setShiftKey] = useState(false);
 
   // Animation playback state - needed for UI hiding during playback
-  const isPlaying = useTimelineStore(state => state.playback.isPlaying);
+  const isPlaying = useTimelineStore((state: any) => state.playback.isPlaying);
 
   // Canvas container ref for wheel event handling
   const canvasContainerRef = useRef<HTMLDivElement>(null);

@@ -184,7 +184,7 @@ export function useTimelineIntegration() {
  * Hook for timeline UI operations
  */
 export function useTimelineUI() {
-  return useTimelineStore((state) => ({
+  return useTimelineStore((state: any) => ({
     ui: state.ui,
     tracks: state.tracks,
     playback: state.playback,
@@ -214,7 +214,7 @@ export function useTimelineUI() {
  * Hook for timeline operations (import/export, reset)
  */
 export function useTimelineOperations() {
-  return useTimelineStore((state) => ({
+  return useTimelineStore((state: any) => ({
     exportTimeline: state.exportTimeline,
     importTimeline: state.importTimeline,
     resetTimeline: state.resetTimeline,
