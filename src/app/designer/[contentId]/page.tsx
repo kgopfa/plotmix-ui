@@ -54,6 +54,7 @@ export default function DesignerPage() {
     try {
       const res = await apiClient.get<{ data: { project: { id: string; name: string; title?: string; version: string; mainState?: unknown; configuration?: unknown } } }>(`/api/projects/${contentId}`);
       const project = res.data.project;
+      
       setProjectInfo({
         projectId: project.id,
         name: project.name,
@@ -70,34 +71,60 @@ export default function DesignerPage() {
         elements?: unknown[]; 
         groups?: unknown[]; 
         timeline?: unknown; 
+        dimensions?: unknown;
+        scenes?: unknown[];
       }) || {};
+      
       setBaseline(mainState);
 
       // Hydrate canvas and timeline stores from mainState
       const canvasStore = useCanvasStore.getState();
       const timelineStore = useTimelineStore.getState();
       
-      // Single-scene format: mainState: {elements, groups, timeline}
-      const rawElements = Array.isArray(mainState.elements) ? mainState.elements : [];
-      const rawGroups = Array.isArray(mainState.groups) ? mainState.groups : [];
-      const timeline = mainState.timeline || {};
+      // Handle both legacy and new formats for now (will be removed after migration)
+      let rawElements: unknown[] = [];
+      let rawGroups: unknown[] = [];
+      let timeline: unknown = {};
+      
+      if (mainState.scenes && Array.isArray(mainState.scenes) && mainState.scenes.length > 0) {
+        // New multi-scene format
+        const firstScene = mainState.scenes[0] as any;
+        
+        if (firstScene?.sceneCanvas) {
+          rawElements = Array.isArray(firstScene.sceneCanvas.elements) ? firstScene.sceneCanvas.elements : [];
+          rawGroups = Array.isArray(firstScene.sceneCanvas.groups) ? firstScene.sceneCanvas.groups : [];
+          timeline = firstScene.sceneCanvas.timeline || {};
+        }
+      } else {
+        // Legacy single-scene format
+        rawElements = Array.isArray(mainState.elements) ? mainState.elements : [];
+        rawGroups = Array.isArray(mainState.groups) ? mainState.groups : [];
+        timeline = mainState.timeline || {};
+      }
 
       // Sanitize to ensure required fields exist
-      const sanitizedElements = rawElements.map((el: unknown) => ({
-        animations: Array.isArray((el as any)?.animations) ? (el as any).animations : [],
-        fill: typeof (el as any)?.fill === 'string' && (el as any).fill ? (el as any).fill : '#000000',
-        ...(el as any),
-      }));
+      const sanitizedElements = rawElements.map((el: unknown) => {
+        const element = el as any;
+        return {
+          animations: Array.isArray(element?.animations) ? element.animations : [],
+          fill: typeof element?.fill === 'string' && element.fill ? element.fill : '#000000',
+          ...element,
+        };
+      });
+      
       // Dedupe by id
       const elements = Array.from(
         new Map(sanitizedElements.map((e: any) => [e.id as string, e])).values()
       ) as import('@/types/canvas').AnimatedCanvasObject[];
 
-      const sanitizedGroups = rawGroups.map((g: unknown) => ({
-        animations: Array.isArray((g as any)?.animations) ? (g as any).animations : [],
-        elementIds: Array.isArray((g as any)?.elementIds) ? (g as any).elementIds : [],
-        ...(g as any),
-      }));
+      const sanitizedGroups = rawGroups.map((g: unknown) => {
+        const group = g as any;
+        return {
+          animations: Array.isArray(group?.animations) ? group.animations : [],
+          elementIds: Array.isArray(group?.elementIds) ? group.elementIds : [],
+          ...group,
+        };
+      });
       const groups = Array.from(
         new Map(sanitizedGroups.map((g: any) => [g.id as string, g])).values()
       ) as import('@/types/canvas').CanvasGroup[];
@@ -113,6 +140,7 @@ export default function DesignerPage() {
         duration: typeof (timeline as any)?.duration === 'number' ? (timeline as any).duration : 10,
         currentTime: typeof (timeline as any)?.currentTime === 'number' ? (timeline as any).currentTime : 0,
       });
+
       // Capture baseline after stores are hydrated
       captureBaseline();
 

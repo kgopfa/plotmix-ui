@@ -99,24 +99,35 @@ export const useProjectStore = create<ProjectStore>()(
         return;
       }
       
-      // BREAKING CHANGE: Only accept new multi-scene format
+      // Check format types
       const hasNewFormat = stateObj.dimensions && Array.isArray(stateObj.scenes);
       const hasLegacyFormat = Array.isArray(stateObj.elements) && Array.isArray(stateObj.groups);
       
+      // For now, accept both formats during transition
       if (hasLegacyFormat && !hasNewFormat) {
-        throw new Error(
-          'LEGACY FORMAT DETECTED: This project uses the old single-scene format. ' +
-          'Expected new multi-scene format: { dimensions: {...}, scenes: [...] }. ' +
-          'Legacy format is no longer supported.'
-        );
+        // Convert legacy format to new format for internal storage
+        const convertedState = {
+          dimensions: { width: 1920, height: 1080 }, // Default dimensions
+          scenes: [{
+            sceneId: 'scene-1',
+            sceneName: 'Scene 1',
+            sceneCanvas: {
+              elements: stateObj.elements || [],
+              groups: stateObj.groups || [],
+              timeline: stateObj.timeline || { scale: 100, duration: 10, currentTime: 0, animationStates: {} }
+            }
+          }]
+        };
+        stateObj = convertedState;
       }
       
-      if (!hasNewFormat) {
-        console.error('Invalid mainState format: Expected {dimensions, scenes} structure');
+      if (!hasNewFormat && !hasLegacyFormat) {
+        console.error('Invalid mainState format: Expected {dimensions, scenes} structure or legacy {elements, groups} structure');
         return;
       }
       
       const deepCopy = JSON.parse(JSON.stringify(stateObj));
+      
       set(produce((state: ProjectStore) => {
         state.baselineMainState = deepCopy;
         // Also update internal scene state

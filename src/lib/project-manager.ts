@@ -120,7 +120,6 @@ export class ProjectManager {
    */
   saveProject(name?: string, options: ProjectSaveOptions = {}): string {
     const { includeUI = true } = options;
-    console.log('includeUI:', includeUI); // Temporary to avoid unused warning
     
     const canvasStore = useCanvasStore.getState();
     const timelineStore = useTimelineStore.getState();
