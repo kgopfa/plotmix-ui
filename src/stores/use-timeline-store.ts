@@ -271,19 +271,6 @@ export const useTimelineStore = create<TimelineStore>()(
           console.warn('Cannot save timeline: no scene ID set.');
           return;
         }
-
-        const timelineData = {
-          elements: get().elements,
-          groups: get().groups,
-          animationStates: Object.fromEntries(get().animationStates.entries()),
-          scale: get().ui.scale,
-          duration: get().playback.totalDuration,
-          currentTime: get().playback.currentTime,
-        };
-
-        // In a real app, you'd save this data to a file or database
-        console.log(`Saving timeline for scene ${sceneId}:`, timelineData);
-        // For now, we'll just log it
       },
 
       // Playback controls
