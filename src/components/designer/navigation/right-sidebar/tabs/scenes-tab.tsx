@@ -89,10 +89,11 @@ export const ScenesTab: React.FC = () => {
             <h3 className="font-semibold text-green-500 text-sm">Scenes</h3>
             <button
               onClick={handleAddScene}
-              className="p-1 text-gray-400 hover:text-blue-600 transition-colors rounded-lg hover:bg-blue-50"
+              className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-full transition-colors"
               title="Add Scene"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3 h-3" />
+              Add
             </button>
           </div>
           <button
