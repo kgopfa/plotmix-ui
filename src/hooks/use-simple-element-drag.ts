@@ -9,6 +9,9 @@ interface UseSimpleElementDragProps {
   updateElementPosition: (id: string, position: { x: number; y: number }) => void;
   viewportRef?: React.RefObject<ViewportWrapper | null>;
   designCanvasContainerRef?: React.RefObject<Container | null>;
+  onSnapElement?: (element: AnimatedCanvasObject, allElements: AnimatedCanvasObject[]) => { x: number; y: number; guides: any[] };
+  onSetSnapGuides?: (guides: any[]) => void;
+  onClearSnapGuides?: () => void;
 }
 
 interface UseSimpleElementDragReturn {
@@ -28,6 +31,9 @@ export function useSimpleElementDrag({
   updateElementPosition,
   viewportRef,
   designCanvasContainerRef,
+  onSnapElement,
+  onSetSnapGuides,
+  onClearSnapGuides,
 }: UseSimpleElementDragProps): UseSimpleElementDragReturn {
   const [isDragging, setIsDragging] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -76,17 +82,32 @@ export function useSimpleElementDrag({
     if (!isDragging || !draggingId) return;
     const localPos = getCanvasLocalFromEvent(e);
     const { x: offX, y: offY } = dragOffsetRef.current;
-    updateElementPosition(draggingId, {
-      x: localPos.x - offX,
-      y: localPos.y - offY,
-    });
-  }, [isDragging, draggingId, getCanvasLocalFromEvent, updateElementPosition]);
+    let targetX = localPos.x - offX;
+    let targetY = localPos.y - offY;
+
+    // Apply snapping if provided
+    if (onSnapElement) {
+      const element = elements.find(el => el.id === draggingId);
+      if (element) {
+        const temp = { ...element, x: targetX, y: targetY } as AnimatedCanvasObject;
+        const snap = onSnapElement(temp, elements);
+        if (snap) {
+          targetX = snap.x;
+          targetY = snap.y;
+          if (onSetSnapGuides) onSetSnapGuides(snap.guides || []);
+        }
+      }
+    }
+
+    updateElementPosition(draggingId, { x: targetX, y: targetY });
+  }, [isDragging, draggingId, getCanvasLocalFromEvent, updateElementPosition, elements, onSnapElement, onSetSnapGuides]);
 
   const handlePointerUp = useCallback(() => {
     if (!isDragging) return;
     setIsDragging(false);
     setDraggingId(null);
-  }, [isDragging]);
+    if (onClearSnapGuides) onClearSnapGuides();
+  }, [isDragging, onClearSnapGuides]);
 
   return {
     handlePointerDown,

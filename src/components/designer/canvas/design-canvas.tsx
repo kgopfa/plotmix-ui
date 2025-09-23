@@ -227,6 +227,9 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
     updateElementPosition: (id, position) => updateElement(id, position),
     viewportRef: props.viewportRef,
     designCanvasContainerRef: containerRef,
+    onSnapElement: props.onSnapElement,
+    onSetSnapGuides: props.onSetSnapGuides,
+    onClearSnapGuides: props.onClearSnapGuides,
   });
 
   // Legacy/advanced handlers (endpoint drag, chaining, etc.) for non-select tools
