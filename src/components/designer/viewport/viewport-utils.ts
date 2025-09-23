@@ -3,8 +3,6 @@ import type { ViewportWrapper } from './viewport-wrapper';
 // Viewport utility functions following standard viewport patterns
 export const centerOnDesign = (
   viewport: ViewportWrapper | null,
-  containerWidth?: number,
-  containerHeight?: number,
   canvasWidth?: number,
   canvasHeight?: number
 ) => {
@@ -19,9 +17,7 @@ export const centerOnDesign = (
 };
 
 export const zoomToFit = (
-  viewport: ViewportWrapper | null, 
-  containerWidth: number, 
-  containerHeight: number,
+  viewport: ViewportWrapper | null,
   canvasWidth: number,
   canvasHeight: number
 ) => {
@@ -38,8 +34,6 @@ export const zoomToFit = (
 
 export const resetZoom = (
   viewport: ViewportWrapper | null,
-  containerWidth?: number,
-  containerHeight?: number,
   canvasWidth?: number,
   canvasHeight?: number
 ) => {

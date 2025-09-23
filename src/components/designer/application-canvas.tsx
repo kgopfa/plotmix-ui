@@ -140,7 +140,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       if (viewportRef.current && dimensions.width > 0 && dimensions.height > 0) {
         const timeoutId = setTimeout(() => {
           // Use responsive centering based on new screen dimensions
-          centerOnDesign(viewportRef.current, dimensions.width, dimensions.height, canvasWidth, canvasHeight);
+          centerOnDesign(viewportRef.current, canvasWidth, canvasHeight);
         }, 50); // Small delay to debounce rapid changes
 
         return () => clearTimeout(timeoutId);
@@ -493,9 +493,9 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
     useImperativeHandle(ref, () => ({
       getApplication: () => appRef.current,
       getViewport: () => viewportRef.current,
-      centerOnDesign: () => centerOnDesign(viewportRef.current, dimensions.width, dimensions.height, canvasWidth, canvasHeight),
-      zoomToFit: () => zoomToFit(viewportRef.current, dimensions.width, dimensions.height, canvasWidth, canvasHeight),
-      resetZoom: () => resetZoom(viewportRef.current, dimensions.width, dimensions.height, canvasWidth, canvasHeight),
+      centerOnDesign: () => centerOnDesign(viewportRef.current, canvasWidth, canvasHeight),
+      zoomToFit: () => zoomToFit(viewportRef.current, canvasWidth, canvasHeight),
+      resetZoom: () => resetZoom(viewportRef.current, canvasWidth, canvasHeight),
       getShapeRefs: () => props.shapeRefs.current as Record<string, Container>,
       getGroupContainers: () => props.groupContainers.current as Record<string, Container>,
       getMainContainer: () => props.mainCanvasContainerRef.current,
