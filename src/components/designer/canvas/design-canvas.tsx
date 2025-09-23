@@ -27,6 +27,7 @@ import { useSelectionStore } from '@/stores/use-selection-store';
 import { useTimelineStore } from '@/stores/use-timeline-store';
 import { useResponsiveCanvasPosition } from '@/hooks/use-responsive-canvas-position';
 import { useElementDragging } from '@/hooks/use-element-dragging';
+import { useSimpleElementDrag } from '@/hooks/use-simple-element-drag';
 import { useElementPointerHandlers } from '@/hooks/use-element-pointer-handlers';
 
 // Extend PIXI components for React
@@ -216,7 +217,19 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
     canvasPosition: canvasPosition,
   });
 
-  // Use element pointer handlers hook
+  // Use simple element drag for select tool (center-origin coordinates)
+  const {
+    handlePointerDown: simpleElementPointerDown,
+    handlePointerMove: simpleElementPointerMove,
+    handlePointerUp: simpleElementPointerUp,
+  } = useSimpleElementDrag({
+    elements,
+    updateElementPosition: (id, position) => updateElement(id, position),
+    viewportRef: props.viewportRef,
+    designCanvasContainerRef: containerRef,
+  });
+
+  // Legacy/advanced handlers (endpoint drag, chaining, etc.) for non-select tools
   const {
     handleElementPointerDown,
     handleElementPointerMove,
@@ -331,24 +344,30 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         }
       }}
       onPointerMove={(e: FederatedPointerEvent) => {
-        // Call the element pointer move handler for drag detection
-        handleElementPointerMove(e);
-        // Call the canvas pointer move handler for drawing and other interactions
+        // Use simple drag when selecting
+        if (tool === 'select') {
+          simpleElementPointerMove(e);
+        }
+        // Canvas interactions (draw, etc.)
         props.handleCanvasPointerMove(e);
       }}
       onPointerUp={() => {
         // Clear the drag flag when pointer up occurs
         // hasDraggedRef.current = false; // Removed
-        // Call the element pointer up handler
-        handleElementPointerUp();
+        // End simple drag
+        if (tool === 'select') {
+          simpleElementPointerUp();
+        }
         // Call the canvas pointer up handler
         props.handlePointerUp();
       }}
       onPointerUpOutside={() => {
         // Clear the drag flag when pointer up occurs
         // hasDraggedRef.current = false; // Removed
-        // Call the element pointer up handler
-        handleElementPointerUp();
+        // End simple drag
+        if (tool === 'select') {
+          simpleElementPointerUp();
+        }
         // Call the canvas pointer up handler
         props.handlePointerUp();
       }}
@@ -623,7 +642,11 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                       e.stopPropagation();
                       return;
                     }
-                    handleElementPointerDown(el.id, el.x, el.y)(e);
+                    if (tool === 'select') {
+                      simpleElementPointerDown(el.id)(e);
+                    } else {
+                      handleElementPointerDown(el.id, el.x, el.y)(e);
+                    }
                   } : undefined}
                   onPointerUp={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
                   onPointerUpOutside={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
@@ -820,7 +843,11 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                     return;
                   }
                 }
-                handleElementPointerDown(el.id, el.x, el.y)(e);
+                if (tool === 'select') {
+                  simpleElementPointerDown(el.id)(e);
+                } else {
+                  handleElementPointerDown(el.id, el.x, el.y)(e);
+                }
               } : undefined}
               onPointerUp={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
               onPointerUpOutside={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
