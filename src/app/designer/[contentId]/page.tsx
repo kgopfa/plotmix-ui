@@ -136,7 +136,7 @@ export default function DesignerPage() {
         groups,
         animationStates: ((timeline as any)?.animationStates as Record<string, AnimationState>) || {},
         scale: typeof (timeline as any)?.scale === 'number' ? (timeline as any).scale : 1,
-        duration: typeof (timeline as any)?.duration === 'number' ? (timeline as any).duration : 10,
+        duration: typeof (timeline as any)?.duration === 'number' ? (timeline as any).duration : 0,
         currentTime: typeof (timeline as any)?.currentTime === 'number' ? (timeline as any).currentTime : 0,
       });
 

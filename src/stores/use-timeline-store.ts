@@ -342,7 +342,7 @@ export const useTimelineStore: any = create<TimelineStore>()(
         let sceneLocalTime = time;
         
         for (let i = 0; i < allScenes.length; i++) {
-          const sceneDuration = allScenes[i].sceneCanvas.timeline?.duration || 10;
+          const sceneDuration = allScenes[i].sceneCanvas.timeline?.duration || 0;
           
           if (accumulatedTime + sceneDuration > time) {
             targetSceneIndex = i;
@@ -435,7 +435,7 @@ export const useTimelineStore: any = create<TimelineStore>()(
         // Calculate accumulated time from previous scenes
         let accumulatedTime = 0;
         for (let i = 0; i < currentSceneIndex; i++) {
-          accumulatedTime += allScenes[i].sceneCanvas.timeline?.duration || 10;
+          accumulatedTime += allScenes[i].sceneCanvas.timeline?.duration || 0;
         }
         
         return accumulatedTime + playback.currentTime;
@@ -447,7 +447,7 @@ export const useTimelineStore: any = create<TimelineStore>()(
         const allScenes = projectStore.scenes;
         
         return allScenes.reduce((total: number, scene: any) => {
-          return total + (scene.sceneCanvas.timeline?.duration || 10);
+          return total + (scene.sceneCanvas.timeline?.duration || 0);
         }, 0);
       },
 
@@ -914,16 +914,16 @@ export const useTimelineStore: any = create<TimelineStore>()(
         
         // Calculate total project duration across all scenes
         const totalProjectDuration = allScenes.reduce((total, scene) => {
-          return total + (scene.sceneCanvas.timeline?.duration || 10);
+          return total + (scene.sceneCanvas.timeline?.duration || 0);
         }, 0);
         
         // Calculate current scene's position in the overall timeline
         let sceneStartTime = 0;
         for (let i = 0; i < currentSceneIndex; i++) {
-          sceneStartTime += allScenes[i].sceneCanvas.timeline?.duration || 10;
+          sceneStartTime += allScenes[i].sceneCanvas.timeline?.duration || 0;
         }
         
-        const currentSceneDuration = currentScene?.sceneCanvas.timeline?.duration || 10;
+        const currentSceneDuration = currentScene?.sceneCanvas.timeline?.duration || 0;
         const globalTime = sceneStartTime + timeState.elapsedTime;
 
         // First, clamp the reported time to current scene duration for local playback
@@ -1356,8 +1356,37 @@ export const useTimelineStore: any = create<TimelineStore>()(
           
           // Update timeline UI
           state.ui.scale = data.scale || 1;
-          state.playback.totalDuration = data.duration || 10;
           state.playback.currentTime = data.currentTime || 0;
+          
+          // Recalculate duration based on loaded animations
+          // If the loaded duration is 0 or not specified, calculate from animations
+          if (data.duration === 0 || data.duration === undefined) {
+            let maxEndTime = 0;
+            
+            // Check element animations
+            state.elements.forEach((element: AnimatedCanvasObject) => {
+              if (!element.isAnimationPath && element.animations && element.animations.length > 0) {
+                element.animations.forEach((animation: ElementAnimation) => {
+                  const endTime = animation.startTime + animation.duration;
+                  maxEndTime = Math.max(maxEndTime, endTime);
+                });
+              }
+            });
+            
+            // Check group animations
+            state.groups.forEach((group: CanvasGroup) => {
+              if (!group.isDefaultGroup && group.animations && group.animations.length > 0) {
+                group.animations.forEach((animation: ElementAnimation) => {
+                  const endTime = animation.startTime + animation.duration;
+                  maxEndTime = Math.max(maxEndTime, endTime);
+                });
+              }
+            });
+            
+            state.playback.totalDuration = maxEndTime;
+          } else {
+            state.playback.totalDuration = data.duration;
+          }
         }));
         
         // Update tracks and rebuild timeline

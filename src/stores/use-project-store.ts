@@ -114,7 +114,7 @@ export const useProjectStore = create<ProjectStore>()(
             sceneCanvas: {
               elements: stateObj.elements || [],
               groups: stateObj.groups || [],
-              timeline: stateObj.timeline || { scale: 100, duration: 10, currentTime: 0, animationStates: {} }
+              timeline: stateObj.timeline || { scale: 100, duration: 0, currentTime: 0, animationStates: {} }
             }
           }]
         };
@@ -501,7 +501,7 @@ export const useProjectStore = create<ProjectStore>()(
           groups: scene.sceneCanvas.groups,
           animationStates: scene.sceneCanvas.timeline.animationStates || {},
           scale: scene.sceneCanvas.timeline.scale || 1,
-          duration: scene.sceneCanvas.timeline.duration || 10,
+          duration: scene.sceneCanvas.timeline.duration || 0, // Use 0 instead of 10 for empty scenes
           currentTime: scene.sceneCanvas.timeline.currentTime || 0,
         });
       }

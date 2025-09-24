@@ -94,7 +94,7 @@ export default function ScriptsPage() {
         groups,
         animationStates: (timeline.animationStates as Record<string, any>) || {},
         scale: typeof timeline.scale === 'number' ? timeline.scale : 1,
-        duration: typeof timeline.duration === 'number' ? timeline.duration : 10,
+        duration: typeof timeline.duration === 'number' ? timeline.duration : 0,
         currentTime: typeof timeline.currentTime === 'number' ? timeline.currentTime : 0,
       });
 
@@ -208,7 +208,7 @@ export default function ScriptsPage() {
                 groups: newResult.groups as any,
                 animationStates: newResult.timeline.animationStates || {},
                 scale: newResult.timeline.scale || 1,
-                duration: newResult.timeline.duration || 10,
+                duration: newResult.timeline.duration || 0,
                 currentTime: newResult.timeline.currentTime || 0,
               });
             }
@@ -219,7 +219,7 @@ export default function ScriptsPage() {
               groups: newResult.groups,
               timeline: {
                 scale: newResult.timeline.scale || 1,
-                duration: newResult.timeline.duration || 10,
+                duration: newResult.timeline.duration || 0,
                 currentTime: newResult.timeline.currentTime || 0,
                 animationStates: newResult.timeline.animationStates || {}
               }
@@ -333,7 +333,7 @@ export default function ScriptsPage() {
       groups: groups,
       timeline: {
         scale: 1,
-        duration: 10,
+        duration: 0,
         currentTime: 0,
         animationStates: animationStates
       }
@@ -345,7 +345,7 @@ export default function ScriptsPage() {
       groups: result.groups,
       timeline: {
         scale: result.timeline?.scale || 1,
-        duration: result.timeline?.duration || 10,
+        duration: result.timeline?.duration || 0,
         currentTime: result.timeline?.currentTime || 0,
         animationStates: result.timeline?.animationStates || {}
       }
@@ -401,7 +401,7 @@ export default function ScriptsPage() {
           groups: result.groups as any,
           animationStates: result.timeline.animationStates || {},
           scale: result.timeline.scale || 1,
-          duration: result.timeline.duration || 10,
+          duration: result.timeline.duration || 0,
           currentTime: result.timeline.currentTime || 0,
         });
       }

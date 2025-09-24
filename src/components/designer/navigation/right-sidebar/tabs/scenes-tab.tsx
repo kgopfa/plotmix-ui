@@ -39,7 +39,7 @@ export const ScenesTab: React.FC = () => {
         groups: [],
         timeline: {
           scale: 100,
-          duration: 10,
+          duration: 0, // Start with 0 duration for empty scenes
           currentTime: 0,
           animationStates: {}
         }

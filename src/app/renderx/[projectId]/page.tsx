@@ -148,7 +148,7 @@ export default function RenderXPage() {
           groups: groupsUnique,
           animationStates: timeline.animationStates || {},
           scale: typeof timeline.scale === 'number' ? timeline.scale : 1,
-          duration: typeof timeline.duration === 'number' ? timeline.duration : 10,
+          duration: typeof timeline.duration === 'number' ? timeline.duration : 0,
           currentTime: typeof timeline.currentTime === 'number' ? timeline.currentTime : 0,
         });
 
