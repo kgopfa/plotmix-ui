@@ -76,30 +76,39 @@ export default function DesignerPage() {
       
       setBaseline(mainState);
 
-      // Hydrate canvas and timeline stores from mainState
+      // Hydrate stores from mainState
       const canvasStore = useCanvasStore.getState();
       const timelineStore = useTimelineStore.getState();
+      const projectStore = useProjectStore.getState();
       
-      // Handle both legacy and new formats for now (will be removed after migration)
-      let rawElements: unknown[] = [];
-      let rawGroups: unknown[] = [];
-      let timeline: unknown = {};
-      
-      if (mainState.scenes && Array.isArray(mainState.scenes) && mainState.scenes.length > 0) {
-        // New multi-scene format
-        const firstScene = mainState.scenes[0] as any;
-        
-        if (firstScene?.sceneCanvas) {
-          rawElements = Array.isArray(firstScene.sceneCanvas.elements) ? firstScene.sceneCanvas.elements : [];
-          rawGroups = Array.isArray(firstScene.sceneCanvas.groups) ? firstScene.sceneCanvas.groups : [];
-          timeline = firstScene.sceneCanvas.timeline || {};
-        }
-      } else {
-        // Legacy single-scene format
-        rawElements = Array.isArray(mainState.elements) ? mainState.elements : [];
-        rawGroups = Array.isArray(mainState.groups) ? mainState.groups : [];
-        timeline = mainState.timeline || {};
+      // Multi-scene format only - fail if not present
+      if (!mainState.scenes || !Array.isArray(mainState.scenes) || mainState.scenes.length === 0) {
+        console.error('Invalid project format: Expected multi-scene structure with scenes array');
+        console.error('Server project mainState:', JSON.stringify(mainState, null, 2));
+        return;
       }
+
+      const allScenes = mainState.scenes as any[];
+      const dimensions = (mainState.dimensions as any) || { width: 1920, height: 1080 };
+      
+      // Load all scenes into project store
+      projectStore.setScenes(allScenes, dimensions);
+      
+      // Load first scene into canvas and timeline stores
+      const defaultScene = mainState.scenes[0] as any;
+      
+      if (!defaultScene?.sceneCanvas) {
+        console.error('Invalid scene structure: Missing sceneCanvas data');
+        console.error('Default scene data:', JSON.stringify(defaultScene, null, 2));
+        return;
+      }
+      
+      const rawElements = Array.isArray(defaultScene.sceneCanvas.elements) ? defaultScene.sceneCanvas.elements : [];
+      const rawGroups = Array.isArray(defaultScene.sceneCanvas.groups) ? defaultScene.sceneCanvas.groups : [];
+      const timeline = defaultScene.sceneCanvas.timeline || {};
+      
+      // Set current scene in canvas store
+      canvasStore.setCurrentScene(defaultScene.sceneId);
 
       // Sanitize to ensure required fields exist
       const sanitizedElements = rawElements.map((el: unknown) => {

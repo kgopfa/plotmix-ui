@@ -120,13 +120,46 @@ export default function RenderXPage() {
 
         // Hydrate canvas + timeline stores from mainState (rendertest style)
         const canvasStore = useCanvasStore.getState();
-        type MainStateLike = { elements?: AnimatedCanvasObject[]; groups?: CanvasGroup[]; timeline?: any };
+        type MainStateLike = { 
+          elements?: AnimatedCanvasObject[]; 
+          groups?: CanvasGroup[]; 
+          timeline?: any;
+          dimensions?: any;
+          scenes?: any[];
+        };
         const ms = mainState as MainStateLike;
-        const rawElements = Array.isArray(ms.elements) ? ms.elements : [];
-        const rawGroups = Array.isArray(ms.groups) ? ms.groups : [];
+        
+        // Multi-scene format only - fail if not present
+        if (!ms.scenes || !Array.isArray(ms.scenes) || ms.scenes.length === 0) {
+          console.error('Invalid project format: Expected multi-scene structure with scenes array');
+          console.error('Server project mainState:', JSON.stringify(mainState, null, 2));
+          return;
+        }
+
+        const allScenes = ms.scenes as any[];
+        const dimensions = (ms.dimensions as any) || { width: 1920, height: 1080 };
+        
+        // Load all scenes into project store
+        useProjectStore.getState().setScenes(allScenes, dimensions);
+        
+        // Load first scene into canvas and timeline stores
+        const firstScene = ms.scenes[0];
+        
+        if (!firstScene?.sceneCanvas) {
+          console.error('Invalid scene structure: Missing sceneCanvas data');
+          console.error('First scene data:', JSON.stringify(firstScene, null, 2));
+          return;
+        }
+        
+        const rawElements = Array.isArray(firstScene.sceneCanvas.elements) ? firstScene.sceneCanvas.elements : [];
+        const rawGroups = Array.isArray(firstScene.sceneCanvas.groups) ? firstScene.sceneCanvas.groups as any[] : [];
+        const timelineData = firstScene.sceneCanvas.timeline || {};
+        
+        // Set current scene in canvas store
+        canvasStore.setCurrentScene(firstScene.sceneId);
 
         // Sanitize and dedupe elements
-        const sanitizedElements: AnimatedCanvasObject[] = rawElements.map((el) => ({
+        const sanitizedElements: AnimatedCanvasObject[] = rawElements.map((el: any) => ({
           ...el,
           animations: Array.isArray(el?.animations) ? el.animations : [],
           fill: typeof el?.fill === 'string' && el.fill ? el.fill : '#000000',
@@ -136,13 +169,13 @@ export default function RenderXPage() {
         );
 
         const groupsUnique: CanvasGroup[] = Array.from(
-          new Map(rawGroups.map((g) => [g.id as string, g])).values()
+          new Map(rawGroups.map((g: any) => [g.id as string, g])).values()
         );
 
         canvasStore.setElements(elementsUnique);
         canvasStore.setGroups(groupsUnique);
 
-        const timeline = ms.timeline || {};
+        const timeline = timelineData || {};
         useTimelineStore.getState().loadProjectData({
           elements: elementsUnique,
           groups: groupsUnique,

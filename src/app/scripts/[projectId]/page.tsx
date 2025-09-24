@@ -57,12 +57,47 @@ export default function ScriptsPage() {
         version: project.version,
       });
 
-      const mainState = (project.mainState as { elements?: unknown[]; groups?: unknown[]; timeline?: unknown }) || {};
+      const mainState = (project.mainState as { 
+        elements?: unknown[]; 
+        groups?: unknown[]; 
+        timeline?: unknown;
+        dimensions?: unknown;
+        scenes?: unknown[];
+      }) || {};
       setBaseline(mainState);
 
-      // Hydrate canvas and timeline stores from mainState
-      const rawElements = Array.isArray(mainState.elements) ? mainState.elements : [];
-      const rawGroups = Array.isArray(mainState.groups) ? mainState.groups : [];
+      // Hydrate stores from mainState
+      const canvasStore = useCanvasStore.getState();
+      const projectStore = useProjectStore.getState();
+      
+      // Multi-scene format only - fail if not present
+      if (!mainState.scenes || !Array.isArray(mainState.scenes) || mainState.scenes.length === 0) {
+        console.error('Invalid project format: Expected multi-scene structure with scenes array');
+        console.error('Server project mainState:', JSON.stringify(mainState, null, 2));
+        return;
+      }
+
+      const allScenes = mainState.scenes as any[];
+      const dimensions = (mainState.dimensions as any) || { width: 1920, height: 1080 };
+      
+      // Load all scenes into project store
+      projectStore.setScenes(allScenes, dimensions);
+      
+      // Load first scene into canvas and timeline stores
+      const firstScene = mainState.scenes[0] as any;
+      
+      if (!firstScene?.sceneCanvas) {
+        console.error('Invalid scene structure: Missing sceneCanvas data');
+        console.error('First scene data:', JSON.stringify(firstScene, null, 2));
+        return;
+      }
+      
+      const rawElements = Array.isArray(firstScene.sceneCanvas.elements) ? firstScene.sceneCanvas.elements : [];
+      const rawGroups = Array.isArray(firstScene.sceneCanvas.groups) ? firstScene.sceneCanvas.groups : [];
+      const timelineData = firstScene.sceneCanvas.timeline || {};
+      
+      // Set current scene in canvas store
+      canvasStore.setCurrentScene(firstScene.sceneId);
 
       // Sanitize elements
       const sanitizedElements = rawElements.map((el: unknown) => ({
@@ -88,7 +123,7 @@ export default function ScriptsPage() {
       setGroups(groups);
 
       // Load timeline data
-      const timeline = (mainState.timeline as { animationStates?: any; scale?: number; duration?: number; currentTime?: number }) || {};
+      const timeline = (timelineData as { animationStates?: any; scale?: number; duration?: number; currentTime?: number }) || {};
       loadProjectData({
         elements,
         groups,
