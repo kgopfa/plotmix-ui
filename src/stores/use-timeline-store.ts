@@ -383,7 +383,11 @@ export const useTimelineStore: any = create<TimelineStore>()(
               }));
               
               // Use the robust seek method for all time updates to ensure proper visual state
-              newTimelineStore.gsapManager.seekToTime(clampedSceneTime);
+              // Only seek if the scene has animations (duration > 0)
+              const currentSceneDuration = newTimelineStore.playback.totalDuration;
+              if (currentSceneDuration > 0) {
+                newTimelineStore.gsapManager.seekToTime(clampedSceneTime);
+              }
               
               // If seeking to time 0, ensure we're in a stopped state
               if (time === 0) {
@@ -412,7 +416,11 @@ export const useTimelineStore: any = create<TimelineStore>()(
           }));
           
           // Use the robust seek method for all time updates to ensure proper visual state
-          gsapManager.seekToTime(clampedTime);
+          // Only seek if the scene has animations (duration > 0)
+          const { playback } = get();
+          if (playback.totalDuration > 0) {
+            gsapManager.seekToTime(clampedTime);
+          }
           
           // If seeking to time 0, ensure we're in a stopped state
           if (time === 0) {
@@ -955,7 +963,10 @@ export const useTimelineStore: any = create<TimelineStore>()(
               setTimeout(() => {
                 const newTimelineStore = useTimelineStore.getState();
                 newTimelineStore.seek(0);
-                newTimelineStore.play();
+                // Only play if the scene has animations (duration > 0)
+                if (newTimelineStore.playback.totalDuration > 0) {
+                  newTimelineStore.play();
+                }
               }, 50); // Small delay to ensure scene switch is complete
               
             } catch (error) {
@@ -981,7 +992,11 @@ export const useTimelineStore: any = create<TimelineStore>()(
         // Called on each tick. Keep GSAP timeline time in sync with store state.
         try {
           const { playback, gsapManager } = get();
-          gsapManager.updateTime(playback.currentTime);
+          // Only update time if the scene has animations (duration > 0)
+          // Also check the GSAP timeline duration to avoid race conditions during scene switching
+          if (playback.totalDuration > 0 && gsapManager.getTimelineDuration() > 0) {
+            gsapManager.updateTime(playback.currentTime);
+          }
         } catch {}
       },
 
