@@ -28,6 +28,7 @@ import { useTimelineStore } from '@/stores/use-timeline-store';
 import { useResponsiveCanvasPosition } from '@/hooks/use-responsive-canvas-position';
 import { useElementDragging } from '@/hooks/use-element-dragging';
 import { useSimpleElementDrag } from '@/hooks/use-simple-element-drag';
+import { useSimpleGroupDrag } from '@/hooks/use-simple-group-drag';
 import { useElementPointerHandlers } from '@/hooks/use-element-pointer-handlers';
 
 // Extend PIXI components for React
@@ -133,7 +134,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
   const canvasState = useCanvasState();
 
   // Get canvas operations and selection store
-  const { moveElement, moveMultipleElements, updateElement } = useCanvasOperations();
+  const { moveElement, moveMultipleElements, updateElement, moveGroup } = useCanvasOperations();
   const { select: selectElement } = useSelectionStore();
 
   // Get current canvas size
@@ -230,6 +231,46 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
     onSnapElement: props.onSnapElement,
     onSetSnapGuides: props.onSetSnapGuides,
     onClearSnapGuides: props.onClearSnapGuides,
+  });
+
+  // Use simple group drag for groups
+  const {
+    handlePointerDown: simpleGroupPointerDown,
+    handlePointerMove: simpleGroupPointerMove,
+    handlePointerUp: simpleGroupPointerUp,
+    isDragging: isGroupDragging,
+    draggingId: draggingGroupId,
+  } = useSimpleGroupDrag({
+    groups,
+    elements,
+    moveGroup,
+    selectGroup,
+    viewportRef: props.viewportRef,
+    designCanvasContainerRef: containerRef,
+    onSnapGroup: props.onSnapElement ? (group, allGroups, allElements) => {
+      // Use the same snapping logic as elements, but adapt it for groups
+      // For now, we'll use the element snapping with a virtual element
+      const virtualElement: AnimatedCanvasObject = {
+        id: `group-${group.id}`,
+        type: 'rectangle',
+        name: group.name,
+        x: group.x,
+        y: group.y,
+        width: 100,
+        height: 100,
+        rotation: 0,
+        fill: 'transparent',
+        stroke: '#2196F3',
+        strokeWidth: 2,
+        opacity: 1,
+        animations: [],
+        zIndex: 0
+      };
+      return props.onSnapElement!(virtualElement, allElements);
+    } : undefined,
+    onSetSnapGuides: props.onSetSnapGuides,
+    onClearSnapGuides: props.onClearSnapGuides,
+    onGroupContextMenu: props.onGroupContextMenu,
   });
 
   // Legacy/advanced handlers (endpoint drag, chaining, etc.) for non-select tools
@@ -350,6 +391,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         // Use simple drag when selecting
         if (tool === 'select') {
           simpleElementPointerMove(e);
+          simpleGroupPointerMove(e);
         }
         // Canvas interactions (draw, etc.)
         props.handleCanvasPointerMove(e);
@@ -360,6 +402,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         // End simple drag
         if (tool === 'select') {
           simpleElementPointerUp();
+          simpleGroupPointerUp();
         }
         // Call the canvas pointer up handler
         props.handlePointerUp();
@@ -370,6 +413,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         // End simple drag
         if (tool === 'select') {
           simpleElementPointerUp();
+          simpleGroupPointerUp();
         }
         // Call the canvas pointer up handler
         props.handlePointerUp();
@@ -480,48 +524,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
             interactive={tool === 'select'}
             eventMode={tool === 'select' ? 'dynamic' : 'none'}
             cursor={tool === 'select' ? 'move' : 'default'}
-            onPointerDown={tool === 'select' ? (e: FederatedPointerEvent) => {
-              e.stopPropagation();
-
-              // Check if this is a right-click for context menu
-              if (e.button === 2) {
-                if (props.onGroupContextMenu) {
-                  props.onGroupContextMenu(e, group.id);
-                }
-                return;
-              }
-
-              // Handle group selection - same approach as timeline
-              const isMultiSelect = (e.nativeEvent && 'metaKey' in e.nativeEvent) ?
-                (e.nativeEvent.metaKey || e.nativeEvent.ctrlKey) : false;
-
-              // Select the group directly (same as timeline)
-              selectGroup(group, isMultiSelect);
-
-              // Handle dragging if the group is already selected
-              if (isGroupSelected && props.handleGroupSelectionDragStart) {
-                // Create a virtual group element for dragging
-                const virtualGroupElement: AnimatedCanvasObject = {
-                  id: `group-${group.id}`,
-                  type: 'rectangle',
-                  name: group.name,
-                  x: group.x,
-                  y: group.y,
-                  width: 100, // Will be calculated properly in the handler
-                  height: 100,
-                  rotation: group.rotation || 0,
-                  fill: 'transparent',
-                  stroke: '#2196F3',
-                  strokeWidth: 2,
-                  opacity: 1,
-                  groupId: group.id,
-                  animations: [],
-                  zIndex: Math.max(...groupElements.map((el: AnimatedCanvasObject) => el.zIndex || 0))
-                };
-
-                props.handleGroupSelectionDragStart(virtualGroupElement, e.global.x, e.global.y, elements);
-              }
-            } : undefined}
+            onPointerDown={tool === 'select' ? simpleGroupPointerDown(group.id) : undefined}
             ref={(node) => {
               if (node) groupContainers.current[group.id] = node;
             }}
@@ -578,45 +581,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                 cursor="move"
                 onPointerDown={(e: FederatedPointerEvent) => {
                   e.stopPropagation();
-
-                  // Check if this is a right-click for context menu
-                  if (e.button === 2) {
-                    if (props.onGroupContextMenu) {
-                      props.onGroupContextMenu(e, group.id);
-                    }
-                    return;
-                  }
-
-                  // Handle group selection
-                  const isMultiSelect = (e.nativeEvent && 'metaKey' in e.nativeEvent) ?
-                    (e.nativeEvent.metaKey || e.nativeEvent.ctrlKey) : false;
-
-                  // Select the group directly (same as timeline)
-                  selectGroup(group, isMultiSelect);
-
-                  // Handle dragging if the group is already selected
-                  if (isGroupSelected && props.handleGroupSelectionDragStart) {
-                    // Create a virtual group element for dragging
-                    const virtualGroupElement: AnimatedCanvasObject = {
-                      id: `group-${group.id}`,
-                      type: 'rectangle',
-                      name: group.name,
-                      x: group.x,
-                      y: group.y,
-                      width: 100, // Will be calculated properly in the handler
-                      height: 100,
-                      rotation: group.rotation || 0,
-                      fill: 'transparent',
-                      stroke: '#2196F3',
-                      strokeWidth: 2,
-                      opacity: 1,
-                      groupId: group.id,
-                      animations: [],
-                      zIndex: Math.max(...groupElements.map((el: AnimatedCanvasObject) => el.zIndex || 0))
-                    };
-
-                    props.handleGroupSelectionDragStart(virtualGroupElement, e.global.x, e.global.y, elements);
-                  }
+                  // This is just a transparent hit area - the main group container handles all interactions
                 }}
               />
             )}
