@@ -119,6 +119,7 @@ interface UIState {
   snapping: SnappingState;
   canvas: CanvasState;
   canvasZoom: number;
+  canvasPan: { x: number; y: number };
   preferences: UserPreferences;
   keyboardShortcuts: KeyboardShortcut[];
   navigation: NavigationState;
@@ -194,6 +195,7 @@ interface UIActions {
   setCanvasDimensions: (dimensions: { width: number; height: number }) => void;
   getCanvasDimensions: () => { width: number; height: number };
   setCanvasZoom: (zoom: number) => void;
+  setCanvasPan: (pan: { x: number; y: number }) => void;
   
   // Uploaded Files Actions
   addUploadedFile: (file: UploadedFile) => void;
@@ -358,6 +360,7 @@ export const useUIStore = create<UIStore>((set, get) => {
     snapping: defaultSnappingState,
     canvas: defaultCanvasState,
     canvasZoom: 1,
+    canvasPan: { x: 0, y: 0 },
     preferences: defaultUserPreferences,
     keyboardShortcuts: defaultKeyboardShortcuts,
     navigation: { activeNav: null, hoverNav: null, interactedNav: null },
@@ -782,6 +785,12 @@ export const useUIStore = create<UIStore>((set, get) => {
       // Clamp to a reasonable range
       const clamped = Math.max(0.05, Math.min(10, zoom));
       state.canvasZoom = clamped;
+    }));
+  },
+
+  setCanvasPan: (pan: { x: number; y: number }) => {
+    set(produce((state) => {
+      state.canvasPan = { x: pan.x, y: pan.y };
     }));
   },
 

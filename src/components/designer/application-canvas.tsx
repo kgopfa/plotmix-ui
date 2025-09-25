@@ -88,9 +88,11 @@ export interface ApplicationCanvasRef extends TimelineCanvasRef {
 
 export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCanvasProps>(
   (props, ref) => {
-    // Read and write zoom from the UI store instead of props
+    // Read and write zoom and pan from the UI store instead of props
     const canvasZoom = useUIStore(state => state.canvasZoom);
+    const canvasPan = useUIStore(state => state.canvasPan);
     const setCanvasZoom = useUIStore(state => state.setCanvasZoom);
+    const setCanvasPan = useUIStore(state => state.setCanvasPan);
     const appRef = useRef<ApplicationRef | null>(null);
     const viewportRef = useRef<ViewportWrapper | null>(null);
     const canvasContainerRef = useRef<HTMLDivElement | null>(null);
@@ -326,18 +328,34 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
     // Initialize viewport to center on the actual design canvas container position
     // Delay to ensure PIXI application, viewport world, and container refs are mounted
 
-    // Listen for viewport zoom changes and sync back to store (attach after ref is ready)
+    // Listen for viewport zoom and pan changes and sync back to store (attach after ref is ready)
     useEffect(() => {
       let attached = false;
       let vp: ViewportWrapper | null = null;
       let intervalId: NodeJS.Timeout | null = null;
       let lastKnownZoom = canvasZoom;
+      let lastKnownPan = canvasPan;
 
       const handleZoomChange = () => {
         const current = vp?.scale.x ?? viewportRef.current?.scale.x;
         if (typeof current === 'number' && current !== lastKnownZoom) {
           lastKnownZoom = current;
           setCanvasZoom(current);
+        }
+      };
+
+      const handlePanChange = () => {
+        const currentX = vp?.center.x ?? viewportRef.current?.center.x;
+        const currentY = vp?.center.y ?? viewportRef.current?.center.y;
+        if (typeof currentX === 'number' && typeof currentY === 'number') {
+          const newPan = { x: currentX, y: currentY };
+          if (newPan.x !== lastKnownPan.x || newPan.y !== lastKnownPan.y) {
+            lastKnownPan = newPan;
+            setCanvasPan(newPan);
+            
+            // Log panning events with timestamp
+            console.log(`[Canvas Pan] X: ${Math.round(newPan.x)}, Y: ${Math.round(newPan.y)} at ${new Date().toISOString()}`);
+          }
         }
       };
 
@@ -369,17 +387,37 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
         // Use a more aggressive approach - also check zoom on any viewport change
         vp.on('moved', () => {
           handleZoomChange();
+          handlePanChange();
         });
         vp.on('frame-end', () => {
           handleZoomChange();
+          handlePanChange();
         });
 
-        // Add a more frequent check for pinch gestures
+        // Listen for pan-specific events
+        vp.on('drag-start', () => {
+          handlePanChange();
+        });
+        vp.on('drag', () => {
+          handlePanChange();
+        });
+        vp.on('drag-end', () => {
+          handlePanChange();
+        });
+
+        // Add a more frequent check for pinch gestures and panning
         intervalId = setInterval(() => {
-          if (vp && vp.scale.x !== lastKnownZoom) {
-            handleZoomChange();
+          if (vp) {
+            if (vp.scale.x !== lastKnownZoom) {
+              handleZoomChange();
+            }
+            const currentX = vp.center.x;
+            const currentY = vp.center.y;
+            if (currentX !== lastKnownPan.x || currentY !== lastKnownPan.y) {
+              handlePanChange();
+            }
           }
-        }, 16); // Check every 16ms (60fps) for very responsive pinch detection
+        }, 16); // Check every 16ms (60fps) for very responsive pinch detection and panning
 
         attached = true;
         return true;
@@ -402,9 +440,12 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
           vp.off('scale', handleZoomChange);
           vp.off('moved', handleZoomChange);
           vp.off('frame-end', handleZoomChange);
+          vp.off('drag-start', handlePanChange);
+          vp.off('drag', handlePanChange);
+          vp.off('drag-end', handlePanChange);
         }
       };
-    }, [setCanvasZoom, canvasZoom]);
+    }, [setCanvasZoom, setCanvasPan, canvasZoom, canvasPan]);
 
     // Use custom hook for viewport empty area click handling
     useViewportEmptyAreaClick({
