@@ -45,8 +45,6 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
 }) => {
   const [projectName, setProjectName] = useState('Project Name');
   const { projectId, name, title, saveStatus, captureBaseline, setProjectInfo, setSaveStatus } = useProjectStore();
-  const canvasZoom = useUIStore(state => state.canvasZoom);
-  const canvasPan = useUIStore(state => state.canvasPan);
 
   useEffect(() => {
     if (name) setProjectName(name);
@@ -247,15 +245,6 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
                   </div>
                 </div>
 
-                {/* Page Zoom and Pan (reflects viewport zoom and position) */}
-                <div className="ml-4 flex items-center gap-2">
-                  <div className="text-sm font-mono text-gray-600 w-16 rounded-md px-3 py-1.5 border border-gray-300 text-center select-none" title="Canvas Zoom">
-                    {`${Math.round((canvasZoom ?? 1) * 100)}%`}
-                  </div>
-                  <div className="text-sm font-mono text-gray-600 w-24 rounded-md px-3 py-1.5 border border-gray-300 text-center select-none" title="Canvas Position">
-                    {`X:${Math.round(canvasPan?.x ?? 0)} Y:${Math.round(canvasPan?.y ?? 0)}`}
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -264,16 +253,19 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
           <div className="flex items-center gap-4">
             {/* Desktop user menu */}
             <div className="hidden lg:flex lg:items-center gap-x-5 mr-5">
+              {/* 
               <Link
                 href={`/scripts/${projectId}`}
                 className="group h-9 w-10 flex items-center justify-center rounded-md bg-gradient-to-r from-slate-500 to-gray-600 text-white shadow-lg shadow-slate-600/30 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 hover:from-slate-700 hover:to-gray-800"
               >
                 <CodeXml className="size-5 transition-all duration-200 group-hover:scale-110 drop-shadow-sm" />
               </Link>
+              */}
 
+              {/* Share */}
               <button
                 type="button"
-                className="group relative inline-flex w-28 h-9 items-center gap-x-2.5 rounded-md bg-gradient-to-r from-indigo-500 to-purple-600 px-3 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 hover:from-indigo-600 hover:to-purple-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95"
+                className="group relative inline-flex w-28 h-9 items-center gap-x-2.5 rounded-lg bg-purple-600 opacity-90 px-3 py-2 text-sm font-semibold text-white hover:from-indigo-600 hover:to-purple-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95"
               >
                 <Upload className="size-4 ml-1.5 transition-all duration-200 group-hover:scale-110 drop-shadow-sm" />
                 <span className="text-sm">Share</span>
