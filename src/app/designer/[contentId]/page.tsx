@@ -45,9 +45,6 @@ export default function DesignerPage() {
       uiStore.clearChainedLineIds();
       uiStore.setClosingShape(false);
       uiStore.setAnimationTarget(null);
-      
-      // Reset canvas zoom to default
-      uiStore.setCanvasZoom(1);
     } catch {}
 
     try {

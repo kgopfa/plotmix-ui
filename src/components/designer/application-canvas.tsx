@@ -324,10 +324,6 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
     useEffect(() => {
       setDismissedEditButtons(new Set());
     }, [props.selectedIds.join(',')]);
-
-    // Initialize viewport to center on the actual design canvas container position
-    // Delay to ensure PIXI application, viewport world, and container refs are mounted
-
     // Listen for viewport zoom and pan changes and sync back to store (attach after ref is ready)
     useEffect(() => {
       let attached = false;
@@ -362,6 +358,10 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       const attach = () => {
         vp = viewportRef.current;
         if (!vp) return false;
+
+        // Initialize lastKnownZoom with the actual viewport zoom to prevent initial sync issues
+        lastKnownZoom = vp.scale.x;
+        lastKnownPan = { x: vp.center.x, y: vp.center.y };
 
         // Listen for all zoom-related events
         vp.on('zoomed', () => {
@@ -659,6 +659,8 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
             worldWidth={canvasWidth * 3}
             worldHeight={canvasHeight * 3}
             stopPropagation={false}
+            initialZoom={canvasZoom}
+            initialCenter={canvasPan}
             ref={viewportRef}
           >
             <DesignCanvas

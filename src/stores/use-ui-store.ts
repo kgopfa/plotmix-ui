@@ -349,7 +349,7 @@ export const useUIStore = create<UIStore>((set, get) => {
 
   const persistedState = loadPersistedState();
 
-  return {
+  const initialState = {
     // Initial state with persisted values
     panels: defaultPanelState,
     tools: {
@@ -359,8 +359,8 @@ export const useUIStore = create<UIStore>((set, get) => {
     },
     snapping: defaultSnappingState,
     canvas: defaultCanvasState,
-    canvasZoom: 1,
-    canvasPan: { x: 0, y: 0 },
+    canvasZoom: 0.42, // 42%
+    canvasPan: { x: 2800, y: 1700 },
     preferences: defaultUserPreferences,
     keyboardShortcuts: defaultKeyboardShortcuts,
     navigation: { activeNav: null, hoverNav: null, interactedNav: null },
@@ -369,6 +369,10 @@ export const useUIStore = create<UIStore>((set, get) => {
     showAnimationsTab: false,
     uploadedFiles: defaultUploadedFilesState,
     aiPromptHistory: [],
+  };
+
+  return {
+    ...initialState,
 
   // Panel Actions
   toggleLeftPanel: () => {

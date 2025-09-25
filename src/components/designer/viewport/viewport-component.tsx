@@ -34,6 +34,8 @@ declare global {
         worldWidth?: number | null;
         worldHeight?: number | null;
         stopPropagation?: boolean;
+        initialZoom?: number;
+        initialCenter?: { x: number; y: number };
         ref?: React.Ref<ViewportWrapper>;
       }>;
     }

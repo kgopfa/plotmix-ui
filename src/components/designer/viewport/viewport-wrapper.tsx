@@ -8,11 +8,19 @@ export type ViewportProps = Omit<IViewportOptions, "events"> & {
    * while keeping programmatic controls (centerOnDesign, zoomToFit, setZoom) available.
    */
   readonly?: boolean;
+  /**
+   * Initial zoom level for the viewport
+   */
+  initialZoom?: number;
+  /**
+   * Initial center position for the viewport
+   */
+  initialCenter?: { x: number; y: number };
 };
 
 export class ViewportWrapper extends BaseViewport {
   constructor(options: ViewportProps & { app: PixiApplication }) {
-    const { app, readonly, ...rest } = options;
+    const { app, readonly, initialZoom, initialCenter, ...rest } = options;
     super({
       ...rest,
       events: app.renderer.events,
@@ -40,14 +48,19 @@ export class ViewportWrapper extends BaseViewport {
 
     }
 
-    // Initial zoom only; avoid animation to prevent race with later centering
-    this.setZoom(1, false);
+    // Use initial zoom from props, or default to 1
+    const zoom = initialZoom ?? 1;
+    this.setZoom(zoom, false);
 
-    // Center on world center by default so content isn't off-screen
-    const ww = (rest.worldWidth ?? 0) as number;
-    const wh = (rest.worldHeight ?? 0) as number;
-    if (ww > 0 && wh > 0) {
-      this.moveCenter(ww / 2, wh / 2);
+    // Use initial center from props, or center on world center by default
+    if (initialCenter) {
+      this.moveCenter(initialCenter.x, initialCenter.y);
+    } else {
+      const ww = (rest.worldWidth ?? 0) as number;
+      const wh = (rest.worldHeight ?? 0) as number;
+      if (ww > 0 && wh > 0) {
+        this.moveCenter(ww / 2, wh / 2);
+      }
     }
   }
 }
