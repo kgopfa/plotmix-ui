@@ -349,6 +349,70 @@ export const useUIStore = create<UIStore>((set, get) => {
 
   const persistedState = loadPersistedState();
 
+  // Detect screen size and get appropriate initial values
+  const getScreenSizeValues = () => {
+    if (typeof window === 'undefined') {
+      // Default values for SSR
+      return { zoom: 0.42, pan: { x: 2800, y: 1700 } };
+    }
+
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+    
+    // Define screen size presets with their optimal zoom and pan values
+    const screenPresets = [
+      // Small laptops (13-14 inch)
+      { 
+        name: 'Small Laptop (13-14")', 
+        width: { min: 1200, max: 1600 }, 
+        height: { min: 600, max: 900 },
+        zoom: 0.42, 
+        pan: { x: 2800, y: 1700 } 
+      },
+      // Medium laptops (15-16 inch)
+      { 
+        name: 'Medium Laptop (15-16")', 
+        width: { min: 1600, max: 2000 }, 
+        height: { min: 900, max: 1200 },
+        zoom: 0.35, 
+        pan: { x: 3200, y: 2000 } 
+      },
+      // Large laptops/desktops (17+ inch)
+      { 
+        name: 'Large Laptop/Desktop (17+")', 
+        width: { min: 2000, max: 3000 }, 
+        height: { min: 1200, max: 1800 },
+        zoom: 0.28, 
+        pan: { x: 4000, y: 2500 } 
+      },
+      // Ultra-wide/4K monitors
+      { 
+        name: 'Ultra-wide/4K Monitor', 
+        width: { min: 3000, max: 9999 }, 
+        height: { min: 1800, max: 9999 },
+        zoom: 0.20, 
+        pan: { x: 5000, y: 3000 } 
+      }
+    ];
+
+    // Find matching preset
+    const matchingPreset = screenPresets.find(preset => 
+      screenWidth >= preset.width.min && screenWidth <= preset.width.max &&
+      screenHeight >= preset.height.min && screenHeight <= preset.height.max
+    );
+
+    const selectedPreset = matchingPreset || screenPresets[0]; // Default to small laptop
+    
+    console.log(`[Screen Detection] ${screenWidth}x${screenHeight} → ${selectedPreset.name} → Zoom: ${selectedPreset.zoom}, Pan: X:${selectedPreset.pan.x}, Y:${selectedPreset.pan.y}`);
+    
+    return {
+      zoom: selectedPreset.zoom,
+      pan: selectedPreset.pan
+    };
+  };
+
+  const screenValues = getScreenSizeValues();
+
   const initialState = {
     // Initial state with persisted values
     panels: defaultPanelState,
@@ -359,8 +423,8 @@ export const useUIStore = create<UIStore>((set, get) => {
     },
     snapping: defaultSnappingState,
     canvas: defaultCanvasState,
-    canvasZoom: 0.42, // 42%
-    canvasPan: { x: 2800, y: 1700 },
+    canvasZoom: screenValues.zoom,
+    canvasPan: screenValues.pan,
     preferences: defaultUserPreferences,
     keyboardShortcuts: defaultKeyboardShortcuts,
     navigation: { activeNav: null, hoverNav: null, interactedNav: null },
