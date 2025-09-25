@@ -367,7 +367,7 @@ export const useUIStore = create<UIStore>((set, get) => {
         width: { min: 1200, max: 1600 }, 
         height: { min: 600, max: 900 },
         zoom: 0.42, 
-        pan: { x: 2800, y: 1700 } 
+        pan: { x: 2850, y: 1700 } 
       },
       // Medium laptops (15-16 inch)
       { 
