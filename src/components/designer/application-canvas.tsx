@@ -12,7 +12,7 @@ import { RightClickOptions } from './panels/right-click-options';
 import { contextMenuManager } from '@/lib/context-menu-manager';
 import { useViewportEmptyAreaClick, useContainerEmptyAreaClick } from '@/hooks';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
-import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager';
+import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager-v2';
 import type { SnapGuide } from '../../utils/element-snapping';
 import type { FederatedPointerEvent } from 'pixi.js';
 

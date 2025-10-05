@@ -1,12 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useUIStore } from '@/stores/use-ui-store';
-import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
+import { GSAPTimelineManagerV2 } from '@/lib/gsap-timeline-manager-v2';
 import { AnimatedCanvasObject } from '@/types/canvas';
 import { useSelectionStore } from '@/stores/use-selection-store';
+import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
 
 interface UseCanvasEventListenersProps {
-  gsapManager: GSAPTimelineManager;
+  gsapManager: GSAPTimelineManagerV2;
   updateAnimationsForPathElement: (elements: AnimatedCanvasObject[], pathElement: AnimatedCanvasObject) => AnimatedCanvasObject[];
   addPathToAnimation: (pathShape: AnimatedCanvasObject) => void;
   togglePathMode: () => void;
@@ -23,6 +24,7 @@ export const useCanvasEventListeners = ({
   clearElementSnapGuides
 }: UseCanvasEventListenersProps) => {
   const { elements: canvasObjects, updateElement } = useCanvasStore();
+  const { buildGSAPTimeline: buildTimelineV2 } = useTimelineStoreV2();
   const elementsRef = useRef(canvasObjects);
   elementsRef.current = canvasObjects;
 
@@ -188,8 +190,7 @@ export const useCanvasEventListeners = ({
 
         // Force a state update first, then rebuild timeline
         setTimeout(() => {
-
-          gsapManager.buildAnimationTimeline(elementsWithUpdatedAnimations);
+          buildTimelineV2();
         }, 10); // Small delay to ensure state is updated
 
         // Update all elements at once
@@ -305,8 +306,7 @@ export const useCanvasEventListeners = ({
 
       // Rebuild timeline after animation path update
       setTimeout(() => {
-
-        gsapManager.buildAnimationTimeline(elementsWithUpdatedAnimations);
+        buildTimelineV2();
       }, 10);
 
       // Update all elements

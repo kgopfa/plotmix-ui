@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import gsap from 'gsap';
 import type { ApplicationCanvasRef } from '@/components/designer/application-canvas';
-import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager';
+import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager-v2';
 import type { FederatedPointerEvent } from 'pixi.js';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { useCanvasStore } from '@/stores/use-canvas-store';

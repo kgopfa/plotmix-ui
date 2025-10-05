@@ -8,7 +8,7 @@ import { Viewport, ViewportWrapper, centerOnDesign, zoomToFit, resetZoom } from 
 import { useCanvasState } from '@/stores/use-ui-store';
 import { useViewportEmptyAreaClick } from '@/hooks';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
-import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager';
+import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager-v2';
 import type { SnapGuide } from '../../../utils/element-snapping';
 import type { FederatedPointerEvent } from 'pixi.js';
 

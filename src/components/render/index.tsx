@@ -8,9 +8,9 @@ import { TimelineManager } from '@/lib/timeline-manager';
 import { useCanvasElements, useCanvasGroups, useCanvasStore } from '@/stores/use-canvas-store';
 import { useTimelineSync, useTimelineStore } from '@/stores/use-timeline-store';
 import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
-import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
+import { GSAPTimelineManagerV2 } from '@/lib/gsap-timeline-manager-v2';
 import { Container } from 'pixi.js';
-import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager';
+import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager-v2';
 import { AnimatedCanvasObject } from '@/types/canvas';
 import dynamic from 'next/dynamic';
 import { useCanvasDimensions } from '@/hooks/use-canvas-dimensions';
@@ -72,7 +72,7 @@ export default function ScreenCapture({ autoplayOnReady = false, recordDurationS
 
   // Panel resize handlers
   const { handleMouseDown } = usePanelResize();
-  const gsapManager = useMemo(() => new GSAPTimelineManager(), []);
+  const gsapManager = useMemo(() => new GSAPTimelineManagerV2(), []);
 
   // Memoize the timeline manager instance
   const timelineManager = useMemo(() => TimelineManager.getInstance(), []);

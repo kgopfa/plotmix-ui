@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { useTimelineStore } from '@/stores/use-timeline-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import type { ElementAnimation } from '@/types/canvas';
-import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager';
+import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager-v2';
 
 /**
  * Enhanced Timeline Integration Hook

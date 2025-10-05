@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { AnimatedCanvasObject, CanvasGroup, ElementAnimation } from '@/types/canvas';
-import { GSAPTimelineManager, type TimelinePerformanceMetrics } from './gsap-timeline-manager';
+import type { AnimatedCanvasObject, CanvasGroup, ElementAnimation, TimelineAnimation } from '@/types/canvas';
+import { GSAPTimelineManagerV2, type TimelinePerformanceMetrics } from './gsap-timeline-manager-v2';
 
 /**
  * Performance metrics interface
@@ -33,7 +33,7 @@ interface CacheEntry {
  * - Proper error handling
  * - Foundation for Phase 2 individual timeline implementation
  */
-export class GSAPTimelineManagerEnhanced extends GSAPTimelineManager {
+export class GSAPTimelineManagerEnhanced extends GSAPTimelineManagerV2 {
   private elementCache = new Map<string, CacheEntry>();
   private groupCache = new Map<string, CacheEntry>();
   private metrics: PerformanceMetrics = {
@@ -55,12 +55,12 @@ export class GSAPTimelineManagerEnhanced extends GSAPTimelineManager {
   /**
    * Enhanced timeline building with intelligent optimization
    */
-  buildAnimationTimeline(elements: AnimatedCanvasObject[], groups?: CanvasGroup[]) {
+  buildAnimationTimeline(timelineAnimations: TimelineAnimation[], elements: AnimatedCanvasObject[], groups?: CanvasGroup[]) {
     const startTime = performance.now();
 
     try {
       // Performance check - skip if no animations and already optimized
-      if (!this.hasAnimations(elements, groups)) {
+      if (!this.hasAnimations(timelineAnimations)) {
         if (this.timeline.duration() === 0) {
           return;
         } else {
@@ -72,28 +72,27 @@ export class GSAPTimelineManagerEnhanced extends GSAPTimelineManager {
       // Clean expired cache entries
       this.cleanExpiredCache();
 
-      // Detect only changed elements and groups
-      const changedElements = this.detectChangedElements(elements);
-      const changedGroups = this.detectChangedGroups(groups || []);
+      // Detect only changed timeline animations
+      const changedAnimations = this.detectChangedAnimations(timelineAnimations);
 
       // Force rebuild if we have animations but no timeline content
       const hasTimelineContent = this.timeline.duration() > 0;
-      const forceRebuild = !hasTimelineContent && this.hasAnimations(elements, groups);
+      const forceRebuild = !hasTimelineContent && this.hasAnimations(timelineAnimations);
 
-      if (changedElements.length === 0 && changedGroups.length === 0 && !forceRebuild) {
+      if (changedAnimations.length === 0 && !forceRebuild) {
         this.metrics.cacheHits++;
         return; // No changes, skip rebuild
       }
 
       this.metrics.cacheMisses++;
-      this.metrics.elementsProcessed += elements.length; // Process all elements for safety
+      this.metrics.elementsProcessed += elements.length;
       this.metrics.groupsProcessed += (groups || []).length;
 
       // For Phase 1, we'll do a smart full rebuild with caching
-      this.performOptimizedRebuild(elements, groups || []);
+      this.performOptimizedRebuild(timelineAnimations, elements, groups || []);
 
       // Update cache with new hashes
-      this.updateCache(elements, groups || []);
+      this.updateCache(timelineAnimations);
 
       // Update performance metrics
       const rebuildTime = performance.now() - startTime;
@@ -107,30 +106,21 @@ export class GSAPTimelineManagerEnhanced extends GSAPTimelineManager {
   /**
    * Perform optimized rebuild (Phase 1 approach)
    */
-  private performOptimizedRebuild(elements: AnimatedCanvasObject[], groups: CanvasGroup[]) {
+  private performOptimizedRebuild(timelineAnimations: TimelineAnimation[], elements: AnimatedCanvasObject[], groups: CanvasGroup[]) {
     // Use the parent class's proven implementation but with our optimizations
-    super.buildAnimationTimeline(elements, groups);
+    super.buildAnimationTimeline(timelineAnimations, elements, groups);
   }
 
   /**
    * Update cache with current animation hashes
    */
-  private updateCache(elements: AnimatedCanvasObject[], groups: CanvasGroup[]) {
+  private updateCache(timelineAnimations: TimelineAnimation[]) {
     const now = Date.now();
 
-    // Update element cache
-    elements.forEach(element => {
-      const animationHash = this.hashAnimations(element.animations);
-      this.elementCache.set(element.id, {
-        animationHash,
-        lastUpdate: now
-      });
-    });
-
-    // Update group cache
-    groups.forEach(group => {
-      const animationHash = this.hashAnimations(group.animations);
-      this.groupCache.set(group.id, {
+    // Update animation cache
+    timelineAnimations.forEach(animation => {
+      const animationHash = this.hashTimelineAnimation(animation);
+      this.elementCache.set(animation.id, {
         animationHash,
         lastUpdate: now
       });
@@ -138,62 +128,44 @@ export class GSAPTimelineManagerEnhanced extends GSAPTimelineManager {
   }
 
   /**
-   * Create hash for animations to detect changes
+   * Create hash for timeline animation to detect changes
    */
-  private hashAnimations(animations: ElementAnimation[]): string {
-    if (animations.length === 0) return '';
-
-    return JSON.stringify(animations.map(anim => ({
-      id: anim.id,
-      type: anim.type,
-      startTime: anim.startTime,
-      duration: anim.duration,
-      properties: anim.properties,
-      easing: anim.easing,
-      repeat: anim.repeat,
-      repeatDelay: anim.repeatDelay,
-      yoyo: anim.yoyo
-    })));
-  }
-
-  /**
-   * Check if any animations exist in elements or groups
-   */
-  private hasAnimations(elements: AnimatedCanvasObject[], groups?: CanvasGroup[]): boolean {
-    const hasElementAnimations = elements.some(el =>
-      !el.isAnimationPath && el.animations && el.animations.length > 0
-    );
-    const hasGroupAnimations = groups?.some(group =>
-      !group.isDefaultGroup && group.animations && group.animations.length > 0
-    ) ?? false;
-    
-    const result = hasElementAnimations || hasGroupAnimations;
-
-    return result;
-  }
-
-  /**
-   * Detect which elements have changed animations since last build
-   */
-  private detectChangedElements(elements: AnimatedCanvasObject[]): AnimatedCanvasObject[] {
-    return elements.filter(element => {
-      const cached = this.elementCache.get(element.id);
-      if (!cached) return true;
-
-      const currentHash = this.hashAnimations(element.animations);
-      return cached.animationHash !== currentHash;
+  private hashTimelineAnimation(animation: TimelineAnimation): string {
+    return JSON.stringify({
+      id: animation.id,
+      displayName: animation.displayName,
+      target: animation.target,
+      startAt: animation.startAt,
+      tracks: animation.tracks.map(track => ({
+        id: track.id,
+        type: track.type,
+        startTime: track.startTime,
+        duration: track.duration,
+        properties: track.properties,
+        easing: track.easing,
+        repeat: track.repeat,
+        repeatDelay: track.repeatDelay,
+        yoyo: track.yoyo
+      }))
     });
   }
 
   /**
-   * Detect which groups have changed animations since last build
+   * Check if any animations exist in timeline
    */
-  private detectChangedGroups(groups: CanvasGroup[]): CanvasGroup[] {
-    return groups.filter(group => {
-      const cached = this.groupCache.get(group.id);
+  private hasAnimations(timelineAnimations?: TimelineAnimation[]): boolean {
+    return timelineAnimations ? timelineAnimations.length > 0 : false;
+  }
+
+  /**
+   * Detect which timeline animations have changed since last build
+   */
+  private detectChangedAnimations(timelineAnimations: TimelineAnimation[]): TimelineAnimation[] {
+    return timelineAnimations.filter(animation => {
+      const cached = this.elementCache.get(animation.id);
       if (!cached) return true;
 
-      const currentHash = this.hashAnimations(group.animations);
+      const currentHash = this.hashTimelineAnimation(animation);
       return cached.animationHash !== currentHash;
     });
   }
@@ -204,14 +176,14 @@ export class GSAPTimelineManagerEnhanced extends GSAPTimelineManager {
   private cleanExpiredCache() {
     const now = Date.now();
 
-    // Clean element cache
+    // Clean animation cache
     for (const [key, entry] of this.elementCache.entries()) {
       if (now - entry.lastUpdate > this.CACHE_TTL || this.elementCache.size > this.maxCacheSize) {
         this.elementCache.delete(key);
       }
     }
 
-    // Clean group cache
+    // Clean group cache (keeping for compatibility)
     for (const [key, entry] of this.groupCache.entries()) {
       if (now - entry.lastUpdate > this.CACHE_TTL || this.groupCache.size > this.maxCacheSize) {
         this.groupCache.delete(key);

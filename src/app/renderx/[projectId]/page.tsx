@@ -10,7 +10,7 @@ import { useUIStore } from '@/stores/use-ui-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useTimelineStore, useTimelineSync } from '@/stores/use-timeline-store';
 import { useTimelineIntegration } from '@/hooks/use-timeline-integration';
-import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager';
+import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager-v2';
 import type { ApplicationCanvasRef } from '@/components/render/canvas/application-canvas';
 import type { FederatedPointerEvent } from 'pixi.js';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';

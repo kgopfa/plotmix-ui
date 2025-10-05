@@ -8,22 +8,21 @@ import { useSelectionStore } from '@/stores/use-selection-store';
 import { useCanvasElements, useCanvasGroups, useCanvasStore } from '@/stores/use-canvas-store';
 import { useUIStore, useActiveNav, useActiveRightPanel, useSnappingState, useCanvasState } from '@/stores/use-ui-store';
 import { useTimelineSync, useTimelineStore } from '@/stores/use-timeline-store';
+import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
 import { useCanvasMigration } from '@/hooks/use-canvas-migration';
-import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
+import { GSAPTimelineManagerV2 } from '@/lib/gsap-timeline-manager-v2';
 import { Graphics, Container } from 'pixi.js';
 import { PropertiesPanel } from './navigation/right-sidebar/properties-panel';
 import { AnimationsPanel } from './navigation/right-sidebar/animations-panel';
 import { LayersTab } from './navigation/right-sidebar/tabs/layers-tab';
 import { ScenesTab } from './navigation/right-sidebar/tabs/scenes-tab';
-import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager';
+import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager-v2';
 import { Timeline } from './timeline';
 import { MaskOverlay } from './helpers/mask-overlay';
 import { AnimatedCanvasObject, ElementAnimation, CanvasGroup } from '@/types/canvas';
 import dynamic from 'next/dynamic';
 import { useCanvasDimensions } from '@/hooks/use-canvas-dimensions';
 import { useTimelineIntegration } from '@/hooks/use-timeline-integration';
-import { useElementSnapping } from '@/hooks/use-element-snapping';
-import { useGridSnapping } from '@/hooks/use-grid-snapping';
 import type { SnapGuide } from '@/utils/element-snapping';
 import { useElementBoundsCache } from '@/hooks/use-element-bounds-cache';
 import { usePanelResize } from '@/hooks/use-panel-resize';
@@ -112,6 +111,7 @@ export default function Designer() {
 
   // Animation playback state - needed for UI hiding during playback
   const isPlaying = useTimelineStore((state: any) => state.playback.isPlaying);
+  const { timelineAnimations, buildGSAPTimeline: buildTimelineV2 } = useTimelineStoreV2();
 
   // Canvas container ref for wheel event handling
   const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -293,7 +293,7 @@ export default function Designer() {
 
   // Panel resize handlers
   const { handleMouseDown } = usePanelResize();
-  const gsapManager = useMemo(() => new GSAPTimelineManager(), []);
+  const gsapManager = useMemo(() => new GSAPTimelineManagerV2(), []);
 
   // Memoize the timeline manager instance
   const timelineManager = useMemo(() => TimelineManager.getInstance(), []);
@@ -648,7 +648,7 @@ export default function Designer() {
 
           // Update the GSAP timeline after the state update
           setTimeout(() => {
-            gsapManager.buildAnimationTimeline(newElements);
+            buildTimelineV2();
           }, 0);
 
           return newElements;
@@ -728,7 +728,7 @@ export default function Designer() {
 
         // Rebuild timeline after group animation changes
         setTimeout(() => {
-          gsapManager.buildAnimationTimeline(canvasObjects, updatedGroups);
+          buildTimelineV2();
         }, 0);
       }
 
