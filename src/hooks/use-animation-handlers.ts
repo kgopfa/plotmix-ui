@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   AnimatedCanvasObject, 
   GsapEase, 
@@ -23,11 +23,13 @@ export function useAnimationHandlers(
 ) {
   const { timelineAnimations } = useTimelineStoreV2();
   
-  const elementAnimations = selectedElement 
-    ? timelineAnimations
-        .filter(anim => anim.target.type === 'element' && anim.target.id === selectedElement.id)
-        .flatMap(anim => anim.tracks)
-    : [];
+  const elementAnimations = useMemo(() => {
+    return selectedElement 
+      ? timelineAnimations
+          .filter(anim => anim.target.type === 'element' && anim.target.id === selectedElement.id)
+          .flatMap(anim => anim.tracks)
+      : [];
+  }, [selectedElement, timelineAnimations]);
   
   const [localAnimations, setLocalAnimations] = useState<ElementAnimation[]>(elementAnimations);
 

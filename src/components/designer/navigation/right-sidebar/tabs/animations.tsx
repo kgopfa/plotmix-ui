@@ -70,51 +70,53 @@ export function AnimationsTab({
   }, [localAnimations, selectedGroup?.id, selectedElement?.id]); // Sync when localAnimations prop changes
 
   // Auto-rebuild timeline when animations change
-  useEffect(() => {
-    // Prevent infinite loop by checking if we're already syncing
-    if (isSyncingRef.current) {
-      return;
-    }
+  // Note: This effect is removed as it was causing infinite loops with the new timeline structure
+  // The V2 timeline store handles updates differently and doesn't need this complex syncing
+  // useEffect(() => {
+  //   // Prevent infinite loop by checking if we're already syncing
+  //   if (isSyncingRef.current) {
+  //     return;
+  //   }
 
-    // Only sync when local animations actually differ from incoming props
-    const animationsChanged = JSON.stringify(animations) !== JSON.stringify(localAnimations);
+  //   // Only sync when local animations actually differ from incoming props
+  //   const animationsChanged = JSON.stringify(animations) !== JSON.stringify(localAnimations);
     
-    if (animationsChanged) {
-      isSyncingRef.current = true;
+  //   if (animationsChanged) {
+  //     isSyncingRef.current = true;
 
-      // Update timeline animations instead of element/group animations
-      if (selectedGroup) {
-        // TODO: Update timeline animations for group
-        console.warn('Updating group animations needs to be implemented for new timeline structure');
-      } else if (selectedElement) {
-        // TODO: Update timeline animations for element
-        console.warn('Updating element animations needs to be implemented for new timeline structure');
-      }
+  //     // Update timeline animations instead of element/group animations
+  //     if (selectedGroup) {
+  //       // TODO: Update timeline animations for group
+  //       console.warn('Updating group animations needs to be implemented for new timeline structure');
+  //     } else if (selectedElement) {
+  //       // TODO: Update timeline animations for element
+  //       console.warn('Updating element animations needs to be implemented for new timeline structure');
+  //     }
 
-      // Force Timeline Store to sync with Canvas Store
-      const canvasElements = canvasStore.getAllElements();
-      const canvasGroups = canvasStore.getAllGroups();
-      const timelineStore = useTimelineStoreV2.getState();
+  //     // Force Timeline Store to sync with Canvas Store
+  //     const canvasElements = canvasStore.getAllElements();
+  //     const canvasGroups = canvasStore.getAllGroups();
+  //     const timelineStore = useTimelineStoreV2.getState();
 
-      // Update Timeline Store with latest data
-      timelineStore.setElements(canvasElements);
-      timelineStore.setGroups(canvasGroups);
+  //     // Update Timeline Store with latest data
+  //     timelineStore.setElements(canvasElements);
+  //     timelineStore.setGroups(canvasGroups);
 
-      // Force clear Enhanced Timeline Manager cache to ensure rebuild
-      // Note: forceClearCache not available in base GSAPTimelineManagerV2
+  //     // Force clear Enhanced Timeline Manager cache to ensure rebuild
+  //     // Note: forceClearCache not available in base GSAPTimelineManagerV2
 
-      // Rebuild timeline
-      setTimeout(() => {
-        updateTracks();
-        buildGSAPTimeline();
-        // Reset sync flag after a short delay to allow for any subsequent updates
-        setTimeout(() => {
-          isSyncingRef.current = false;
-        }, 100);
-      }, 0);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [animations, selectionId, selectedGroup, selectedElement, canvasStore, updateTracks, buildGSAPTimeline, onGroupInspectorChange]);
+  //     // Rebuild timeline
+  //     setTimeout(() => {
+  //       updateTracks();
+  //       buildGSAPTimeline();
+  //       // Reset sync flag after a short delay to allow for any subsequent updates
+  //       setTimeout(() => {
+  //         isSyncingRef.current = false;
+  //       }, 100);
+  //     }, 0);
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [animations, selectionId, selectedGroup, selectedElement, canvasStore, updateTracks, buildGSAPTimeline, onGroupInspectorChange]);
 
   // Listen for animation selections
   useEffect(() => {

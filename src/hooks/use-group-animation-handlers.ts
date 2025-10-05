@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { 
   CanvasGroup, 
   ElementAnimation, 
@@ -21,11 +21,13 @@ export function useGroupAnimationHandlers(
   const { timelineAnimations } = useTimelineStoreV2();
   
   // Get animations for the selected group from timeline
-  const groupAnimations = selectedGroup 
-    ? timelineAnimations
-        .filter(anim => anim.target.type === 'group' && anim.target.id === selectedGroup.id)
-        .flatMap(anim => anim.tracks)
-    : [];
+  const groupAnimations = useMemo(() => {
+    return selectedGroup 
+      ? timelineAnimations
+          .filter(anim => anim.target.type === 'group' && anim.target.id === selectedGroup.id)
+          .flatMap(anim => anim.tracks)
+      : [];
+  }, [selectedGroup, timelineAnimations]);
   
   const [localGroupAnimations, setLocalGroupAnimations] = useState<ElementAnimation[]>(groupAnimations);
 
