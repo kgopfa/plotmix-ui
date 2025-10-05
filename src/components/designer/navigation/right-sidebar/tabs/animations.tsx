@@ -3,11 +3,9 @@ import {
   ElementAnimation,
   CanvasGroup
 } from '@/types/canvas';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
 import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
-import { useCanvasStore } from '@/stores/use-canvas-store';
-import { useSelectionStore } from '@/stores/use-selection-store';
 import { AnimationCard } from './animation-card';
 import { generateAnimationDisplayName, updateAnimationDisplayNames } from '@/utils/animation-utils';
 import { X } from 'lucide-react';
@@ -36,12 +34,7 @@ export function AnimationsTab({
   const [animations, setAnimations] = useState<ElementAnimation[]>(localAnimations);
   const [selectedAnimationId, setSelectedAnimationId] = useState<string | null>(null);
   const animationSelectionManager = AnimationSelectionManager.getInstance();
-  const isSyncingRef = useRef(false);
   const setActiveRightPanel = useSetActiveRightPanel();
-
-  // Get stores for direct updates
-  const canvasStore = useCanvasStore();
-  const { updateTracks, buildGSAPTimeline } = useTimelineStoreV2();
 
   // Determine the current selection type and ID
   const currentSelection = selectedGroup || selectedElement;
@@ -67,56 +60,7 @@ export function AnimationsTab({
     const updatedAnimations = updateAnimationDisplayNames(migratedAnimations);
     
     setAnimations(updatedAnimations);
-  }, [localAnimations, selectedGroup?.id, selectedElement?.id]); // Sync when localAnimations prop changes
-
-  // Auto-rebuild timeline when animations change
-  // Note: This effect is removed as it was causing infinite loops with the new timeline structure
-  // The V2 timeline store handles updates differently and doesn't need this complex syncing
-  // useEffect(() => {
-  //   // Prevent infinite loop by checking if we're already syncing
-  //   if (isSyncingRef.current) {
-  //     return;
-  //   }
-
-  //   // Only sync when local animations actually differ from incoming props
-  //   const animationsChanged = JSON.stringify(animations) !== JSON.stringify(localAnimations);
-    
-  //   if (animationsChanged) {
-  //     isSyncingRef.current = true;
-
-  //     // Update timeline animations instead of element/group animations
-  //     if (selectedGroup) {
-  //       // TODO: Update timeline animations for group
-  //       console.warn('Updating group animations needs to be implemented for new timeline structure');
-  //     } else if (selectedElement) {
-  //       // TODO: Update timeline animations for element
-  //       console.warn('Updating element animations needs to be implemented for new timeline structure');
-  //     }
-
-  //     // Force Timeline Store to sync with Canvas Store
-  //     const canvasElements = canvasStore.getAllElements();
-  //     const canvasGroups = canvasStore.getAllGroups();
-  //     const timelineStore = useTimelineStoreV2.getState();
-
-  //     // Update Timeline Store with latest data
-  //     timelineStore.setElements(canvasElements);
-  //     timelineStore.setGroups(canvasGroups);
-
-  //     // Force clear Enhanced Timeline Manager cache to ensure rebuild
-  //     // Note: forceClearCache not available in base GSAPTimelineManagerV2
-
-  //     // Rebuild timeline
-  //     setTimeout(() => {
-  //       updateTracks();
-  //       buildGSAPTimeline();
-  //       // Reset sync flag after a short delay to allow for any subsequent updates
-  //       setTimeout(() => {
-  //         isSyncingRef.current = false;
-  //       }, 100);
-  //     }, 0);
-  //   }
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [animations, selectionId, selectedGroup, selectedElement, canvasStore, updateTracks, buildGSAPTimeline, onGroupInspectorChange]);
+  }, [localAnimations, selectedGroup?.id, selectedElement?.id]); 
 
   // Listen for animation selections
   useEffect(() => {
@@ -129,36 +73,32 @@ export function AnimationsTab({
     });
   }, [animationSelectionManager, selectionId]);
 
-  // Simplified sync to stores (Timeline rebuild handled by useEffect above)
+  // Sync to stores (Timeline rebuild handled by useEffect above)
   const syncToStores = (updatedAnimations: ElementAnimation[], changedField?: string, animationId?: string) => {
-    // For repeat-related changes, use Timeline Store methods for consistency
-    if (changedField && animationId && ['repeat', 'repeatDelay', 'yoyo'].includes(changedField)) {
-      const animation = updatedAnimations.find(a => a.id === animationId);
-      if (animation) {
-        if (changedField === 'repeat') {
-          // TODO: Update for new centralized timeline structure
-          // updateAnimationRepeat(animationId, selectionId!, animation.repeat ?? 0, animation.repeatDelay, animation.yoyo);
-        } else if (changedField === 'repeatDelay') {
-          // TODO: Update for new centralized timeline structure
-          // updateAnimationRepeat(animationId, selectionId!, animation.repeat ?? 0, animation.repeatDelay, animation.yoyo);
-        } else if (changedField === 'yoyo') {
-          // TODO: Update for new centralized timeline structure
-          // updateAnimationRepeat(animationId, selectionId!, animation.repeat ?? 0, animation.repeatDelay, animation.yoyo);
-        }
-      }
-    } else if (changedField === 'duration' && animationId) {
-      const animation = updatedAnimations.find(a => a.id === animationId);
-      if (animation) {
-        // TODO: Update for new centralized timeline structure
-        // updateAnimationDuration(animationId, selectionId!, animation.duration);
-      }
-    }
+    if (!currentSelection) return;
 
-    // Force clear cache for any animation changes to ensure timeline rebuilds
+    // Update the timeline animation in the centralized store
     const timelineStore = useTimelineStoreV2.getState();
-    // Note: forceClearCache not available in base GSAPTimelineManagerV2
+    
+    // Find the timeline animation that contains this element/group
+    const timelineAnimation = timelineStore.timelineAnimations.find(anim => 
+      anim.target.type === (selectedGroup ? 'group' : 'element') && 
+      anim.target.id === currentSelection.id
+    );
 
-    // Note: Canvas Store update and timeline rebuild handled by useEffect
+    if (timelineAnimation) {
+      // Update the tracks with the new animations
+      const updatedTimelineAnimation = {
+        ...timelineAnimation,
+        tracks: updatedAnimations
+      };
+
+      // Update the timeline animation in the store
+      timelineStore.updateTimelineAnimation(timelineAnimation.id, updatedTimelineAnimation);
+      
+      // Rebuild the GSAP timeline to reflect changes
+      timelineStore.buildGSAPTimeline();
+    }
   };
 
   // Handle deleting animations internally
