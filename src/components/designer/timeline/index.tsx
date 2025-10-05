@@ -22,11 +22,10 @@ export function Timeline() {
   );
 
   // Get timeline state and actions
-  const { playback, ui: timelineUI, getEffectiveDuration, setScale, getTotalDuration } = useTimelineStoreV2(
+  const { playback, ui: timelineUI, setScale, getTotalDuration } = useTimelineStoreV2(
     useShallow((state: any) => ({
       playback: state.playback,
       ui: state.ui,
-      getEffectiveDuration: state.getEffectiveDuration,
       setScale: state.setScale,
       getTotalDuration: state.getTotalDuration
     }))
@@ -54,15 +53,13 @@ export function Timeline() {
   // Zoom controls moved to main navigation; timeline no longer manages zoom
 
   // Pre-warm animation durations for newly detected animations
-  useEffect(() => {
-    const allAnimations = timelineAnimations.flatMap(anim => anim.tracks);
-
-    // Pre-warm the getEffectiveDuration cache by calling it for each animation
-    // This triggers the fallback logic which initializes the cache
-    allAnimations.forEach(animation => {
-      getEffectiveDuration(animation.id);
-    });
-  }, [timelineAnimations, getEffectiveDuration]);
+  // Note: This pre-warming logic is removed as the V2 timeline store handles durations differently
+  // useEffect(() => {
+  //   const allAnimations = timelineAnimations.flatMap(anim => anim.tracks);
+  //   allAnimations.forEach(animation => {
+  //     getEffectiveDuration(animation.id);
+  //   });
+  // }, [timelineAnimations, getEffectiveDuration]);
 
   const handleScroll = () => {
     if (scrollContainerRef.current) {

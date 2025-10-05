@@ -395,13 +395,12 @@ export const useUIStore = create<UIStore>((set, get) => {
       }
     ];
 
-    // Find matching preset
     const matchingPreset = screenPresets.find(preset => 
       screenWidth >= preset.width.min && screenWidth <= preset.width.max &&
       screenHeight >= preset.height.min && screenHeight <= preset.height.max
     );
 
-    const selectedPreset = matchingPreset || screenPresets[0]; // Default to small laptop
+    const selectedPreset = matchingPreset || screenPresets[0];
     
     return {
       zoom: selectedPreset.zoom,
