@@ -374,24 +374,24 @@ export const useUIStore = create<UIStore>((set, get) => {
         name: 'Medium Laptop (15-16")', 
         width: { min: 1600, max: 2000 }, 
         height: { min: 900, max: 1200 },
-        zoom: 0.35, 
-        pan: { x: 3200, y: 2000 } 
+        zoom: 0.55, 
+        pan: { x: 2850, y: 1700 } 
       },
       // Large laptops/desktops (17+ inch)
       { 
         name: 'Large Laptop/Desktop (17+")', 
         width: { min: 2000, max: 3000 }, 
         height: { min: 1200, max: 1800 },
-        zoom: 0.28, 
-        pan: { x: 4000, y: 2500 } 
+        zoom: 0.70, 
+        pan: { x: 2850, y: 1700 } 
       },
       // Ultra-wide/4K monitors
       { 
         name: 'Ultra-wide/4K Monitor', 
         width: { min: 3000, max: 9999 }, 
-        height: { min: 1800, max: 9999 },
-        zoom: 0.20, 
-        pan: { x: 5000, y: 3000 } 
+        height: { min: 1000, max: 9999 },
+        zoom: 0.85, 
+        pan: { x: 2850, y: 1550 } 
       }
     ];
 

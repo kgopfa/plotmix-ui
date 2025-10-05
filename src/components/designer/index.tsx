@@ -599,10 +599,6 @@ export default function Designer() {
     clearElementSnapGuides: clearSnapGuides
   });
 
-  // Use a ref to track if we're currently dragging to avoid expensive operations
-  const isGroupDraggingRef = useRef(false);
-  const groupDragTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
   const handleInspectorChange = (
     prop: string,
     value: string | number | boolean | ElementAnimation[] | NonNullable<AnimatedCanvasObject['lineOptions']> | {
