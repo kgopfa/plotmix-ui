@@ -403,8 +403,6 @@ export const useUIStore = create<UIStore>((set, get) => {
 
     const selectedPreset = matchingPreset || screenPresets[0]; // Default to small laptop
     
-    console.log(`[Screen Detection] ${screenWidth}x${screenHeight} → ${selectedPreset.name} → Zoom: ${selectedPreset.zoom}, Pan: X:${selectedPreset.pan.x}, Y:${selectedPreset.pan.y}`);
-    
     return {
       zoom: selectedPreset.zoom,
       pan: selectedPreset.pan
