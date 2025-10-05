@@ -6,6 +6,7 @@ import {
 import { useState, useEffect, useRef } from 'react';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
 import { useTimelineStore } from '@/stores/use-timeline-store';
+import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { AnimationCard } from './animation-card';
@@ -42,6 +43,7 @@ export function AnimationsTab({
   // Get stores for direct updates
   const canvasStore = useCanvasStore();
   const { updateAnimationDuration, updateAnimationRepeat, updateTracks, buildGSAPTimeline } = useTimelineStore();
+  const { updateTimelineAnimation } = useTimelineStoreV2();
 
   // Determine the current selection type and ID
   const currentSelection = selectedGroup || selectedElement;
@@ -82,15 +84,13 @@ export function AnimationsTab({
     if (animationsChanged) {
       isSyncingRef.current = true;
 
-      // Update Canvas Store first based on selection type
+      // Update timeline animations instead of element/group animations
       if (selectedGroup) {
-        // For groups, use the group inspector change handler
-        if (onGroupInspectorChange) {
-          onGroupInspectorChange(selectedGroup.id, 'animations', animations);
-        }
+        // TODO: Update timeline animations for group
+        console.warn('Updating group animations needs to be implemented for new timeline structure');
       } else if (selectedElement) {
-        // For elements, update directly in canvas store
-        canvasStore.updateElement(selectedElement.id, { animations });
+        // TODO: Update timeline animations for element
+        console.warn('Updating element animations needs to be implemented for new timeline structure');
       }
 
       // Force Timeline Store to sync with Canvas Store

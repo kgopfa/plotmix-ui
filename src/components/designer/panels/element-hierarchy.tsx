@@ -6,6 +6,7 @@ import { contextMenuManager } from '@/lib/context-menu-manager';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useUIStore } from '@/stores/use-ui-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
+import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
 import { useDragAndDrop } from '@/hooks/use-drag-and-drop';
 
 interface ContextMenuPosition {
@@ -46,6 +47,9 @@ export function ElementHierarchy({
     isSelected: isElementSelected,
     isGroupSelected,
   } = useSelectionStore();
+
+  // Use timeline store to check for animations
+  const { timelineAnimations } = useTimelineStoreV2();
 
   // Filter out animation paths and character elements (characters will be shown under their group parent)
   const shapes = elements.filter(element => !element.isAnimationPath);
@@ -292,7 +296,9 @@ export function ElementHierarchy({
 
   // Component to render hierarchical element
   const renderHierarchicalElement = (element: AnimatedCanvasObject, depth: number = 0): React.ReactNode => {
-    const hasAnimations = element.animations.length > 0;
+    const hasAnimations = timelineAnimations.some(anim => 
+      anim.target.type === 'element' && anim.target.id === element.id
+    );
     const isExpanded = expandedShapes.has(element.id);
     const children = getChildElements(element.id);
     const childGroups = getChildGroups(element.id);
@@ -347,7 +353,11 @@ export function ElementHierarchy({
             <span className="text-sm">{getShapeIcon(element.type)}</span>
             <span className="flex-1">{element.name}</span>
             {hasAnimations && (
-              <span className="text-xs text-gray-500">({element.animations.length} anim)</span>
+              <span className="text-xs text-gray-500">
+                ({timelineAnimations.filter(anim => 
+                  anim.target.type === 'element' && anim.target.id === element.id
+                ).length} anim)
+              </span>
             )}
             {hasChildren && (
               <span className="text-xs text-gray-400">({children.length + childGroups.length} children)</span>
@@ -388,7 +398,10 @@ export function ElementHierarchy({
             {children.map(child => renderHierarchicalElement(child, depth + 1))}
             
             {/* Element Animations */}
-            {hasAnimations && element.animations.map(animation => (
+            {hasAnimations && timelineAnimations
+              .filter(anim => anim.target.type === 'element' && anim.target.id === element.id)
+              .flatMap(anim => anim.tracks)
+              .map(animation => (
               <li key={animation.id}>
                 <div 
                   className="px-2 py-1 rounded cursor-pointer hover:bg-gray-100 hover:text-green-600 flex items-center gap-2 text-sm"
@@ -415,7 +428,9 @@ export function ElementHierarchy({
   const renderHierarchicalGroup = (group: CanvasGroup, depth: number = 0): React.ReactNode => {
     const isGroupExpanded = expandedGroups.has(group.id);
     const groupElements = getGroupElements(group.id);
-    const hasAnimations = group.animations.length > 0;
+    const hasAnimations = timelineAnimations.some(anim => 
+      anim.target.type === 'group' && anim.target.id === group.id
+    );
     const hasElements = groupElements.length > 0;
     const children = getChildElements(group.id);
     const childGroups = getChildGroups(group.id);
@@ -472,7 +487,11 @@ export function ElementHierarchy({
               <span className="text-sm">{getGroupIcon(group.type)}</span>
               <span className="flex-1">{group.name}</span>
               {hasAnimations && (
-                <span className="text-xs text-gray-500">({group.animations.length} anim)</span>
+                <span className="text-xs text-gray-500">
+                  ({timelineAnimations.filter(anim => 
+                    anim.target.type === 'group' && anim.target.id === group.id
+                  ).length} anim)
+                </span>
               )}
               {hasChildren && (
                 <span className="text-xs text-gray-400">({children.length + childGroups.length} children)</span>
@@ -526,8 +545,14 @@ export function ElementHierarchy({
                   >
                     <span className="text-xs">{getShapeIcon(element.type)}</span>
                     <span className="flex-1">{element.name}</span>
-                    {element.animations.length > 0 && (
-                      <span className="text-xs text-gray-400">({element.animations.length} anim)</span>
+                    {timelineAnimations.filter(anim => 
+                      anim.target.type === 'element' && anim.target.id === element.id
+                    ).length > 0 && (
+                      <span className="text-xs text-gray-400">
+                        ({timelineAnimations.filter(anim => 
+                          anim.target.type === 'element' && anim.target.id === element.id
+                        ).length} anim)
+                      </span>
                     )}
                   </div>
                   
@@ -564,7 +589,10 @@ export function ElementHierarchy({
             {children.map(child => renderHierarchicalElement(child, depth + 1))}
 
             {/* Group Animations */}
-            {hasAnimations && group.animations.map(animation => (
+            {hasAnimations && timelineAnimations
+              .filter(anim => anim.target.type === 'group' && anim.target.id === group.id)
+              .flatMap(anim => anim.tracks)
+              .map(animation => (
               <li key={animation.id}>
                 <div 
                   className="px-2 py-1 rounded cursor-pointer hover:bg-gray-100 hover:text-green-600 flex items-center gap-2 text-sm"

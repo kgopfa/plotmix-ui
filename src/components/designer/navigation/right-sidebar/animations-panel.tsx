@@ -3,6 +3,7 @@ import { AnimatedCanvasObject, ElementAnimation } from '@/types/canvas';
 import { AnimationsTab } from './tabs/animations';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
+import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
 import { useAnimationHandlers } from '@/hooks/use-animation-handlers';
 
 interface AnimationsPanelProps {
@@ -33,6 +34,7 @@ export const AnimationsPanel: React.FC<AnimationsPanelProps> = ({
   const { selectedElements, selectedGroups, getFirstSelected } =
     useSelectionStore();
   const canvasStore = useCanvasStore();
+  const { timelineAnimations } = useTimelineStoreV2();
   const selectedElement = getFirstSelected();
   const selectedGroup = selectedGroups[0] || null;
   const selectedElementsCount = selectedElements.length;
@@ -49,16 +51,18 @@ export const AnimationsPanel: React.FC<AnimationsPanelProps> = ({
     onInspectorChange
   );
 
-  // Get the actual animations from the store (most current data)
+  // Get the actual animations from the timeline store
   const getCurrentAnimations = (): ElementAnimation[] => {
     if (hasGroupSelection && selectedGroup) {
-      // Get the latest group data from the store
-      const storeGroup = canvasStore.getGroupById(selectedGroup.id);
-      return storeGroup?.animations || [];
+      // Get animations targeting this group from timeline
+      return timelineAnimations
+        .filter(anim => anim.target.type === 'group' && anim.target.id === selectedGroup.id)
+        .flatMap(anim => anim.tracks);
     } else if (hasIndividualElement && selectedElement) {
-      // Get the latest element data from the store
-      const storeElement = canvasStore.getElementById(selectedElement.id);
-      return storeElement?.animations || [];
+      // Get animations targeting this element from timeline
+      return timelineAnimations
+        .filter(anim => anim.target.type === 'element' && anim.target.id === selectedElement.id)
+        .flatMap(anim => anim.tracks);
     }
     return [];
   };

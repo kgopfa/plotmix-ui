@@ -7,6 +7,7 @@ import gsap from 'gsap';
 import { TimelineManager } from '@/lib/timeline-manager';
 import { useCanvasElements, useCanvasGroups, useCanvasStore } from '@/stores/use-canvas-store';
 import { useTimelineSync, useTimelineStore } from '@/stores/use-timeline-store';
+import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
 import { GSAPTimelineManager } from '@/lib/gsap-timeline-manager';
 import { Container } from 'pixi.js';
 import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager';
@@ -36,6 +37,9 @@ export default function ScreenCapture({ autoplayOnReady = false, recordDurationS
   const {
     setCanvasRef: setTimelineCanvasRef,
   } = useTimelineIntegration();
+
+  // Timeline store V2 for animations
+  const { timelineAnimations } = useTimelineStoreV2();
 
   // Canvas zoom state - will be implemented with pixi-viewport
   const [canvasZoom, setCanvasZoom] = useState(1);
@@ -125,9 +129,10 @@ export default function ScreenCapture({ autoplayOnReady = false, recordDurationS
 
     const areTargetsReady = () => {
       const refs = shapeRefs.current as Record<string, Container>;
-      const animatedIds = canvasObjects
-        .filter(el => !el.isAnimationPath && (el.animations?.length ?? 0) > 0)
-        .map(el => el.id);
+      // Get animated element IDs from timeline
+      const animatedIds = timelineAnimations
+        .filter(anim => anim.target.type === 'element')
+        .map(anim => anim.target.id);
       if (animatedIds.length === 0) return false;
       return animatedIds.every(id => {
         const target = refs[id];

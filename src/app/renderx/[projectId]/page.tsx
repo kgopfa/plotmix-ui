@@ -161,7 +161,7 @@ export default function RenderXPage() {
         // Sanitize and dedupe elements
         const sanitizedElements: AnimatedCanvasObject[] = rawElements.map((el: any) => ({
           ...el,
-          animations: Array.isArray(el?.animations) ? el.animations : [],
+          // Note: animations property removed in new timeline structure
           fill: typeof el?.fill === 'string' && el.fill ? el.fill : '#000000',
         }));
         const elementsUnique: AnimatedCanvasObject[] = Array.from(
@@ -214,8 +214,9 @@ export default function RenderXPage() {
           try {
             const { gsapManager } = useTimelineStore.getState();
             // Debug: check a sample animated target value before/after
+            // Note: With new timeline structure, we need to check timeline animations instead
             const animatedIds = elements
-              .filter(el => !el.isAnimationPath && (el.animations?.length ?? 0) > 0)
+              .filter(el => !el.isAnimationPath)
               .map(el => el.id);
             const sampleId = animatedIds[0];
             const before = sampleId ? (shapeRefs.current as Record<string, any>)[sampleId]?.x : undefined;
@@ -241,17 +242,22 @@ export default function RenderXPage() {
 
         // Ensure containers are mounted and refs are populated before declaring readiness
         // Wait until all animated targets are present to avoid empty timeline builds
-        const hasAnimations = (els: AnimatedCanvasObject[], grps: CanvasGroup[]) =>
-          els.some(el => !el.isAnimationPath && (el.animations?.length ?? 0) > 0) ||
-          grps.some(g => !g.isDefaultGroup && (g.animations?.length ?? 0) > 0);
+        // Note: With new timeline structure, we need to check timeline animations instead
+        const hasAnimations = (els: AnimatedCanvasObject[], grps: CanvasGroup[]) => {
+          // For now, assume we have animations if we have elements/groups
+          // In the new structure, animations are stored separately in timeline
+          return els.length > 0 || grps.length > 0;
+        };
 
         const needTargets = hasAnimations(elements, groups);
         if (!pixiApp || needTargets) {
+          // Note: With new timeline structure, animations are stored separately
+          // For now, just get all element and group IDs
           const animatedIds = elements
-            .filter(el => !el.isAnimationPath && (el.animations?.length ?? 0) > 0)
+            .filter(el => !el.isAnimationPath)
             .map(el => el.id);
           const animatedGroupIds = groups
-            .filter(g => !g.isDefaultGroup && (g.animations?.length ?? 0) > 0)
+            .filter(g => !g.isDefaultGroup)
             .map(g => g.id);
 
           let tries = 0;

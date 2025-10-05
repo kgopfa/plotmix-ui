@@ -6,7 +6,7 @@ import { NavigationSidebar } from '@/components/shared/navigation-sidebar';
 import { navigation } from '@/data/shared-navigation';
 import { useConversations } from '@/hooks/use-conversations';
 import { ChatCard } from '@/components/chat/chat-card';
-import { LogIn, Palette, Sparkles } from 'lucide-react';
+import { LogIn, Sparkles } from 'lucide-react';
 import QuickActionButtons from '@/components/shared/quick-action-buttons';
 import { useAuth } from '@/lib/auth-context';
 import { SearchBar } from '@/components/shared/search-bar';

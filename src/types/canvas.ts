@@ -150,7 +150,6 @@ export interface AnimatedCanvasObject {
     points: Array<{x: number, y: number}>; // Array of points defining the polygon
     isClosed: boolean; // Whether the polygon path is closed
   };
-  animations: ElementAnimation[];
   isAnimationPath?: boolean;
   // Text-specific properties
   text?: string;
@@ -204,7 +203,6 @@ export interface CanvasGroup {
   type: 'text' | 'custom' | 'polygon'; // Group type determines presentation and behavior
   isDefaultGroup: boolean; // True for auto-created single-object groups
   isAnimationPath?: boolean; // True for groups that are animation paths
-  animations: ElementAnimation[]; // Group animations
   // Text group specific properties (when type === 'text')
   characters?: string[]; // For text groups, the individual characters
   fontSize?: number;
@@ -228,6 +226,29 @@ export interface GroupAnimatableProperties {
   scaleX?: number;
   scaleY?: number;
   alpha?: number;
+}
+
+// New centralized timeline animation structure
+export interface TimelineAnimation {
+  id: string;
+  displayName: string; // Human-readable name like "path-1", "move-2", etc.
+  target: {
+    type: 'element' | 'group';
+    id: string; // ID of the element or group
+  };
+  tracks: ElementAnimation[]; // Array of animation tracks for this target
+  startAt: number; // When this animation starts in the timeline
+}
+
+// Playback state for timeline
+export interface TimelinePlayback {
+  scale: number; // pixels per second
+  duration: number; // total timeline duration in seconds
+  currentTime: number; // current playback time
+  isPlaying?: boolean;
+  isPaused?: boolean;
+  isStopped?: boolean;
+  playbackSpeed?: number;
 }
 
 export const EASING_OPTIONS: GsapEase[] = [

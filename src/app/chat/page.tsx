@@ -8,7 +8,7 @@ import { SuggestionsSection } from '@/components/chat/suggestions-section';
 import { PromptInput } from '@/components/chat/prompt-input';
 import { navigation } from '@/data/shared-navigation';
 import { suggestions, type Suggestion } from '@/data/chat-suggestions';
-import { Palette, Sparkles, LogIn } from 'lucide-react';
+import { LogIn } from 'lucide-react';
 import QuickActionButtons from '@/components/shared/quick-action-buttons';
 import { useAuth } from '@/lib/auth-context';
 import { useProjectGeneration } from '@/hooks/use-project-generation';
@@ -17,7 +17,7 @@ import { ChatAttachment, ChatOptions } from '@/types/project-generation';
 export default function ChatPage() {
   const [prompt, setPrompt] = useState('');
   const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
-  const [options, setOptions] = useState<ChatOptions>({});
+  const [options, _] = useState<ChatOptions>({});
   const { isAuthenticated } = useAuth();
   const { submitChat, isLoading, error } = useProjectGeneration();
   const router = useRouter();

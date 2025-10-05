@@ -1,4 +1,4 @@
-import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
+import { AnimatedCanvasObject, CanvasGroup, ElementAnimation } from '@/types/canvas';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { AnimationBlock } from './animation-block';
 import Image from 'next/image';
@@ -31,6 +31,7 @@ interface TimelineTrackProps {
   scale: number;
   currentTime: number;
   isSelected: boolean;
+  animations: any[];
   onAnimationClick?: (animation: { id: string; type: string; startTime: number; duration: number }) => void;
   onAnimationChange: (
     elementId: string,
@@ -116,6 +117,7 @@ export function TimelineTrack({
   scale,
   currentTime,
   isSelected,
+  animations,
   onAnimationClick,
   onAnimationChange,
   isGroup: isGroupProp,
@@ -134,7 +136,6 @@ export function TimelineTrack({
   
   // Get the appropriate properties
   const name = customName || element.name;
-  const animations = element.animations || [];
   const id = element.id;
 
   const handleTrackClick = () => {

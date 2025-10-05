@@ -6,6 +6,7 @@ import type {
   GsapEase
 } from '@/types/canvas';
 import { generateAnimationDisplayName } from '@/utils/animation-utils';
+import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
 
 type GroupInspectorChangeHandler = (
   groupId: string,
@@ -17,18 +18,21 @@ export function useGroupAnimationHandlers(
   selectedGroup: CanvasGroup | null,
   onGroupInspectorChange?: GroupInspectorChangeHandler
 ) {
-  const [localGroupAnimations, setLocalGroupAnimations] = useState<ElementAnimation[]>(
-    selectedGroup?.animations ?? []
-  );
+  const { timelineAnimations } = useTimelineStoreV2();
+  
+  // Get animations for the selected group from timeline
+  const groupAnimations = selectedGroup 
+    ? timelineAnimations
+        .filter(anim => anim.target.type === 'group' && anim.target.id === selectedGroup.id)
+        .flatMap(anim => anim.tracks)
+    : [];
+  
+  const [localGroupAnimations, setLocalGroupAnimations] = useState<ElementAnimation[]>(groupAnimations);
 
   // Sync local animations when selected group changes
   useEffect(() => {
-    if (selectedGroup) {
-      setLocalGroupAnimations(selectedGroup.animations);
-    } else {
-      setLocalGroupAnimations([]);
-    }
-  }, [selectedGroup]);
+    setLocalGroupAnimations(groupAnimations);
+  }, [selectedGroup, groupAnimations]);
 
   const handleGroupAnimationChange = (
     animationId: string,

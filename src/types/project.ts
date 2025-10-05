@@ -1,4 +1,4 @@
-import { AnimatedCanvasObject, CanvasGroup } from './canvas';
+import { AnimatedCanvasObject, CanvasGroup, TimelineAnimation, TimelinePlayback } from './canvas';
 
 // Maximum scene duration in seconds (2 minutes)
 export const MAX_SCENE_DURATION = 120;
@@ -32,7 +32,8 @@ export interface ProjectDimensions {
 export interface SceneCanvas {
   elements: AnimatedCanvasObject[];
   groups: CanvasGroup[];
-  timeline: ProjectTimeline;
+  timeline: TimelineAnimation[]; // Array of animations
+  playback: TimelinePlayback; // Playback state
 }
 
 export interface ProjectScene {
@@ -54,12 +55,6 @@ export interface ProjectCanvas {
   };
 }
 
-export interface ProjectTimeline {
-  scale: number;
-  duration: number;
-  currentTime: number;
-  animationStates: Record<string, AnimationState>; // Serialized from Map
-}
 
 export interface ProjectUI {
   zoom: number;
@@ -97,7 +92,8 @@ export interface ProjectData {
   title?: string;
   elements: import('@/types/canvas').AnimatedCanvasObject[];
   groups: import('@/types/canvas').CanvasGroup[];
-  timeline: ProjectTimeline;
+  timeline: TimelineAnimation[]; // Array of animations
+  playback: TimelinePlayback; // Playback state
   ui?: ProjectUI;
 }
 

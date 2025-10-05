@@ -4,6 +4,7 @@ import { TimelineTrack } from '@/components/designer/timeline/timeline-track';
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { useCanvasElements, useCanvasGroups } from '@/stores/use-canvas-store';
 import { useTimelineStore } from '@/stores/use-timeline-store';
+import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { usePanelState, useUIStore } from '@/stores/use-ui-store';
 import { useShallow } from 'zustand/react/shallow';
@@ -33,6 +34,8 @@ export function Timeline() {
     }))
   );
 
+  const { timelineAnimations } = useTimelineStoreV2();
+
   const { play, pause, stop, updateAnimation } = useTimelineStore(
     useShallow((state: any) => ({
       play: state.play,
@@ -54,17 +57,14 @@ export function Timeline() {
 
   // Pre-warm animation durations for newly detected animations
   useEffect(() => {
-    const allAnimations = [
-      ...elements.flatMap(el => el.animations),
-      ...groups.flatMap(g => g.animations)
-    ];
+    const allAnimations = timelineAnimations.flatMap(anim => anim.tracks);
 
     // Pre-warm the getEffectiveDuration cache by calling it for each animation
     // This triggers the fallback logic which initializes the cache
     allAnimations.forEach(animation => {
       getEffectiveDuration(animation.id);
     });
-  }, [elements, groups, getEffectiveDuration]);
+  }, [timelineAnimations, getEffectiveDuration]);
 
   const handleScroll = () => {
     if (scrollContainerRef.current) {
@@ -152,7 +152,9 @@ export function Timeline() {
             type: 'group',
             name: group.name,
             item: group,
-            animations: group.animations,
+            animations: timelineAnimations
+              .filter(anim => anim.target.type === 'group' && anim.target.id === group.id)
+              .flatMap(anim => anim.tracks),
             isSelected: groupIsSelected,
             isGroup: true,
             isExpanded: expandedElements.has(group.id),
@@ -173,7 +175,9 @@ export function Timeline() {
                 type: 'element',
                 name: element.name,
                 item: element,
-                animations: element.animations,
+                animations: timelineAnimations
+                  .filter(anim => anim.target.type === 'element' && anim.target.id === element.id)
+                  .flatMap(anim => anim.tracks),
                 isSelected: isSelected(element),
                 isChild: true,
                 parentGroupId: group.id,
@@ -200,7 +204,9 @@ export function Timeline() {
             type: 'element',
             name: element.name,
             item: element,
-            animations: element.animations,
+            animations: timelineAnimations
+              .filter(anim => anim.target.type === 'element' && anim.target.id === element.id)
+              .flatMap(anim => anim.tracks),
             isSelected: isSelected(element),
             depth: 0
           });
@@ -311,6 +317,7 @@ export function Timeline() {
                 scale={timelineUI.scale}
                 currentTime={globalTime}
                 isSelected={track.isSelected}
+                animations={track.animations}
                 onAnimationChange={track.type === 'group'
                   ? handleGroupAnimationChange
                   : handleAnimationChange

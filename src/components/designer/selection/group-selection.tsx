@@ -146,7 +146,6 @@ export const GroupSelection: React.FC<GroupSelectionProps> = ({
       strokeWidth: 2,
       opacity: 1,
       groupId: 'virtual-group',
-      animations: [],
       cornerRadius: 0 // Ensure no rounded corners for group selection
     };
   };

@@ -263,7 +263,6 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         stroke: '#2196F3',
         strokeWidth: 2,
         opacity: 1,
-        animations: [],
         zIndex: 0
       };
       return props.onSnapElement!(virtualElement, allElements);
@@ -719,7 +718,6 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           strokeWidth: 2,
           opacity: group.opacity ?? 1,
           groupId: group.id,
-          animations: [],
           cornerRadius: 0
         };
 

@@ -259,7 +259,6 @@ export default function Designer() {
         isAnimationPath: false,
         groupId: undefined,
         zIndex: 0,
-        animations: [],
         shadowEnabled: false,
         visible: true
       };
@@ -475,7 +474,6 @@ export default function Designer() {
       y: bounds.y,
       rotation: 0,
       opacity: 1,
-      animations: [],
       ...additionalProperties
     };
 
@@ -573,65 +571,22 @@ export default function Designer() {
 
     const { elementId, animationId } = target;
 
-    setCanvasObjects(prev =>
-      prev.map(el => {
-        if (el.id !== elementId) return el;
-
-        return {
-          ...el,
-          animations: el.animations.map(anim => {
-            if (anim.id !== animationId) return anim;
-
-            return {
-              ...anim,
-              properties: {
-                ...anim.properties,
-                pathElement: pathShape, // Use the original pathShape (could be group or single element)
-                isPolygonPath: 'elementIds' in pathShape // Mark as polygon if it came from a group
-              }
-            };
-          })
-        };
-      })
-    );
-  }, [toolState.animationTarget, setCanvasObjects]);
+    // TODO: Update this to work with new timeline structure
+    // This function needs to be refactored to update timeline animations instead of element animations
+    console.warn('addPathToAnimation needs to be updated for new timeline structure');
+    
+    // For now, just return without updating anything
+    return;
+  }, [toolState.animationTarget]);
 
 
 
   // Update animations when their path element is modified
   const updateAnimationsForPathElement = useCallback((elements: AnimatedCanvasObject[], pathElement: AnimatedCanvasObject) => {
-    let animationsUpdated = 0;
-
-    const updatedElements = elements.map(element => {
-      // Find animations that reference this path element
-      const updatedAnimations = element.animations.map(animation => {
-        if (animation.properties.pathElement?.id === pathElement.id) {
-          animationsUpdated++;
-          // Update the animation with the new path element data
-          return {
-            ...animation,
-            properties: {
-              ...animation.properties,
-              pathElement: pathElement // Update with the new position/size
-            }
-          };
-        }
-        return animation;
-      });
-
-      // Return element with updated animations if any were changed
-      if (updatedAnimations.some((anim, index) => anim !== element.animations[index])) {
-        return { ...element, animations: updatedAnimations };
-      }
-
-      return element;
-    });
-
-    if (animationsUpdated > 0) {
-
-    }
-
-    return updatedElements;
+    // TODO: Update this to work with new timeline structure
+    // This function needs to be refactored to update timeline animations instead of element animations
+    console.warn('updateAnimationsForPathElement needs to be updated for new timeline structure');
+    return elements; // Return elements unchanged for now
   }, []);
 
   // Canvas event listeners hook
@@ -668,28 +623,10 @@ export default function Designer() {
       let updatedElement: AnimatedCanvasObject | null = null;
 
       if (prop === 'animations') {
-        setCanvasObjects(prevElements => {
-          const newElements = prevElements.map(el => {
-            if (el.id === selectedObject.id) {
-              updatedElement = { ...el, animations: value as ElementAnimation[] };
-              return updatedElement;
-            }
-            return el;
-          });
-
-          // Update the GSAP timeline after the state update
-          setTimeout(() => {
-            gsapManager.buildAnimationTimeline(newElements);
-          }, 0);
-
-          return newElements;
-        });
-
-        // Also update the selected element reference to ensure the inspector shows the latest values
-        if (updatedElement) {
-          selectElement([updatedElement]);
-          updateSelectedGroups([]);
-        }
+        // TODO: Update this to work with new timeline structure
+        // Animations are now stored in the timeline, not on elements
+        console.warn('Updating animations property is not supported in new timeline structure');
+        return;
       } else if (prop === 'lineOptions') {
         setCanvasObjects(prevElements => {
           const newElements = prevElements.map(el => {

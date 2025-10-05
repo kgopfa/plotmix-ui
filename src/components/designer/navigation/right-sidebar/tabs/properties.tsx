@@ -55,10 +55,8 @@ export function PropertiesTab({ selectedElement, onInspectorChange }: Properties
 
   // Sync with parent component when selected element changes
   useEffect(() => {
-    // Exclude animations from local element state - they should only be managed by AnimationsTab
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { animations: _, ...elementWithoutAnimations } = selectedElement;
-    setLocalElement({ ...elementWithoutAnimations, animations: [] } as AnimatedCanvasObject);
+    // Set local element state without animations (animations are now in timeline)
+    setLocalElement(selectedElement);
     setIsDirty({});
 
     // Initialize color input states from the selected element

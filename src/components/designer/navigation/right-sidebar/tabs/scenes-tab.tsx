@@ -37,11 +37,15 @@ export const ScenesTab: React.FC = () => {
       sceneCanvas: {
         elements: [],
         groups: [],
-        timeline: {
+        timeline: [], // Array of animations
+        playback: {
           scale: 100,
           duration: 0, // Start with 0 duration for empty scenes
           currentTime: 0,
-          animationStates: {}
+          isPlaying: false,
+          isPaused: false,
+          isStopped: true,
+          playbackSpeed: 1
         }
       }
     };

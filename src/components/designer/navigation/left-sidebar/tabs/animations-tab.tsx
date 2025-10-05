@@ -2,6 +2,7 @@ import React from 'react';
 import { Zap, Plus, X } from 'lucide-react';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
+import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
 import { useSetActiveRightPanel, useUIStore } from '@/stores/use-ui-store';
 import { AnimationType, ElementAnimation, GsapEase } from '@/types/canvas';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
@@ -10,6 +11,7 @@ import { generateAnimationDisplayName } from '@/utils/animation-utils';
 export const AnimationsTab: React.FC = () => {
   const { selectedElements, selectedGroups, select } = useSelectionStore();
   const { addElementAnimation, addGroupAnimation, getElementById } = useCanvasStore();
+  const { addTimelineAnimation } = useTimelineStoreV2();
   const setActiveRightPanel = useSetActiveRightPanel();
   const { setShowAnimationsTab } = useUIStore();
   const animationSelectionManager = AnimationSelectionManager.getInstance();
@@ -99,7 +101,7 @@ export const AnimationsTab: React.FC = () => {
 
     const newAnimation: ElementAnimation = {
       id: `${animationType}-${Date.now()}`,
-      displayName: generateAnimationDisplayName(animationType, selectedElement?.animations || selectedGroup?.animations || []),
+      displayName: generateAnimationDisplayName(animationType, []), // Empty array since animations are now in timeline
       type: animationType,
       startTime: 0,
       duration: 1,
@@ -111,26 +113,32 @@ export const AnimationsTab: React.FC = () => {
     };
 
     if (selectedElement) {
-      // Add the animation to the element
-      addElementAnimation(selectedElement.id, newAnimation);
-
-      // Get the updated element from canvas store and refresh selection store
-      const updatedElement = getElementById(selectedElement.id);
-      if (updatedElement) {
-        select(updatedElement);
-      }
-
-      // Select the newly created animation in the animations panel after the next render cycle
+      // Create timeline animation for the element
+      const timelineAnimation = {
+        id: `${selectedElement.id}-${animationType}-${Date.now()}`,
+        displayName: `${selectedElement.name} ${animationType}`,
+        target: { type: 'element' as const, id: selectedElement.id },
+        tracks: [newAnimation],
+        startAt: 0
+      };
+      
+      addTimelineAnimation(timelineAnimation);
+      
+      // Select the newly created animation
       setTimeout(() => {
-        // Use the updated element for selection
-        const finalUpdatedElement = getElementById(selectedElement.id);
-        if (finalUpdatedElement) {
-          animationSelectionManager.selectAnimation(finalUpdatedElement, newAnimation);
-        }
+        animationSelectionManager.selectAnimation(selectedElement, newAnimation);
       }, 50);
     } else if (selectedGroup) {
-      // Add the animation to the group
-      addGroupAnimation(selectedGroup.id, newAnimation);
+      // Create timeline animation for the group
+      const timelineAnimation = {
+        id: `${selectedGroup.id}-${animationType}-${Date.now()}`,
+        displayName: `${selectedGroup.name} ${animationType}`,
+        target: { type: 'group' as const, id: selectedGroup.id },
+        tracks: [newAnimation],
+        startAt: 0
+      };
+      
+      addTimelineAnimation(timelineAnimation);
     }
 
     // Switch to the right sidebar animations panel

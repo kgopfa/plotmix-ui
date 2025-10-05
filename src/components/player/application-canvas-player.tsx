@@ -74,16 +74,16 @@ export const ApplicationCanvasPlayer = forwardRef<ApplicationCanvasPlayerRef, Pr
 
     useEffect(() => {
       if (viewportRef.current && dimensions.width > 0 && dimensions.height > 0) {
-        centerOnDesign(viewportRef.current, dimensions.width, dimensions.height, designWidth, designHeight);
+        centerOnDesign(viewportRef.current, designWidth, designHeight);
       }
     }, [dimensions.width, dimensions.height, designWidth, designHeight]);
 
     useImperativeHandle(ref, () => ({
       getApplication: () => appRef.current,
       getViewport: () => viewportRef.current,
-      centerOnDesign: () => centerOnDesign(viewportRef.current, dimensions.width, dimensions.height, designWidth, designHeight),
-      zoomToFit: () => zoomToFit(viewportRef.current, dimensions.width, dimensions.height, designWidth, designHeight),
-      resetZoom: () => resetZoom(viewportRef.current, dimensions.width, dimensions.height, designWidth, designHeight),
+      centerOnDesign: () => centerOnDesign(viewportRef.current, designWidth, designHeight),
+      zoomToFit: () => zoomToFit(viewportRef.current, designWidth, designHeight),
+      resetZoom: () => resetZoom(viewportRef.current, designWidth, designHeight),
     }));
 
     return (

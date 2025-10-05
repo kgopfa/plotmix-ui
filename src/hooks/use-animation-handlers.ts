@@ -7,6 +7,7 @@ import {
   AnimatableProperties 
 } from '@/types/canvas';
 import { generateAnimationDisplayName } from '@/utils/animation-utils';
+import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
 
 type InspectorChangeHandler = (
   prop: string,
@@ -20,18 +21,20 @@ export function useAnimationHandlers(
   selectedElement: AnimatedCanvasObject | null,
   onInspectorChange: InspectorChangeHandler
 ) {
-  const [localAnimations, setLocalAnimations] = useState<ElementAnimation[]>(
-    selectedElement?.animations ?? []
-  );
+  const { timelineAnimations } = useTimelineStoreV2();
+  
+  const elementAnimations = selectedElement 
+    ? timelineAnimations
+        .filter(anim => anim.target.type === 'element' && anim.target.id === selectedElement.id)
+        .flatMap(anim => anim.tracks)
+    : [];
+  
+  const [localAnimations, setLocalAnimations] = useState<ElementAnimation[]>(elementAnimations);
 
   // Sync local animations when selected element changes
   useEffect(() => {
-    if (selectedElement) {
-      setLocalAnimations(selectedElement.animations);
-    } else {
-      setLocalAnimations([]);
-    }
-  }, [selectedElement, selectedElement?.animations]);
+    setLocalAnimations(elementAnimations);
+  }, [selectedElement, elementAnimations]);
 
   const getAnimationProperty = (path: string, value: string | number): Partial<AnimatableProperties> => {
     const parts = path?.split('.');
@@ -63,7 +66,7 @@ export function useAnimationHandlers(
 
       // For properties changes, preserve existing repeat settings that might have been updated via Timeline Store
       if (field.startsWith('properties.')) {
-        const currentAnimation = selectedElement?.animations.find(a => a.id === animationId);
+        const currentAnimation = elementAnimations.find(a => a.id === animationId);
         const preservedRepeatSettings = {
           repeat: currentAnimation?.repeat ?? anim.repeat ?? 0,
           repeatDelay: currentAnimation?.repeatDelay ?? anim.repeatDelay ?? 0,

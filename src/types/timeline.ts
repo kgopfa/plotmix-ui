@@ -2,7 +2,8 @@ import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 
 export type AnimationProperty = number | string | boolean;
 
-export interface TimelineAnimation {
+// Legacy timeline animation interface (for backward compatibility)
+export interface LegacyTimelineAnimation {
   id: string;
   elementId: string;
   startTime: number;  // in seconds
