@@ -4,13 +4,10 @@ import { useShallow } from 'zustand/react/shallow';
 import { TimeManager, TimeManagerState } from '@/lib/time-manager';
 import { TimelineManagerV2 } from '@/lib/timeline-manager-v2';
 import { GSAPTimelineManagerV2 } from '@/lib/gsap-timeline-manager-v2';
-import { AnimatedCanvasObject, CanvasGroup, TimelineAnimation } from '@/types/canvas';
-import { TimelineTrackData } from '@/types/timeline';
-import { calculateEffectiveEndTime, calculateEffectiveDuration } from '@/utils/animation-utils';
+import { AnimatedCanvasObject, CanvasGroup, ElementAnimation, TimelineAnimation } from '@/types/canvas';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { MAX_SCENE_DURATION } from '@/types/project';
-import { migrateToCentralizedTimeline, migrateFromCentralizedTimeline } from '@/utils/timeline-migration';
 
 enableMapSet();
 
@@ -130,10 +127,6 @@ interface TimelineStoreActions {
   getTotalDuration: () => number;
   getTimeAtPosition: (position: number) => number;
   getPositionAtTime: (time: number) => number;
-  
-  // Migration utilities
-  migrateFromLegacyStructure: (elements: AnimatedCanvasObject[], groups: CanvasGroup[]) => void;
-  migrateToLegacyStructure: () => { elements: AnimatedCanvasObject[], groups: CanvasGroup[] };
 }
 
 type TimelineStoreV2 = TimelineStoreState & TimelineStoreActions;
@@ -351,13 +344,13 @@ export const useTimelineStoreV2 = create<TimelineStoreV2>()(
 
     duplicateTimelineAnimation: (animationId: string) => {
       set(produce((state) => {
-        const sourceAnimation = state.timelineAnimations.find(anim => anim.id === animationId);
+        const sourceAnimation = state.timelineAnimations.find((anim: TimelineAnimation) => anim.id === animationId);
         if (sourceAnimation) {
           const duplicatedAnimation: TimelineAnimation = {
             ...sourceAnimation,
             id: crypto.randomUUID(),
             startAt: sourceAnimation.startAt + 2, // Offset by 2 seconds
-            tracks: sourceAnimation.tracks.map(track => ({
+            tracks: sourceAnimation.tracks.map((track: ElementAnimation) => ({
               ...track,
               id: crypto.randomUUID(),
               startTime: track.startTime + 2
@@ -638,23 +631,7 @@ export const useTimelineStoreV2 = create<TimelineStoreV2>()(
     getPositionAtTime: (time: number) => {
       const { ui } = get();
       return time * ui.scale;
-    },
-
-    // Migration utilities
-    migrateFromLegacyStructure: (elements: AnimatedCanvasObject[], groups: CanvasGroup[]) => {
-      const timelineAnimations = migrateToCentralizedTimeline(elements, groups);
-      set(produce((state) => {
-        state.timelineAnimations = timelineAnimations;
-        state.elements = elements.map(el => ({ ...el, animations: [] }));
-        state.groups = groups.map(group => ({ ...group, animations: [] }));
-      }));
-      get().updateTracks();
-    },
-
-    migrateToLegacyStructure: () => {
-      const { elements, groups, timelineAnimations } = get();
-      return migrateFromCentralizedTimeline(timelineAnimations, elements, groups);
-    },
+    }
   })
 );
 
