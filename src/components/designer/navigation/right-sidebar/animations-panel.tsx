@@ -71,8 +71,8 @@ export const AnimationsPanel: React.FC<AnimationsPanelProps> = ({
   useEffect(() => {
     (async () => {
       try {
-        const store = await import('@/stores/use-timeline-store');
-        const state = store.useTimelineStore.getState();
+        const store = await import('@/stores/use-timeline-store-v2');
+        const state = store.useTimelineStoreV2.getState();
         state.updateTracks();
         state.buildGSAPTimeline();
       } catch {}

@@ -3,11 +3,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { TimelineManager } from '@/lib/timeline-manager';
+import { TimelineManagerV2 } from '@/lib/timeline-manager-v2';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useCanvasElements, useCanvasGroups, useCanvasStore } from '@/stores/use-canvas-store';
 import { useUIStore, useActiveNav, useActiveRightPanel, useSnappingState, useCanvasState } from '@/stores/use-ui-store';
-import { useTimelineSync, useTimelineStore } from '@/stores/use-timeline-store';
+import { useTimelineSync } from '@/stores/use-timeline-store-v2';
 import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
 import { useCanvasMigration } from '@/hooks/use-canvas-migration';
 import { GSAPTimelineManagerV2 } from '@/lib/gsap-timeline-manager-v2';
@@ -110,7 +110,7 @@ export default function Designer() {
   const [shiftKey, setShiftKey] = useState(false);
 
   // Animation playback state - needed for UI hiding during playback
-  const isPlaying = useTimelineStore((state: any) => state.playback.isPlaying);
+  const isPlaying = useTimelineStoreV2((state: any) => state.playback.isPlaying);
   const { timelineAnimations, buildGSAPTimeline: buildTimelineV2 } = useTimelineStoreV2();
 
   // Canvas container ref for wheel event handling
@@ -296,7 +296,7 @@ export default function Designer() {
   const gsapManager = useMemo(() => new GSAPTimelineManagerV2(), []);
 
   // Memoize the timeline manager instance
-  const timelineManager = useMemo(() => TimelineManager.getInstance(), []);
+  const timelineManager = useMemo(() => TimelineManagerV2.getInstance(), []);
 
   // Use the canvas dimensions hook
   const { dimensions } = useCanvasDimensions();

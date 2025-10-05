@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Play, RotateCcw, Sparkles, Save, Loader2, RedoDot } from 'lucide-react';
 import { useProjectStore } from '@/stores/use-project-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
-import { useTimelineStore } from '@/stores/use-timeline-store';
+import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
 import { apiClient } from '@/lib/api-client';
 import { CodeExecutor, type ProjectData } from '@/utils/code-executor';
 import AceEditor from 'react-ace';
@@ -21,7 +21,7 @@ export default function ScriptsPage() {
 
   const { name, version, setProjectInfo, setBaseline, captureBaseline, checkStateDiff, getStateDiff, persistIfDirty } = useProjectStore();
   const { elements, groups, setElements, setGroups, clearCanvas } = useCanvasStore();
-  const { animationStates, loadProjectData, resetTimeline } = useTimelineStore();
+  const { timelineAnimations, loadProjectData, resetTimeline } = useTimelineStoreV2();
 
   const [code, setCode] = useState('');
   const [prompt, setPrompt] = useState('');
@@ -205,7 +205,7 @@ export default function ScriptsPage() {
           scale: 100,
           duration: 1,
           currentTime: 0,
-          animationStates: animationStates
+          animationStates: {} // Note: animationStates not used in new centralized timeline structure
         }
       };
 
@@ -370,7 +370,7 @@ export default function ScriptsPage() {
         scale: 1,
         duration: 0,
         currentTime: 0,
-        animationStates: animationStates
+        animationStates: {} // Note: animationStates not used in new centralized timeline structure
       }
     };
     
@@ -417,7 +417,7 @@ export default function ScriptsPage() {
     
     console.log('🔍 Custom diff data:', diff);
     return diff;
-  }, [result, elements, groups, animationStates]);
+  }, [result, elements, groups, timelineAnimations]);
 
   const overwriteCurrentProject = async () => {
     if (!result || !projectId) return;

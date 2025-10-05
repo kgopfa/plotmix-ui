@@ -6,7 +6,7 @@ import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { Rectangle, Graphics, Container } from 'pixi.js';
 import { drawShape, applyShadowToContainer } from '@/utils/drawing-utils';
 import { useCanvasState } from '@/stores/use-ui-store';
-import { useTimelineStore } from '@/stores/use-timeline-store';
+import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
 import { useResponsiveCanvasPosition } from '@/hooks/use-responsive-canvas-position';
 
 // Extend PIXI components for React

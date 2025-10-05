@@ -102,8 +102,16 @@ interface TimelineStoreActions {
   setTimelineCollapsed: (collapsed: boolean) => void;
   toggleGrid: () => void;
   toggleSnapToGrid: () => void;
-  setGridSize: (size: number) => void;
   clearSelection: () => void;
+    loadProjectData: (data: {
+      elements: AnimatedCanvasObject[];
+      groups: CanvasGroup[];
+      timelineAnimations?: TimelineAnimation[];
+      animationStates?: Record<string, any>;
+      scale?: number;
+      duration?: number;
+      currentTime?: number;
+    }) => void;
   
   // Real-time synchronization
   initializeSubscriptions: () => void;
@@ -178,7 +186,7 @@ export const useTimelineStoreV2 = create<TimelineStoreV2>()(
       }));
     },
 
-    loadSceneTimeline: (sceneId: string, timelineData: unknown) => {
+    loadSceneTimeline: (sceneId: string, timelineData: any) => {
       set(produce((state) => {
         state.currentSceneId = sceneId;
         state.elements = timelineData.elements || [];
@@ -325,7 +333,7 @@ export const useTimelineStoreV2 = create<TimelineStoreV2>()(
 
     updateTimelineAnimation: (animationId: string, updates: Partial<TimelineAnimation>) => {
       set(produce((state) => {
-        const index = state.timelineAnimations.findIndex(anim => anim.id === animationId);
+        const index = state.timelineAnimations.findIndex((anim: TimelineAnimation) => anim.id === animationId);
         if (index >= 0) {
           state.timelineAnimations[index] = { ...state.timelineAnimations[index], ...updates };
         }
@@ -335,7 +343,7 @@ export const useTimelineStoreV2 = create<TimelineStoreV2>()(
 
     removeTimelineAnimation: (animationId: string) => {
       set(produce((state) => {
-        state.timelineAnimations = state.timelineAnimations.filter(anim => anim.id !== animationId);
+        state.timelineAnimations = state.timelineAnimations.filter((anim: TimelineAnimation) => anim.id !== animationId);
         state.ui.selectedAnimationIds.delete(animationId);
       }));
       get().updateTracks();
@@ -449,6 +457,27 @@ export const useTimelineStoreV2 = create<TimelineStoreV2>()(
       set(produce((state) => {
         state.ui.selectedTrackIds.clear();
         state.ui.selectedAnimationIds.clear();
+      }));
+    },
+
+    loadProjectData: (data) => {
+      set(produce((state) => {
+        state.elements = data.elements;
+        state.groups = data.groups;
+        if (data.timelineAnimations !== undefined) {
+          state.timelineAnimations = data.timelineAnimations;
+        }
+        if (data.scale !== undefined) {
+          state.playback.scale = data.scale;
+        }
+        if (data.duration !== undefined) {
+          state.playback.duration = data.duration;
+        }
+        if (data.currentTime !== undefined) {
+          state.playback.currentTime = data.currentTime;
+        }
+        // Note: animationStates is not used in the new centralized timeline structure
+        // as animations are now stored in the timelineAnimations array
       }));
     },
 
@@ -667,3 +696,9 @@ export const useTimelineDataV2 = () => {
     seekToTime: state.seekToTime,
   })));
 };
+
+// Export aliases for compatibility with existing code
+export const useTimelineSync = useTimelineStoreV2;
+export const useTimelineOperations = useTimelineStoreV2;
+export const useTimelinePlayback = useTimelinePlaybackV2;
+export const useTimelineTracks = useTimelineAnimationsV2;

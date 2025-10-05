@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useTimelineStore } from '@/stores/use-timeline-store';
+import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import type { ElementAnimation } from '@/types/canvas';
 import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager-v2';
@@ -22,7 +22,7 @@ export function useTimelineIntegration() {
     stop: timelineStop,
     seek: timelineSeek,
     setPlaybackSpeed
-  } = useTimelineStore();
+  } = useTimelineStoreV2();
 
   const {
     updateElementAnimation: updateCanvasElementAnimation,
@@ -33,7 +33,7 @@ export function useTimelineIntegration() {
 
   // Enhanced canvas ref setup with automatic timeline building
   const setCanvasRef = useCallback((ref: React.RefObject<TimelineCanvasRef | null>) => {
-    const state = useTimelineStore.getState();
+    const state = useTimelineStoreV2.getState();
     
     // Set canvas ref for Enhanced Timeline Manager
     state.gsapManager.setCanvasRef(ref);
@@ -92,7 +92,7 @@ export function useTimelineIntegration() {
     // Sync Timeline Store with Canvas Store first
     const canvasElements = useCanvasStore.getState().getAllElements();
     const canvasGroups = useCanvasStore.getState().getAllGroups();
-    const timelineStore = useTimelineStore.getState();
+    const timelineStore = useTimelineStoreV2.getState();
     
     // Update Timeline Store with latest data
     timelineStore.setElements(canvasElements);
@@ -184,7 +184,7 @@ export function useTimelineIntegration() {
  * Hook for timeline UI operations
  */
 export function useTimelineUI() {
-  return useTimelineStore((state: any) => ({
+  return useTimelineStoreV2((state: any) => ({
     ui: state.ui,
     tracks: state.tracks,
     playback: state.playback,
@@ -214,7 +214,7 @@ export function useTimelineUI() {
  * Hook for timeline operations (import/export, reset)
  */
 export function useTimelineOperations() {
-  return useTimelineStore((state: any) => ({
+  return useTimelineStoreV2((state: any) => ({
     exportTimeline: state.exportTimeline,
     importTimeline: state.importTimeline,
     resetTimeline: state.resetTimeline,

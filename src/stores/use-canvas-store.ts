@@ -195,8 +195,7 @@ export const useCanvasStore = create<CanvasStore>()(
             visible: true,
             opacity: 1,
             type: 'custom',
-            isDefaultGroup: true,
-            animations: []
+            isDefaultGroup: true
           };
           state.groups.push(defaultGroup);
           
@@ -302,8 +301,7 @@ export const useCanvasStore = create<CanvasStore>()(
             rotation: 0,
             visible: true,
             type: 'custom',
-            isDefaultGroup: true,
-            animations: []
+            isDefaultGroup: true
           };
           state.groups.push(newGroup);
           duplicatedElement.groupId = newGroup.id;
@@ -664,7 +662,6 @@ export const useCanvasStore = create<CanvasStore>()(
         opacity: 1,
         type: 'custom',
         isDefaultGroup: false,
-        animations: [],
         ...groupOptions
       };
 
@@ -703,8 +700,7 @@ export const useCanvasStore = create<CanvasStore>()(
                 rotation: 0,
                 visible: true,
                 type: 'custom',
-                isDefaultGroup: true,
-                animations: []
+                isDefaultGroup: true
               };
               state.groups.push(defaultGroup);
               element.groupId = defaultGroup.id;
@@ -1024,12 +1020,9 @@ export const useCanvasStore = create<CanvasStore>()(
         );
         
         // Deep clone the elements to avoid reference issues
+        // Note: animations are now centralized in timeline, not on elements
         const clonedElements = elementsToCopy.map((element: AnimatedCanvasObject) => ({
-          ...element,
-          animations: element.animations.map((anim: ElementAnimation) => ({
-            ...anim,
-            id: crypto.randomUUID()
-          }))
+          ...element
         }));
         
         // Store in clipboard
@@ -1051,11 +1044,7 @@ export const useCanvasStore = create<CanvasStore>()(
               id: crypto.randomUUID(),
               name: `${element.name} Copy`,
               x: element.x + 20,
-              y: element.y + 20,
-              animations: element.animations.map((anim: ElementAnimation) => ({
-                ...anim,
-                id: crypto.randomUUID()
-              }))
+              y: element.y + 20
             };
             
             // Create a new group for the pasted element
@@ -1069,7 +1058,6 @@ export const useCanvasStore = create<CanvasStore>()(
               visible: true,
               type: 'custom',
               isDefaultGroup: true,
-              animations: []
             };
             
             state.groups.push(newGroup);
@@ -1122,8 +1110,6 @@ export const useCanvasElements = () => {
 export const useCanvasGroups = () => {
   return useCanvasStore(state => state.groups);
 };
-
-
 
 export const useCanvasOperations = () => {
   return useCanvasStore(

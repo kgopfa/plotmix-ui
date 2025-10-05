@@ -1,4 +1,4 @@
-import { AnimatedCanvasObject, CanvasGroup, TimelineAnimation, ElementAnimation } from '@/types/canvas';
+import { AnimatedCanvasObject, CanvasGroup, TimelineAnimation, ElementAnimation, AnimationType } from '@/types/canvas';
 import { TimelineState, TimelineTrackData } from '../types/timeline';
 import { calculateEffectiveEndTime } from '@/utils/animation-utils';
 import { MAX_SCENE_DURATION } from '@/types/project';
@@ -137,7 +137,7 @@ export class TimelineManagerV2 {
           startTime: anim.startTime,
           duration: anim.duration,
           properties: anim.properties,
-          easing: anim.easing
+          easing: anim.easing as any
         }))
       };
 
@@ -202,11 +202,11 @@ export class TimelineManagerV2 {
         timelineAnim.tracks.push({
           id: anim.id,
           displayName: anim.type,
-          type: anim.type,
+          type: anim.type as AnimationType,
           startTime: anim.startTime,
           duration: anim.duration,
           properties: anim.properties,
-          easing: anim.easing
+          easing: anim.easing as any
         });
       });
     });

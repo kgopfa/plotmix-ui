@@ -6,7 +6,7 @@ import Designer from '@/components/designer';
 import { apiClient } from '@/lib/api-client';
 import { useProjectStore } from '@/stores/use-project-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
-import { useTimelineStore } from '@/stores/use-timeline-store';
+import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
 import { useUIStore } from '@/stores/use-ui-store';
 import { useSnappingPersistence } from '@/hooks/use-snapping-persistence';
 import type { AnimationState } from '@/types/project';
@@ -27,7 +27,7 @@ export default function DesignerPage() {
     // Clear any stale canvas/timeline/UI state immediately to avoid flash of previous project
     try {
       useCanvasStore.getState().clearCanvas();
-      useTimelineStore.getState().resetTimeline();
+      useTimelineStoreV2.getState().resetTimeline();
       
       // Reset UI state to close any open tabs/panels from previous project
       const uiStore = useUIStore.getState();
@@ -35,7 +35,7 @@ export default function DesignerPage() {
       uiStore.setActiveNav(null);
       uiStore.setHoverRightPanel(null);
       uiStore.setInteractedNav(null);
-      useTimelineStore.getState().clearSelection(); // Clear timeline selection
+      useTimelineStoreV2.getState().clearSelection(); // Clear timeline selection
       
       // Reset tool state to default
       uiStore.setActiveTool('select');
@@ -75,7 +75,7 @@ export default function DesignerPage() {
 
       // Hydrate stores from mainState
       const canvasStore = useCanvasStore.getState();
-      const timelineStore = useTimelineStore.getState();
+      const timelineStore = useTimelineStoreV2.getState();
       const projectStore = useProjectStore.getState();
       
       // Multi-scene format only - fail if not present

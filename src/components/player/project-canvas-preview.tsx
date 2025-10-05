@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { FitFullCanvasPlayer } from './fit-full-canvas-player';
 import { apiClient } from '@/lib/api-client';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
-import { useTimelineTracks, useTimelineSync } from '@/stores/use-timeline-store';
+import { useTimelineTracks, useTimelineSync, useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
 
 type Props = { projectId: string; fallbackSize?: { width: number; height: number } };
 
@@ -12,7 +12,7 @@ export function ProjectCanvasPreview({ projectId, fallbackSize = { width: 1920, 
   const [elements, setElements] = useState<AnimatedCanvasObject[]>([]);
   const [groups, setGroups] = useState<CanvasGroup[]>([]);
   const [designSize, setDesignSize] = useState(fallbackSize);
-  const { setElements: setTimelineElements, setGroups: setTimelineGroups, updateTracks } = useTimelineTracks();
+  const { setElements: setTimelineElements, setGroups: setTimelineGroups, updateTracks } = useTimelineStoreV2();
   const { buildGSAPTimeline } = useTimelineSync();
 
   useEffect(() => {

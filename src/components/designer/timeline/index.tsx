@@ -3,7 +3,6 @@ import { Play, Pause, ChevronUp, ChevronDown, Square } from 'lucide-react';
 import { TimelineTrack } from '@/components/designer/timeline/timeline-track';
 import { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { useCanvasElements, useCanvasGroups } from '@/stores/use-canvas-store';
-import { useTimelineStore } from '@/stores/use-timeline-store';
 import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { usePanelState, useUIStore } from '@/stores/use-ui-store';
@@ -23,7 +22,7 @@ export function Timeline() {
   );
 
   // Get timeline state and actions
-  const { playback, ui: timelineUI, getEffectiveDuration, setScale, getTotalProjectDuration, getGlobalTime } = useTimelineStore(
+  const { playback, ui: timelineUI, getEffectiveDuration, setScale, getTotalProjectDuration, getGlobalTime } = useTimelineStoreV2(
     useShallow((state: any) => ({
       playback: state.playback,
       ui: state.ui,
@@ -36,7 +35,7 @@ export function Timeline() {
 
   const { timelineAnimations } = useTimelineStoreV2();
 
-  const { play, pause, stop, updateAnimation } = useTimelineStore(
+  const { play, pause, stop, updateAnimation } = useTimelineStoreV2(
     useShallow((state: any) => ({
       play: state.play,
       pause: state.pause,

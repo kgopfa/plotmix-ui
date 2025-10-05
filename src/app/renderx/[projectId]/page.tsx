@@ -8,7 +8,7 @@ import gsap from 'gsap';
 import { useProjectStore } from '@/stores/use-project-store';
 import { useUIStore } from '@/stores/use-ui-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
-import { useTimelineStore, useTimelineSync } from '@/stores/use-timeline-store';
+import { useTimelineStoreV2, useTimelineSync } from '@/stores/use-timeline-store-v2';
 import { useTimelineIntegration } from '@/hooks/use-timeline-integration';
 import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager-v2';
 import type { ApplicationCanvasRef } from '@/components/render/canvas/application-canvas';
@@ -176,7 +176,7 @@ export default function RenderXPage() {
         canvasStore.setGroups(groupsUnique);
 
         const timeline = timelineData || {};
-        useTimelineStore.getState().loadProjectData({
+        useTimelineStoreV2.getState().loadProjectData({
           elements: elementsUnique,
           groups: groupsUnique,
           animationStates: timeline.animationStates || {},
@@ -198,7 +198,7 @@ export default function RenderXPage() {
           // Live preview: wake GSAP, start Pixi ticker, and play timeline
           gsap.ticker.wake();
           pixiApp?.ticker?.start();
-          const { play } = useTimelineStore.getState();
+          const { play } = useTimelineStoreV2.getState();
           try { play(); } catch { }
         } else {
           // Headless recording mode: sleep GSAP and stop Pixi ticker for manual seeking
@@ -206,13 +206,13 @@ export default function RenderXPage() {
           pixiApp?.ticker?.stop();
         }
 
-        const duration = useTimelineStore.getState().playback.totalDuration || 5;
+        const duration = useTimelineStoreV2.getState().playback.totalDuration || 5;
         const tl = gsap.globalTimeline;
 
         // Expose deterministic seek-and-render entry
         globalThis.__seekAndRender__ = (t: number) => {
           try {
-            const { gsapManager } = useTimelineStore.getState();
+            const { gsapManager } = useTimelineStoreV2.getState();
             // Debug: check a sample animated target value before/after
             // Note: With new timeline structure, we need to check timeline animations instead
             const animatedIds = elements
@@ -276,7 +276,7 @@ export default function RenderXPage() {
 
         // Prime initial frame at t=0 to apply starting values
         try {
-          const { gsapManager } = useTimelineStore.getState();
+          const { gsapManager } = useTimelineStoreV2.getState();
           if (gsapManager) {
             gsapManager.updateTime(0);
           } else {

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Play, Pause, RotateCcw } from 'lucide-react';
-import { useTimelinePlayback } from '@/stores/use-timeline-store';
+import { useTimelinePlayback } from '@/stores/use-timeline-store-v2';
 
 export function VerticalPlaybackControls() {
   const { playback, play, pause, stop } = useTimelinePlayback();

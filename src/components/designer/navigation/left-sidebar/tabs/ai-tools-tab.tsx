@@ -4,7 +4,7 @@ import { useSetActiveNav, useSetHoverNav, useSetInteractedNav, useAIPromptHistor
 import { apiClient } from '@/lib/api-client';
 import { useProjectStore } from '@/stores/use-project-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
-import { useTimelineStore } from '@/stores/use-timeline-store';
+import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
 
 function formatRelativeTime(input: string | number | Date): string {
   const date = new Date(input);
@@ -92,7 +92,7 @@ export const AIToolsTab: React.FC = () => {
 
       // Hydrate stores with new state
       const canvas = useCanvasStore.getState();
-      const timeline = useTimelineStore.getState();
+      const timeline = useTimelineStoreV2.getState();
       const rawElements = Array.isArray(mainState.elements) ? mainState.elements : [];
       const rawGroups = Array.isArray(mainState.groups) ? mainState.groups : [];
       const elements = Array.from(new Map(rawElements.map((e: any) => [e.id, { animations: Array.isArray(e.animations) ? e.animations : [], fill: typeof e.fill === 'string' && e.fill ? e.fill : '#000000', ...e }])).values());
@@ -140,7 +140,7 @@ export const AIToolsTab: React.FC = () => {
       setProjectInfo({ version: project.version, name: project.name, title: project.title });
       const mainState = (project.mainState as any) || {};
       const canvas = useCanvasStore.getState();
-      const timeline = useTimelineStore.getState();
+      const timeline = useTimelineStoreV2.getState();
       const rawElements = Array.isArray(mainState.elements) ? mainState.elements : [];
       const rawGroups = Array.isArray(mainState.groups) ? mainState.groups : [];
       const elements = Array.from(new Map(rawElements.map((e: any) => [e.id, { animations: Array.isArray(e.animations) ? e.animations : [], fill: typeof e.fill === 'string' && e.fill ? e.fill : '#000000', ...e }])).values());

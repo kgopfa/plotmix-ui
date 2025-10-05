@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { ElementAnimation } from '@/types/canvas';
-import { useTimelineStore } from '@/stores/use-timeline-store';
+import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
 
 interface AnimationBlockProps {
   animation: ElementAnimation;
@@ -41,7 +41,8 @@ export const AnimationBlock: React.FC<AnimationBlockProps> = ({
   onClick,
   onChange,
 }) => {
-  const { getEffectiveDuration, updateAnimationFromTimeline } = useTimelineStore();
+  // TODO: Update for new centralized timeline structure
+  // const { getEffectiveDuration, updateAnimationFromTimeline } = useTimelineStoreV2();
   const isDragging = useRef(false);
   const isResizing = useRef(false);
   const dragStartX = useRef(0);
@@ -49,7 +50,7 @@ export const AnimationBlock: React.FC<AnimationBlockProps> = ({
   const initialWidth = useRef(0);
 
   const left = animation.startTime * scale;
-  const width = getEffectiveDuration(animation.id) * scale; // Get from Zustand
+  const width = animation.duration * scale; // Use animation duration directly
 
   // Get color based on animation number
   // Use a stable hash of the animation id so colors also appear correctly after project load
@@ -98,7 +99,8 @@ export const AnimationBlock: React.FC<AnimationBlockProps> = ({
     const newEffectiveDuration = Math.max(0.1, newWidth / scale);
     
     // Use the actual elementId instead of hardcoded string
-    updateAnimationFromTimeline(animation.id, elementId, newEffectiveDuration, animation.startTime);
+    // TODO: Update for new centralized timeline structure
+    // updateAnimationFromTimeline(animation.id, elementId, newEffectiveDuration, animation.startTime);
   };
 
   const handleMouseUp = () => {

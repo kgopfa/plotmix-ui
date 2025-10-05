@@ -19,7 +19,7 @@ import {
   useUIStore
 } from '@/stores/use-ui-store';
 import { useCanvasOperations } from '@/stores/use-canvas-store';
-import { useTimelineOperations } from '@/stores/use-timeline-store';
+import { useTimelineOperations } from '@/stores/use-timeline-store-v2';
 import { ToolbarTab } from './tabs/toolbar-tab';
 import { UploadsTab } from './tabs/uploads-tab';
 import { TextTab } from './tabs/text-tab';

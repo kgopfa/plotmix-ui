@@ -24,7 +24,7 @@ import { GroupSelection } from '../selection/group-selection';
 import { useCanvasState } from '@/stores/use-ui-store';
 import { useCanvasOperations } from '@/stores/use-canvas-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
-import { useTimelineStore } from '@/stores/use-timeline-store';
+import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
 import { useResponsiveCanvasPosition } from '@/hooks/use-responsive-canvas-position';
 import { useElementDragging } from '@/hooks/use-element-dragging';
 import { useSimpleElementDrag } from '@/hooks/use-simple-element-drag';
@@ -96,7 +96,7 @@ interface DesignCanvasProps {
 
 export const DesignCanvas = (props: DesignCanvasProps) => {
   // Get isPlaying state directly from timeline store
-  const isPlaying = useTimelineStore((state: any) => state.playback.isPlaying);
+  const isPlaying = useTimelineStoreV2((state: any) => state.playback.isPlaying);
 
   // Get selection store functions
   const { selectGroup } = useSelectionStore();

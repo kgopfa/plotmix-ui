@@ -9,7 +9,7 @@ import type { FederatedPointerEvent } from 'pixi.js';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useProjectStore } from '@/stores/use-project-store';
-import { useTimelineStore, useTimelineSync } from '@/stores/use-timeline-store';
+import { useTimelineStoreV2, useTimelineSync } from '@/stores/use-timeline-store-v2';
 import { useTimelineIntegration } from '@/hooks/use-timeline-integration';
 import { apiClient } from '@/lib/api-client';
 
@@ -130,7 +130,7 @@ export function SimpleRenderEmbed({ projectId, autoplay = true }: Props) {
         // @ts-expect-error runtime app
         const pixiApp = appRef.current?.getApplication()?.app;
         pixiApp?.ticker?.start();
-        const { play } = useTimelineStore.getState();
+        const { play } = useTimelineStoreV2.getState();
         try { play(); } catch {}
       }
     })();

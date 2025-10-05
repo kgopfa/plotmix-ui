@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { produce } from 'immer';
 import { useCanvasStore } from '@/stores/use-canvas-store';
-import { useTimelineStore } from '@/stores/use-timeline-store';
+import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
 import { DiffPatcher } from 'jsondiffpatch';
 import { apiClient } from '@/lib/api-client';
 import { useUIStore } from '@/stores/use-ui-store';
@@ -142,7 +142,7 @@ export const useProjectStore = create<ProjectStore>()(
 
     getCurrentMainState: () => {
       const canvas = useCanvasStore.getState();
-      const timeline = useTimelineStore.getState();
+      const timeline = useTimelineStoreV2.getState();
       const { scenes, dimensions, currentSceneIndex } = get();
 
       // Return NEW multi-scene format: {dimensions, scenes}
@@ -157,11 +157,15 @@ export const useProjectStore = create<ProjectStore>()(
             sceneCanvas: {
               elements: canvas.elements,
               groups: canvas.groups,
-              timeline: {
+              timeline: timeline.timelineAnimations,
+              playback: {
                 scale: timeline.ui.scale,
                 duration: timeline.playback.totalDuration,
                 currentTime: timeline.playback.currentTime,
-                animationStates: Object.fromEntries(timeline.animationStates as unknown as Iterable<readonly [PropertyKey, unknown]>) as Record<string, any>,
+                isPlaying: timeline.playback.isPlaying,
+                isPaused: timeline.playback.isPaused,
+                isStopped: timeline.playback.isStopped,
+                playbackSpeed: timeline.playback.playbackSpeed || 1
               }
             }
           }]
@@ -175,11 +179,15 @@ export const useProjectStore = create<ProjectStore>()(
         sceneCanvas: {
           elements: canvas.elements,
           groups: canvas.groups,
-          timeline: {
+          timeline: timeline.timelineAnimations,
+          playback: {
             scale: timeline.ui.scale,
             duration: timeline.playback.totalDuration,
             currentTime: timeline.playback.currentTime,
-            animationStates: Object.fromEntries(timeline.animationStates as unknown as Iterable<readonly [PropertyKey, unknown]>) as Record<string, any>,
+            isPlaying: timeline.playback.isPlaying,
+            isPaused: timeline.playback.isPaused,
+            isStopped: timeline.playback.isStopped,
+            playbackSpeed: timeline.playback.playbackSpeed || 1
           }
         }
       };
@@ -488,7 +496,7 @@ export const useProjectStore = create<ProjectStore>()(
         // Load the scene data into canvas and timeline stores
         const scene = scenes[sceneIndex];
         const canvasStore = useCanvasStore.getState();
-        const timelineStore = useTimelineStore.getState();
+        const timelineStore = useTimelineStoreV2.getState();
         
         canvasStore.loadSceneData(
           scene.sceneId,
@@ -499,10 +507,11 @@ export const useProjectStore = create<ProjectStore>()(
         timelineStore.loadProjectData({
           elements: scene.sceneCanvas.elements,
           groups: scene.sceneCanvas.groups,
-          animationStates: scene.sceneCanvas.timeline.animationStates || {},
-          scale: scene.sceneCanvas.timeline.scale || 1,
-          duration: scene.sceneCanvas.timeline.duration || 0, // Use 0 instead of 10 for empty scenes
-          currentTime: scene.sceneCanvas.timeline.currentTime || 0,
+          timelineAnimations: scene.sceneCanvas.timeline || [],
+          animationStates: {},
+          scale: scene.sceneCanvas.playback?.scale || 1,
+          duration: scene.sceneCanvas.playback?.duration || 0,
+          currentTime: scene.sceneCanvas.playback?.currentTime || 0,
         });
       }
     },

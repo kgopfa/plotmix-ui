@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useTimelinePlayback } from '@/stores/use-timeline-store';
+import { useTimelinePlayback } from '@/stores/use-timeline-store-v2';
 
 export function FullscreenPlaybackControls() {
   const { playback, play, pause, stop, setPlaybackSpeed } = useTimelinePlayback();

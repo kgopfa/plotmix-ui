@@ -30,7 +30,7 @@ import { useProjectStore } from '@/stores/use-project-store';
 import { DiffPatcher } from 'jsondiffpatch';
 import { apiClient } from '@/lib/api-client';
 import { useCanvasStore } from '@/stores/use-canvas-store';
-import { useTimelineStore } from '@/stores/use-timeline-store';
+import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
 import { useUIStore } from '@/stores/use-ui-store';
 
 // Simplified interface - only for props that can't be accessed via stores
@@ -97,7 +97,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
       // Hydrate canvas and timeline from returned mainState
       const mainState = (project.mainState as any) || {};
       const canvasStore = useCanvasStore.getState();
-      const timelineStore = useTimelineStore.getState();
+      const timelineStore = useTimelineStoreV2.getState();
       const rawElements = Array.isArray(mainState.elements) ? mainState.elements : [];
       const rawGroups = Array.isArray(mainState.groups) ? mainState.groups : [];
       const sanitizedElements = rawElements.map((el: any) => ({
@@ -140,7 +140,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
       // Hydrate canvas and timeline from returned mainState
       const mainState = (project.mainState as any) || {};
       const canvasStore = useCanvasStore.getState();
-      const timelineStore = useTimelineStore.getState();
+      const timelineStore = useTimelineStoreV2.getState();
       const rawElements = Array.isArray(mainState.elements) ? mainState.elements : [];
       const rawGroups = Array.isArray(mainState.groups) ? mainState.groups : [];
       const sanitizedElements = rawElements.map((el: any) => ({

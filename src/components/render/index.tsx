@@ -4,9 +4,9 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import gsap from 'gsap';
-import { TimelineManager } from '@/lib/timeline-manager';
+import { TimelineManagerV2 } from '@/lib/timeline-manager-v2';
 import { useCanvasElements, useCanvasGroups, useCanvasStore } from '@/stores/use-canvas-store';
-import { useTimelineSync, useTimelineStore } from '@/stores/use-timeline-store';
+import { useTimelineSync } from '@/stores/use-timeline-store-v2';
 import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
 import { GSAPTimelineManagerV2 } from '@/lib/gsap-timeline-manager-v2';
 import { Container } from 'pixi.js';
@@ -75,7 +75,7 @@ export default function ScreenCapture({ autoplayOnReady = false, recordDurationS
   const gsapManager = useMemo(() => new GSAPTimelineManagerV2(), []);
 
   // Memoize the timeline manager instance
-  const timelineManager = useMemo(() => TimelineManager.getInstance(), []);
+  const timelineManager = useMemo(() => TimelineManagerV2.getInstance(), []);
 
   // Use the canvas dimensions hook
   const { dimensions } = useCanvasDimensions();
@@ -302,7 +302,7 @@ export default function ScreenCapture({ autoplayOnReady = false, recordDurationS
         pixiApp?.ticker?.start();
       } catch {}
       try {
-        const { play, playback } = useTimelineStore.getState();
+        const { play, playback } = useTimelineStoreV2.getState();
         if (!playback.isPlaying) play();
       } catch {}
       // Start recording after playback begins

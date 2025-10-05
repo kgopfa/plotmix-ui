@@ -5,7 +5,6 @@ import {
 } from '@/types/canvas';
 import { useState, useEffect, useRef } from 'react';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
-import { useTimelineStore } from '@/stores/use-timeline-store';
 import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
@@ -42,8 +41,7 @@ export function AnimationsTab({
 
   // Get stores for direct updates
   const canvasStore = useCanvasStore();
-  const { updateAnimationDuration, updateAnimationRepeat, updateTracks, buildGSAPTimeline } = useTimelineStore();
-  const { updateTimelineAnimation } = useTimelineStoreV2();
+  const { updateTracks, buildGSAPTimeline } = useTimelineStoreV2();
 
   // Determine the current selection type and ID
   const currentSelection = selectedGroup || selectedElement;
@@ -96,14 +94,14 @@ export function AnimationsTab({
       // Force Timeline Store to sync with Canvas Store
       const canvasElements = canvasStore.getAllElements();
       const canvasGroups = canvasStore.getAllGroups();
-      const timelineStore = useTimelineStore.getState();
+      const timelineStore = useTimelineStoreV2.getState();
 
       // Update Timeline Store with latest data
       timelineStore.setElements(canvasElements);
       timelineStore.setGroups(canvasGroups);
 
       // Force clear Enhanced Timeline Manager cache to ensure rebuild
-      timelineStore.gsapManager.forceClearCache();
+      // Note: forceClearCache not available in base GSAPTimelineManagerV2
 
       // Rebuild timeline
       setTimeout(() => {
@@ -136,23 +134,27 @@ export function AnimationsTab({
       const animation = updatedAnimations.find(a => a.id === animationId);
       if (animation) {
         if (changedField === 'repeat') {
-          updateAnimationRepeat(animationId, selectionId!, animation.repeat ?? 0, animation.repeatDelay, animation.yoyo);
+          // TODO: Update for new centralized timeline structure
+          // updateAnimationRepeat(animationId, selectionId!, animation.repeat ?? 0, animation.repeatDelay, animation.yoyo);
         } else if (changedField === 'repeatDelay') {
-          updateAnimationRepeat(animationId, selectionId!, animation.repeat ?? 0, animation.repeatDelay, animation.yoyo);
+          // TODO: Update for new centralized timeline structure
+          // updateAnimationRepeat(animationId, selectionId!, animation.repeat ?? 0, animation.repeatDelay, animation.yoyo);
         } else if (changedField === 'yoyo') {
-          updateAnimationRepeat(animationId, selectionId!, animation.repeat ?? 0, animation.repeatDelay, animation.yoyo);
+          // TODO: Update for new centralized timeline structure
+          // updateAnimationRepeat(animationId, selectionId!, animation.repeat ?? 0, animation.repeatDelay, animation.yoyo);
         }
       }
     } else if (changedField === 'duration' && animationId) {
       const animation = updatedAnimations.find(a => a.id === animationId);
       if (animation) {
-        updateAnimationDuration(animationId, selectionId!, animation.duration);
+        // TODO: Update for new centralized timeline structure
+        // updateAnimationDuration(animationId, selectionId!, animation.duration);
       }
     }
 
     // Force clear cache for any animation changes to ensure timeline rebuilds
-    const timelineStore = useTimelineStore.getState();
-    timelineStore.gsapManager.forceClearCache();
+    const timelineStore = useTimelineStoreV2.getState();
+    // Note: forceClearCache not available in base GSAPTimelineManagerV2
 
     // Note: Canvas Store update and timeline rebuild handled by useEffect
   };
