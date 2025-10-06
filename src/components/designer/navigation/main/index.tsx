@@ -118,6 +118,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
       timelineStore.loadProjectData({
         elements: elements as any,
         groups: groups as any,
+        timelineAnimations: Array.isArray(timeline) ? timeline : [],
         animationStates: timeline.animationStates || {},
         scale: typeof timeline.scale === 'number' ? timeline.scale : 1,
         duration: typeof timeline.duration === 'number' ? timeline.duration : 10,
@@ -161,6 +162,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
       timelineStore.loadProjectData({
         elements: elements as any,
         groups: groups as any,
+        timelineAnimations: Array.isArray(timeline) ? timeline : [], // Load timeline animations array
         animationStates: timeline.animationStates || {},
         scale: typeof timeline.scale === 'number' ? timeline.scale : 1,
         duration: typeof timeline.duration === 'number' ? timeline.duration : 10,

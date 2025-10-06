@@ -103,6 +103,7 @@ export const AIToolsTab: React.FC = () => {
       timeline.loadProjectData({
         elements: elements as any,
         groups: groups as any,
+        timelineAnimations: Array.isArray(tl) ? tl : [],
         animationStates: (tl.animationStates as any) || {},
         scale: typeof tl.scale === 'number' ? tl.scale : 1,
         duration: typeof tl.duration === 'number' ? tl.duration : 10,
@@ -151,6 +152,7 @@ export const AIToolsTab: React.FC = () => {
       timeline.loadProjectData({
         elements: elements as any,
         groups: groups as any,
+        timelineAnimations: Array.isArray(tl) ? tl : [], // Load timeline animations array
         animationStates: (tl.animationStates as any) || {},
         scale: typeof tl.scale === 'number' ? tl.scale : 1,
         duration: typeof tl.duration === 'number' ? tl.duration : 10,

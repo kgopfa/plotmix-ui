@@ -179,6 +179,7 @@ export default function RenderXPage() {
         useTimelineStoreV2.getState().loadProjectData({
           elements: elementsUnique,
           groups: groupsUnique,
+          timelineAnimations: Array.isArray(timeline) ? timeline : [],
           animationStates: timeline.animationStates || {},
           scale: typeof timeline.scale === 'number' ? timeline.scale : 1,
           duration: typeof timeline.duration === 'number' ? timeline.duration : 0,

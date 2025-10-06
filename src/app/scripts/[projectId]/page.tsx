@@ -127,6 +127,7 @@ export default function ScriptsPage() {
       loadProjectData({
         elements,
         groups,
+        timelineAnimations: Array.isArray(timeline) ? timeline : [],
         animationStates: (timeline.animationStates as Record<string, any>) || {},
         scale: typeof timeline.scale === 'number' ? timeline.scale : 1,
         duration: typeof timeline.duration === 'number' ? timeline.duration : 0,
@@ -241,6 +242,7 @@ export default function ScriptsPage() {
               loadProjectData({
                 elements: newResult.elements as any,
                 groups: newResult.groups as any,
+                timelineAnimations: Array.isArray(newResult.timeline) ? newResult.timeline : [], // Load timeline animations array
                 animationStates: newResult.timeline.animationStates || {},
                 scale: newResult.timeline.scale || 1,
                 duration: newResult.timeline.duration || 0,
@@ -434,6 +436,7 @@ export default function ScriptsPage() {
         loadProjectData({
           elements: result.elements as any,
           groups: result.groups as any,
+          timelineAnimations: Array.isArray(result.timeline) ? result.timeline : [], // Load timeline animations array
           animationStates: result.timeline.animationStates || {},
           scale: result.timeline.scale || 1,
           duration: result.timeline.duration || 0,

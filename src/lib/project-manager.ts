@@ -152,7 +152,7 @@ export class ProjectManager {
           sceneCanvas: {
             elements: currentSceneData.elements,
             groups: currentSceneData.groups,
-            timeline: [], // TODO: Get timeline animations from timeline store
+            timeline: timelineStore.timelineAnimations,
             playback: {
               scale: timelineStore.ui.scale,
               duration: timelineStore.playback.totalDuration,
