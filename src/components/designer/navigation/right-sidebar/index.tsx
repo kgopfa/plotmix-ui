@@ -181,7 +181,7 @@ export const RightSidebar: React.FC<{ onInspectorChange: any; onGroupInspectorCh
       {activePanel && (
         <div
           ref={tabPanelRef}
-          className="fixed pointer-events-auto z-[40] w-80 2xl:w-96"
+          className="fixed pointer-events-auto z-[60] w-80 2xl:w-96"
           style={{
             right: '80px', // Position before sidebar
             top: '72px',
