@@ -12,10 +12,6 @@ import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
 import { useCanvasMigration } from '@/hooks/use-canvas-migration';
 import { GSAPTimelineManagerV2 } from '@/lib/gsap-timeline-manager-v2';
 import { Graphics, Container } from 'pixi.js';
-import { PropertiesPanel } from './navigation/right-sidebar/properties-panel';
-import { AnimationsPanel } from './navigation/right-sidebar/animations-panel';
-import { LayersTab } from './navigation/right-sidebar/tabs/layers-tab';
-import { ScenesTab } from './navigation/right-sidebar/tabs/scenes-tab';
 import type { TimelineCanvasRef } from '@/lib/gsap-timeline-manager-v2';
 import { Timeline } from './timeline';
 import { MaskOverlay } from './helpers/mask-overlay';
@@ -926,18 +922,7 @@ export default function Designer() {
 
   const activeNav = useActiveNav();
 
-  // Track right panel actual width from Tailwind classes to sync dependent offsets
-  const rightPanelRef = useRef<HTMLDivElement | null>(null);
-  const setRightPanelWidth = useUIStore(state => state.setRightPanelWidth);
-  useEffect(() => {
-    if (!rightPanelRef.current) return;
-    const el = rightPanelRef.current;
-    const updateWidth = () => setRightPanelWidth(el.offsetWidth);
-    updateWidth();
-    const ro = new ResizeObserver(() => updateWidth());
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [setRightPanelWidth, panelState.rightPanelVisible, activeRightPanel]);
+  // Right panel width is now tracked in the RightSidebar component itself
 
   const handleGroupSelectionDragStart = useCallback((virtualElement: AnimatedCanvasObject, mouseX: number, mouseY: number, allElements?: AnimatedCanvasObject[]) => {
     // Check if this is a real group selection (not just multi-selection)
@@ -1019,7 +1004,10 @@ export default function Designer() {
 
       {/* Navigation Sidebars */}
       <LeftSidebar />
-      <RightSidebar />
+      <RightSidebar 
+        onInspectorChange={handleInspectorChange}
+        onGroupInspectorChange={handleGroupInspectorChange}
+      />
 
       {/* Main Body - Full-screen PIXI Application */}
       <div 
@@ -1137,46 +1125,6 @@ export default function Designer() {
           maskOffsetY={MASK_OFFSET_Y}
         />
 
-        {/* Floating Right Panel - Content */}
-        {(() => {
-          // Show right panel when there's a selection or when layers/scenes is explicitly selected
-          const shouldShow = panelState.rightPanelVisible && activeRightPanel && !isPlaying && (
-            activeRightPanel === 'layers' || 
-            activeRightPanel === 'scenes' ||
-            (hasSelection && (activeRightPanel === 'properties' || activeRightPanel === 'animations'))
-          );
-          return shouldShow;
-        })() && (
-          <>
-            <div
-              ref={rightPanelRef}
-              className={`absolute right-20 top-2 w-80 2xl:w-96 bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-xl shadow-gray-200/50 rounded-2xl overflow-y-auto z-[60] mb-2 transform transition-all duration-300 ease-out translate-x-0 opacity-100`}
-              style={{ 
-                bottom: `${panelState.timelineHeight + 8}px`,
-                height: `calc(100vh - ${panelState.timelineHeight + 8 + 16}px)`,
-              }}
-            >
-              { activeRightPanel === 'properties' && hasSelection && (
-                <PropertiesPanel
-                  onInspectorChange={handleInspectorChange}
-                  onGroupInspectorChange={handleGroupInspectorChange}
-                />
-              )}
-              { activeRightPanel === 'animations' && hasSelection && (
-                <AnimationsPanel
-                  onInspectorChange={handleInspectorChange}
-                  onGroupInspectorChange={handleGroupInspectorChange}
-                />
-              )}
-              { activeRightPanel === 'layers' && (
-                <LayersTab />
-              )}
-              { activeRightPanel === 'scenes' && (
-                <ScenesTab />
-              )}
-            </div>
-          </>
-        )}
       </div>
 
       {/* Floating Timeline - positioned fixed at bottom, starts after navigation sidebar */}
