@@ -1129,7 +1129,9 @@ export default function Designer() {
 
       {/* Floating Timeline - positioned fixed at bottom, starts after navigation sidebar */}
       <div
-        className="fixed bottom-2 right-0 bg-transparent z-50 transition-all duration-600 ease-in-out"
+        className={`fixed bottom-2 right-0 bg-transparent z-50 transition-all duration-600 ease-in-out ${
+          activeRightPanel ? 'blur-xs opacity-90 pointer-events-none' : ''
+        }`}
         style={{
           left: `${timelineLeftOffset}px`, // Start after nav sidebar and any visible left panel
           height: panelState.isTimelineCollapsed ? '72px' : `${panelState.timelineHeight}px`,
