@@ -3,19 +3,25 @@ import {
   ElementAnimation,
   CanvasGroup
 } from '@/types/canvas';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { AnimationSelectionManager } from '@/lib/animation-selection-manager';
 import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
+import { useAnimationHandlers } from '@/hooks/use-animation-handlers';
 import { AnimationCard } from './animation-card';
 import { generateAnimationDisplayName, updateAnimationDisplayNames } from '@/utils/animation-utils';
-import { X } from 'lucide-react';
-import { useSetActiveRightPanel } from '@/stores/use-ui-store';
+import { X, VectorSquare } from 'lucide-react';
+import { useSetActiveRightPanel, useUIStore } from '@/stores/use-ui-store';
 
 interface AnimationsTabProps {
   selectedElement?: AnimatedCanvasObject;
   selectedGroup?: CanvasGroup;
-  localAnimations: ElementAnimation[];
-  onEnterPathMode: (id: string) => void;
+  onInspectorChange?: (
+    prop: string,
+    value: string | number | boolean | ElementAnimation[] | NonNullable<AnimatedCanvasObject['lineOptions']> | {
+      animationId: string;
+      elementId: string;
+    }
+  ) => void;
   onGroupInspectorChange?: (
     groupId: string,
     prop: string,
@@ -26,15 +32,52 @@ interface AnimationsTabProps {
 export function AnimationsTab({
   selectedElement,
   selectedGroup,
-  localAnimations,
-  onEnterPathMode,
+  onInspectorChange,
   onGroupInspectorChange
 }: AnimationsTabProps) {
+  const setActiveRightPanel = useSetActiveRightPanel();
+  const { timelineAnimations } = useTimelineStoreV2();
+
+  // Check if we have a selection
+  const hasSelection = !!(selectedElement || selectedGroup);
+  
+  // Show "No Selection" message if nothing is selected
+  if (!hasSelection) {
+    return (
+      <div className="h-full p-4 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col items-center justify-center">
+        <div className="text-center text-gray-500 space-y-2">
+          <VectorSquare className="w-12 h-12 mx-auto text-gray-400" />
+          <p className="text-sm font-medium">No Selection</p>
+          <p className="text-xs text-gray-400">Select an element or group to add animations</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Get animations from timeline store
+  const localAnimations = useMemo(() => {
+    if (selectedGroup) {
+      return timelineAnimations
+        .filter(anim => anim.target.type === 'group' && anim.target.id === selectedGroup.id)
+        .flatMap(anim => anim.tracks);
+    } else if (selectedElement) {
+      return timelineAnimations
+        .filter(anim => anim.target.type === 'element' && anim.target.id === selectedElement.id)
+        .flatMap(anim => anim.tracks);
+    }
+    return [];
+  }, [timelineAnimations, selectedElement, selectedGroup]);
+
+  // Get onEnterPathMode handler (only if we have onInspectorChange)
+  const { handleEnterPathMode } = useAnimationHandlers(
+    selectedElement || null,
+    onInspectorChange || (() => {})
+  );
+
   // Local state is the single source of truth for this component
   const [animations, setAnimations] = useState<ElementAnimation[]>(localAnimations);
   const [selectedAnimationId, setSelectedAnimationId] = useState<string | null>(null);
   const animationSelectionManager = AnimationSelectionManager.getInstance();
-  const setActiveRightPanel = useSetActiveRightPanel();
 
   // Determine the current selection type and ID
   const currentSelection = selectedGroup || selectedElement;
@@ -217,7 +260,7 @@ export function AnimationsTab({
             onAnimationChange={handleAnimationChange}
             onDuplicateAnimation={handleDuplicateAnimation}
             onDeleteAnimation={handleDeleteAnimationInternal}
-            onEnterPathMode={onEnterPathMode}
+            onEnterPathMode={handleEnterPathMode}
           />
         ))}
       </div>

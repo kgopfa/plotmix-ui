@@ -9,8 +9,6 @@ import {
 } from 'lucide-react';
 import { useActiveRightPanel, useSetActiveRightPanel, useUIStore } from '@/stores/use-ui-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
-import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
-import { useAnimationHandlers } from '@/hooks/use-animation-handlers';
 import { PropertiesTab } from './tabs/properties';
 import { AnimationsTab } from './tabs/animations';
 import { LayersTab } from './tabs/layers-tab';
@@ -101,42 +99,11 @@ const TabContent: React.FC<{ navKey: string; onInspectorChange: any; onGroupInsp
       );
     
     case 'animations':
-      if (!hasSelection) {
-        return (
-          <div className="h-full p-4 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col items-center justify-center">
-            <div className="text-center text-gray-500 space-y-2">
-              <VectorSquare className="w-12 h-12 mx-auto text-gray-400" />
-              <p className="text-sm font-medium">No Selection</p>
-              <p className="text-xs text-gray-400">Select an element or group to add animations</p>
-            </div>
-          </div>
-        );
-      }
-      // Get animations from timeline store
-      const { timelineAnimations } = useTimelineStoreV2();
-      const getCurrentAnimations = () => {
-        if (hasGroupSelection && selectedGroup) {
-          return timelineAnimations
-            .filter(anim => anim.target.type === 'group' && anim.target.id === selectedGroup.id)
-            .flatMap(anim => anim.tracks);
-        } else if (hasIndividualElement && selectedElement) {
-          return timelineAnimations
-            .filter(anim => anim.target.type === 'element' && anim.target.id === selectedElement.id)
-            .flatMap(anim => anim.tracks);
-        }
-        return [];
-      };
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      const { handleEnterPathMode } = useAnimationHandlers(
-        selectedElement,
-        onInspectorChange
-      );
       return (
         <AnimationsTab
           selectedElement={hasIndividualElement ? selectedElement : undefined}
           selectedGroup={hasGroupSelection ? selectedGroup : undefined}
-          localAnimations={getCurrentAnimations()}
-          onEnterPathMode={handleEnterPathMode}
+          onInspectorChange={onInspectorChange}
           onGroupInspectorChange={onGroupInspectorChange}
         />
       );
