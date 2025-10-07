@@ -39,6 +39,20 @@ export function PropertiesTab({ selectedElement, selectedGroup, onInspectorChang
   const elements = useCanvasElements();
   const { updateMultipleElements } = useCanvasOperations();
 
+  // Elements belonging to the selected group (for group mode) - MUST be before early return
+  const elementsInGroup = useMemo(() => {
+    if (!selectedGroup) return [] as typeof elements;
+    const ids = new Set(selectedGroup.elementIds);
+    return elements.filter(el => ids.has(el.id));
+  }, [elements, selectedGroup]);
+
+  // Detect if all elements are the same type (for group mode) - MUST be before early return
+  const uniformType = useMemo(() => {
+    if (elementsInGroup.length === 0) return null as null | typeof elementsInGroup[number]['type'];
+    const firstType = elementsInGroup[0].type;
+    return elementsInGroup.every(el => el.type === firstType) ? firstType : null;
+  }, [elementsInGroup]);
+
   // Check if we have any selection
   const hasSelection = !!(selectedElement || selectedGroup);
 
@@ -57,20 +71,6 @@ export function PropertiesTab({ selectedElement, selectedGroup, onInspectorChang
 
   // Determine if we're showing group or element properties
   const isGroupMode = !!selectedGroup;
-
-  // Elements belonging to the selected group (for group mode)
-  const elementsInGroup = useMemo(() => {
-    if (!selectedGroup) return [] as typeof elements;
-    const ids = new Set(selectedGroup.elementIds);
-    return elements.filter(el => ids.has(el.id));
-  }, [elements, selectedGroup]);
-
-  // Detect if all elements are the same type (for group mode)
-  const uniformType = useMemo(() => {
-    if (elementsInGroup.length === 0) return null as null | typeof elementsInGroup[number]['type'];
-    const firstType = elementsInGroup[0].type;
-    return elementsInGroup.every(el => el.type === firstType) ? firstType : null;
-  }, [elementsInGroup]);
 
   // If in group mode, render group properties
   if (isGroupMode && selectedGroup) {
