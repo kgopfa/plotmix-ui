@@ -9,8 +9,10 @@ import {
 } from 'lucide-react';
 import { useActiveRightPanel, useSetActiveRightPanel, useUIStore } from '@/stores/use-ui-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
-import { PropertiesPanel } from './properties-panel';
-import { AnimationsPanel } from './animations-panel';
+import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
+import { useAnimationHandlers } from '@/hooks/use-animation-handlers';
+import { PropertiesTab } from './tabs/properties';
+import { AnimationsTab } from './tabs/animations';
 import { LayersTab } from './tabs/layers-tab';
 import { ScenesTab } from './tabs/scenes-tab';
 
@@ -66,29 +68,84 @@ const TabContent: React.FC<{ navKey: string; onInspectorChange: any; onGroupInsp
   onInspectorChange, 
   onGroupInspectorChange 
 }) => {
-  const { selectedElements, selectedGroups } = useSelectionStore();
-  const hasSelection = selectedElements.length > 0 || selectedGroups.length > 0;
+  const { selectedElements, selectedGroups, getFirstSelected } = useSelectionStore();
+  const selectedElement = getFirstSelected();
+  const selectedGroup = selectedGroups[0] || null;
+  const selectedElementsCount = selectedElements.length;
+
+  const hasValidGroupSelection = selectedGroup && !selectedGroup.isDefaultGroup && selectedGroup.id;
+  const hasIndividualElement = selectedElement && selectedElementsCount === 1 && !hasValidGroupSelection;
+  const hasGroupSelection = hasValidGroupSelection;
+  const hasSelection = selectedElement || hasGroupSelection;
 
   switch (navKey) {
     case 'properties':
-      return hasSelection ? (
-        <PropertiesPanel onInspectorChange={onInspectorChange} onGroupInspectorChange={onGroupInspectorChange} />
-      ) : null;
+      if (!hasSelection) {
+        return (
+          <div className="h-full p-4 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col items-center justify-center">
+            <div className="text-center text-gray-500 space-y-2">
+              <SwatchBook className="w-12 h-12 mx-auto text-gray-400" />
+              <p className="text-sm font-medium">No Selection</p>
+              <p className="text-xs text-gray-400">Select an element or group to view properties</p>
+            </div>
+          </div>
+        );
+      }
+      return (
+        <PropertiesTab
+          selectedElement={hasIndividualElement ? selectedElement : undefined}
+          selectedGroup={hasGroupSelection ? selectedGroup : undefined}
+          onInspectorChange={onInspectorChange}
+          onGroupInspectorChange={onGroupInspectorChange}
+        />
+      );
     
     case 'animations':
-      return hasSelection ? (
-        <AnimationsPanel onInspectorChange={onInspectorChange} onGroupInspectorChange={onGroupInspectorChange} />
-      ) : null;
+      if (!hasSelection) {
+        return (
+          <div className="h-full p-4 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col items-center justify-center">
+            <div className="text-center text-gray-500 space-y-2">
+              <VectorSquare className="w-12 h-12 mx-auto text-gray-400" />
+              <p className="text-sm font-medium">No Selection</p>
+              <p className="text-xs text-gray-400">Select an element or group to add animations</p>
+            </div>
+          </div>
+        );
+      }
+      // Get animations from timeline store
+      const { timelineAnimations } = useTimelineStoreV2();
+      const getCurrentAnimations = () => {
+        if (hasGroupSelection && selectedGroup) {
+          return timelineAnimations
+            .filter(anim => anim.target.type === 'group' && anim.target.id === selectedGroup.id)
+            .flatMap(anim => anim.tracks);
+        } else if (hasIndividualElement && selectedElement) {
+          return timelineAnimations
+            .filter(anim => anim.target.type === 'element' && anim.target.id === selectedElement.id)
+            .flatMap(anim => anim.tracks);
+        }
+        return [];
+      };
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      const { handleEnterPathMode } = useAnimationHandlers(
+        selectedElement,
+        onInspectorChange
+      );
+      return (
+        <AnimationsTab
+          selectedElement={hasIndividualElement ? selectedElement : undefined}
+          selectedGroup={hasGroupSelection ? selectedGroup : undefined}
+          localAnimations={getCurrentAnimations()}
+          onEnterPathMode={handleEnterPathMode}
+          onGroupInspectorChange={onGroupInspectorChange}
+        />
+      );
     
     case 'layers':
-      return (
-        <LayersTab />
-      );
+      return <LayersTab />;
     
     case 'scenes':
-      return (
-        <ScenesTab />
-      );
+      return <ScenesTab />;
     
     default:
       return null;
