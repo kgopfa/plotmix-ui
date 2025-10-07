@@ -221,7 +221,7 @@ export function AnimationsTab({
   };
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <div className="h-full w-full bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col gap-4 p-4">
       {/* Header */}
       <div className="flex items-center justify-between pb-2 border-b border-gray-200">
         <h4 className="font-semibold text-purple-500 text-sm">Animations</h4>
