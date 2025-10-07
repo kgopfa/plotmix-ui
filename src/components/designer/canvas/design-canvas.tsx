@@ -226,6 +226,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
   } = useSimpleElementDrag({
     elements,
     updateElementPosition: (id, position) => updateElement(id, position),
+    selectElement,
     viewportRef: props.viewportRef,
     designCanvasContainerRef: containerRef,
     onSnapElement: props.onSnapElement,

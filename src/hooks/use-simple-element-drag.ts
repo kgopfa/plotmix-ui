@@ -7,6 +7,7 @@ import { convertPointerEventToDesignCanvasCoords } from '@/utils/coordinate-util
 interface UseSimpleElementDragProps {
   elements: AnimatedCanvasObject[];
   updateElementPosition: (id: string, position: { x: number; y: number }) => void;
+  selectElement: (element: AnimatedCanvasObject | null, addToSelection?: boolean) => void;
   viewportRef?: React.RefObject<ViewportWrapper | null>;
   designCanvasContainerRef?: React.RefObject<Container | null>;
   onSnapElement?: (element: AnimatedCanvasObject, allElements: AnimatedCanvasObject[]) => { x: number; y: number; guides: any[] };
@@ -29,6 +30,7 @@ interface UseSimpleElementDragReturn {
 export function useSimpleElementDrag({
   elements,
   updateElementPosition,
+  selectElement,
   viewportRef,
   designCanvasContainerRef,
   onSnapElement,
@@ -67,6 +69,14 @@ export function useSimpleElementDrag({
     const localPos = getCanvasLocalFromEvent(e);
 
     if (isPointInsideElement(localPos, element)) {
+      // Handle element selection - same approach as group drag
+      const isMultiSelect = (e.nativeEvent && 'metaKey' in e.nativeEvent) ?
+        (e.nativeEvent.metaKey || e.nativeEvent.ctrlKey) : false;
+
+      // Select the element
+      selectElement(element, isMultiSelect);
+
+      // Start dragging
       setIsDragging(true);
       setDraggingId(id);
       dragOffsetRef.current = {
@@ -76,7 +86,7 @@ export function useSimpleElementDrag({
       e.stopPropagation();
       e.preventDefault?.();
     }
-  }, [elements, getCanvasLocalFromEvent, isPointInsideElement]);
+  }, [elements, getCanvasLocalFromEvent, isPointInsideElement, selectElement]);
 
   const handlePointerMove = useCallback((e: FederatedPointerEvent) => {
     if (!isDragging || !draggingId) return;
