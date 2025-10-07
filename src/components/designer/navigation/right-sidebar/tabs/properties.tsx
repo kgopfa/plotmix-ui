@@ -14,7 +14,7 @@ import { useCanvasElements, useCanvasOperations } from '@/stores/use-canvas-stor
 import { ColorPicker } from './color-picker';
 import { FontSelector } from './font-selector';
 import { GradientPicker } from './gradient-picker';
-import { Weight, SquareRoundCorner, ChevronsUpDown, Check, X, Zap } from 'lucide-react';
+import { Weight, SquareRoundCorner, ChevronsUpDown, Check, X, Zap, SwatchBook } from 'lucide-react';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react';
 import { useSetActiveRightPanel } from '@/stores/use-ui-store';
 
@@ -36,10 +36,27 @@ interface PropertiesTabProps {
 }
 
 export function PropertiesTab({ selectedElement, selectedGroup, onInspectorChange, onGroupInspectorChange }: PropertiesTabProps) {
-  // Determine if we're showing group or element properties
-  const isGroupMode = !!selectedGroup;
   const elements = useCanvasElements();
   const { updateMultipleElements } = useCanvasOperations();
+
+  // Check if we have any selection
+  const hasSelection = !!(selectedElement || selectedGroup);
+
+  // Show "No Selection" message if nothing is selected
+  if (!hasSelection) {
+    return (
+      <div className="h-full p-4 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col items-center justify-center">
+        <div className="text-center text-gray-500 space-y-2">
+          <SwatchBook className="w-12 h-12 mx-auto text-gray-400" />
+          <p className="text-sm font-medium">No Selection</p>
+          <p className="text-xs text-gray-400">Select an element or group to view properties</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Determine if we're showing group or element properties
+  const isGroupMode = !!selectedGroup;
 
   // Elements belonging to the selected group (for group mode)
   const elementsInGroup = useMemo(() => {
@@ -55,7 +72,7 @@ export function PropertiesTab({ selectedElement, selectedGroup, onInspectorChang
     return elementsInGroup.every(el => el.type === firstType) ? firstType : null;
   }, [elementsInGroup]);
 
-  // If in group mode, render group properties from the old GroupPropertiesTab
+  // If in group mode, render group properties
   if (isGroupMode && selectedGroup) {
     return <GroupPropertiesContent 
       selectedGroup={selectedGroup} 

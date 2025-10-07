@@ -3,9 +3,9 @@
 import React, { useRef, useEffect } from 'react';
 import {
   SwatchBook,
-  VectorSquare,
   Layers,
   Film,
+  VectorSquare,
 } from 'lucide-react';
 import { useActiveRightPanel, useSetActiveRightPanel, useUIStore } from '@/stores/use-ui-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
@@ -78,17 +78,6 @@ const TabContent: React.FC<{ navKey: string; onInspectorChange: any; onGroupInsp
 
   switch (navKey) {
     case 'properties':
-      if (!hasSelection) {
-        return (
-          <div className="h-full p-4 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col items-center justify-center">
-            <div className="text-center text-gray-500 space-y-2">
-              <SwatchBook className="w-12 h-12 mx-auto text-gray-400" />
-              <p className="text-sm font-medium">No Selection</p>
-              <p className="text-xs text-gray-400">Select an element or group to view properties</p>
-            </div>
-          </div>
-        );
-      }
       return (
         <PropertiesTab
           selectedElement={hasIndividualElement ? selectedElement : undefined}
