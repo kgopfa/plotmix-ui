@@ -11,9 +11,9 @@ import {
   clearAnimatedRectangleDotsCacheForShape
 } from '@/utils/drawing-utils';
 import { useCanvasElements, useCanvasOperations } from '@/stores/use-canvas-store';
-import { ColorPicker } from './color-picker';
-import { FontSelector } from './font-selector';
-import { GradientPicker } from './gradient-picker';
+import { ColorPicker } from './utils/color-picker';
+import { FontSelector } from './utils/font-selector';
+import { GradientPicker } from './utils/gradient-picker';
 import { Weight, SquareRoundCorner, ChevronsUpDown, Check, X, Zap, SwatchBook } from 'lucide-react';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react';
 import { useSetActiveRightPanel } from '@/stores/use-ui-store';
