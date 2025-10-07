@@ -56,7 +56,7 @@ export function AnimationsTab({
           </button>
         </div>
         
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex items-start justify-center pt-12">
           <div className="text-center text-gray-500 space-y-2">
             <VectorSquare className="w-12 h-12 mx-auto text-gray-400" />
             <p className="text-sm font-medium">No Selection</p>
