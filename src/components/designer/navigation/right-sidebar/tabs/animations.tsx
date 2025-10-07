@@ -10,7 +10,7 @@ import { useAnimationHandlers } from '@/hooks/use-animation-handlers';
 import { AnimationCard } from './animation-card';
 import { generateAnimationDisplayName, updateAnimationDisplayNames } from '@/utils/animation-utils';
 import { X, VectorSquare } from 'lucide-react';
-import { useSetActiveRightPanel, useUIStore } from '@/stores/use-ui-store';
+import { useSetActiveRightPanel } from '@/stores/use-ui-store';
 
 interface AnimationsTabProps {
   selectedElement?: AnimatedCanvasObject;
@@ -33,7 +33,6 @@ export function AnimationsTab({
   selectedElement,
   selectedGroup,
   onInspectorChange,
-  onGroupInspectorChange
 }: AnimationsTabProps) {
   const setActiveRightPanel = useSetActiveRightPanel();
   const { timelineAnimations } = useTimelineStoreV2();
