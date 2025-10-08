@@ -1,5 +1,5 @@
 import { useEffect, FC, useState, useRef } from 'react';
-import { Eye, EyeOff, Square, Circle, Type, Image as ImageIcon, Minus, Folder, ChevronDown, ChevronRight, X, Code } from 'lucide-react';
+import { Eye, EyeOff, Square, Circle, Type, Image as ImageIcon, Minus, Folder, ChevronDown, ChevronRight, X, Code, GripVertical } from 'lucide-react';
 import Image from 'next/image';
 import { useCanvasElements, useCanvasGroups, useCanvasOperations } from '@/stores/use-canvas-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
@@ -82,7 +82,7 @@ const getElementIcon = (type: string) => {
 export const LayersTab: FC = () => {
   const canvasObjects = useCanvasElements();
   const groups = useCanvasGroups();
-  const { setElementVisibility, setGroupVisibility, updateElement, updateGroup } = useCanvasOperations();
+  const { setElementVisibility, setGroupVisibility, updateElement, updateGroup, reorderElements, reorderElementsInGroup, reorderGroups } = useCanvasOperations();
   const { selectedElements, selectedGroups, select: selectElement, selectGroup, updateSelectedGroups } = useSelectionStore();
   const setActiveRightPanel = useSetActiveRightPanel();
   const [lastSelectedElementId, setLastSelectedElementId] = useState<string | null>(null);
@@ -91,6 +91,13 @@ export const LayersTab: FC = () => {
   const [editingName, setEditingName] = useState<string>('');
   const nameInputRef = useRef<HTMLInputElement | null>(null);
   const commitByEnterRef = useRef<boolean>(false);
+
+  // Drag and drop state
+  const [draggedElementId, setDraggedElementId] = useState<string | null>(null);
+  const [draggedGroupId, setDraggedGroupId] = useState<string | null>(null);
+  const [dragOverElementId, setDragOverElementId] = useState<string | null>(null);
+  const [dragOverGroupId, setDragOverGroupId] = useState<string | null>(null);
+  const [dragContext, setDragContext] = useState<'ungrouped' | 'group' | 'groups' | null>(null);
 
   // State for collapsed groups - initialize with all groups collapsed
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
@@ -237,7 +244,136 @@ export const LayersTab: FC = () => {
     setGroupVisibility(group.id, group.visible === false);
   };
 
+  // Drag and drop handlers for elements
+  const handleElementDragStart = (e: React.DragEvent, element: AnimatedCanvasObject, context: 'ungrouped' | 'group', groupId?: string) => {
+    setDraggedElementId(element.id);
+    setDragContext(context);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', JSON.stringify({ elementId: element.id, context, groupId }));
+    
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '0.5';
+    }
+  };
 
+  const handleElementDragEnd = (e: React.DragEvent) => {
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '1';
+    }
+    
+    setDraggedElementId(null);
+    setDragOverElementId(null);
+    setDragContext(null);
+  };
+
+  const handleElementDragOver = (e: React.DragEvent, element: AnimatedCanvasObject) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    
+    if (draggedElementId && draggedElementId !== element.id) {
+      setDragOverElementId(element.id);
+    }
+  };
+
+  const handleElementDrop = (e: React.DragEvent, dropElement: AnimatedCanvasObject, context: 'ungrouped' | 'group', groupId?: string) => {
+    e.preventDefault();
+    
+    if (!draggedElementId || draggedElementId === dropElement.id) return;
+
+    if (context === 'ungrouped' && dragContext === 'ungrouped') {
+      // Reorder ungrouped elements
+      const ungroupedEls = ungroupedElements.sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0));
+      const elementIds = ungroupedEls.map(el => el.id);
+      const draggedIndex = elementIds.indexOf(draggedElementId);
+      const dropIndex = elementIds.indexOf(dropElement.id);
+      
+      if (draggedIndex !== -1 && dropIndex !== -1) {
+        const newOrder = [...elementIds];
+        const [removed] = newOrder.splice(draggedIndex, 1);
+        newOrder.splice(dropIndex, 0, removed);
+        
+        // Reverse the order since highest z-index should be first
+        reorderElements(elementIds, newOrder.reverse());
+      }
+    } else if (context === 'group' && dragContext === 'group' && groupId) {
+      // Reorder elements within the same group
+      const groupEls = groupedElements
+        .filter(el => el.groupId === groupId)
+        .sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0));
+      const elementIds = groupEls.map(el => el.id);
+      const draggedIndex = elementIds.indexOf(draggedElementId);
+      const dropIndex = elementIds.indexOf(dropElement.id);
+      
+      if (draggedIndex !== -1 && dropIndex !== -1) {
+        const newOrder = [...elementIds];
+        const [removed] = newOrder.splice(draggedIndex, 1);
+        newOrder.splice(dropIndex, 0, removed);
+        
+        // Reverse the order since highest z-index should be first
+        reorderElementsInGroup(groupId, elementIds, newOrder.reverse());
+      }
+    }
+    
+    setDraggedElementId(null);
+    setDragOverElementId(null);
+    setDragContext(null);
+  };
+
+  // Drag and drop handlers for groups
+  const handleGroupDragStart = (e: React.DragEvent, group: CanvasGroup) => {
+    setDraggedGroupId(group.id);
+    setDragContext('groups');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', JSON.stringify({ groupId: group.id }));
+    
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '0.5';
+    }
+  };
+
+  const handleGroupDragEnd = (e: React.DragEvent) => {
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '1';
+    }
+    
+    setDraggedGroupId(null);
+    setDragOverGroupId(null);
+    setDragContext(null);
+  };
+
+  const handleGroupDragOver = (e: React.DragEvent, group: CanvasGroup) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    
+    if (draggedGroupId && draggedGroupId !== group.id) {
+      setDragOverGroupId(group.id);
+    }
+  };
+
+  const handleGroupDrop = (e: React.DragEvent, dropGroup: CanvasGroup) => {
+    e.preventDefault();
+    
+    if (!draggedGroupId || draggedGroupId === dropGroup.id || dragContext !== 'groups') return;
+
+    const nonDefaultGroups = groups.filter(g => !g.isDefaultGroup);
+    const groupIds = nonDefaultGroups.map(g => g.id);
+    const draggedIndex = groupIds.indexOf(draggedGroupId);
+    const dropIndex = groupIds.indexOf(dropGroup.id);
+    
+    if (draggedIndex !== -1 && dropIndex !== -1) {
+      const newOrder = [...groupIds];
+      const [removed] = newOrder.splice(draggedIndex, 1);
+      newOrder.splice(dropIndex, 0, removed);
+      
+      // Groups are displayed in reverse z-index order (highest first)
+      // So we need to reverse before passing to reorderGroups
+      reorderGroups(groupIds, newOrder.reverse());
+    }
+    
+    setDraggedGroupId(null);
+    setDragOverGroupId(null);
+    setDragContext(null);
+  };
 
   const isElementSelected = (elementId: string) => {
     return selectedElements.some(el => el.id === elementId);
@@ -302,13 +438,24 @@ export const LayersTab: FC = () => {
             <div className="space-y-1">
               {groups.filter(group => !group.isDefaultGroup).map((group) => {
                 const isCollapsed = collapsedGroups.has(group.id);
+                const isDraggingGroup = draggedGroupId === group.id;
+                const isDragOverGroup = dragOverGroupId === group.id;
+                
                 return (
                   <div key={group.id} className="space-y-1">
                     <div
-                      className={`w-full p-2 rounded-lg transition-colors ${isGroupSelected(group.id)
-                        ? 'bg-indigo-100 border border-indigo-200'
-                        : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
-                        }`}
+                      draggable={!editingGroupId}
+                      onDragStart={(e) => handleGroupDragStart(e, group)}
+                      onDragEnd={handleGroupDragEnd}
+                      onDragOver={(e) => handleGroupDragOver(e, group)}
+                      onDrop={(e) => handleGroupDrop(e, group)}
+                      className={`w-full p-2 rounded-lg transition-all group cursor-move ${
+                        isGroupSelected(group.id)
+                          ? 'bg-indigo-100 border border-indigo-200'
+                          : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
+                      } ${isDraggingGroup ? 'opacity-50' : ''} ${
+                        isDragOverGroup ? 'border-t-2 border-t-blue-500 bg-blue-50' : ''
+                      }`}
                     >
                       <div className="flex items-center gap-2">
                         <button
@@ -359,17 +506,29 @@ export const LayersTab: FC = () => {
                             {group.name}
                           </button>
                         )}
-                        <button
-                          onClick={(e) => handleGroupVisibilityToggle(e, group)}
-                          className="p-1 hover:bg-white rounded transition-colors"
-                          title={group.visible !== false ? 'Hide group' : 'Show group'}
-                        >
-                          {group.visible !== false ? (
-                            <Eye className="w-4 h-4 text-green-600" />
-                          ) : (
-                            <EyeOff className="w-4 h-4 text-gray-400" />
+                        
+                        {/* Group Actions */}
+                        <div className="flex items-center gap-1">
+                          {!editingGroupId && (
+                            <div 
+                              className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors hover:bg-gray-200 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100"
+                              title="Drag to reorder"
+                            >
+                              <GripVertical className="w-3 h-3" />
+                            </div>
                           )}
-                        </button>
+                          <button
+                            onClick={(e) => handleGroupVisibilityToggle(e, group)}
+                            className="p-1 hover:bg-white rounded transition-colors"
+                            title={group.visible !== false ? 'Hide group' : 'Show group'}
+                          >
+                            {group.visible !== false ? (
+                              <Eye className="w-4 h-4 text-green-600" />
+                            ) : (
+                              <EyeOff className="w-4 h-4 text-gray-400" />
+                            )}
+                          </button>
+                        </div>
                       </div>
                     </div>
 
@@ -378,14 +537,26 @@ export const LayersTab: FC = () => {
                       <div className="ml-4 space-y-1">
                         {groupedElements
                           .filter(el => el.groupId === group.id)
+                          .sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0))
                           .map((element) => {
+                            const isDraggingElement = draggedElementId === element.id;
+                            const isDragOverElement = dragOverElementId === element.id;
+                            
                             return (
                               <div
                                 key={element.id}
-                                className={`w-full p-2 rounded transition-colors ${isElementSelected(element.id)
-                                  ? 'bg-blue-100 border border-blue-200'
-                                  : 'bg-white hover:bg-gray-50 border border-gray-200'
-                                  }`}
+                                draggable={!editingElementId}
+                                onDragStart={(e) => handleElementDragStart(e, element, 'group', group.id)}
+                                onDragEnd={handleElementDragEnd}
+                                onDragOver={(e) => handleElementDragOver(e, element)}
+                                onDrop={(e) => handleElementDrop(e, element, 'group', group.id)}
+                                className={`w-full p-2 rounded transition-all group cursor-move ${
+                                  isElementSelected(element.id)
+                                    ? 'bg-blue-100 border border-blue-200'
+                                    : 'bg-white hover:bg-gray-50 border border-gray-200'
+                                } ${isDraggingElement ? 'opacity-50' : ''} ${
+                                  isDragOverElement ? 'border-t-2 border-t-blue-500 bg-blue-50' : ''
+                                }`}
                               >
                                 <div className="flex items-center gap-2">
                                   <ElementThumbnail element={element} />
@@ -422,17 +593,29 @@ export const LayersTab: FC = () => {
                                       {element.name}
                                     </button>
                                   )}
-                                  <button
-                                    onClick={(e) => handleElementVisibilityToggle(e, element)}
-                                    className="p-1 hover:bg-gray-100 rounded transition-colors"
-                                    title={element.visible !== false ? 'Hide element' : 'Show element'}
-                                  >
-                                    {element.visible !== false ? (
-                                      <Eye className="w-4 h-4 text-green-600" />
-                                    ) : (
-                                      <EyeOff className="w-4 h-4 text-gray-400" />
+                                  
+                                  {/* Element Actions */}
+                                  <div className="flex items-center gap-1">
+                                    {!editingElementId && (
+                                      <div 
+                                        className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors hover:bg-gray-200 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100"
+                                        title="Drag to reorder"
+                                      >
+                                        <GripVertical className="w-3 h-3" />
+                                      </div>
                                     )}
-                                  </button>
+                                    <button
+                                      onClick={(e) => handleElementVisibilityToggle(e, element)}
+                                      className="p-1 hover:bg-gray-100 rounded transition-colors"
+                                      title={element.visible !== false ? 'Hide element' : 'Show element'}
+                                    >
+                                      {element.visible !== false ? (
+                                        <Eye className="w-4 h-4 text-green-600" />
+                                      ) : (
+                                        <EyeOff className="w-4 h-4 text-gray-400" />
+                                      )}
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
                             );
@@ -448,14 +631,25 @@ export const LayersTab: FC = () => {
           {/* Ungrouped Elements */}
           {ungroupedElements.length > 0 && (
             <div className="space-y-1">
-              {ungroupedElements.map((element) => {
+              {ungroupedElements.sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0)).map((element) => {
+                const isDraggingElement = draggedElementId === element.id;
+                const isDragOverElement = dragOverElementId === element.id;
+                
                 return (
                   <div
                     key={element.id}
-                    className={`w-full py-2 pl-8 pr-2 rounded-lg transition-colors ${isElementSelected(element.id)
-                      ? 'bg-blue-100 border border-blue-200'
-                      : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
-                      }`}
+                    draggable={!editingElementId}
+                    onDragStart={(e) => handleElementDragStart(e, element, 'ungrouped')}
+                    onDragEnd={handleElementDragEnd}
+                    onDragOver={(e) => handleElementDragOver(e, element)}
+                    onDrop={(e) => handleElementDrop(e, element, 'ungrouped')}
+                    className={`w-full py-2 pl-8 pr-2 rounded-lg transition-all group cursor-move ${
+                      isElementSelected(element.id)
+                        ? 'bg-blue-100 border border-blue-200'
+                        : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
+                    } ${isDraggingElement ? 'opacity-50' : ''} ${
+                      isDragOverElement ? 'border-t-2 border-t-blue-500 bg-blue-50' : ''
+                    }`}
                   >
                     <div className="flex items-center gap-2">
                       <ElementThumbnail element={element} />
@@ -492,17 +686,29 @@ export const LayersTab: FC = () => {
                           {element.name}
                         </button>
                       )}
-                      <button
-                        onClick={(e) => handleElementVisibilityToggle(e, element)}
-                        className="p-1 hover:bg-gray-200 rounded transition-colors"
-                        title={element.visible !== false ? 'Hide element' : 'Show element'}
-                      >
-                        {element.visible !== false ? (
-                          <Eye className="w-4 h-4 text-green-600" />
-                        ) : (
-                          <EyeOff className="w-4 h-4 text-gray-400" />
+                      
+                      {/* Element Actions */}
+                      <div className="flex items-center gap-1">
+                        {!editingElementId && (
+                          <div 
+                            className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors hover:bg-gray-200 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100"
+                            title="Drag to reorder"
+                          >
+                            <GripVertical className="w-3 h-3" />
+                          </div>
                         )}
-                      </button>
+                        <button
+                          onClick={(e) => handleElementVisibilityToggle(e, element)}
+                          className="p-1 hover:bg-gray-200 rounded transition-colors"
+                          title={element.visible !== false ? 'Hide element' : 'Show element'}
+                        >
+                          {element.visible !== false ? (
+                            <Eye className="w-4 h-4 text-green-600" />
+                          ) : (
+                            <EyeOff className="w-4 h-4 text-gray-400" />
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );

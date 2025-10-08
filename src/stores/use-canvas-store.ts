@@ -52,6 +52,9 @@ interface CanvasActions {
   sendElementToBack: (id: string) => void;
   bringGroupToFront: (id: string) => void;
   sendGroupToBack: (id: string) => void;
+  reorderElements: (elementIds: string[], newOrder: string[]) => void;
+  reorderElementsInGroup: (groupId: string, elementIds: string[], newOrder: string[]) => void;
+  reorderGroups: (groupIds: string[], newOrder: string[]) => void;
   
   // Group operations
   addGroup: (group: CanvasGroup) => void;
@@ -488,6 +491,144 @@ export const useCanvasStore = create<CanvasStore>()(
       // Notify subscribers
       notifySubscribers({ elements: get().elements, groups: get().groups });
       
+      // Call sortChildren after z-index update
+      setTimeout(() => {
+        const canvasRef = get().canvasRef;
+        if (canvasRef?.current?.sortChildren) {
+          canvasRef.current.sortChildren();
+        }
+      }, 0);
+    },
+
+    // Reorder elements (for ungrouped elements) by assigning new z-indexes
+    reorderElements: (elementIds, newOrder) => {
+      set(produce((state) => {
+        // Create a map of element ID to element for quick lookup
+        const elementMap = new Map<string, AnimatedCanvasObject>();
+        elementIds.forEach(id => {
+          const element = state.elements.find((el: AnimatedCanvasObject) => el.id === id);
+          if (element) {
+            elementMap.set(id, element);
+          }
+        });
+
+        // Find the minimum z-index to use as a base
+        const minZIndex = Math.min(...elementIds.map(id => {
+          const el = elementMap.get(id);
+          return el?.zIndex || 0;
+        }));
+
+        // Assign new z-indexes based on the new order (first in order = lowest z-index)
+        newOrder.forEach((id, index) => {
+          const element = elementMap.get(id);
+          if (element) {
+            element.zIndex = minZIndex + index;
+          }
+        });
+      }));
+
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
+
+      // Call sortChildren after z-index update
+      setTimeout(() => {
+        const canvasRef = get().canvasRef;
+        if (canvasRef?.current?.sortChildren) {
+          canvasRef.current.sortChildren();
+        }
+      }, 0);
+    },
+
+    // Reorder elements within a group
+    reorderElementsInGroup: (groupId, elementIds, newOrder) => {
+      set(produce((state) => {
+        const group = state.groups.find((g: CanvasGroup) => g.id === groupId);
+        if (!group) return;
+
+        // Create a map of element ID to element for quick lookup
+        const elementMap = new Map<string, AnimatedCanvasObject>();
+        elementIds.forEach(id => {
+          const element = state.elements.find((el: AnimatedCanvasObject) => el.id === id && el.groupId === groupId);
+          if (element) {
+            elementMap.set(id, element);
+          }
+        });
+
+        // Find the minimum z-index to use as a base
+        const minZIndex = Math.min(...elementIds.map(id => {
+          const el = elementMap.get(id);
+          return el?.zIndex || 0;
+        }));
+
+        // Assign new z-indexes based on the new order (first in order = lowest z-index)
+        newOrder.forEach((id, index) => {
+          const element = elementMap.get(id);
+          if (element) {
+            element.zIndex = minZIndex + index;
+          }
+        });
+      }));
+
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
+
+      // Call sortChildren after z-index update
+      setTimeout(() => {
+        const canvasRef = get().canvasRef;
+        if (canvasRef?.current?.sortChildren) {
+          canvasRef.current.sortChildren();
+        }
+      }, 0);
+    },
+
+    // Reorder groups by updating z-indexes of all elements in each group
+    reorderGroups: (groupIds, newOrder) => {
+      set(produce((state) => {
+        // Get all elements that belong to these groups
+        const groupElementsMap = new Map<string, AnimatedCanvasObject[]>();
+        groupIds.forEach(groupId => {
+          const group = state.groups.find((g: CanvasGroup) => g.id === groupId);
+          if (group) {
+            const groupElements = state.elements.filter((el: AnimatedCanvasObject) => 
+              group.elementIds.includes(el.id)
+            );
+            groupElementsMap.set(groupId, groupElements);
+          }
+        });
+
+        // Find the minimum z-index across all group elements
+        let minZIndex = Infinity;
+        groupElementsMap.forEach(elements => {
+          elements.forEach(el => {
+            if ((el.zIndex || 0) < minZIndex) {
+              minZIndex = el.zIndex || 0;
+            }
+          });
+        });
+        if (minZIndex === Infinity) minZIndex = 0;
+
+        // Calculate how many z-index levels we need per group
+        const maxElementsPerGroup = Math.max(...Array.from(groupElementsMap.values()).map(els => els.length));
+        const zIndexStep = maxElementsPerGroup + 10; // Extra spacing between groups
+
+        // Assign new z-indexes based on the new order (first in order = lowest z-index)
+        newOrder.forEach((groupId, groupIndex) => {
+          const groupElements = groupElementsMap.get(groupId);
+          if (groupElements && groupElements.length > 0) {
+            // Sort elements within this group by their current z-index to maintain relative order
+            const sortedElements = [...groupElements].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+            
+            // Assign new z-indexes to maintain element order within the group
+            sortedElements.forEach((element, elementIndex) => {
+              element.zIndex = minZIndex + (groupIndex * zIndexStep) + elementIndex;
+            });
+          }
+        });
+      }));
+
+      // Notify subscribers
+      notifySubscribers({ elements: get().elements, groups: get().groups });
+
       // Call sortChildren after z-index update
       setTimeout(() => {
         const canvasRef = get().canvasRef;
@@ -1130,6 +1271,15 @@ export const useCanvasOperations = () => {
       setGroupVisibility: state.setGroupVisibility,
       
       createGroupFromElements: state.createGroupFromElements,
+      
+      // Z-index and reordering operations
+      bringElementToFront: state.bringElementToFront,
+      sendElementToBack: state.sendElementToBack,
+      bringGroupToFront: state.bringGroupToFront,
+      sendGroupToBack: state.sendGroupToBack,
+      reorderElements: state.reorderElements,
+      reorderElementsInGroup: state.reorderElementsInGroup,
+      reorderGroups: state.reorderGroups,
       
       // Clipboard operations
       copyElements: state.copyElements,
