@@ -367,7 +367,11 @@ export function Timeline() {
                   style={{ left: `${tick.left}px`, width: 0 }}
                 >
                   {tick.isMajor && (
-                    <div className="absolute top-0 text-[10px] text-gray-600 font-mono -translate-x-1/2 bg-white/80 backdrop-blur-sm px-1 rounded z-10">
+                    <div 
+                      className={`absolute top-0 text-[10px] text-gray-600 font-mono bg-white/80 backdrop-blur-sm px-1 rounded z-10 ${
+                        tick.index === 0 ? 'left-0' : '-translate-x-1/2'
+                      }`}
+                    >
                       {tick.time}
                     </div>
                   )}
