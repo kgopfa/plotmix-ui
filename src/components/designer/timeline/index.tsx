@@ -184,6 +184,11 @@ export function Timeline() {
           emitted.add(groupKey);
         }
         
+        // Mark all elements in this group as emitted in root context to prevent them appearing as standalone
+        group.elementIds.forEach(elementId => {
+          emitted.add(`element:${elementId}:root`);
+        });
+        
         // For custom groups, add element children if group is expanded (polygon groups are not expandable)
         if (group.type === 'custom' && expandedElements.has(group.id)) {
           const groupElements = elements.filter(el => group.elementIds.includes(el.id));
