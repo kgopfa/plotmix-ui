@@ -54,7 +54,7 @@ interface TimelineTrackProps {
 // Icon component for element types
 const ElementIcon = ({ element, isChild = false }: { element: AnimatedCanvasObject | CanvasGroup; isChild?: boolean }) => {
   const iconSize = 14;
-  const iconClass = "text-gray-600";
+  const iconClass = "text-purple-600";
   
   // Handle groups first
   if ('elementIds' in element) {
@@ -165,14 +165,14 @@ export function TimelineTrack({
   if (labelOnly) {
     return (
       <div
-        className={`h-8 flex items-center border-b border-gray-200/50 text-gray-700 transition-all duration-200 cursor-pointer hover:bg-white/40 ${
+        className={`h-8 flex items-center border-b border-gray-200/50 transition-all duration-200 cursor-pointer hover:bg-white/40 ${
           isSelected ? 'bg-gradient-to-r from-blue-50/80 to-blue-100/80 backdrop-blur-sm' : ''
         } ${isChild ? 'bg-gray-50/60 backdrop-blur-sm' : ''}`}
         onClick={handleTrackClick}
       >
         <div
-          className={`w-full text-sm font-semibold truncate flex items-center gap-2 transition-all duration-200 tracking-tight ${
-            isSelected ? 'text-blue-600' : 'text-gray-700'
+          className={`w-full text-sm truncate flex items-center gap-2 transition-all duration-200 ${
+            isSelected ? 'text-blue-600 font-medium' : 'text-gray-700'
           } ${isChild ? 'text-gray-600' : ''}`}
           style={{ paddingLeft: `${8 + depth * 16}px` }}
         >
@@ -242,7 +242,7 @@ export function TimelineTrack({
   // Default: render full track (shouldn't be used in new grid layout)
   return (
     <div
-      className={`h-8 flex items-center border-b border-gray-200/50 text-gray-700 transition-all duration-200 ${
+      className={`h-8 flex items-center border-b border-gray-200/50 transition-all duration-200 ${
         'cursor-pointer hover:bg-white/40'
       } ${
         isSelected ? 'bg-gradient-to-r from-blue-50/80 to-blue-100/80 backdrop-blur-sm' : ''
@@ -250,8 +250,8 @@ export function TimelineTrack({
     >
       {/* Track Label */}
       <div
-        className={`w-32 text-sm font-normal truncate flex items-center gap-2 transition-all duration-200 tracking-tight ${
-          isSelected ? 'text-blue-600' : 'text-gray-700'
+        className={`w-32 text-sm truncate flex items-center gap-2 transition-all duration-200 ${
+          isSelected ? 'text-blue-600 font-medium' : 'text-gray-700'
         } ${isChild ? 'text-gray-600' : ''}`}
         style={{ paddingLeft: `${8 + depth * 16}px` }}
         onClick={handleTrackClick}
