@@ -51,6 +51,7 @@ interface ProjectStoreActions {
   removeScene: (sceneId: string) => void;
   updateScene: (sceneId: string, updates: Partial<ProjectScene>) => void;
   switchToScene: (sceneIndex: number) => void;
+  reorderScenes: (fromIndex: number, toIndex: number) => void;
   getCurrentScene: () => ProjectScene | null;
   getSceneCount: () => number;
   getDimensions: () => ProjectDimensions | null;
@@ -514,6 +515,33 @@ export const useProjectStore = create<ProjectStore>()(
           currentTime: scene.sceneCanvas.playback?.currentTime || 0,
         });
       }
+    },
+
+    reorderScenes: (fromIndex, toIndex) => {
+      set(produce((state: ProjectStore) => {
+        if (fromIndex < 0 || fromIndex >= state.scenes.length || 
+            toIndex < 0 || toIndex >= state.scenes.length) {
+          return;
+        }
+
+        // Remove the scene from the old position
+        const [movedScene] = state.scenes.splice(fromIndex, 1);
+        
+        // Insert it at the new position
+        state.scenes.splice(toIndex, 0, movedScene);
+
+        // Update currentSceneIndex to track the currently active scene
+        if (state.currentSceneIndex === fromIndex) {
+          // The active scene was moved
+          state.currentSceneIndex = toIndex;
+        } else if (fromIndex < state.currentSceneIndex && toIndex >= state.currentSceneIndex) {
+          // Scene moved from before to after current scene
+          state.currentSceneIndex--;
+        } else if (fromIndex > state.currentSceneIndex && toIndex <= state.currentSceneIndex) {
+          // Scene moved from after to before current scene
+          state.currentSceneIndex++;
+        }
+      }));
     },
 
     getCurrentScene: () => {

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, MoreVertical, Copy, Trash2, X, Clapperboard, Layers } from 'lucide-react';
+import { Plus, Copy, Trash2, X, Clapperboard, GripVertical } from 'lucide-react';
 import { useProjectStore } from '@/stores/use-project-store';
 import { useSetActiveRightPanel } from '@/stores/use-ui-store';
 
@@ -12,7 +12,8 @@ export const ScenesTab: React.FC = () => {
     switchToScene,
     addScene,
     removeScene,
-    updateScene
+    updateScene,
+    reorderScenes
   } = useProjectStore();
 
   const setActiveRightPanel = useSetActiveRightPanel();
@@ -21,6 +22,10 @@ export const ScenesTab: React.FC = () => {
   const [editingName, setEditingName] = useState('');
   const nameInputRef = useRef<HTMLInputElement | null>(null);
   const commitByEnterRef = useRef<boolean>(false);
+  
+  // Drag and drop state
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   // Focus the input when starting to edit
   useEffect(() => {
@@ -84,6 +89,52 @@ export const ScenesTab: React.FC = () => {
     }
   };
 
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', index.toString());
+    
+    // Add semi-transparent effect to the dragged element
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '0.5';
+    }
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    // Reset opacity
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '1';
+    }
+    
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    
+    if (draggedIndex !== null && draggedIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    
+    if (draggedIndex !== null && draggedIndex !== dropIndex) {
+      reorderScenes(draggedIndex, dropIndex);
+    }
+    
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
   return (
     <div className="h-full p-4 bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
       {/* Header - matching layers tab */}
@@ -116,14 +167,25 @@ export const ScenesTab: React.FC = () => {
           {scenes.map((scene, index) => {
             const isActive = index === currentSceneIndex;
             const isEditing = editingSceneId === scene.sceneId;
+            const isDragging = draggedIndex === index;
+            const isDragOver = dragOverIndex === index;
 
             return (
               <div
                 key={scene.sceneId}
-                className={`w-full py-2 px-3 rounded-lg transition-colors group cursor-pointer ${isActive
+                draggable={!isEditing}
+                onDragStart={(e) => handleDragStart(e, index)}
+                onDragEnd={handleDragEnd}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, index)}
+                className={`w-full py-2 px-3 rounded-lg transition-all group cursor-move ${
+                  isActive
                     ? 'bg-blue-100 border border-blue-200'
                     : 'hover:bg-gray-50 border border-transparent'
-                  }`}
+                } ${isDragging ? 'opacity-50' : ''} ${
+                  isDragOver ? 'border-t-2 border-t-blue-500 bg-blue-50' : ''
+                }`}
                 onClick={() => !isEditing && handleSceneSelect(index)}
               >
                 <div className="flex items-center justify-between">
@@ -173,16 +235,12 @@ export const ScenesTab: React.FC = () => {
                   {/* Scene Actions */}
                   {!isEditing && (
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          startEditScene(scene);
-                        }}
-                        className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors hover:bg-gray-200"
-                        title="Rename scene"
+                      <div 
+                        className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors hover:bg-gray-100 cursor-grab active:cursor-grabbing"
+                        title="Drag to reorder"
                       >
-                        <MoreVertical className="w-3 h-3" />
-                      </button>
+                        <GripVertical className="w-3 h-3" />
+                      </div>
 
                       <button
                         onClick={(e) => {
