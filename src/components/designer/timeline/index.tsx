@@ -311,7 +311,7 @@ export function Timeline() {
           {/* Track Labels */}
           {hierarchicalTracks.map((track) => (
             <TimelineTrack
-              key={`label-${track.type}-${track.id}`}
+              key={`label-${track.type}-${track.id}-${track.parentGroupId || 'root'}`}
               element={track.item}
               trackType={track.type}
               scale={timelineUI.scale}
@@ -382,7 +382,7 @@ export function Timeline() {
             {/* Track Content */}
             {hierarchicalTracks.map((track) => (
               <TimelineTrack
-                key={`content-${track.type}-${track.id}`}
+                key={`content-${track.type}-${track.id}-${track.parentGroupId || 'root'}`}
                 element={track.item}
                 trackType={track.type}
                 scale={timelineUI.scale}
