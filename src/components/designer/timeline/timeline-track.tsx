@@ -171,8 +171,8 @@ export function TimelineTrack({
         onClick={handleTrackClick}
       >
         <div
-          className={`w-full text-sm font-medium truncate flex items-center gap-2 transition-all duration-200 ${
-            isSelected ? 'text-blue-600' : ''
+          className={`w-full text-sm font-semibold truncate flex items-center gap-2 transition-all duration-200 tracking-tight ${
+            isSelected ? 'text-blue-600' : 'text-gray-700'
           } ${isChild ? 'text-gray-600' : ''}`}
           style={{ paddingLeft: `${8 + depth * 16}px` }}
         >
@@ -250,8 +250,8 @@ export function TimelineTrack({
     >
       {/* Track Label */}
       <div
-        className={`w-32 text-sm font-medium truncate flex items-center gap-2 transition-all duration-200 ${
-          isSelected ? 'text-blue-600' : ''
+        className={`w-32 text-sm font-normal truncate flex items-center gap-2 transition-all duration-200 tracking-tight ${
+          isSelected ? 'text-blue-600' : 'text-gray-700'
         } ${isChild ? 'text-gray-600' : ''}`}
         style={{ paddingLeft: `${8 + depth * 16}px` }}
         onClick={handleTrackClick}
