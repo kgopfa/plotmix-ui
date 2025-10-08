@@ -49,6 +49,8 @@ export function Timeline() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [scrollLeft, setScrollLeft] = useState(0);
   const [expandedElements, setExpandedElements] = useState<Set<string>>(new Set());
+  const [labelColumnWidth, setLabelColumnWidth] = useState(192); // 192px = w-48
+  const [isResizingLabels, setIsResizingLabels] = useState(false);
 
   // Zoom controls moved to main navigation; timeline no longer manages zoom
 
@@ -84,6 +86,30 @@ export function Timeline() {
       }
       return newSet;
     });
+  };
+
+  // Handle label column resize
+  const handleLabelResizeMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizingLabels(true);
+    
+    const startX = e.clientX;
+    const startWidth = labelColumnWidth;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const delta = e.clientX - startX;
+      const newWidth = Math.max(120, Math.min(400, startWidth + delta)); // Min 120px, max 400px
+      setLabelColumnWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingLabels(false);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
   };
 
   // Handle play/pause toggle
@@ -277,8 +303,8 @@ export function Timeline() {
         isTimelineCollapsed ? 'opacity-0 max-h-0' : 'opacity-100 max-h-full'
       }`}>
         
-        {/* Left Column - Track Labels (Fixed) */}
-        <div className="w-48 flex-shrink-0 overflow-y-auto border-r border-gray-200/50">
+        {/* Left Column - Track Labels (Fixed, Resizable) */}
+        <div className="flex-shrink-0 overflow-y-auto border-r border-gray-200/50 relative" style={{ width: `${labelColumnWidth}px` }}>
           {/* Ruler placeholder */}
           <div className="h-6 border-b border-gray-200/50 bg-white/50 backdrop-blur-sm"></div>
           
@@ -312,6 +338,14 @@ export function Timeline() {
               No tracks
             </div>
           )}
+          
+          {/* Resize Handle */}
+          <div
+            className={`absolute right-0 top-0 bottom-0 w-0.5 cursor-col-resize hover:bg-blue-700/50 transition-colors ${
+              isResizingLabels ? 'bg-blue-700' : ''
+            }`}
+            onMouseDown={handleLabelResizeMouseDown}
+          />
         </div>
 
         {/* Right Column - Track Content (Scrollable) */}
@@ -333,7 +367,7 @@ export function Timeline() {
                   style={{ left: `${tick.left}px`, width: 0 }}
                 >
                   {tick.isMajor && (
-                    <div className="absolute top-0 text-[10px] text-gray-600 font-mono -translate-x-1/2 bg-white/80 backdrop-blur-sm px-1 rounded">
+                    <div className="absolute top-0 text-[10px] text-gray-600 font-mono -translate-x-1/2 bg-white/80 backdrop-blur-sm px-1 rounded z-10">
                       {tick.time}
                     </div>
                   )}
