@@ -46,6 +46,9 @@ interface TimelineTrackProps {
   onToggleExpansion?: () => void;
   customName?: string; // Allow custom name override
   onGroupSelect?: (group: CanvasGroup) => void;
+  // Split rendering modes
+  labelOnly?: boolean;
+  contentOnly?: boolean;
 }
 
 // Icon component for element types
@@ -127,6 +130,8 @@ export function TimelineTrack({
   onToggleExpansion,
   customName,
   onGroupSelect,
+  labelOnly = false,
+  contentOnly = false,
 }: TimelineTrackProps) {
   // Use Zustand store for selection
   const { select } = useSelectionStore();
@@ -156,6 +161,85 @@ export function TimelineTrack({
     }
   };
   
+  // Render only label
+  if (labelOnly) {
+    return (
+      <div
+        className={`h-8 flex items-center border-b border-gray-200/50 text-gray-700 transition-all duration-200 cursor-pointer hover:bg-white/40 ${
+          isSelected ? 'bg-gradient-to-r from-blue-50/80 to-blue-100/80 backdrop-blur-sm' : ''
+        } ${isChild ? 'bg-gray-50/60 backdrop-blur-sm' : ''}`}
+        onClick={handleTrackClick}
+      >
+        <div
+          className={`w-full text-sm font-medium truncate flex items-center gap-2 transition-all duration-200 ${
+            isSelected ? 'text-blue-600' : ''
+          } ${isChild ? 'text-gray-600' : ''}`}
+          style={{ paddingLeft: `${8 + depth * 16}px` }}
+        >
+          <div className="flex items-center gap-2">
+            <ElementIcon element={element} isChild={isChild} />
+            <span className="truncate">{name}</span>
+          </div>
+          {(isGroup || ('type' in element)) && onToggleExpansion && (!isGroup || !('type' in element) || (element as CanvasGroup).type !== 'polygon') && (
+            <button
+              onClick={handleExpandToggle}
+              className="w-4 h-4 flex ml-1 items-center justify-center hover:bg-white/80 backdrop-blur-sm rounded text-xs transition-all duration-200 hover:shadow-sm"
+            >
+              {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Render only content
+  if (contentOnly) {
+    return (
+      <div
+        className={`h-8 relative border-b border-gray-200/50 transition-all duration-200 ${
+          isSelected ? 'bg-gradient-to-r from-blue-50/80 to-blue-100/80 backdrop-blur-sm' : ''
+        } ${isChild ? 'bg-gray-50/60 backdrop-blur-sm' : ''}`}
+        onClick={handleTrackClick}
+      >
+        {/* Optional internal ticks (could be removed since ruler handles it) */}
+        <div className="absolute inset-0">
+          {Array.from({ length: 121 }).map((_, i) => {
+            return (
+              i % 5 === 0 && (
+                <div
+                  key={i}
+                  className="absolute h-full border-l border-gray-200/30"
+                  style={{ left: `${i * scale}px`, width: 0 }}
+                />
+              )
+            );
+          })}
+        </div>
+
+        {/* Animations */}
+        {animations.map((animation) => (
+          <AnimationBlock
+            key={animation.id}
+            animation={animation}
+            elementId={id}
+            scale={scale}
+            isSelected={isSelected}
+            onClick={() => onAnimationClick?.(animation)}
+            onChange={(update) => onAnimationChange(id, animation.id, update)}
+          />
+        ))}
+
+        {/* Playhead */}
+        <div
+          className="absolute top-0 bottom-0 w-0.5 bg-gradient-to-b from-fuchsia-400 to-fuchsia-600 shadow-sm"
+          style={{ left: `${currentTime * scale}px` }}
+        />
+      </div>
+    );
+  }
+
+  // Default: render full track (shouldn't be used in new grid layout)
   return (
     <div
       className={`h-8 flex items-center border-b border-gray-200/50 text-gray-700 transition-all duration-200 ${
@@ -189,10 +273,10 @@ export function TimelineTrack({
       {/* Track Content */}
       <div
         className="flex-1 relative h-full"
-        style={{ minWidth: `${scale * 120}px` }} // Dynamic width based on scale and minimum duration
+        style={{ minWidth: `${scale * 120}px` }}
         onClick={handleTrackClick}
       >
-        {/* Optional internal ticks (could be removed since ruler handles it) */}
+        {/* Optional internal ticks */}
         <div className="absolute inset-0">
           {Array.from({ length: 121 }).map((_, i) => {
             return (

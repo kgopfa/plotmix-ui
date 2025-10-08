@@ -272,51 +272,86 @@ export function Timeline() {
         </div>
       </div>
 
-      {/* Scrollable timeline container (ruler + tracks) - only visible when not collapsed */}
-      <div className={`flex-1 overflow-y-auto transition-all duration-600 ease-in-out bg-white/30 backdrop-blur-sm rounded-b-2xl ${
+      {/* Timeline Grid - Two column layout: fixed labels + scrollable content */}
+      <div className={`flex-1 flex transition-all duration-600 ease-in-out bg-white/30 backdrop-blur-sm rounded-b-2xl ${
         isTimelineCollapsed ? 'opacity-0 max-h-0' : 'opacity-100 max-h-full'
       }`}>
+        
+        {/* Left Column - Track Labels (Fixed) */}
+        <div className="w-48 flex-shrink-0 overflow-y-auto border-r border-gray-200/50">
+          {/* Ruler placeholder */}
+          <div className="h-6 border-b border-gray-200/50 bg-white/50 backdrop-blur-sm"></div>
+          
+          {/* Track Labels */}
+          {hierarchicalTracks.map((track) => (
+            <TimelineTrack
+              key={`label-${track.type}-${track.id}`}
+              element={track.item}
+              trackType={track.type}
+              scale={timelineUI.scale}
+              currentTime={globalTime}
+              isSelected={track.isSelected}
+              animations={track.animations}
+              onAnimationChange={track.type === 'group' ? handleGroupAnimationChange : handleAnimationChange}
+              isGroup={track.isGroup}
+              isExpanded={track.isExpanded}
+              isChild={track.isChild}
+              depth={track.depth}
+              customName={track.name}
+              onToggleExpansion={track.type === 'group' ? () => toggleElementExpansion(track.id) : undefined}
+              onGroupSelect={(group) => {
+                const { selectGroup } = useSelectionStore.getState();
+                selectGroup(group);
+              }}
+              labelOnly={true}
+            />
+          ))}
+          
+          {hierarchicalTracks.length === 0 && (
+            <div className="p-4 text-center text-sm text-gray-500">
+              No tracks
+            </div>
+          )}
+        </div>
+
+        {/* Right Column - Track Content (Scrollable) */}
+        <div 
+          className="flex-1 overflow-auto"
+          ref={scrollContainerRef}
+          onScroll={handleScroll}
+        >
           <div
-            className="relative w-max"
-            style={{ width: `${timelineUI.scale * Math.max(totalProjectDuration, 10) + 128}px` }} // 128 = w-32 name column, use total project duration
-            ref={scrollContainerRef}
-            onScroll={handleScroll}
+            className="relative"
+            style={{ width: `${timelineUI.scale * Math.max(totalProjectDuration, 10)}px`, minWidth: '100%' }}
           >
-            {/* Ruler (scrolls with timeline) */}
-            <div className={`h-6 relative border-b border-gray-200/50 transition-all duration-300 ease-in-out bg-white/50 backdrop-blur-sm ${
-              isTimelineCollapsed ? 'opacity-0 scale-y-0' : 'opacity-100 scale-y-100'
-            }`}>
-              <div className="absolute top-0 left-32 h-full w-full" style={{ transform: `translateX(-${scrollLeft}px)` }}>
-                {rulerTicks.map((tick) => (
-                  <div
-                    key={tick.index}
-                    className="absolute h-full border-l border-gray-200/50"
-                    style={{ left: `${tick.left}px`, width: 0 }}
-                  >
-                    {tick.isMajor && (
-                      <div className="absolute top-0 text-[10px] text-gray-600 font-mono translate-x-[-50%] bg-white/80 backdrop-blur-sm px-1 rounded">
-                        {tick.time}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+            {/* Ruler */}
+            <div className="h-6 relative border-b border-gray-200/50 bg-white/50 backdrop-blur-sm">
+              {rulerTicks.map((tick) => (
+                <div
+                  key={tick.index}
+                  className="absolute h-full border-l border-gray-200/50"
+                  style={{ left: `${tick.left}px`, width: 0 }}
+                >
+                  {tick.isMajor && (
+                    <div className="absolute top-0 text-[10px] text-gray-600 font-mono -translate-x-1/2 bg-white/80 backdrop-blur-sm px-1 rounded">
+                      {tick.time}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
 
-            {/* Hierarchical Tracks */}
+            {/* Track Content */}
             {hierarchicalTracks.map((track) => (
               <TimelineTrack
-                key={`${track.type}-${track.id}-${track.parentGroupId ?? 'root'}`}
+                key={`content-${track.type}-${track.id}`}
                 element={track.item}
                 trackType={track.type}
                 scale={timelineUI.scale}
                 currentTime={globalTime}
                 isSelected={track.isSelected}
                 animations={track.animations}
-                onAnimationChange={track.type === 'group'
-                  ? handleGroupAnimationChange
-                  : handleAnimationChange
-                }
+                onAnimationChange={track.type === 'group' ? handleGroupAnimationChange : handleAnimationChange}
                 isGroup={track.isGroup}
                 isExpanded={track.isExpanded}
                 isChild={track.isChild}
@@ -327,6 +362,7 @@ export function Timeline() {
                   const { selectGroup } = useSelectionStore.getState();
                   selectGroup(group);
                 }}
+                contentOnly={true}
               />
             ))}
 
@@ -337,6 +373,7 @@ export function Timeline() {
             )}
           </div>
         </div>
+      </div>
     </div>
   );
 } 
