@@ -174,7 +174,7 @@ export function TimelineTrack({
           className={`w-full text-sm truncate flex items-center gap-2 transition-all duration-200 ${
             isSelected ? 'text-blue-600 font-medium' : 'text-gray-700'
           } ${isChild ? 'text-gray-600' : ''}`}
-          style={{ paddingLeft: `${8 + depth * 16}px` }}
+          style={{ paddingLeft: `${16 + depth * 24}px` }}
         >
           <div className="flex items-center gap-2">
             <ElementIcon element={element} isChild={isChild} />
@@ -253,7 +253,7 @@ export function TimelineTrack({
         className={`w-32 text-sm truncate flex items-center gap-2 transition-all duration-200 ${
           isSelected ? 'text-blue-600 font-medium' : 'text-gray-700'
         } ${isChild ? 'text-gray-600' : ''}`}
-        style={{ paddingLeft: `${8 + depth * 16}px` }}
+        style={{ paddingLeft: `${16 + depth * 24}px` }}
         onClick={handleTrackClick}
       >
         <div className="flex items-center gap-2">
