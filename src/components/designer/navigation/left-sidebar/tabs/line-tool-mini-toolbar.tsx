@@ -17,7 +17,7 @@ export const LineToolMiniToolbar: React.FC<LineToolMiniToolbarProps> = ({
   if (!isVisible) return null;
 
   return (
-    <div className="absolute left-20 top-0 bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-xl shadow-gray-200/50 rounded-xl flex flex-col gap-2 p-2 min-w-[120px]">
+    <div className="absolute left-20 top-0 bg-white border border-gray-200 shadow-lg rounded-xl flex flex-col gap-2 p-2 min-w-[120px]">
       <div className="text-xs font-medium text-gray-600 px-2 py-1 border-b border-gray-100">
         Line Type
       </div>

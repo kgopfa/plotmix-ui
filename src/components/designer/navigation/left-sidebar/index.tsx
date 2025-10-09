@@ -324,7 +324,7 @@ export const LeftSidebar: React.FC = () => {
         <>
           {/* Transparent bridge to ensure seamless hover */}
           <div
-            className={`fixed pointer-events-auto ${showAnimationsTab ? 'z-[45]' : 'z-[40]'
+            className={`fixed pointer-events-auto ${showAnimationsTab ? 'z-[60]' : 'z-[60]'
               }`}
             style={{
               left: '72px', // Start right after sidebar
@@ -343,7 +343,7 @@ export const LeftSidebar: React.FC = () => {
           {/* Actual tab panel */}
           <div
             ref={tabPanelRef}
-            className={`fixed pointer-events-none tab-panel-area ${showAnimationsTab ? 'z-[45]' : 'z-[40]'} w-80 2xl:w-96`}
+            className={`fixed pointer-events-none tab-panel-area ${showAnimationsTab ? 'z-[60]' : 'z-[60]'} w-80 2xl:w-96`}
             style={{
               left: '80px', // Position after bridge
               top: '72px',

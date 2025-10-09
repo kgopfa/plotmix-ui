@@ -122,7 +122,7 @@ export function ToolbarTab() {
 
   const renderVerticalToolbar = () => (
     <div className="relative">
-      <div className="bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-xl shadow-gray-200/50 rounded-2xl flex flex-col gap-3 pt-6 pb-4 px-2 w-16 items-center">
+      <div className="bg-white border border-gray-200 shadow-lg rounded-2xl flex flex-col gap-3 pt-6 pb-4 px-2 w-16 items-center">
         <div className="flex flex-col items-center space-y-3">
           <button
             className={getButtonStyling('rectangle').buttonClass}
