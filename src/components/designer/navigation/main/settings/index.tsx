@@ -1,10 +1,10 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Menu,
   MenuButton,
-  MenuItem,
   MenuItems
 } from '@headlessui/react'
 import {
@@ -12,13 +12,13 @@ import {
   Video,
   Move3D
 } from 'lucide-react'
-import { SnappingOptions } from './snapping/snap-options';
-import { VideoOptions } from './video/video-options';
+import { SnappingOptions } from './snapping';
+import { DisplaySettings } from './display';
 import { useSnappingState, useSnappingActions } from '@/stores/use-ui-store';
 
 // Settings navigation configuration
 const settingsNavigation = [
-  { name: 'Video Settings', icon: Video },
+  { name: 'Display Settings', icon: Video },
   { name: 'Snapping Settings', icon: Move3D },
 ];
 
@@ -32,6 +32,9 @@ export const SettingsDropdown: React.FC = () => {
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const openStateRef = useRef(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuItemsRef = useRef<HTMLDivElement>(null);
 
   // Use UI store snapping state instead of local hooks
   const snappingState = useSnappingState();
@@ -103,11 +106,27 @@ export const SettingsDropdown: React.FC = () => {
     };
   }, [hoverTimeout]);
 
+  // Set mounted state for portal (SSR safety)
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   return (
-    <Menu as="div" className="relative ml-4">
+    <Menu as="div" className="relative ml-4" ref={menuRef}>
       {({ open }) => {
         // Sync the open state (deferred to avoid setState during render)
         syncOpenState(open);
+
+        // Calculate panel position based on MenuItems position
+        const panelPosition = (() => {
+          if (!menuItemsRef.current) return { top: 72, left: 240 };
+          
+          const rect = menuItemsRef.current.getBoundingClientRect();
+          return {
+            top: rect.top,
+            left: rect.right + 8 // 8px gap from MenuItems
+          };
+        })();
 
         return (
           <>
@@ -118,6 +137,7 @@ export const SettingsDropdown: React.FC = () => {
               </MenuButton>
             </div>
             <MenuItems
+              ref={menuItemsRef}
               transition
               className="absolute left-0 z-[60] mt-2 -ml-2 w-56 origin-top-left rounded-md bg-white/95 backdrop-blur-sm pt-3 pb-3 shadow-xl shadow-gray-200/50 ring-1 ring-gray-200/50 transition focus:outline-hidden data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
             >
@@ -157,42 +177,44 @@ export const SettingsDropdown: React.FC = () => {
               </nav>
             </MenuItems>
 
-            {/* Settings Panels - positioned next to settings menu - only show when menu is open */}
-            {open && getShowPanel('Snapping Settings') && (
+            {/* Settings Panels rendered via Portal - positioned next to settings menu - only show when menu is open */}
+            {isMounted && open && getShowPanel('Snapping Settings') && createPortal(
               <div
-                className="absolute left-60 top-0 z-[60]"
+                className="fixed z-[60]"
+                style={{
+                  top: `${panelPosition.top}px`,
+                  left: `${panelPosition.left}px`
+                }}
                 onMouseEnter={() => handleSettingsHover('Snapping Settings')}
                 onMouseLeave={handleSettingsLeave}
               >
-                <div className="relative">
-                  <SnappingOptions
-                    gridConfig={gridConfig}
-                    onToggleGridSnap={() => updateGridConfig({ enabled: !gridConfig.enabled })}
-                    onGridSizeChange={(size: number) => updateGridConfig({ size })}
-                    elementSnapConfig={elementSnapConfig}
-                    onToggleElementSnap={() => updateElementSnapConfig({ enabled: !elementSnapConfig.enabled })}
-                    onToggleGuides={() => updateElementSnapConfig({ showGuides: !elementSnapConfig.showGuides })}
-                    onToggleSpacing={() => updateElementSnapConfig({ enableSpacing: !elementSnapConfig.enableSpacing })}
-                    onToggleDistribution={() => updateElementSnapConfig({ enableDistribution: !elementSnapConfig.enableDistribution })}
-                    onSnapThresholdChange={(threshold: number) => updateElementSnapConfig({ snapThreshold: threshold })}
-                    isGridSnapTemporarilyDisabled={isGridSnapTemporarilyDisabled}
-                    isElementSnapTemporarilyDisabled={isElementSnapTemporarilyDisabled}
-                  />
-                </div>
-              </div>
+                <SnappingOptions
+                  gridConfig={gridConfig}
+                  onToggleGridSnap={() => updateGridConfig({ enabled: !gridConfig.enabled })}
+                  elementSnapConfig={elementSnapConfig}
+                  onToggleElementSnap={() => updateElementSnapConfig({ enabled: !elementSnapConfig.enabled })}
+                  onToggleGuides={() => updateElementSnapConfig({ showGuides: !elementSnapConfig.showGuides })}
+                  isGridSnapTemporarilyDisabled={isGridSnapTemporarilyDisabled}
+                  isElementSnapTemporarilyDisabled={isElementSnapTemporarilyDisabled}
+                />
+              </div>,
+              document.body
             )}
 
-            {/* Video Settings Panel - positioned next to settings menu - only show when menu is open */}
-            {open && getShowPanel('Video Settings') && (
+            {/* Display Settings Panel rendered via Portal - positioned next to settings menu - only show when menu is open */}
+            {isMounted && open && getShowPanel('Display Settings') && createPortal(
               <div
-                className="absolute left-60 top-0 z-[60]"
-                onMouseEnter={() => handleSettingsHover('Video Settings')}
+                className="fixed z-[60]"
+                style={{
+                  top: `${panelPosition.top}px`,
+                  left: `${panelPosition.left}px`
+                }}
+                onMouseEnter={() => handleSettingsHover('Display Settings')}
                 onMouseLeave={handleSettingsLeave}
               >
-                <div className="relative">
-                  <VideoOptions />
-                </div>
-              </div>
+                <DisplaySettings />
+              </div>,
+              document.body
             )}
           </>
         );

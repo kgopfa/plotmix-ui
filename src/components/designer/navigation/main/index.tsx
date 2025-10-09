@@ -10,24 +10,15 @@ import {
   X,
   Upload,
   Redo2,
-  Search,
   Undo2,
   CloudCheck,
   Home,
   MessagesSquare,
   Boxes,
-  Code,
-  CodeXml
-} from 'lucide-react'
-import { ProjectControls } from './project-controls';
-import { PathModeIndicator } from './path-mode-indicator';
-import { PanelToggleButtons } from './panel-toggle-buttons';
-import { SnappingControls } from './settings/snapping/snapping-controls';
-import { SelectionIndicator } from './selection-indicator';
+} from 'lucide-react';
 import { SettingsDropdown } from './settings';
 import { UserAvatar } from './user-avatar';
 import { useProjectStore } from '@/stores/use-project-store';
-import { DiffPatcher } from 'jsondiffpatch';
 import { apiClient } from '@/lib/api-client';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
@@ -39,10 +30,7 @@ interface MainNavBarProps {
   onUngroupElements: () => void;
 }
 
-export const MainNavBar: React.FC<MainNavBarProps> = ({
-  onGroupElements,
-  onUngroupElements
-}) => {
+export const MainNavBar: React.FC<MainNavBarProps> = () => {
   const [projectName, setProjectName] = useState('Project Name');
   const { projectId, name, title, saveStatus, captureBaseline, setProjectInfo, setSaveStatus } = useProjectStore();
 
@@ -315,50 +303,6 @@ export const MainNavBar: React.FC<MainNavBarProps> = ({
               </DisclosureButton>
             </>
           )}
-        </div>
-
-        {/* Mobile editor controls */}
-        <div className="border-t border-gray-200 pt-2 pb-2">
-          <div className="px-4 space-y-2">
-            <div className="text-sm font-medium text-gray-700 mb-2">Editor Tools</div>
-            <div className="flex flex-col gap-2">
-              <ProjectControls />
-              <PathModeIndicator />
-              <PanelToggleButtons />
-              <SnappingControls />
-              <SelectionIndicator
-                onGroupElements={onGroupElements}
-                onUngroupElements={onUngroupElements}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile search */}
-        <div className="border-t border-gray-200 pt-4 pb-3">
-          <div className="px-4">
-            <div className="grid w-full grid-cols-1">
-              <input
-                name="search"
-                type="search"
-                placeholder="Search projects..."
-                value={projectName}
-                onChange={(e) => setProjectName(e.target.value)}
-                className="col-start-1 row-start-1 block w-full rounded-md bg-white py-2 pr-3 pl-10 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600"
-              />
-              <Search
-                aria-hidden="true"
-                className="pointer-events-none col-start-1 row-start-1 ml-3 size-5 self-center text-gray-400"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile user section */}
-        <div className="border-t border-gray-200 pt-4 pb-3">
-          <div className="px-4">
-            <UserAvatar showDropdown={true} />
-          </div>
         </div>
       </DisclosurePanel>
     </Disclosure>
