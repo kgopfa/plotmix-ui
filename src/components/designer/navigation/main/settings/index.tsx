@@ -154,16 +154,16 @@ export const SettingsDropdown: React.FC = () => {
                         onClick={() => handleSettingsClick(item.name)}
                         onMouseEnter={() => handleSettingsHover(item.name)}
                         className={classNames(
-                          currentSettingsItem === item.name || hoveredSettingsItem === item.name
+                          currentSettingsItem === item.name
                             ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-sm shadow-purple-500/30'
-                            : 'text-gray-500 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 focus:bg-purple-50 focus:text-purple-700',
-                          'group flex gap-x-3 items-center rounded-md py-2 px-4 text-sm font-semibold focus:outline-hidden cursor-pointer w-full text-left h-10',
+                            : 'text-gray-500 hover:text-purple-700',
+                          'group flex gap-x-3 items-center rounded-md py-2 px-4 text-sm font-semibold focus:outline-hidden cursor-pointer w-full text-left h-10 transition-colors duration-200',
                         )}
                       >
                         <item.icon
                           aria-hidden="true"
                           className={classNames(
-                            currentSettingsItem === item.name || hoveredSettingsItem === item.name
+                            currentSettingsItem === item.name
                               ? 'text-white drop-shadow-sm'
                               : 'text-gray-500 group-hover:text-purple-700',
                             'size-5 shrink-0 transition-colors duration-200',
