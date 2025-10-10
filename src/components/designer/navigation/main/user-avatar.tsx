@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { createPortal } from 'react-dom'
 import { User, CreditCard, LogOut } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { signOut } from 'next-auth/react'
@@ -12,18 +11,11 @@ interface UserAvatarProps {
   showDropdown?: boolean
 }
 
-interface DropdownPosition {
-  top: number
-  left: number
-  transform: string
-}
-
 export function UserAvatar({ className = '', showDropdown = true }: UserAvatarProps) {
   const { isAuthenticated, session } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
-  const [dropdownPosition, setDropdownPosition] = useState<DropdownPosition>({ top: 0, left: 0, transform: '' })
   const [isLoggingOut, setIsLoggingOut] = useState(false)
-  const avatarRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
 
@@ -43,68 +35,30 @@ export function UserAvatar({ className = '', showDropdown = true }: UserAvatarPr
   const userName = session?.user?.name
   const userEmail = session?.user?.email
 
-  // Calculate dropdown position
-  const calculateDropdownPosition = () => {
-    if (!avatarRef.current) return;
-
-    const avatarRect = avatarRef.current.getBoundingClientRect();
-    const dropdownHeight = 200; // Approximate height of dropdown
-    const dropdownWidth = 224; // w-56 = 14rem = 224px
-    
-    let top = avatarRect.bottom + 8; // 8px gap below avatar
-    let left = avatarRect.left;
-    let transform = '';
-
-    // Check if dropdown would go below viewport
-    if (top + dropdownHeight > window.innerHeight) {
-      top = avatarRect.top - dropdownHeight - 8; // Position above avatar
-    }
-
-    // Check if dropdown would go outside right edge
-    if (left + dropdownWidth > window.innerWidth) {
-      left = window.innerWidth - dropdownWidth - 16; // 16px margin from edge
-    }
-
-    // Check if dropdown would go outside left edge
-    if (left < 16) {
-      left = 16;
-    }
-
-    setDropdownPosition({ top, left, transform });
-  };
-
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       const target = event.target as Node;
       
-      // Check if click is on avatar or dropdown
-      const isClickOnAvatar = avatarRef.current?.contains(target);
-      const isClickOnDropdown = dropdownRef.current?.contains(target);
+      // Check if click is on container or dropdown
+      const isClickOnContainer = containerRef.current?.contains(target);
       
-      // Only close if click is outside both avatar and dropdown
-      if (!isClickOnAvatar && !isClickOnDropdown) {
+      // Only close if click is outside container (which includes both avatar and dropdown)
+      if (!isClickOnContainer) {
         setIsOpen(false);
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [])
-
-  // Recalculate position when dropdown opens
-  useEffect(() => {
     if (isOpen) {
-      calculateDropdownPosition();
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside)
+      }
     }
-  }, [isOpen]);
+  }, [isOpen])
 
   // Secure logout function that implements dual logout
   const handleSecureLogout = async () => {
-    console.log('=== LOGOUT FUNCTION CALLED ===');
-    
     if (isLoggingOut) return; // Prevent multiple logout attempts
     
     setIsLoggingOut(true);
@@ -145,39 +99,33 @@ export function UserAvatar({ className = '', showDropdown = true }: UserAvatarPr
     },
   ]
 
-  const AvatarButton = () => (
-    <div 
-      ref={avatarRef}
-      className="h-9 w-9 rounded-full bg-slate-300 flex items-center justify-center border border-indigo-300 hover:bg-slate-200 transition-colors duration-200 cursor-pointer"
-      onClick={() => {
-        setIsOpen(!isOpen)
-      }}
-    >
-      <span className="text-indigo-800 text-sm font-semibold">{userInitials}</span>
-    </div>
-  )
-
   if (!isAuthenticated || !userInitials) {
     return null
   }
 
   if (!showDropdown) {
-    return <AvatarButton />
+    return (
+      <div 
+        className="h-9 w-9 rounded-full bg-slate-300 flex items-center justify-center border border-indigo-300 transition-colors duration-200"
+      >
+        <span className="text-indigo-800 text-sm font-semibold">{userInitials}</span>
+      </div>
+    )
   }
 
   return (
-    <>
-      <AvatarButton />
+    <div className="relative" ref={containerRef}>
+      <div 
+        className="h-9 w-9 rounded-full bg-slate-300 flex items-center justify-center border border-indigo-300 hover:bg-slate-200 transition-colors duration-200 cursor-pointer"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span className="text-indigo-800 text-sm font-semibold">{userInitials}</span>
+      </div>
       
-      {isOpen && typeof window !== 'undefined' && createPortal(
+      {isOpen && (
         <div 
           ref={dropdownRef}
-          className="fixed z-50 w-64 border border-gray-300 rounded-xl bg-white px-4 py-6 text-sm font-semibold text-gray-700 shadow-lg ring-1 ring-gray-900/5" 
-          style={{
-            top: `${dropdownPosition.top}px`,
-            left: `${dropdownPosition.left}px`,
-            transform: dropdownPosition.transform
-          }}
+          className="absolute right-0 z-[60] mt-2 w-64 origin-top-right rounded-xl bg-white/95 backdrop-blur-sm px-4 py-6 text-sm font-semibold text-gray-700 shadow-xl shadow-gray-200/50 ring-1 ring-gray-200/50"
         >
           {/* User info header */}
           <div className="border-b border-gray-200 pb-3 mb-3">
@@ -217,9 +165,8 @@ export function UserAvatar({ className = '', showDropdown = true }: UserAvatarPr
               </a>
             )
           })}
-        </div>,
-        document.body
+        </div>
       )}
-    </>
+    </div>
   )
 } 
