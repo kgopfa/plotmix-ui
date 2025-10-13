@@ -178,26 +178,26 @@ export const MainNavBar: React.FC<MainNavBarProps> = () => {
               </DisclosureButton>
               {/* Desktop options menu */}
               <DisclosurePanel className="absolute left-0 top-12 z-50 hidden lg:block">
-                <div className="w-56 rounded-xl bg-white/95 backdrop-blur-sm px-4 py-6 text-sm font-semibold text-gray-700 shadow-xl shadow-gray-200/50 ring-1 ring-gray-200/50">
+                <div className="w-44 rounded-xl bg-white/95 backdrop-blur-sm px-4 py-6 text-sm font-semibold text-gray-700 shadow-xl shadow-gray-200/50 ring-1 ring-gray-200/50">
                   <Link
                     href="/"
-                    className="flex items-center gap-x-3 p-2 rounded-lg transition-colors duration-200 hover:bg-gray-50 hover:text-indigo-600"
+                    className="group flex items-center gap-x-3 px-2 py-3 rounded-lg transition-colors duration-200 hover:bg-gray-50 hover:text-indigo-600"
                   >
-                    <Home className="size-4 text-gray-600" />
+                    <Home className="size-4 text-gray-600 group-hover:text-indigo-600 transition-colors duration-200" />
                     Home
                   </Link>
                   <Link
                     href="/chats"
-                    className="flex items-center gap-x-3 p-2 rounded-lg transition-colors duration-200 hover:bg-gray-50 hover:text-indigo-600"
+                    className="group flex items-center gap-x-3 px-2 py-3 rounded-lg transition-colors duration-200 hover:bg-gray-50 hover:text-indigo-600"
                   >
-                    <MessagesSquare strokeWidth={2.3} className="size-4 text-gray-600" />
+                    <MessagesSquare strokeWidth={2.3} className="size-4 text-gray-600 group-hover:text-indigo-600 transition-colors duration-200" />
                     Chats
                   </Link>
                   <Link
                     href="/projects"
-                    className="flex items-center gap-x-3 p-2 rounded-lg transition-colors duration-200 hover:bg-gray-50 hover:text-indigo-600"
+                    className="group flex items-center gap-x-3 px-2 py-3 rounded-lg transition-colors duration-200 hover:bg-gray-50 hover:text-indigo-600"
                   >
-                    <Boxes strokeWidth={1.5} className="size-4 text-gray-600" />
+                    <Boxes strokeWidth={1.5} className="size-4 text-gray-600 group-hover:text-indigo-600 transition-colors duration-200" />
                     Projects
                   </Link>
                 </div>
