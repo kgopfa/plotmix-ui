@@ -189,7 +189,7 @@ export const RightSidebar: React.FC<{ onInspectorChange: any; onGroupInspectorCh
             height: 'calc(100vh - 80px)'
           }}
         >
-          <div className="h-full overflow-hidden">
+          <div className="h-full overflow-y-auto">
             <TabContent 
               navKey={activePanel}
               onInspectorChange={onInspectorChange}

@@ -33,11 +33,12 @@ export function Timeline() {
 
   const { timelineAnimations } = useTimelineStoreV2();
 
-  const { play, pause, stop, updateAnimation } = useTimelineStoreV2(
+  const { play, pause, stop, seek, updateAnimation } = useTimelineStoreV2(
     useShallow((state: any) => ({
       play: state.play,
       pause: state.pause,
       stop: state.stop,
+      seek: state.seek,
       updateAnimation: state.updateAnimation
     }))
   );
@@ -47,10 +48,12 @@ export function Timeline() {
   const toggleTimelineCollapse = useUIStore(state => state.toggleTimelineCollapse);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const rulerRef = useRef<HTMLDivElement>(null);
   const [scrollLeft, setScrollLeft] = useState(0);
   const [expandedElements, setExpandedElements] = useState<Set<string>>(new Set());
   const [labelColumnWidth, setLabelColumnWidth] = useState(192); // 192px = w-48
   const [isResizingLabels, setIsResizingLabels] = useState(false);
+  const [isDraggingPlayhead, setIsDraggingPlayhead] = useState(false);
 
   // Zoom controls moved to main navigation; timeline no longer manages zoom
 
@@ -108,6 +111,42 @@ export function Timeline() {
       document.removeEventListener('mouseup', handleMouseUp);
     };
 
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  // Handle playhead dragging for seeking
+  const handleRulerMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!rulerRef.current || !scrollContainerRef.current) return;
+    
+    e.preventDefault();
+    setIsDraggingPlayhead(true);
+    
+    const seekToPosition = (clientX: number) => {
+      if (!rulerRef.current || !scrollContainerRef.current) return;
+      
+      const rect = rulerRef.current.getBoundingClientRect();
+      const scrollLeft = scrollContainerRef.current.scrollLeft;
+      const offsetX = clientX - rect.left + scrollLeft;
+      const time = offsetX / timelineUI.scale;
+      const clampedTime = Math.max(0, Math.min(time, totalProjectDuration));
+      
+      seek(clampedTime);
+    };
+    
+    // Seek immediately on mouse down
+    seekToPosition(e.clientX);
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      seekToPosition(e.clientX);
+    };
+    
+    const handleMouseUp = () => {
+      setIsDraggingPlayhead(false);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+    
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
   };
@@ -364,11 +403,17 @@ export function Timeline() {
             style={{ width: `${timelineUI.scale * Math.max(totalProjectDuration, 10)}px`, minWidth: '100%' }}
           >
             {/* Ruler */}
-            <div className="h-6 relative border-b border-gray-200/50 bg-white/50 backdrop-blur-sm">
+            <div 
+              ref={rulerRef}
+              className={`h-6 relative border-b border-gray-200/50 bg-white/50 backdrop-blur-sm ${
+                isDraggingPlayhead ? 'cursor-grabbing' : 'cursor-pointer'
+              }`}
+              onMouseDown={handleRulerMouseDown}
+            >
               {rulerTicks.map((tick) => (
                 <div
                   key={tick.index}
-                  className="absolute h-full border-l border-gray-200/50"
+                  className="absolute h-full border-l border-gray-200/50 pointer-events-none"
                   style={{ left: `${tick.left}px`, width: 0 }}
                 >
                   {tick.isMajor && (
@@ -382,6 +427,15 @@ export function Timeline() {
                   )}
                 </div>
               ))}
+              
+              {/* Global playhead indicator on ruler */}
+              <div
+                className="absolute top-0 bottom-0 w-0.5 bg-gradient-to-b from-fuchsia-400 to-fuchsia-600 shadow-lg pointer-events-none z-20"
+                style={{ left: `${globalTime * timelineUI.scale}px` }}
+              >
+                {/* Playhead handle */}
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-fuchsia-500 rounded-full shadow-lg border-2 border-white" />
+              </div>
             </div>
 
             {/* Track Content */}
