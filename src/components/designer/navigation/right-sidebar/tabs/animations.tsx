@@ -37,37 +37,7 @@ export function AnimationsTab({
   const setActiveRightPanel = useSetActiveRightPanel();
   const { timelineAnimations } = useTimelineStoreV2();
 
-  // Check if we have a selection
-  const hasSelection = !!(selectedElement || selectedGroup);
-  
-  // Show "No Selection" message if nothing is selected
-  if (!hasSelection) {
-    return (
-      <div className="h-full w-full bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col gap-4 p-4">
-        {/* Header */}
-        <div className="flex items-center justify-between pb-2 border-b border-gray-200">
-          <h4 className="font-semibold text-purple-500 text-sm">Animations</h4>
-          <button
-            onClick={() => setActiveRightPanel(null)}
-            className="p-1 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-100"
-            title="Close"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-        
-        <div className="flex-1 flex items-start justify-center pt-12">
-          <div className="text-center text-gray-500 space-y-2">
-            <VectorSquare className="w-12 h-12 mx-auto text-gray-400" />
-            <p className="text-sm font-medium">No Selection</p>
-            <p className="text-xs text-gray-400">Select an element or group to add animations</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Get animations from timeline store
+  // Get animations from timeline store - MUST be before any early returns
   const localAnimations = useMemo(() => {
     if (selectedGroup) {
       return timelineAnimations
@@ -81,13 +51,13 @@ export function AnimationsTab({
     return [];
   }, [timelineAnimations, selectedElement, selectedGroup]);
 
-  // Get onEnterPathMode handler (only if we have onInspectorChange)
+  // Get onEnterPathMode handler - MUST be before any early returns
   const { handleEnterPathMode } = useAnimationHandlers(
     selectedElement || null,
     onInspectorChange || (() => {})
   );
 
-  // Local state is the single source of truth for this component
+  // Local state is the single source of truth for this component - MUST be before any early returns
   const [animations, setAnimations] = useState<ElementAnimation[]>(localAnimations);
   const [selectedAnimationId, setSelectedAnimationId] = useState<string | null>(null);
   const animationSelectionManager = AnimationSelectionManager.getInstance();
@@ -128,6 +98,36 @@ export function AnimationsTab({
       }
     });
   }, [animationSelectionManager, selectionId]);
+
+  // Check if we have a selection - MUST be after all hooks
+  const hasSelection = !!(selectedElement || selectedGroup);
+  
+  // Show "No Selection" message if nothing is selected
+  if (!hasSelection) {
+    return (
+      <div className="h-full w-full bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col gap-4 p-4">
+        {/* Header */}
+        <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+          <h4 className="font-semibold text-purple-500 text-sm">Animations</h4>
+          <button
+            onClick={() => setActiveRightPanel(null)}
+            className="p-1 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-100"
+            title="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        
+        <div className="flex-1 flex items-start justify-center pt-12">
+          <div className="text-center text-gray-500 space-y-2">
+            <VectorSquare className="w-12 h-12 mx-auto text-gray-400" />
+            <p className="text-sm font-medium">No Selection</p>
+            <p className="text-xs text-gray-400">Select an element or group to add animations</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Sync to stores (Timeline rebuild handled by useEffect above)
   const syncToStores = (updatedAnimations: ElementAnimation[], changedField?: string, animationId?: string) => {

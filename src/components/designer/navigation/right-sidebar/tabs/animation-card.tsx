@@ -144,6 +144,7 @@ export function AnimationCard({
 
                   <ListboxOptions
                     transition
+                    modal={false}
                     className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white py-1 text-sm shadow-lg ring-1 ring-black/5 focus:outline-hidden data-leave:transition data-leave:duration-100 data-leave:ease-in data-closed:data-leave:opacity-0"
                   >
                     {EASING_OPTIONS.map((ease) => (
