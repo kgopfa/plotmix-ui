@@ -37,7 +37,7 @@ export function ChatCard({ title, lastMessageAt, messageCount, onClick, onDelete
       tabIndex={0}
       onClick={onClick}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick?.(); }}
-      className="text-left bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-md hover:border-purple-300 transition-all duration-200 cursor-pointer"
+      className="text-left bg-white hover:bg-blue-100/30 border border-gray-200 rounded-2xl p-4 transition-all duration-200 cursor-pointer"
     >
       <div className="flex items-start gap-x-3">
         <MessagesSquare className="size-5 text-gray-700 mt-0.5" />
