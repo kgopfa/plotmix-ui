@@ -7,7 +7,8 @@ import { useProjectStore } from '@/stores/use-project-store';
 import { useCanvasStore } from '@/stores/use-canvas-store';
 import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
 import { apiClient } from '@/lib/api-client';
-import { CodeExecutor, type ProjectData } from '@/utils/code-executor';
+import { CodeExecutor } from '@/utils/code-executor';
+import type { ProjectData } from '@/utils/code-executor';
 import AceEditor from 'react-ace';
 
 import 'ace-builds/src-noconflict/mode-javascript';
@@ -19,7 +20,7 @@ export default function ScriptsPage() {
   const params = useParams();
   const projectId = params.projectId as string;
 
-  const { name, version, setProjectInfo, setBaseline, captureBaseline, checkStateDiff, getStateDiff, persistIfDirty } = useProjectStore();
+  const { name, version, setProjectInfo, setBaseline, captureBaseline, checkStateDiff, persistIfDirty } = useProjectStore();
   const { elements, groups, setElements, setGroups, clearCanvas } = useCanvasStore();
   const { timelineAnimations, loadProjectData, resetTimeline } = useTimelineStoreV2();
 
@@ -28,7 +29,25 @@ export default function ScriptsPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isOverwriting, setIsOverwriting] = useState(false);
-  const [result, setResult] = useState<ProjectData | null>(null);
+  // Local type for script execution results (full multi-scene structure)
+  type ScriptProjectData = {
+    dimensions: {
+      width: number;
+      height: number;
+    };
+    scenes: Array<{
+      sceneId: string;
+      sceneName: string;
+      sceneCanvas: {
+        elements: any[];
+        groups: any[];
+        timeline: any[];
+        playback: any;
+      };
+    }>;
+  };
+  
+  const [result, setResult] = useState<ScriptProjectData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isExecuting, setIsExecuting] = useState(false);
@@ -50,6 +69,9 @@ export default function ScriptsPage() {
       const res = await apiClient.get<{ data: { project: { id: string; name: string; title?: string; version: string; mainState?: unknown } } }>(`/api/projects/${projectId}`);
       const project = res.data.project;
       
+      // Log the full project received from backend for debugging
+      console.log('📦 FULL PROJECT FROM BACKEND:', JSON.stringify(project, null, 2));
+      
       setProjectInfo({
         projectId: project.id,
         name: project.name,
@@ -58,9 +80,6 @@ export default function ScriptsPage() {
       });
 
       const mainState = (project.mainState as { 
-        elements?: unknown[]; 
-        groups?: unknown[]; 
-        timeline?: unknown;
         dimensions?: unknown;
         scenes?: unknown[];
       }) || {};
@@ -94,7 +113,8 @@ export default function ScriptsPage() {
       
       const rawElements = Array.isArray(firstScene.sceneCanvas.elements) ? firstScene.sceneCanvas.elements : [];
       const rawGroups = Array.isArray(firstScene.sceneCanvas.groups) ? firstScene.sceneCanvas.groups : [];
-      const timelineData = firstScene.sceneCanvas.timeline || {};
+      const timeline = firstScene.sceneCanvas.timeline || [];
+      const playback = firstScene.sceneCanvas.playback || {};
       
       // Set current scene in canvas store
       canvasStore.setCurrentScene(firstScene.sceneId);
@@ -122,31 +142,24 @@ export default function ScriptsPage() {
       setElements(elements);
       setGroups(groups);
 
-      // Load timeline data
-      const timeline = (timelineData as { animationStates?: any; scale?: number; duration?: number; currentTime?: number }) || {};
+      // Load timeline data - timeline is an array of TimelineAnimation objects
       loadProjectData({
         elements,
         groups,
         timelineAnimations: Array.isArray(timeline) ? timeline : [],
-        animationStates: (timeline.animationStates as Record<string, any>) || {},
-        scale: typeof timeline.scale === 'number' ? timeline.scale : 1,
-        duration: typeof timeline.duration === 'number' ? timeline.duration : 0,
-        currentTime: typeof timeline.currentTime === 'number' ? timeline.currentTime : 0,
+        animationStates: {},
+        scale: typeof (playback as any)?.scale === 'number' ? (playback as any).scale : 1,
+        duration: typeof (playback as any)?.duration === 'number' ? (playback as any).duration : 0,
+        currentTime: typeof (playback as any)?.currentTime === 'number' ? (playback as any).currentTime : 0,
       });
 
       // Capture baseline after stores are hydrated
       captureBaseline();
 
-      // Set initial result
+      // Set initial result - show the full multi-scene structure
       const projectData = {
-        groups: groups,
-        elements: elements,
-        timeline: {
-          scale: timeline.scale || 100,
-          duration: timeline.duration || 1,
-          currentTime: timeline.currentTime || 0,
-          animationStates: timeline.animationStates || {}
-        }
+        dimensions: dimensions,
+        scenes: allScenes
       };
       setResult(projectData);
 
@@ -199,21 +212,16 @@ export default function ScriptsPage() {
       console.log('🚀 Executing code:', code.substring(0, 100) + (code.length > 100 ? '...' : ''));
 
       // Create a safe execution environment with access to project data
-      const projectData: ProjectData = {
-        groups: groups,
-        elements: elements,
-        timeline: {
-          scale: 100,
-          duration: 1,
-          currentTime: 0,
-          animationStates: {} // Note: animationStates not used in new centralized timeline structure
-        }
+      // Provide the full multi-scene structure
+      const projectStore = useProjectStore.getState();
+      const projectData = {
+        dimensions: projectStore.dimensions || { width: 1920, height: 1080 },
+        scenes: projectStore.scenes
       };
 
       console.log('📊 Project data before execution:', {
-        elementsCount: projectData.elements.length,
-        groupsCount: projectData.groups.length,
-        hasTimeline: !!projectData.timeline
+        dimensions: projectData.dimensions,
+        scenesCount: projectData.scenes.length
       });
 
       // Execute the code using the CodeExecutor
@@ -229,45 +237,15 @@ export default function ScriptsPage() {
           });
           setResult(newResult);
           
-          // Use the same diffing system as the designer page
+          // Check if result changed from baseline
           if (newResult) {
-            // Temporarily update stores to check diff using project store
-            const originalGroups = groups;
-            const originalElements = elements;
+            const projectStore = useProjectStore.getState();
+            const baseline = projectStore.baselineMainState;
             
-            setGroups(newResult.groups as any);
-            setElements(newResult.elements as any);
-            
-            if (newResult.timeline) {
-              loadProjectData({
-                elements: newResult.elements as any,
-                groups: newResult.groups as any,
-                timelineAnimations: Array.isArray(newResult.timeline) ? newResult.timeline : [], // Load timeline animations array
-                animationStates: newResult.timeline.animationStates || {},
-                scale: newResult.timeline.scale || 1,
-                duration: newResult.timeline.duration || 0,
-                currentTime: newResult.timeline.currentTime || 0,
-              });
-            }
-            
-            // Use the same diffing logic as designer page
-            const hasChanges = checkStateDiff({
-              elements: newResult.elements,
-              groups: newResult.groups,
-              timeline: {
-                scale: newResult.timeline.scale || 1,
-                duration: newResult.timeline.duration || 0,
-                currentTime: newResult.timeline.currentTime || 0,
-                animationStates: newResult.timeline.animationStates || {}
-              }
-            });
-            
-            console.log('🔄 Project store diffing result:', { hasChanges });
+            // Compare the new result with baseline
+            const hasChanges = JSON.stringify(baseline) !== JSON.stringify(newResult);
+            console.log('🔄 Script diffing result:', { hasChanges });
             setIsDirty(hasChanges);
-            
-            // Restore original state
-            setGroups(originalGroups);
-            setElements(originalElements);
           }
         },
         (error) => {
@@ -337,11 +315,12 @@ export default function ScriptsPage() {
       setIsSaving(true);
       setError(null);
 
+      // Use the result directly as mainState (it's already in the correct format)
       const data = await apiClient.post<{ success: boolean; data: { project: { id: string } } }>('/api/projects', {
         name: `${name} - Script Result`,
         mainState: result,
         configuration: {
-          canvas: { width: 1920, height: 1080 },
+          canvas: { width: result.dimensions.width, height: result.dimensions.height },
           editor: { snappingEnabled: true, gridEnabled: false },
           animation: { playbackRate: 1, isLooping: false, autoPlay: false }
         }
@@ -364,62 +343,24 @@ export default function ScriptsPage() {
   const getChangesDiff = useCallback(() => {
     if (!result) return null;
     
-    // Create the original project data structure
-    const originalData = {
-      elements: elements,
-      groups: groups,
-      timeline: {
-        scale: 1,
-        duration: 0,
-        currentTime: 0,
-        animationStates: {} // Note: animationStates not used in new centralized timeline structure
-      }
-    };
+    const projectStore = useProjectStore.getState();
+    const baseline = projectStore.baselineMainState;
     
-    // Create the new result data structure
-    const newData = {
-      elements: result.elements,
-      groups: result.groups,
-      timeline: {
-        scale: result.timeline?.scale || 1,
-        duration: result.timeline?.duration || 0,
-        currentTime: result.timeline?.currentTime || 0,
-        animationStates: result.timeline?.animationStates || {}
-      }
-    };
-    
-    // Use jsondiffpatch to create a visual diff
-    // For now, let's create a simple diff by highlighting what changed
+    // Simple comparison showing what changed
     const diff = {
-      original: originalData,
-      modified: newData,
-      changes: {
-        elements: {
-          count: originalData.elements.length,
-          newCount: newData.elements.length,
-          added: newData.elements.filter((el: any) => !originalData.elements.find((orig: any) => orig.id === el.id)),
-          modified: newData.elements.filter((el: any) => {
-            const orig = originalData.elements.find((orig: any) => orig.id === el.id);
-            return orig && JSON.stringify(orig) !== JSON.stringify(el);
-          }),
-          removed: originalData.elements.filter((el: any) => !newData.elements.find((newEl: any) => newEl.id === el.id))
-        },
-        groups: {
-          count: originalData.groups.length,
-          newCount: newData.groups.length,
-          added: newData.groups.filter((g: any) => !originalData.groups.find((orig: any) => orig.id === g.id)),
-          modified: newData.groups.filter((g: any) => {
-            const orig = originalData.groups.find((orig: any) => orig.id === g.id);
-            return orig && JSON.stringify(orig) !== JSON.stringify(g);
-          }),
-          removed: originalData.groups.filter((g: any) => !newData.groups.find((newG: any) => newG.id === g.id))
-        }
+      original: baseline,
+      modified: result,
+      summary: {
+        dimensionsChanged: JSON.stringify(baseline?.dimensions) !== JSON.stringify(result.dimensions),
+        scenesCountOriginal: (baseline?.scenes as any[])?.length || 0,
+        scenesCountNew: result.scenes.length,
+        scenesChanged: JSON.stringify(baseline?.scenes) !== JSON.stringify(result.scenes)
       }
     };
     
     console.log('🔍 Custom diff data:', diff);
     return diff;
-  }, [result, elements, groups, timelineAnimations]);
+  }, [result]);
 
   const overwriteCurrentProject = async () => {
     if (!result || !projectId) return;
@@ -428,33 +369,14 @@ export default function ScriptsPage() {
       setIsOverwriting(true);
       setError(null);
 
-      // First, update the stores with the result data so the project store can detect changes
-      setGroups(result.groups as any);
-      setElements(result.elements as any);
+      // Directly save the full multi-scene mainState
+      const response = await apiClient.put<any>(`/api/projects/${projectId}`, { mainState: result });
       
-      if (result.timeline) {
-        loadProjectData({
-          elements: result.elements as any,
-          groups: result.groups as any,
-          timelineAnimations: Array.isArray(result.timeline) ? result.timeline : [], // Load timeline animations array
-          animationStates: result.timeline.animationStates || {},
-          scale: result.timeline.scale || 1,
-          duration: result.timeline.duration || 0,
-          currentTime: result.timeline.currentTime || 0,
-        });
-      }
-
-      // Use the existing project store diffing and persistence (same as designer auto-save)
-      const success = await persistIfDirty('Script execution result');
+      setProjectInfo({ version: response.data.project.version });
+      setIsDirty(false);
       
-      if (success) {
-        // Update the baseline and mark as not dirty
-        setIsDirty(false);
-        // Refresh the project data to show the new version
-        initialize();
-      } else {
-        throw new Error('No changes detected or save failed');
-      }
+      // Refresh to show the new version
+      initialize();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to overwrite project');
     } finally {
@@ -675,7 +597,7 @@ setResult(project);`}
                     </span>
                   )}
                   <span className="text-xs text-gray-500">
-                    {result.elements?.length || 0} elements, {result.groups?.length || 0} groups
+                    {result.scenes?.length || 0} scenes
                   </span>
                 </div>
               )}
@@ -708,17 +630,12 @@ setResult(project);`}
                   showChangesOnly 
                     ? (() => {
                         const diff = getChangesDiff();
-                        if (diff && diff.changes) {
+                        if (diff && diff.summary) {
                           // Check if there are actual changes
-                          const hasChanges = diff.changes.elements.added.length > 0 || 
-                                           diff.changes.elements.modified.length > 0 || 
-                                           diff.changes.elements.removed.length > 0 ||
-                                           diff.changes.groups.added.length > 0 || 
-                                           diff.changes.groups.modified.length > 0 || 
-                                           diff.changes.groups.removed.length > 0;
+                          const hasChanges = diff.summary.dimensionsChanged || diff.summary.scenesChanged;
                           
                           if (hasChanges) {
-                            return JSON.stringify(diff.changes, null, 2);
+                            return JSON.stringify(diff.summary, null, 2);
                           } else {
                             return '// No changes detected\n// The script execution did not modify the project data';
                           }

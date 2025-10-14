@@ -6,18 +6,20 @@ export interface CodeExecutionResult {
 }
 
 export interface ProjectData {
-  groups: any[];
-  elements: any[];
-  timeline: {
-    scale: number;
-    duration: number;
-    currentTime: number;
-    animationStates: Record<string, any>;
+  dimensions: {
+    width: number;
+    height: number;
   };
-  currentScene?: {
-    id: string;
-    name: string;
-  };
+  scenes: Array<{
+    sceneId: string;
+    sceneName: string;
+    sceneCanvas: {
+      elements: any[];
+      groups: any[];
+      timeline: any[];
+      playback: any;
+    };
+  }>;
 }
 
 /**
