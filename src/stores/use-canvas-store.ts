@@ -262,6 +262,20 @@ export const useCanvasStore = create<CanvasStore>()(
         clearSelections();
       }
       
+      // Clean up timeline animations associated with this element
+      try {
+        const { useTimelineStoreV2 } = require('@/stores/use-timeline-store-v2');
+        const timelineStore = useTimelineStoreV2.getState();
+        const animationsToDelete = timelineStore.timelineAnimations.filter(
+          (anim: any) => anim.target.type === 'element' && anim.target.id === id
+        );
+        animationsToDelete.forEach((anim: any) => {
+          timelineStore.removeTimelineAnimation(anim.id);
+        });
+      } catch (error) {
+        console.warn('Could not clean up timeline animations for deleted element:', error);
+      }
+      
       // Force a full project save to ensure the deleted element is persisted
       try {
         const projectStore = useProjectStore.getState();
@@ -678,6 +692,20 @@ export const useCanvasStore = create<CanvasStore>()(
         // If the deleted group was selected, clear all selections
         // This ensures the properties panel is hidden when groups are deleted
         clearSelections();
+      }
+      
+      // Clean up timeline animations associated with this group
+      try {
+        const { useTimelineStoreV2 } = require('@/stores/use-timeline-store-v2');
+        const timelineStore = useTimelineStoreV2.getState();
+        const animationsToDelete = timelineStore.timelineAnimations.filter(
+          (anim: any) => anim.target.type === 'group' && anim.target.id === id
+        );
+        animationsToDelete.forEach((anim: any) => {
+          timelineStore.removeTimelineAnimation(anim.id);
+        });
+      } catch (error) {
+        console.warn('Could not clean up timeline animations for deleted group:', error);
       }
       
       // Force a full project save to ensure the deleted group is persisted
