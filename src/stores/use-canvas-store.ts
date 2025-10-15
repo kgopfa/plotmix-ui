@@ -1299,6 +1299,8 @@ export const useCanvasOperations = () => {
       setGroupVisibility: state.setGroupVisibility,
       
       createGroupFromElements: state.createGroupFromElements,
+      addElementsToGroup: state.addElementsToGroup,
+      removeElementsFromGroup: state.removeElementsFromGroup,
       
       // Z-index and reordering operations
       bringElementToFront: state.bringElementToFront,

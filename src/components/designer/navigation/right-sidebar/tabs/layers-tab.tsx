@@ -82,7 +82,7 @@ const getElementIcon = (type: string) => {
 export const LayersTab: FC = () => {
   const canvasObjects = useCanvasElements();
   const groups = useCanvasGroups();
-  const { setElementVisibility, setGroupVisibility, updateElement, updateGroup, reorderElements, reorderElementsInGroup, reorderGroups } = useCanvasOperations();
+  const { setElementVisibility, setGroupVisibility, updateElement, updateGroup, reorderElements, reorderElementsInGroup, reorderGroups, addElementsToGroup, removeElementsFromGroup } = useCanvasOperations();
   const { selectedElements, selectedGroups, select: selectElement, selectGroup, updateSelectedGroups } = useSelectionStore();
   const setActiveRightPanel = useSetActiveRightPanel();
   const [lastSelectedElementId, setLastSelectedElementId] = useState<string | null>(null);
@@ -95,8 +95,10 @@ export const LayersTab: FC = () => {
   // Drag and drop state
   const [draggedElementId, setDraggedElementId] = useState<string | null>(null);
   const [draggedGroupId, setDraggedGroupId] = useState<string | null>(null);
+  const [draggedElementGroupId, setDraggedElementGroupId] = useState<string | null>(null); // Track which group the dragged element belongs to
   const [dragOverElementId, setDragOverElementId] = useState<string | null>(null);
   const [dragOverGroupId, setDragOverGroupId] = useState<string | null>(null);
+  const [dragOverUngroupedZone, setDragOverUngroupedZone] = useState<boolean>(false);
   const [dragContext, setDragContext] = useState<'ungrouped' | 'group' | 'groups' | null>(null);
 
   // State for collapsed groups - initialize with all groups collapsed
@@ -248,6 +250,7 @@ export const LayersTab: FC = () => {
   const handleElementDragStart = (e: React.DragEvent, element: AnimatedCanvasObject, context: 'ungrouped' | 'group', groupId?: string) => {
     setDraggedElementId(element.id);
     setDragContext(context);
+    setDraggedElementGroupId(groupId || null); // Store the source group ID
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', JSON.stringify({ elementId: element.id, context, groupId }));
     
@@ -262,7 +265,9 @@ export const LayersTab: FC = () => {
     }
     
     setDraggedElementId(null);
+    setDraggedElementGroupId(null);
     setDragOverElementId(null);
+    setDragOverUngroupedZone(false);
     setDragContext(null);
   };
 
@@ -295,7 +300,30 @@ export const LayersTab: FC = () => {
         // Reverse the order since highest z-index should be first
         reorderElements(elementIds, newOrder.reverse());
       }
+    } else if (context === 'ungrouped' && dragContext === 'group' && draggedElementGroupId) {
+      // Dragging from group to ungrouped area - remove from group
+      removeElementsFromGroup([draggedElementId], draggedElementGroupId);
+      
+      // Insert the element into the ungrouped elements at the drop position
+      const ungroupedEls = ungroupedElements.sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0));
+      const elementIds = ungroupedEls.map(el => el.id);
+      const dropIndex = elementIds.indexOf(dropElement.id);
+      
+      if (dropIndex !== -1) {
+        // Add the dragged element to the order at the drop position
+        const newOrder = [...elementIds];
+        newOrder.splice(dropIndex, 0, draggedElementId);
+        
+        // Reverse the order since highest z-index should be first
+        reorderElements([...elementIds, draggedElementId], newOrder.reverse());
+      }
     } else if (context === 'group' && dragContext === 'group' && groupId) {
+      // Verify both elements are in the same group before reordering
+      if (draggedElementGroupId !== groupId) {
+        console.warn('Cannot reorder elements from different groups');
+        return;
+      }
+      
       // Reorder elements within the same group
       const groupEls = groupedElements
         .filter(el => el.groupId === groupId)
@@ -315,6 +343,7 @@ export const LayersTab: FC = () => {
     }
     
     setDraggedElementId(null);
+    setDraggedElementGroupId(null);
     setDragOverElementId(null);
     setDragContext(null);
   };
@@ -345,7 +374,12 @@ export const LayersTab: FC = () => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     
+    // Allow group reordering (group dragged over another group)
     if (draggedGroupId && draggedGroupId !== group.id) {
+      setDragOverGroupId(group.id);
+    }
+    // Allow ungrouped elements to be dropped on groups
+    else if (dragContext === 'ungrouped' && draggedElementId && !draggedElementGroupId) {
       setDragOverGroupId(group.id);
     }
   };
@@ -353,6 +387,17 @@ export const LayersTab: FC = () => {
   const handleGroupDrop = (e: React.DragEvent, dropGroup: CanvasGroup) => {
     e.preventDefault();
     
+    // Handle ungrouped element being dropped on a group (add to group)
+    if (dragContext === 'ungrouped' && draggedElementId && !draggedElementGroupId) {
+      addElementsToGroup([draggedElementId], dropGroup.id);
+      
+      setDraggedElementId(null);
+      setDragOverGroupId(null);
+      setDragContext(null);
+      return;
+    }
+    
+    // Handle group reordering
     if (!draggedGroupId || draggedGroupId === dropGroup.id || dragContext !== 'groups') return;
 
     const nonDefaultGroups = groups.filter(g => !g.isDefaultGroup);
@@ -372,6 +417,41 @@ export const LayersTab: FC = () => {
     
     setDraggedGroupId(null);
     setDragOverGroupId(null);
+    setDragContext(null);
+  };
+
+  // Handlers for ungrouped zone (when dragging from group to empty ungrouped area)
+  const handleUngroupedZoneDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Only accept elements from groups
+    if (dragContext === 'group' && draggedElementId && draggedElementGroupId) {
+      e.dataTransfer.dropEffect = 'move';
+      setDragOverUngroupedZone(true);
+    }
+  };
+
+  const handleUngroupedZoneDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOverUngroupedZone(false);
+  };
+
+  const handleUngroupedZoneDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Only handle elements from groups
+    if (dragContext === 'group' && draggedElementId && draggedElementGroupId) {
+      // Remove element from its group
+      removeElementsFromGroup([draggedElementId], draggedElementGroupId);
+      
+      // The element will now be ungrouped - no need to reorder since it will appear at its current z-index
+    }
+    
+    setDraggedElementId(null);
+    setDraggedElementGroupId(null);
+    setDragOverUngroupedZone(false);
     setDragContext(null);
   };
 
@@ -440,6 +520,8 @@ export const LayersTab: FC = () => {
                 const isCollapsed = collapsedGroups.has(group.id);
                 const isDraggingGroup = draggedGroupId === group.id;
                 const isDragOverGroup = dragOverGroupId === group.id;
+                const isElementBeingAddedToGroup = isDragOverGroup && dragContext === 'ungrouped' && draggedElementId;
+                const isGroupReordering = isDragOverGroup && dragContext === 'groups' && draggedGroupId;
                 
                 return (
                   <div key={group.id} className="space-y-1">
@@ -454,7 +536,9 @@ export const LayersTab: FC = () => {
                           ? 'bg-indigo-100 border border-indigo-200'
                           : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
                       } ${isDraggingGroup ? 'opacity-50' : ''} ${
-                        isDragOverGroup ? 'border-t-2 border-t-blue-500 bg-blue-50' : ''
+                        isElementBeingAddedToGroup ? 'border-2 border-green-500 bg-green-50' : ''
+                      } ${
+                        isGroupReordering ? 'border-t-2 border-t-blue-500 bg-blue-50' : ''
                       }`}
                     >
                       <div className="flex items-center gap-2">
@@ -629,9 +713,16 @@ export const LayersTab: FC = () => {
           )}
 
           {/* Ungrouped Elements */}
-          {ungroupedElements.length > 0 && (
-            <div className="space-y-1">
-              {ungroupedElements.sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0)).map((element) => {
+          <div
+            onDragOver={handleUngroupedZoneDragOver}
+            onDragLeave={handleUngroupedZoneDragLeave}
+            onDrop={handleUngroupedZoneDrop}
+            className={`space-y-1 ${
+              dragOverUngroupedZone ? 'bg-blue-50 border-2 border-dashed border-blue-400 rounded-lg p-2' : ''
+            } ${ungroupedElements.length === 0 && dragContext === 'group' ? 'min-h-[60px] border-2 border-dashed border-gray-300 rounded-lg p-2 flex items-center justify-center' : ''}`}
+          >
+            {ungroupedElements.length > 0 ? (
+              ungroupedElements.sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0)).map((element) => {
                 const isDraggingElement = draggedElementId === element.id;
                 const isDragOverElement = dragOverElementId === element.id;
                 
@@ -712,9 +803,14 @@ export const LayersTab: FC = () => {
                     </div>
                   </div>
                 );
-              })}
-            </div>
-          )}
+              })
+            ) : (
+              dragContext === 'group' && draggedElementId ? (
+                <div className="text-xs text-gray-500 text-center">
+                </div>
+              ) : null
+            )}
+          </div>
 
           {/* Empty State */}
           {canvasObjects.length === 0 && (
