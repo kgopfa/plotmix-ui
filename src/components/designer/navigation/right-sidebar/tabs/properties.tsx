@@ -692,7 +692,7 @@ function ElementPropertiesContent({ selectedElement, onInspectorChange }: {
         </div>
 
         {/* Appearance Properties */}
-        <div className="space-y-4">
+        <div className="space-y-4 mt-6">
           <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
             <h4 className="font-semibold text-purple-600 text-sm">Appearance</h4>
           </div>
@@ -842,7 +842,7 @@ function ElementPropertiesContent({ selectedElement, onInspectorChange }: {
 
         {/* Stroke Properties - hide for text elements since they use textStroke instead, and hide for animated lines since they use animated rectangle color */}
         {localElement.type !== 'text' && !(localElement.lineOptions?.dotted && localElement.lineOptions?.animatedDots) && (
-          <div className="space-y-4">
+          <div className="space-y-4 mt-6">
             <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
               <h4 className="font-semibold text-indigo-600 text-sm">Stroke</h4>
             </div>
@@ -959,7 +959,7 @@ function ElementPropertiesContent({ selectedElement, onInspectorChange }: {
 
         {/* Shadow Properties - hide for animated lines since they don't support shadows */}
         {!(localElement.lineOptions?.dotted && localElement.lineOptions?.animatedDots) && (
-          <div className="space-y-4">
+          <div className="space-y-4 mt-6">
             <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
               <h4 className="font-semibold text-amber-600 text-sm">Shadow</h4>
             </div>
@@ -1100,7 +1100,7 @@ function ElementPropertiesContent({ selectedElement, onInspectorChange }: {
         {/* Text Properties */}
         {
           (localElement.type === 'text') && (
-            <div className="space-y-4">
+            <div className="space-y-4 mt-6">
               <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
                 <h4 className="font-semibold text-red-400 text-sm">Text Properties</h4>
               </div>
@@ -1621,7 +1621,7 @@ function ElementPropertiesContent({ selectedElement, onInspectorChange }: {
         {/* Code Editor Properties */}
         {
           (localElement.type === 'code-editor') && (
-            <div className="space-y-4">
+            <div className="space-y-4 mt-6">
               <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
                 <h4 className="font-semibold text-blue-400 text-sm">Code Editor Properties</h4>
               </div>
