@@ -235,9 +235,9 @@ export function AnimationsTab({
   };
 
   return (
-    <div className="h-full w-full bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col gap-4 p-4">
-      {/* Header */}
-      <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+    <div className="h-full w-full bg-white border border-gray-200 shadow-lg rounded-lg flex flex-col">
+      {/* Header - Fixed */}
+      <div className="flex-shrink-0 flex items-center justify-between p-4 pb-2 border-b border-gray-200">
         <h4 className="font-semibold text-purple-500 text-sm">Animations</h4>
         <button
           onClick={() => setActiveRightPanel(null)}
@@ -248,34 +248,37 @@ export function AnimationsTab({
         </button>
       </div>
 
-      {/* No animations state */}
-      {animations.length === 0 && (
-        <div className="p-6 text-center bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg border border-purple-200/50">
-          <div className="w-12 h-12 mx-auto mb-3 bg-purple-100 rounded-full flex items-center justify-center">
-            <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
+      {/* Scrollable Content Area */}
+      <div className="flex-1 overflow-y-auto p-4">
+        {/* No animations state */}
+        {animations.length === 0 && (
+          <div className="p-6 text-center bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg border border-purple-200/50">
+            <div className="w-12 h-12 mx-auto mb-3 bg-purple-100 rounded-full flex items-center justify-center">
+              <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <p className="text-sm font-medium text-gray-700 mb-1">No animations yet</p>
+            <p className="text-xs text-gray-500">Use the left sidebar to add animations</p>
           </div>
-          <p className="text-sm font-medium text-gray-700 mb-1">No animations yet</p>
-          <p className="text-xs text-gray-500">Use the left sidebar to add animations</p>
-        </div>
-      )}
+        )}
 
-      {/* Animation List */}
-      <div className="space-y-4">
-        {animations.map((animation) => (
-          <AnimationCard
-            key={animation.id}
-            animation={animation}
-            selectedElement={selectedElement}
-            selectedGroup={selectedGroup}
-            isSelected={selectedAnimationId === animation.id}
-            onAnimationChange={handleAnimationChange}
-            onDuplicateAnimation={handleDuplicateAnimation}
-            onDeleteAnimation={handleDeleteAnimationInternal}
-            onEnterPathMode={handleEnterPathMode}
-          />
-        ))}
+        {/* Animation List */}
+        <div className="space-y-4">
+          {animations.map((animation) => (
+            <AnimationCard
+              key={animation.id}
+              animation={animation}
+              selectedElement={selectedElement}
+              selectedGroup={selectedGroup}
+              isSelected={selectedAnimationId === animation.id}
+              onAnimationChange={handleAnimationChange}
+              onDuplicateAnimation={handleDuplicateAnimation}
+              onDeleteAnimation={handleDeleteAnimationInternal}
+              onEnterPathMode={handleEnterPathMode}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

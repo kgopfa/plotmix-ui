@@ -113,32 +113,56 @@ export const AnimationsTab: React.FC = () => {
     };
 
     if (selectedElement) {
-      // Create timeline animation for the element
-      const timelineAnimation = {
-        id: `${selectedElement.id}-${animationType}-${Date.now()}`,
-        displayName: `${selectedElement.name} ${animationType}`,
-        target: { type: 'element' as const, id: selectedElement.id },
-        tracks: [newAnimation],
-        startAt: 0
-      };
+      // Check if timeline animation already exists for this element
+      const { timelineAnimations, updateTimelineAnimation } = useTimelineStoreV2.getState();
+      const existingTimelineAnimation = timelineAnimations.find(
+        anim => anim.target.type === 'element' && anim.target.id === selectedElement.id
+      );
       
-      addTimelineAnimation(timelineAnimation);
+      if (existingTimelineAnimation) {
+        // Add track to existing timeline animation
+        updateTimelineAnimation(existingTimelineAnimation.id, {
+          tracks: [...existingTimelineAnimation.tracks, newAnimation]
+        });
+      } else {
+        // Create new timeline animation for the element
+        const timelineAnimation = {
+          id: `${selectedElement.id}-timeline-${Date.now()}`,
+          displayName: `${selectedElement.name}`,
+          target: { type: 'element' as const, id: selectedElement.id },
+          tracks: [newAnimation],
+          startAt: 0
+        };
+        addTimelineAnimation(timelineAnimation);
+      }
       
       // Select the newly created animation
       setTimeout(() => {
         animationSelectionManager.selectAnimation(selectedElement, newAnimation);
       }, 50);
     } else if (selectedGroup) {
-      // Create timeline animation for the group
-      const timelineAnimation = {
-        id: `${selectedGroup.id}-${animationType}-${Date.now()}`,
-        displayName: `${selectedGroup.name} ${animationType}`,
-        target: { type: 'group' as const, id: selectedGroup.id },
-        tracks: [newAnimation],
-        startAt: 0
-      };
+      // Check if timeline animation already exists for this group
+      const { timelineAnimations, updateTimelineAnimation } = useTimelineStoreV2.getState();
+      const existingTimelineAnimation = timelineAnimations.find(
+        anim => anim.target.type === 'group' && anim.target.id === selectedGroup.id
+      );
       
-      addTimelineAnimation(timelineAnimation);
+      if (existingTimelineAnimation) {
+        // Add track to existing timeline animation
+        updateTimelineAnimation(existingTimelineAnimation.id, {
+          tracks: [...existingTimelineAnimation.tracks, newAnimation]
+        });
+      } else {
+        // Create new timeline animation for the group
+        const timelineAnimation = {
+          id: `${selectedGroup.id}-timeline-${Date.now()}`,
+          displayName: `${selectedGroup.name}`,
+          target: { type: 'group' as const, id: selectedGroup.id },
+          tracks: [newAnimation],
+          startAt: 0
+        };
+        addTimelineAnimation(timelineAnimation);
+      }
     }
 
     // Switch to the right sidebar animations panel

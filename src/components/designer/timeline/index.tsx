@@ -48,12 +48,14 @@ export function Timeline() {
   const toggleTimelineCollapse = useUIStore(state => state.toggleTimelineCollapse);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const labelScrollContainerRef = useRef<HTMLDivElement>(null);
   const rulerRef = useRef<HTMLDivElement>(null);
   const [scrollLeft, setScrollLeft] = useState(0);
   const [expandedElements, setExpandedElements] = useState<Set<string>>(new Set());
   const [labelColumnWidth, setLabelColumnWidth] = useState(192); // 192px = w-48
   const [isResizingLabels, setIsResizingLabels] = useState(false);
   const [isDraggingPlayhead, setIsDraggingPlayhead] = useState(false);
+  const isScrollingSyncRef = useRef(false);
 
   // Zoom controls moved to main navigation; timeline no longer manages zoom
 
@@ -69,6 +71,28 @@ export function Timeline() {
   const handleScroll = () => {
     if (scrollContainerRef.current) {
       setScrollLeft(scrollContainerRef.current.scrollLeft);
+      
+      // Sync vertical scroll to labels column
+      if (labelScrollContainerRef.current && !isScrollingSyncRef.current) {
+        isScrollingSyncRef.current = true;
+        labelScrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollTop;
+        // Reset flag after scroll completes
+        requestAnimationFrame(() => {
+          isScrollingSyncRef.current = false;
+        });
+      }
+    }
+  };
+
+  const handleLabelScroll = () => {
+    // Sync vertical scroll from labels to content
+    if (labelScrollContainerRef.current && scrollContainerRef.current && !isScrollingSyncRef.current) {
+      isScrollingSyncRef.current = true;
+      scrollContainerRef.current.scrollTop = labelScrollContainerRef.current.scrollTop;
+      // Reset flag after scroll completes
+      requestAnimationFrame(() => {
+        isScrollingSyncRef.current = false;
+      });
     }
   };
 
@@ -348,7 +372,12 @@ export function Timeline() {
       }`}>
         
         {/* Left Column - Track Labels (Fixed, Resizable) */}
-        <div className="flex-shrink-0 overflow-y-auto border-r border-gray-200/50 relative" style={{ width: `${labelColumnWidth}px` }}>
+        <div 
+          ref={labelScrollContainerRef}
+          className="flex-shrink-0 overflow-y-auto border-r border-gray-200/50 relative" 
+          style={{ width: `${labelColumnWidth}px` }}
+          onScroll={handleLabelScroll}
+        >
           {/* Ruler placeholder */}
           <div className="h-6 border-b border-gray-200/50 bg-white/50 backdrop-blur-sm"></div>
           
