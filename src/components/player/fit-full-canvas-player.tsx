@@ -32,7 +32,7 @@ export function FitFullCanvasPlayer({ designWidth, designHeight, elements, group
           clipCornerRadius={14}
           appBackgroundColor={0xFFFFFF}
           designCanvasBackgroundColor={0xFFFFFF}
-          designCanvasBorderColor={0xFFFFFF}
+          designCanvasBorderColor={0xE2E8F0}
         />
       </div>
     </div>

@@ -28,7 +28,7 @@ export const ApplicationCanvasPlayer = forwardRef<ApplicationRef, Props>(
       groups,
       transparentBackground = true,
       clipToDesignCanvas = true,
-      clipCornerRadius = 14,
+      clipCornerRadius = 0,
       appBackgroundColor,
       designCanvasBackgroundColor,
       designCanvasBorderColor,

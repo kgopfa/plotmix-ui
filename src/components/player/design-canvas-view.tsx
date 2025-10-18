@@ -27,10 +27,10 @@ export function DesignCanvasView({
   elements,
   groups,
   clipToCanvas = true,
-  clipCornerRadius = 14,
+  clipCornerRadius = 0,
   backgroundColor = 0xffffff,
   borderColor = 0xE2E8F0,
-  borderWidth = 1,
+  borderWidth = 0,
 }: Props) {
   const mainContainerRef = useRef<Container | null>(null);
   const maskRef = useRef<Graphics | null>(null);
@@ -39,8 +39,8 @@ export function DesignCanvasView({
 
   return (
     <pixiContainer
-      x={designWidth * 1.5}
-      y={designHeight * 1.5}
+      x={designWidth}
+      y={designHeight}
       interactive={false}
       eventMode="none"
       sortableChildren={true}
@@ -52,30 +52,13 @@ export function DesignCanvasView({
       // Clip all rendering to the design rectangle when enabled
       mask={clipToCanvas ? (maskRef.current as unknown as Container | undefined) : undefined}
     >
-      {clipToCanvas && (
-        <pixiGraphics
-          ref={(g) => {
-            maskRef.current = g as unknown as Graphics;
-          }}
-          visible={false}
-          draw={(g) => {
-            g.clear();
-            g.roundRect(-designWidth / 2, -designHeight / 2, designWidth, designHeight, clipCornerRadius);
-            g.fill(0xffffff);
-          }}
-        />
-      )}
-
       {/* Canvas frame background */}
       <pixiGraphics
         zIndex={-1}
         draw={(g) => {
           g.clear();
-          g.roundRect(-designWidth / 2, -designHeight / 2, designWidth, designHeight, clipCornerRadius);
-          g.fill({ color: backgroundColor, alpha: 1 });
-          if (borderWidth > 0) {
-            g.stroke({ color: borderColor, width: borderWidth });
-          }
+          g.rect(-designWidth / 2, -designHeight / 2, designWidth, designHeight);
+          g.fill({ color: backgroundColor });
         }}
         interactive={false}
         eventMode="none"
