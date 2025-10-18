@@ -2,7 +2,7 @@
 
 import React, { useRef } from 'react';
 import { extend } from '@pixi/react';
-import { Container, Graphics, Rectangle } from 'pixi.js';
+import { Container, Graphics } from 'pixi.js';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { drawShape, applyShadowToContainer } from '@/utils/drawing-utils';
 import { RichTextRenderer } from '@/components/designer/helpers/rich-text-renderer';
@@ -28,10 +28,12 @@ export function DesignCanvasView({
   const shapeRefs = useRef<Record<string, Container>>({});
   const groupContainers = useRef<Record<string, Container>>({});
 
+  console.log(`width: ${designWidth}, height: ${designHeight}`);
+
   return (
     <pixiContainer
-      x={designWidth}
-      y={designHeight}
+      x={designWidth/2}
+      y={designHeight/2}
       interactive={false}
       eventMode="none"
       sortableChildren={true}
@@ -46,7 +48,19 @@ export function DesignCanvasView({
         draw={(g) => {
           g.clear();
           g.rect(-designWidth, -designHeight, designWidth, designHeight);
-          g.fill({ color: backgroundColor });
+          g.fill({ color: 'red' });
+        }}
+        interactive={false}
+        eventMode="none"
+      />
+
+      {/* Debug: Blue rectangle in the middle */}
+      <pixiGraphics
+        zIndex={1000}
+        draw={(g) => {
+          g.clear();
+          g.rect(-100, -100, 200, 200);
+          g.fill({ color: 'blue' });
         }}
         interactive={false}
         eventMode="none"
@@ -142,5 +156,3 @@ export function DesignCanvasView({
     </pixiContainer>
   );
 }
-
-
