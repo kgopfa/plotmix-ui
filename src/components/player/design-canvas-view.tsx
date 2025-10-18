@@ -14,7 +14,7 @@ type Props = {
   designHeight: number;
   elements: AnimatedCanvasObject[];
   groups: CanvasGroup[];
-  backgroundColor?: number;
+  backgroundColor: string;
 };
 
 export function DesignCanvasView({
@@ -22,7 +22,7 @@ export function DesignCanvasView({
   designHeight,
   elements,
   groups,
-  backgroundColor = 0xffffff,
+  backgroundColor,
 }: Props) {
   const mainContainerRef = useRef<Container | null>(null);
   const shapeRefs = useRef<Record<string, Container>>({});
@@ -46,7 +46,7 @@ export function DesignCanvasView({
         draw={(g) => {
           g.clear();
           g.rect(-designWidth, -designHeight, designWidth, designHeight);
-          g.fill({ color: '#000000' });
+          g.fill({ color: backgroundColor });
         }}
         interactive={false}
         eventMode="none"

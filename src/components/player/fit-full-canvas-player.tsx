@@ -28,9 +28,8 @@ export function FitFullCanvasPlayer({ designWidth, designHeight, elements, group
           elements={elements}
           groups={groups}
           transparentBackground={false}
-          clipToDesignCanvas={false}
+          backgroundColor="#FFFFFF"
           appBackgroundColor={0xFFFFFF}
-          designCanvasBackgroundColor={0xFFFFFF}
         />
       </div>
     </div>

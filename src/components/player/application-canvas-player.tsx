@@ -11,10 +11,8 @@ type Props = {
   elements: AnimatedCanvasObject[];
   groups: CanvasGroup[];
   transparentBackground?: boolean;
-  clipToDesignCanvas?: boolean;
-  clipCornerRadius?: number;
   appBackgroundColor?: number;
-  designCanvasBackgroundColor?: number;
+  backgroundColor: string;
 };
 
 export const ApplicationCanvasPlayer = forwardRef<ApplicationRef, Props>(
@@ -25,10 +23,8 @@ export const ApplicationCanvasPlayer = forwardRef<ApplicationRef, Props>(
       elements,
       groups,
       transparentBackground = true,
-      clipToDesignCanvas = true,
-      clipCornerRadius = 0,
       appBackgroundColor,
-      designCanvasBackgroundColor,
+      backgroundColor,
     },
     ref
   ) => {
@@ -48,7 +44,7 @@ export const ApplicationCanvasPlayer = forwardRef<ApplicationRef, Props>(
           designHeight={designHeight}
           elements={elements}
           groups={groups}
-          backgroundColor={designCanvasBackgroundColor}
+          backgroundColor={backgroundColor}
         />
       </Application>
     );
