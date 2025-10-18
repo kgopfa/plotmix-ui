@@ -6,9 +6,8 @@ export default function PlaybackControls() {
       <div aria-hidden="true" className="rounded-xl">
         <div className="xl:mt-3 2xl:mt-6 hidden grid-cols-1 sm:grid">
           <div className="flex items-center gap-x-2 w-full">
-            <div className="flex items-center gap-x-1 bg-gradient-to-r from-purple-600 to-purple-700 rounded-xl py-2 px-4 shadow-md hover:scale-105 active:scale-95 transition">
-              <Play fill="white" className="size-4" color="white" />
-              <span className="text-white font-semibold text-sm font-mono">Play</span>
+            <div className="flex items-center gap-x-1 bg-gradient-to-r from-purple-600 to-purple-700 rounded-full p-3 shadow-md hover:scale-105 active:scale-95 transition">
+              <Play fill="white" className="size-6" color="white" />
             </div>
           </div>
         </div>
