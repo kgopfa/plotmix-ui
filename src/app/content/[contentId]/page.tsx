@@ -76,7 +76,6 @@ export default function ContentDetailPage() {
           </div>
         </div>
 
-        {/* Canvas Player Container (fit full to this box) with gradient border matching "Open in Designer" */}
         <div className="flex justify-center xl:mt-0 2xl:mt-20 min-h-screen">
           <div className="w-full flex flex-col max-w-2xl xl:max-w-3xl 2xl:max-w-7xl mx-auto">
             {/* Video area: show MP4 when ready; otherwise a placeholder/loading */}
