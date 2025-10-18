@@ -28,8 +28,6 @@ export function DesignCanvasView({
   const shapeRefs = useRef<Record<string, Container>>({});
   const groupContainers = useRef<Record<string, Container>>({});
 
-  console.log(`width: ${designWidth}, height: ${designHeight}`);
-
   return (
     <pixiContainer
       x={designWidth/2}
@@ -47,20 +45,8 @@ export function DesignCanvasView({
         zIndex={-1}
         draw={(g) => {
           g.clear();
-          g.rect(-designWidth, -designHeight, designWidth, designHeight);
-          g.fill({ color: 'red' });
-        }}
-        interactive={false}
-        eventMode="none"
-      />
-
-      {/* Debug: Blue rectangle in the middle */}
-      <pixiGraphics
-        zIndex={1000}
-        draw={(g) => {
-          g.clear();
-          g.rect(-100, -100, 200, 200);
-          g.fill({ color: 'blue' });
+          g.rect(-designWidth/2, -designHeight/2, designWidth, designHeight);
+          g.fill({ color: backgroundColor });
         }}
         interactive={false}
         eventMode="none"
@@ -156,3 +142,4 @@ export function DesignCanvasView({
     </pixiContainer>
   );
 }
+

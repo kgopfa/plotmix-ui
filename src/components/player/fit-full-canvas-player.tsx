@@ -20,7 +20,7 @@ export function FitFullCanvasPlayer({ designWidth, designHeight, elements, group
 
   return (
     <div ref={wrapperRef} className="relative w-full h-full">
-      <div ref={containerRef} className="relative w-full h-full">
+      <div ref={containerRef} className="relative w-full h-full flex items-center justify-center">
         <ApplicationCanvasPlayer
           ref={appRef}
           designWidth={designWidth}
