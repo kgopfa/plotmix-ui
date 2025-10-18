@@ -14,11 +14,7 @@ type Props = {
   designHeight: number;
   elements: AnimatedCanvasObject[];
   groups: CanvasGroup[];
-  clipToCanvas?: boolean;
-  clipCornerRadius?: number;
-  backgroundColor?: number; // default 0xFFFFFF
-  borderColor?: number; // default 0xE2E8F0
-  borderWidth?: number; // default 1
+  backgroundColor?: number;
 };
 
 export function DesignCanvasView({
@@ -26,14 +22,9 @@ export function DesignCanvasView({
   designHeight,
   elements,
   groups,
-  clipToCanvas = true,
-  clipCornerRadius = 0,
   backgroundColor = 0xffffff,
-  borderColor = 0xE2E8F0,
-  borderWidth = 0,
 }: Props) {
   const mainContainerRef = useRef<Container | null>(null);
-  const maskRef = useRef<Graphics | null>(null);
   const shapeRefs = useRef<Record<string, Container>>({});
   const groupContainers = useRef<Record<string, Container>>({});
 
@@ -49,8 +40,6 @@ export function DesignCanvasView({
       ref={(container) => {
         mainContainerRef.current = container;
       }}
-      // Clip all rendering to the design rectangle when enabled
-      mask={clipToCanvas ? (maskRef.current as unknown as Container | undefined) : undefined}
     >
       {/* Canvas frame background */}
       <pixiGraphics

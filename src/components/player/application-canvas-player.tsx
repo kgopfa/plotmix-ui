@@ -13,10 +13,8 @@ type Props = {
   transparentBackground?: boolean;
   clipToDesignCanvas?: boolean;
   clipCornerRadius?: number;
-  // Visual customization
-  appBackgroundColor?: number; // default 0xF1F5F9
-  designCanvasBackgroundColor?: number; // default 0xFFFFFF
-  designCanvasBorderColor?: number; // default 0xE2E8F0
+  appBackgroundColor?: number;
+  designCanvasBackgroundColor?: number;
 };
 
 export const ApplicationCanvasPlayer = forwardRef<ApplicationRef, Props>(
@@ -31,7 +29,6 @@ export const ApplicationCanvasPlayer = forwardRef<ApplicationRef, Props>(
       clipCornerRadius = 0,
       appBackgroundColor,
       designCanvasBackgroundColor,
-      designCanvasBorderColor,
     },
     ref
   ) => {
@@ -51,10 +48,7 @@ export const ApplicationCanvasPlayer = forwardRef<ApplicationRef, Props>(
           designHeight={designHeight}
           elements={elements}
           groups={groups}
-          clipToCanvas={clipToDesignCanvas}
-          clipCornerRadius={clipCornerRadius}
           backgroundColor={designCanvasBackgroundColor}
-          borderColor={designCanvasBorderColor}
         />
       </Application>
     );

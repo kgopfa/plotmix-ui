@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { FitFullCanvasPlayer } from './fit-full-canvas-player';
 import { apiClient } from '@/lib/api-client';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
-import { useTimelineTracks, useTimelineSync, useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
+import { useTimelineSync, useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
 
 type Props = { projectId: string; fallbackSize?: { width: number; height: number } };
 
