@@ -57,7 +57,6 @@ export default function ContentDetailPage() {
           </div>
 
           <div className="flex flex-row items-center gap-x-4 ml-auto">
-            <QuickActionButtons heightClass="h-10" className="bg-white border-2 border-indigo-200" />
             <div className="flex flex-row h-10 rounded-lg border-2 border-indigo-200 bg-white">
               <button
                 type="button"
@@ -122,8 +121,7 @@ export default function ContentDetailPage() {
           title="Open in Designer"
           description={(
             <div className="space-y-2">
-              <p>This project was created from a chat. Opening it in the editor separates the editing workflow from the chat conversation.</p>
-              <p className="text-gray-700">Changes made in the editor won’t be reflected back on the immediately on the content.</p>
+              <p>Opening the editor separates the editing workflow from the chat conversation.</p>
             </div>
           )}
           confirmLabel="Continue to Designer"
