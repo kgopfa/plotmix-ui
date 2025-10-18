@@ -63,13 +63,6 @@ export function ProjectCanvasPreview({ projectId, fallbackSize = { width: 1920, 
           new Map(sanitizedGroups.map((g: any) => [g.id as string, g])).values()
         ) as CanvasGroup[];
 
-        console.log('ProjectCanvasPreview loaded:', { 
-          elementCount: elements.length, 
-          groupCount: groups.length,
-          elements: elements.slice(0, 2),
-          groups: groups.slice(0, 2)
-        });
-
         setElements(elements);
         setGroups(groups);
 
@@ -87,7 +80,6 @@ export function ProjectCanvasPreview({ projectId, fallbackSize = { width: 1920, 
 
         const dimensions = (mainState.dimensions as any) || { width: fallbackSize.width, height: fallbackSize.height };
         setDesignSize({ width: dimensions.width, height: dimensions.height });
-        console.log('ProjectCanvasPreview dimensions:', dimensions);
       } catch (e) {
         // Non-blocking: keep empty state
         // eslint-disable-next-line no-console
