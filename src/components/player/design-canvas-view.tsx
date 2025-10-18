@@ -36,7 +36,6 @@ export function DesignCanvasView({
       eventMode="none"
       sortableChildren={true}
       data-pixi-container="design-canvas-view"
-      hitArea={new Rectangle(-designWidth / 2, -designHeight / 2, designWidth, designHeight)}
       ref={(container) => {
         mainContainerRef.current = container;
       }}
@@ -46,8 +45,8 @@ export function DesignCanvasView({
         zIndex={-1}
         draw={(g) => {
           g.clear();
-          g.rect(-designWidth / 2, -designHeight / 2, designWidth, designHeight);
-          g.fill({ color: backgroundColor });
+          g.rect(-designWidth, -designHeight, designWidth, designHeight);
+          g.fill({ color: '#000000' });
         }}
         interactive={false}
         eventMode="none"
