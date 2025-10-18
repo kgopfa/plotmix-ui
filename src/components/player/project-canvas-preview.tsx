@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { FitFullCanvasPlayer } from './fit-full-canvas-player';
 import { apiClient } from '@/lib/api-client';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
+import type { FitFullCanvasPlayerRef } from './fit-full-canvas-player';
 
 type Props = { projectId: string; fallbackSize?: { width: number; height: number } };
 
@@ -12,6 +13,7 @@ export function ProjectCanvasPreview({ projectId, fallbackSize = { width: 1920, 
   const [elements, setElements] = useState<AnimatedCanvasObject[]>([]);
   const [groups, setGroups] = useState<CanvasGroup[]>([]);
   const [designSize, setDesignSize] = useState(fallbackSize);
+  const playerRef = useRef<FitFullCanvasPlayerRef>(null);
 
   useEffect(() => {
     (async () => {
@@ -88,8 +90,41 @@ export function ProjectCanvasPreview({ projectId, fallbackSize = { width: 1920, 
     })();
   }, [projectId, fallbackSize.width, fallbackSize.height]);
 
+  // Initialize timeline subscriptions (required for playback to work)
+  useEffect(() => {
+    const timelineStore = useTimelineStoreV2.getState();
+    timelineStore.initializeSubscriptions();
+    
+    return () => {
+      timelineStore.cleanupSubscriptions();
+    };
+  }, []);
+
+  // Connect canvas refs to timeline manager for animations
+  useEffect(() => {
+    if (playerRef.current && elements.length > 0) {
+      const canvasRef = playerRef.current.getCanvasRef();
+      if (canvasRef) {
+        console.log('ProjectCanvasPreview: Setting canvas ref for animations', {
+          shapeRefs: Object.keys(canvasRef.getShapeRefs()).length,
+          groupRefs: Object.keys(canvasRef.getGroupContainers()).length,
+          hasMainContainer: !!canvasRef.getMainContainer()
+        });
+        
+        const timelineStore = useTimelineStoreV2.getState();
+        timelineStore.gsapManager.setCanvasRef({ current: canvasRef });
+        
+        // Build the GSAP timeline after setting canvas ref
+        console.log('ProjectCanvasPreview: Building GSAP timeline...');
+        timelineStore.buildGSAPTimeline();
+        console.log('ProjectCanvasPreview: Timeline built with duration:', timelineStore.playback.totalDuration);
+      }
+    }
+  }, [elements, groups]);
+
   return (
     <FitFullCanvasPlayer
+      ref={playerRef}
       designWidth={designSize.width}
       designHeight={designSize.height}
       elements={elements}

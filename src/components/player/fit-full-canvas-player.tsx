@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, forwardRef, useImperativeHandle } from 'react';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { ApplicationCanvasPlayer } from './application-canvas-player';
-import { ApplicationRef } from '@pixi/react';
+import type { ApplicationCanvasPlayerRef } from './application-canvas-player';
 
 type Props = {
   designWidth: number;
@@ -13,10 +13,19 @@ type Props = {
   hideInlineControls?: boolean;
 };
 
-export function FitFullCanvasPlayer({ designWidth, designHeight, elements, groups, hideInlineControls = false }: Props) {
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const appRef = useRef<ApplicationRef>(null);
+export interface FitFullCanvasPlayerRef {
+  getCanvasRef: () => ApplicationCanvasPlayerRef | null;
+}
+
+export const FitFullCanvasPlayer = forwardRef<FitFullCanvasPlayerRef, Props>(
+  ({ designWidth, designHeight, elements, groups, hideInlineControls = false }, ref) => {
+    const wrapperRef = useRef<HTMLDivElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const appRef = useRef<ApplicationCanvasPlayerRef>(null);
+
+    useImperativeHandle(ref, () => ({
+      getCanvasRef: () => appRef.current
+    }));
 
   return (
     <div ref={wrapperRef} className="relative w-full h-full">
@@ -34,6 +43,8 @@ export function FitFullCanvasPlayer({ designWidth, designHeight, elements, group
       </div>
     </div>
   );
-}
+});
+
+FitFullCanvasPlayer.displayName = 'FitFullCanvasPlayer';
 
 

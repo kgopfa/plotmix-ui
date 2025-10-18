@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, forwardRef, useImperativeHandle } from 'react';
 import { extend } from '@pixi/react';
 import { Container, Graphics } from 'pixi.js';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
@@ -17,16 +17,28 @@ type Props = {
   backgroundColor: string;
 };
 
-export function DesignCanvasView({
+export interface DesignCanvasViewRef {
+  getShapeRefs: () => Record<string, Container>;
+  getGroupContainers: () => Record<string, Container>;
+  getMainContainer: () => Container | null;
+}
+
+export const DesignCanvasView = forwardRef<DesignCanvasViewRef, Props>(({
   designWidth,
   designHeight,
   elements,
   groups,
   backgroundColor,
-}: Props) {
+}, ref) => {
   const mainContainerRef = useRef<Container | null>(null);
   const shapeRefs = useRef<Record<string, Container>>({});
   const groupContainers = useRef<Record<string, Container>>({});
+
+  useImperativeHandle(ref, () => ({
+    getShapeRefs: () => shapeRefs.current,
+    getGroupContainers: () => groupContainers.current,
+    getMainContainer: () => mainContainerRef.current
+  }));
 
   return (
     <pixiContainer
@@ -141,5 +153,7 @@ export function DesignCanvasView({
         ))}
     </pixiContainer>
   );
-}
+});
+
+DesignCanvasView.displayName = 'DesignCanvasView';
 

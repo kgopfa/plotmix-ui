@@ -1,9 +1,11 @@
 'use client';
 
-import React, { forwardRef } from 'react';
-import { Application, type ApplicationRef } from '@pixi/react';
+import React, { forwardRef, useRef, useImperativeHandle } from 'react';
+import { Application } from '@pixi/react';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { DesignCanvasView } from './design-canvas-view';
+import type { DesignCanvasViewRef } from './design-canvas-view';
+import type { Container } from 'pixi.js';
 
 type Props = {
   designWidth: number;
@@ -15,7 +17,13 @@ type Props = {
   backgroundColor: string;
 };
 
-export const ApplicationCanvasPlayer = forwardRef<ApplicationRef, Props>(
+export interface ApplicationCanvasPlayerRef {
+  getShapeRefs: () => Record<string, Container>;
+  getGroupContainers: () => Record<string, Container>;
+  getMainContainer: () => Container | null;
+}
+
+export const ApplicationCanvasPlayer = forwardRef<ApplicationCanvasPlayerRef, Props>(
   (
     {
       designWidth,
@@ -28,9 +36,16 @@ export const ApplicationCanvasPlayer = forwardRef<ApplicationRef, Props>(
     },
     ref
   ) => {
+    const designCanvasRef = useRef<DesignCanvasViewRef>(null);
+
+    useImperativeHandle(ref, () => ({
+      getShapeRefs: () => designCanvasRef.current?.getShapeRefs() || {},
+      getGroupContainers: () => designCanvasRef.current?.getGroupContainers() || {},
+      getMainContainer: () => designCanvasRef.current?.getMainContainer() || null
+    }));
+
     return (
       <Application
-        ref={ref}
         width={designWidth}
         height={designHeight}
         backgroundColor={appBackgroundColor ?? 0xF1F5F9}
@@ -40,6 +55,7 @@ export const ApplicationCanvasPlayer = forwardRef<ApplicationRef, Props>(
         autoDensity
       >
         <DesignCanvasView
+          ref={designCanvasRef}
           designWidth={designWidth}
           designHeight={designHeight}
           elements={elements}
