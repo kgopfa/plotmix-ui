@@ -100,11 +100,15 @@ export default function ContentDetailPage() {
                 )}
               </div>
             </div>
-            <PlaybackControls />
           </div>
         </div>
 
-        {/* Vertical playback controls - outside the canvas container, aligned to the left of the sidebar */}
+        {/* Playback controls - fixed on the left, to the right of the navigation panel */}
+        <div className="fixed top-1/2 -translate-y-1/2 left-4 xl:left-[calc(5rem+0.75rem)] z-40">
+          <PlaybackControls />
+        </div>
+
+        {/* Open in Designer button - fixed on the right, to the left of the sidebar */}
         <div className="fixed top-1/2 -translate-y-1/2 right-4 xl:right-[calc(100vw/4+0.75rem)] 2xl:right-[calc(100vw/7+0.75rem)] z-40">
           <button
             onClick={() => setShowConfirm(true)}
