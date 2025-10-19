@@ -27,7 +27,7 @@ export default function PlaybackControls() {
   };
 
   return (
-    <div className="inline-flex flex-col px-5 py-6 rounded-full bg-blue-600 shadow-xl">
+    <div className="inline-flex flex-col px-5 py-6 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 shadow-xl">
       <div className="flex justify-center">
         <button
           onClick={handlePlayPause}
@@ -42,7 +42,7 @@ export default function PlaybackControls() {
         </button>
       </div>
       <div className="w-full h-px my-4" />
-      <div className="text-xs 2xl:text-sm ml-0.5 font-bold text-white text-center whitespace-nowrap">
+      <div className="text-xs 2xl:text-sm ml-0.5 font-bold text-white text-center whitespace-nowrap tabular-nums">
         {formatTime(currentTime)}
       </div>
       <div className="w-full h-px my-4" />
