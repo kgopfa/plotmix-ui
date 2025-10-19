@@ -45,24 +45,46 @@ export const ApplicationCanvasPlayer = forwardRef<ApplicationCanvasPlayerRef, Pr
     }));
 
     return (
-      <Application
-        width={designWidth}
-        height={designHeight}
-        backgroundColor={appBackgroundColor ?? 0xF1F5F9}
-        backgroundAlpha={transparentBackground ? 0 : 1}
-        antialias
-        resolution={typeof window !== 'undefined' ? window.devicePixelRatio || 2 : 2}
-        autoDensity
-      >
-        <DesignCanvasView
-          ref={designCanvasRef}
-          designWidth={designWidth}
-          designHeight={designHeight}
-          elements={elements}
-          groups={groups}
-          backgroundColor={backgroundColor}
-        />
-      </Application>
+      <div className="w-full h-full flex items-center justify-center">
+        <style dangerouslySetInnerHTML={{ __html: `
+          .canvas-player-wrapper canvas {
+            width: 100% !important;
+            height: 100% !important;
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+          }
+        ` }} />
+        <div 
+          className="canvas-player-wrapper"
+          style={{
+            width: '100%',
+            height: '100%',
+            maxWidth: `${designWidth}px`,
+            maxHeight: `${designHeight}px`,
+            aspectRatio: `${designWidth}/${designHeight}`,
+          }}
+        >
+          <Application
+            width={designWidth}
+            height={designHeight}
+            backgroundColor={appBackgroundColor ?? 0xF1F5F9}
+            backgroundAlpha={transparentBackground ? 0 : 1}
+            antialias
+            resolution={typeof window !== 'undefined' ? window.devicePixelRatio || 2 : 2}
+            autoDensity
+          >
+            <DesignCanvasView
+              ref={designCanvasRef}
+              designWidth={designWidth}
+              designHeight={designHeight}
+              elements={elements}
+              groups={groups}
+              backgroundColor={backgroundColor}
+            />
+          </Application>
+        </div>
+      </div>
     );
   }
 );
