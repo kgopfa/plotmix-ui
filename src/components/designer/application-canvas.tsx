@@ -348,9 +348,6 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
           if (newPan.x !== lastKnownPan.x || newPan.y !== lastKnownPan.y) {
             lastKnownPan = newPan;
             setCanvasPan(newPan);
-
-            // Log panning events with timestamp
-            console.log(`[Canvas Pan] X: ${Math.round(newPan.x)}, Y: ${Math.round(newPan.y)} at ${new Date().toISOString()}`);
           }
         }
       };
