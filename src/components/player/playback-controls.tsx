@@ -27,7 +27,7 @@ export default function PlaybackControls() {
   };
 
   return (
-    <div className="inline-flex flex-col px-5 py-6 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 shadow-xl">
+    <div className="inline-flex flex-col px-4 py-5 2xl:px-5 2xl:py-6 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 shadow-xl">
       <div className="flex justify-center">
         <button
           onClick={handlePlayPause}
