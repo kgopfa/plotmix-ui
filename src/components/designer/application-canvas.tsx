@@ -261,6 +261,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
     // Add a robust zoom monitoring mechanism
     useEffect(() => {
       let monitoringInterval: NodeJS.Timeout | null = null;
+      let checkViewportInterval: NodeJS.Timeout | null = null;
 
       const startMonitoring = () => {
         if (monitoringInterval) return;
@@ -270,7 +271,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
           if (viewport && Math.abs(viewport.scale.x - canvasZoom) > 0.001) {
             setCanvasZoom(viewport.scale.x);
           }
-        }, 10); // Check every 10ms for very responsive detection
+        }, 10);
       };
 
       const stopMonitoring = () => {
@@ -278,19 +279,23 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
           clearInterval(monitoringInterval);
           monitoringInterval = null;
         }
+        if (checkViewportInterval) {
+          clearInterval(checkViewportInterval);
+          checkViewportInterval = null;
+        }
       };
 
       // Start monitoring when viewport is ready
       if (viewportRef.current) {
         startMonitoring();
-
-        // Log initial viewport state once
-        const viewport = viewportRef.current;
       } else {
         // Wait for viewport to be ready
-        const checkViewport = setInterval(() => {
+        checkViewportInterval = setInterval(() => {
           if (viewportRef.current) {
-            clearInterval(checkViewport);
+            if (checkViewportInterval) {
+              clearInterval(checkViewportInterval);
+              checkViewportInterval = null;
+            }
             startMonitoring();
           }
         }, 100);
@@ -323,6 +328,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       let attached = false;
       let vp: ViewportWrapper | null = null;
       let intervalId: NodeJS.Timeout | null = null;
+      let timeoutId: NodeJS.Timeout | null = null;
       let lastKnownZoom = canvasZoom;
       let lastKnownPan = canvasPan;
 
@@ -418,11 +424,16 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       };
 
       const rafId = requestAnimationFrame(() => {
-        if (!attach()) setTimeout(attach, 50);
+        if (!attach()) {
+          timeoutId = setTimeout(attach, 50);
+        }
       });
 
       return () => {
         cancelAnimationFrame(rafId);
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
         if (intervalId) {
           clearInterval(intervalId);
         }
