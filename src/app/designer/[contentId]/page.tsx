@@ -26,8 +26,15 @@ export default function DesignerPage() {
 
     // Clear any stale canvas/timeline/UI state immediately to avoid flash of previous project
     try {
+      const timelineStore = useTimelineStoreV2.getState();
+      
+      // Stop playback first to clean up any running animations
+      if (timelineStore.playback.isPlaying) {
+        timelineStore.stop();
+      }
+      
       useCanvasStore.getState().clearCanvas();
-      useTimelineStoreV2.getState().resetTimeline();
+      timelineStore.resetTimeline();
 
       // Reset UI state to close any open tabs/panels from previous project
       const uiStore = useUIStore.getState();
@@ -35,7 +42,7 @@ export default function DesignerPage() {
       uiStore.setActiveNav(null);
       uiStore.setHoverRightPanel(null);
       uiStore.setInteractedNav(null);
-      useTimelineStoreV2.getState().clearSelection();
+      timelineStore.clearSelection();
 
       // Reset tool state to default
       uiStore.setActiveTool('select');
@@ -147,7 +154,7 @@ export default function DesignerPage() {
         animationStates: ((timeline as any)?.animationStates as Record<string, AnimationState>) || {},
         scale: typeof (timeline as any)?.scale === 'number' ? (timeline as any).scale : 1,
         duration: typeof (timeline as any)?.duration === 'number' ? (timeline as any).duration : 0,
-        currentTime: typeof (timeline as any)?.currentTime === 'number' ? (timeline as any).currentTime : 0,
+        currentTime: 0,
       });
 
       // Capture baseline after stores are hydrated

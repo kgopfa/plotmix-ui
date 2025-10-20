@@ -369,6 +369,10 @@ export default function Designer() {
   useEffect(() => {
     // Cleanup on unmount
     return () => {
+      const timelineStore = useTimelineStoreV2.getState();
+      if (timelineStore.playback.isPlaying) {
+        timelineStore.stop();
+      }
       gsapManager.clearTimeline();
     };
   }, [gsapManager, setTimelineCanvasRef, fullscreenCanvasRef]);
