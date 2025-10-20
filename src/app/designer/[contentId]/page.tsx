@@ -28,15 +28,15 @@ export default function DesignerPage() {
     try {
       useCanvasStore.getState().clearCanvas();
       useTimelineStoreV2.getState().resetTimeline();
-      
+
       // Reset UI state to close any open tabs/panels from previous project
       const uiStore = useUIStore.getState();
       uiStore.setActiveRightPanel(null);
       uiStore.setActiveNav(null);
       uiStore.setHoverRightPanel(null);
       uiStore.setInteractedNav(null);
-      useTimelineStoreV2.getState().clearSelection(); // Clear timeline selection
-      
+      useTimelineStoreV2.getState().clearSelection();
+
       // Reset tool state to default
       uiStore.setActiveTool('select');
       uiStore.setMaskPos(null);
@@ -45,39 +45,42 @@ export default function DesignerPage() {
       uiStore.clearChainedLineIds();
       uiStore.setClosingShape(false);
       uiStore.setAnimationTarget(null);
-    } catch {}
+
+      // Reset canvas viewport to screen-appropriate defaults
+      uiStore.resetCanvasViewport();
+    } catch { }
 
     try {
       const res = await apiClient.get<{ data: { project: { id: string; name: string; title?: string; version: string; mainState?: unknown; configuration?: unknown } } }>(`/api/projects/${contentId}`);
       const project = res.data.project;
-      
+
       setProjectInfo({
         projectId: project.id,
         name: project.name,
         title: project.title,
         version: project.version,
       });
-      
+
       // Load snapping preferences from project configuration
       if (project.configuration) {
         loadSnappingPreferences(project.configuration as Record<string, unknown>);
       }
-      
-      const mainState = (project.mainState as { 
-        elements?: unknown[]; 
-        groups?: unknown[]; 
-        timeline?: unknown; 
+
+      const mainState = (project.mainState as {
+        elements?: unknown[];
+        groups?: unknown[];
+        timeline?: unknown;
         dimensions?: unknown;
         scenes?: unknown[];
       }) || {};
-      
+
       setBaseline(mainState);
 
       // Hydrate stores from mainState
       const canvasStore = useCanvasStore.getState();
       const timelineStore = useTimelineStoreV2.getState();
       const projectStore = useProjectStore.getState();
-      
+
       // Multi-scene format only - fail if not present
       if (!mainState.scenes || !Array.isArray(mainState.scenes) || mainState.scenes.length === 0) {
         console.error('Invalid project format: Expected multi-scene structure with scenes array');
@@ -87,23 +90,23 @@ export default function DesignerPage() {
 
       const allScenes = mainState.scenes as any[];
       const dimensions = (mainState.dimensions as any) || { width: 1920, height: 1080 };
-      
+
       // Load all scenes into project store
       projectStore.setScenes(allScenes, dimensions);
-      
+
       // Load first scene into canvas and timeline stores
       const defaultScene = mainState.scenes[0] as any;
-      
+
       if (!defaultScene?.sceneCanvas) {
         console.error('Invalid scene structure: Missing sceneCanvas data');
         console.error('Default scene data:', JSON.stringify(defaultScene, null, 2));
         return;
       }
-      
+
       const rawElements = Array.isArray(defaultScene.sceneCanvas.elements) ? defaultScene.sceneCanvas.elements : [];
       const rawGroups = Array.isArray(defaultScene.sceneCanvas.groups) ? defaultScene.sceneCanvas.groups : [];
       const timeline = defaultScene.sceneCanvas.timeline || {};
-      
+
       // Set current scene in canvas store
       canvasStore.setCurrentScene(defaultScene.sceneId);
 
@@ -116,7 +119,7 @@ export default function DesignerPage() {
           ...element,
         };
       });
-      
+
       // Dedupe by id
       const elements = Array.from(
         new Map(sanitizedElements.map((e: any) => [e.id as string, e])).values()
@@ -187,7 +190,7 @@ export default function DesignerPage() {
           <div className="absolute top-4 left-4 z-50 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 text-sm text-gray-600">
             Editing: {contentId}
           </div>
-          <Designer />
+          <Designer key={contentId} />
         </>
       )}
     </div>

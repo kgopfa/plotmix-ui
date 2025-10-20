@@ -203,23 +203,23 @@ export default function Designer() {
 
     // Import the applyElementSnapping function directly
     const { applyElementSnapping } = require('@/utils/element-snapping');
-    
+
     // Use regular snapping
     const result = applyElementSnapping(
-      element, 
-      allElements, 
-      stableElementSnapConfig.snapThreshold, 
-      stableElementSnapConfig.enableSpacing, 
-      stableElementSnapConfig.enableDistribution, 
+      element,
+      allElements,
+      stableElementSnapConfig.snapThreshold,
+      stableElementSnapConfig.enableSpacing,
+      stableElementSnapConfig.enableDistribution,
       canvasBounds
     );
-    
+
     return result;
   }, [stableElementSnapConfig, snappingState.isElementSnapTemporarilyDisabled, canvasBounds]);
 
   // Grid snapping functionality - use store state directly
   const gridSnapPoint = useCallback((
-    point: { x: number; y: number }, 
+    point: { x: number; y: number },
     event?: { shiftKey?: boolean }
   ): { x: number; y: number } => {
     // Check if grid snapping is enabled
@@ -229,7 +229,7 @@ export default function Designer() {
 
     // Import the smartSnapPointToGrid function directly
     const { smartSnapPointToGrid } = require('@/utils/grid-utils');
-    
+
     return smartSnapPointToGrid(point, stableGridConfig);
   }, [stableGridConfig, snappingState.isGridSnapTemporarilyDisabled]);
 
@@ -237,7 +237,7 @@ export default function Designer() {
   const snapPoint = useCallback((point: { x: number; y: number }, event?: { shiftKey?: boolean }) => {
     // First apply grid snapping
     const gridSnapped = gridSnapPoint(point, event);
-    
+
     // Then apply element snapping if enabled and there are other elements
     if (stableElementSnapConfig.enabled && canvasObjects.length > 0 && !event?.shiftKey) {
       // Create a temporary element at the grid-snapped position to check for element snapping
@@ -258,15 +258,15 @@ export default function Designer() {
         shadowEnabled: false,
         visible: true
       };
-      
+
       const snapResult = snapElement(tempElement, canvasObjects);
-      
+
       // Return the element-snapped position if it's different from grid-snapped
       if (Math.abs(snapResult.x - gridSnapped.x) > 0.1 || Math.abs(snapResult.y - gridSnapped.y) > 0.1) {
         return { x: snapResult.x, y: snapResult.y };
       }
     }
-    
+
     return gridSnapped;
   }, [gridSnapPoint, stableElementSnapConfig.enabled, canvasObjects, snapElement]);
 
@@ -296,28 +296,13 @@ export default function Designer() {
 
   // Use the canvas dimensions hook
   const { dimensions } = useCanvasDimensions();
-  
+
   // Grid and snap configuration - now properly integrated
   const gridConfig = stableGridConfig;
-  
+
   // Local state for snap guides since they're not in the store
   const [snapGuides, setSnapGuides] = useState<SnapGuide[]>([]);
   const clearSnapGuides = useCallback(() => setSnapGuides([]), []);
-
-  // Force a center on mount/size changes using the exposed ref method (debounced)
-  useEffect(() => {
-    if (!fullscreenCanvasRef.current) return;
-    const timeoutId = setTimeout(() => {
-      const run = () => fullscreenCanvasRef.current?.centerOnDesign();
-      const raf = requestAnimationFrame(() => {
-        run();
-        setTimeout(run, 50);
-      });
-      return () => cancelAnimationFrame(raf);
-    }, 50); // Debounce to prevent rapid updates during width changes
-
-    return () => clearTimeout(timeoutId);
-  }, [dimensions.width, dimensions.height, canvasWidth, canvasHeight]);
 
   // Element dragging functionality
   const {
@@ -338,10 +323,10 @@ export default function Designer() {
       const { updateElement } = useCanvasStore.getState();
       updateElement(id, updates);
     },
-          onSnapElement: snapElement,
-      onSnapPoint: snapPoint,
-      onSetSnapGuides: setSnapGuides,
-      onClearSnapGuides: clearSnapGuides,
+    onSnapElement: snapElement,
+    onSnapPoint: snapPoint,
+    onSetSnapGuides: setSnapGuides,
+    onClearSnapGuides: clearSnapGuides,
   });
 
   // Set up global event listeners for dragging
@@ -508,10 +493,10 @@ export default function Designer() {
     timelineManager.setTrackData(canvasObjects, groups);
   }, [canvasObjects, groups, timelineManager]);
 
-      // Clear snap guides when element selection changes or drag ends
-    useEffect(() => {
-      clearSnapGuides();
-    }, [selectedObjects, clearSnapGuides]);
+  // Clear snap guides when element selection changes or drag ends
+  useEffect(() => {
+    clearSnapGuides();
+  }, [selectedObjects, clearSnapGuides]);
 
   // Handle polygon closure when isClosingShape becomes true
   useEffect(() => {
@@ -570,7 +555,7 @@ export default function Designer() {
     // TODO: Update this to work with new timeline structure
     // This function needs to be refactored to update timeline animations instead of element animations
     console.warn('addPathToAnimation needs to be updated for new timeline structure');
-    
+
     // For now, just return without updating anything
     return;
   }, [toolState.animationTarget]);
@@ -773,21 +758,21 @@ export default function Designer() {
 
   const handleSelectionNavbarDelete = useCallback(() => {
     const { removeElement, removeGroup } = useCanvasStore.getState();
-    
+
     // Delete selected elements
     if (selectedObjects.length > 0) {
       selectedObjects.forEach(element => {
         removeElement(element.id);
       });
     }
-    
+
     // Delete selected groups
     if (selectedGroups.length > 0) {
       selectedGroups.forEach(group => {
         removeGroup(group.id);
       });
     }
-    
+
     // Add a small delay before clearing selections to keep navbar visible briefly
     setTimeout(() => {
       selectElement(null);
@@ -812,11 +797,11 @@ export default function Designer() {
         x: element.x + 20,
         y: element.y + 20,
       }));
-      
+
       duplicatedElements.forEach(element => {
         addElement(element);
       });
-      
+
       selectElement(duplicatedElements);
     }
   }, [selectedObjects, selectElement]);
@@ -824,7 +809,7 @@ export default function Designer() {
   const handlePaste = useCallback(() => {
     const { pasteElements } = useCanvasStore.getState();
     const pastedElements = pasteElements();
-    
+
     if (pastedElements.length > 0) {
       // Select the newly pasted elements
       selectElement(pastedElements);
@@ -895,7 +880,7 @@ export default function Designer() {
 
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('keyup', handleKeyUp);
-    
+
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('keyup', handleKeyUp);
@@ -914,7 +899,7 @@ export default function Designer() {
     };
 
     document.addEventListener('contextmenu', handleContextMenu);
-    
+
     return () => {
       document.removeEventListener('contextmenu', handleContextMenu);
     };
@@ -928,12 +913,12 @@ export default function Designer() {
     // Check if this is a real group selection (not just multi-selection)
     const selectedGroupIds = new Set(selectedGroups.map(g => g.id));
     const elementsInGroups = selectedObjects.filter(el => el.groupId && selectedGroupIds.has(el.groupId));
-    
+
     if (elementsInGroups.length > 0) {
       // This is a group selection - handle group movement using the existing drag system
       const groupId = elementsInGroups[0].groupId!;
       const group = groups.find(g => g.id === groupId);
-      
+
       if (group && !group.isDefaultGroup) {
         // Calculate offsets for all elements in the group
         const groupOffsets = elementsInGroups.map(element => ({
@@ -941,7 +926,7 @@ export default function Designer() {
           offsetX: mouseX - element.x,
           offsetY: mouseY - element.y
         }));
-        
+
         // Start group dragging using the existing startDragging function
         startDragging('virtual-group', mouseX - group.x, mouseY - group.y, true, groupOffsets);
       }
@@ -949,14 +934,14 @@ export default function Designer() {
       // This is multi-selection of ungrouped elements - use existing multi-element dragging
       const offsetX = mouseX - virtualElement.x;
       const offsetY = mouseY - virtualElement.y;
-      
+
       // Calculate offsets for all selected elements
       const groupOffsets = selectedObjects.map(element => ({
         id: element.id,
         offsetX: mouseX - element.x,
         offsetY: mouseY - element.y
       }));
-      
+
       // Start multi-element dragging using the existing startDragging function
       startDragging('virtual-group', offsetX, offsetY, true, groupOffsets);
     }
@@ -1004,15 +989,15 @@ export default function Designer() {
 
       {/* Navigation Sidebars */}
       <LeftSidebar />
-      <RightSidebar 
+      <RightSidebar
         onInspectorChange={handleInspectorChange}
         onGroupInspectorChange={handleGroupInspectorChange}
       />
 
       {/* Main Body - Full-screen PIXI Application */}
-      <div 
+      <div
         ref={canvasContainerRef}
-        className="flex-1 relative overflow-hidden" 
+        className="flex-1 relative overflow-hidden"
         style={{ marginTop: '64px' }}
         onContextMenu={(e) => {
           // Prevent browser's default context menu from appearing
@@ -1020,7 +1005,7 @@ export default function Designer() {
           e.stopPropagation();
         }}
       >
-        <ApplicationCanvas 
+        <ApplicationCanvas
           ref={fullscreenCanvasRef}
           dimensions={dimensions}
           snapGuides={snapGuides}
@@ -1055,10 +1040,10 @@ export default function Designer() {
           handleGroupSelectionDragStart={handleGroupSelectionDragStart}
           isElementInCustomOrPolygonGroup={isElementInCustomOrPolygonGroup}
           // Snapping handlers
-                      onSnapElement={snapElement}
-            onSnapPoint={snapPoint}
-            onSetSnapGuides={setSnapGuides}
-            onClearSnapGuides={clearSnapGuides}
+          onSnapElement={snapElement}
+          onSnapPoint={snapPoint}
+          onSetSnapGuides={setSnapGuides}
+          onClearSnapGuides={clearSnapGuides}
           // Deselection handler for empty area clicks
           onEmptyAreaClick={() => {
             // Deselect all elements when clicking in empty area

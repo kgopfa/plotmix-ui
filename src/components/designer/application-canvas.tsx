@@ -119,7 +119,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
     const canvasWidth = currentSize?.width || 1920;
     const canvasHeight = currentSize?.height || 1080;
 
-    // Update dimensions when window resizes
+    // Update dimensions when window resizes and center canvas
     useEffect(() => {
       const updateDimensions = () => {
         if (typeof window !== 'undefined') {
@@ -127,6 +127,12 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
             width: window.innerWidth,
             height: window.innerHeight
           });
+
+          if (viewportRef.current) {
+            requestAnimationFrame(() => {
+              centerOnDesign(viewportRef.current, canvasWidth, canvasHeight);
+            });
+          }
         }
       };
 
@@ -135,19 +141,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
         window.addEventListener('resize', updateDimensions);
         return () => window.removeEventListener('resize', updateDimensions);
       }
-    }, []);
-
-    // Re-center canvas when dimensions change (debounced to prevent flickering)
-    useEffect(() => {
-      if (viewportRef.current && dimensions.width > 0 && dimensions.height > 0) {
-        const timeoutId = setTimeout(() => {
-          // Use responsive centering based on new screen dimensions
-          centerOnDesign(viewportRef.current, canvasWidth, canvasHeight);
-        }, 50); // Small delay to debounce rapid changes
-
-        return () => clearTimeout(timeoutId);
-      }
-    }, [dimensions.width, dimensions.height, canvasWidth, canvasHeight]);
+    }, [canvasWidth, canvasHeight]);
 
     // Configure PIXI canvas for custom touch handling
     useEffect(() => {
@@ -348,7 +342,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
           if (newPan.x !== lastKnownPan.x || newPan.y !== lastKnownPan.y) {
             lastKnownPan = newPan;
             setCanvasPan(newPan);
-            
+
             // Log panning events with timestamp
             console.log(`[Canvas Pan] X: ${Math.round(newPan.x)}, Y: ${Math.round(newPan.y)} at ${new Date().toISOString()}`);
           }
@@ -771,8 +765,8 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
                 <textarea
                   autoFocus
                   className={`w-full text-sm outline-none resize-vertical rounded-md border focus:border-blue-400 focus:ring-1 focus:ring-blue-300 p-2 ${isCodeEditor
-                      ? 'text-gray-200 border-gray-600 bg-gray-800/90 font-mono'
-                      : 'text-gray-800 border-gray-200 bg-white/90'
+                    ? 'text-gray-200 border-gray-600 bg-gray-800/90 font-mono'
+                    : 'text-gray-800 border-gray-200 bg-white/90'
                     }`}
                   rows={Math.min(6, Math.max(2, Math.round((bounds.height || 40) / 18)))}
                   value={activeEditingValue}
@@ -796,8 +790,8 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
                 <div className="flex justify-end gap-2 mt-2">
                   <button
                     className={`px-2.5 py-1 text-xs rounded-md border ${isCodeEditor
-                        ? 'border-gray-600 text-gray-300 hover:bg-gray-800'
-                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      ? 'border-gray-600 text-gray-300 hover:bg-gray-800'
+                      : 'border-gray-300 text-gray-700 hover:bg-gray-50'
                       }`}
                     onMouseDown={(e) => { e.preventDefault(); commitTextEdit(false); }}
                   >
@@ -805,8 +799,8 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
                   </button>
                   <button
                     className={`px-3 py-1.5 text-xs rounded-md text-white shadow-md transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 ${isCodeEditor
-                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 shadow-blue-500/30'
-                        : 'bg-gradient-to-r from-purple-500 to-purple-600 shadow-purple-500/30'
+                      ? 'bg-gradient-to-r from-blue-500 to-blue-600 shadow-blue-500/30'
+                      : 'bg-gradient-to-r from-purple-500 to-purple-600 shadow-purple-500/30'
                       }`}
                     onMouseDown={(e) => { e.preventDefault(); commitTextEdit(true); }}
                   >

@@ -145,7 +145,7 @@ interface UIActions {
   setTimelineHeight: (height: number) => void;
   toggleTimelineCollapse: () => void;
   setResizing: (panel: 'left' | 'right' | 'timeline' | null) => void;
-  
+
   // Tool Actions
   setActiveTool: (tool: ToolType) => void;
   togglePathMode: () => void;
@@ -161,26 +161,26 @@ interface UIActions {
   setLineType: (lineType: 'straight' | 'curved' | 'animated') => void;
   setSelectedFont: (fontFamily: string) => void;
   setSelectedFontWeight: (fontWeight: string) => void;
-  
+
   // Snapping Actions
   updateGridConfig: (config: Partial<GridConfig>) => void;
   updateElementSnapConfig: (config: Partial<ElementSnappingConfig>) => void;
   setGridSnapTemporarilyDisabled: (disabled: boolean) => void;
   setElementSnapTemporarilyDisabled: (disabled: boolean) => void;
-  
+
   // Preferences Actions
   updatePreferences: (preferences: Partial<UserPreferences>) => void;
   addRecentFile: (filePath: string) => void;
   removeRecentFile: (filePath: string) => void;
   updateKeyboardShortcut: (action: string, key: string) => void;
   resetPreferences: () => void;
-  
+
   // Keyboard Shortcuts
   registerShortcut: (shortcut: KeyboardShortcut) => void;
   unregisterShortcut: (action: string) => void;
   executeShortcut: (event: KeyboardEvent) => boolean;
   getShortcutByAction: (action: string) => KeyboardShortcut | undefined;
-  
+
   // Navigation
   setActiveNav: (nav: NavKey | null) => void;
   setHoverNav: (nav: NavKey | null) => void;
@@ -188,10 +188,10 @@ interface UIActions {
   setActiveRightPanel: (panel: RightPanelKey | null) => void;
   setHoverRightPanel: (panel: RightPanelKey | null) => void;
   setInteractedRightPanel: (panel: RightPanelKey | null) => void;
-  
+
   // Animations tab (independent of navigation)
   setShowAnimationsTab: (show: boolean) => void;
-  
+
   // Canvas Actions
   setCanvasSize: (sizeId: string) => void;
   setCustomCanvasSize: (width: number, height: number) => void;
@@ -202,7 +202,8 @@ interface UIActions {
   getCanvasDimensions: () => { width: number; height: number };
   setCanvasZoom: (zoom: number) => void;
   setCanvasPan: (pan: { x: number; y: number }) => void;
-  
+  resetCanvasViewport: () => void;
+
   // Uploaded Files Actions
   addUploadedFile: (file: UploadedFile) => void;
   removeUploadedFile: (fileId: string) => void;
@@ -337,7 +338,7 @@ export const useUIStore = create<UIStore>((set, get) => {
   // Load persisted state from localStorage
   const loadPersistedState = () => {
     if (typeof window === 'undefined') return {};
-    
+
     try {
       const persisted = localStorage.getItem('plotmix-ui-state');
       if (persisted) {
@@ -364,50 +365,50 @@ export const useUIStore = create<UIStore>((set, get) => {
 
     const screenWidth = window.innerWidth;
     const screenHeight = window.innerHeight;
-    
+
     // Define screen size presets with their optimal zoom and pan values
     const screenPresets = [
       // Small laptops (13-14 inch)
-      { 
-        name: 'Small Laptop (13-14")', 
-        width: { min: 1200, max: 1600 }, 
+      {
+        name: 'Small Laptop (13-14")',
+        width: { min: 1200, max: 1600 },
         height: { min: 600, max: 900 },
-        zoom: 0.42, 
-        pan: { x: 2850, y: 1700 } 
+        zoom: 0.42,
+        pan: { x: 2850, y: 1700 }
       },
       // Medium laptops (15-16 inch)
-      { 
-        name: 'Medium Laptop (15-16")', 
-        width: { min: 1600, max: 2000 }, 
+      {
+        name: 'Medium Laptop (15-16")',
+        width: { min: 1600, max: 2000 },
         height: { min: 900, max: 1200 },
-        zoom: 0.55, 
-        pan: { x: 2850, y: 1700 } 
+        zoom: 0.55,
+        pan: { x: 2850, y: 1700 }
       },
       // Large laptops/desktops (17+ inch)
-      { 
-        name: 'Large Laptop/Desktop (17+")', 
-        width: { min: 2000, max: 3000 }, 
+      {
+        name: 'Large Laptop/Desktop (17+")',
+        width: { min: 2000, max: 3000 },
         height: { min: 1200, max: 1800 },
-        zoom: 0.70, 
-        pan: { x: 2850, y: 1700 } 
+        zoom: 0.70,
+        pan: { x: 2850, y: 1700 }
       },
       // Ultra-wide/4K monitors
-      { 
-        name: 'Ultra-wide/4K Monitor', 
-        width: { min: 3000, max: 9999 }, 
+      {
+        name: 'Ultra-wide/4K Monitor',
+        width: { min: 3000, max: 9999 },
         height: { min: 1000, max: 9999 },
-        zoom: 0.85, 
-        pan: { x: 2850, y: 1550 } 
+        zoom: 0.85,
+        pan: { x: 2850, y: 1550 }
       }
     ];
 
-    const matchingPreset = screenPresets.find(preset => 
+    const matchingPreset = screenPresets.find(preset =>
       screenWidth >= preset.width.min && screenWidth <= preset.width.max &&
       screenHeight >= preset.height.min && screenHeight <= preset.height.max
     );
 
     const selectedPreset = matchingPreset || screenPresets[0];
-    
+
     return {
       zoom: selectedPreset.zoom,
       pan: selectedPreset.pan
@@ -442,526 +443,554 @@ export const useUIStore = create<UIStore>((set, get) => {
   return {
     ...initialState,
 
-  // Panel Actions
-  toggleLeftPanel: () => {
-    set(produce((state) => {
-      state.panels.leftPanelVisible = !state.panels.leftPanelVisible;
-    }));
-  },
+    // Panel Actions
+    toggleLeftPanel: () => {
+      set(produce((state) => {
+        state.panels.leftPanelVisible = !state.panels.leftPanelVisible;
+      }));
+    },
 
-  toggleRightPanel: () => {
-    set(produce((state) => {
-      state.panels.rightPanelVisible = !state.panels.rightPanelVisible;
-    }));
-  },
+    toggleRightPanel: () => {
+      set(produce((state) => {
+        state.panels.rightPanelVisible = !state.panels.rightPanelVisible;
+      }));
+    },
 
-  setLeftPanelWidth: (width: number) => {
-    set(produce((state) => {
-      state.panels.leftPanelWidth = Math.max(320, Math.min(600, width));
-    }));
-  },
+    setLeftPanelWidth: (width: number) => {
+      set(produce((state) => {
+        state.panels.leftPanelWidth = Math.max(320, Math.min(600, width));
+      }));
+    },
 
-  setRightPanelWidth: (width: number) => {
-    set(produce((state) => {
-      state.panels.rightPanelWidth = Math.max(200, Math.min(600, width));
-    }));
-  },
+    setRightPanelWidth: (width: number) => {
+      set(produce((state) => {
+        state.panels.rightPanelWidth = Math.max(200, Math.min(600, width));
+      }));
+    },
 
-  setTimelineHeight: (height: number) => {
-    set(produce((state) => {
-      const maxHeight = typeof window !== 'undefined' ? window.innerHeight * 0.8 : 800;
-      const minHeight = 32;
-      state.panels.timelineHeight = Math.max(minHeight, Math.min(maxHeight, height));
-    }));
-  },
+    setTimelineHeight: (height: number) => {
+      set(produce((state) => {
+        const maxHeight = typeof window !== 'undefined' ? window.innerHeight * 0.8 : 800;
+        const minHeight = 32;
+        state.panels.timelineHeight = Math.max(minHeight, Math.min(maxHeight, height));
+      }));
+    },
 
-  toggleTimelineCollapse: () => {
-    set(produce((state) => {
-      state.panels.isTimelineCollapsed = !state.panels.isTimelineCollapsed;
-    }));
-  },
+    toggleTimelineCollapse: () => {
+      set(produce((state) => {
+        state.panels.isTimelineCollapsed = !state.panels.isTimelineCollapsed;
+      }));
+    },
 
-  setResizing: (panel: 'left' | 'right' | 'timeline' | null) => {
-    set(produce((state) => {
-      state.panels.isResizing = panel;
-    }));
-  },
+    setResizing: (panel: 'left' | 'right' | 'timeline' | null) => {
+      set(produce((state) => {
+        state.panels.isResizing = panel;
+      }));
+    },
 
-  // Tool Actions
-  setActiveTool: (tool: ToolType) => {
-    set(produce((state) => {
-      // If we're in line drawing mode and switching away from line tool, exit line mode
-      if ((state.tools.isLineChaining || state.tools.lineStartPoint) && tool !== 'line') {
-        state.tools.isLineChaining = false;
-        state.tools.lineStartPoint = null;
+    // Tool Actions
+    setActiveTool: (tool: ToolType) => {
+      set(produce((state) => {
+        // If we're in line drawing mode and switching away from line tool, exit line mode
+        if ((state.tools.isLineChaining || state.tools.lineStartPoint) && tool !== 'line') {
+          state.tools.isLineChaining = false;
+          state.tools.lineStartPoint = null;
+          state.tools.chainedLineIds = [];
+          state.tools.isClosingShape = false;
+        }
+
+        state.tools.activeTool = tool;
+
+        // Clear mask position when changing tools
+        state.tools.maskPos = null;
+
+        // Clear pending image data if switching away from image tool
+        if (tool !== 'image') {
+          state.tools.pendingImageData = null;
+        }
+
+        // Note: Path mode should only be exited manually, not when switching tools
+        // Note: Selection clearing will be handled by the main component since it needs access to canvas state
+      }));
+    },
+
+    togglePathMode: () => {
+      set(produce((state) => {
+        state.tools.isPathMode = !state.tools.isPathMode;
+      }));
+    },
+
+    setLineChaining: (isChaining: boolean) => {
+      set(produce((state) => {
+        state.tools.isLineChaining = isChaining;
+        if (!isChaining) {
+          state.tools.lineStartPoint = null;
+          state.tools.chainedLineIds = [];
+          state.tools.isClosingShape = false;
+        }
+      }));
+    },
+
+    setLineStartPoint: (point: { x: number; y: number } | null) => {
+      set(produce((state) => {
+        state.tools.lineStartPoint = point;
+      }));
+    },
+
+    addChainedLineId: (id: string) => {
+      set(produce((state) => {
+        state.tools.chainedLineIds.push(id);
+      }));
+    },
+
+    clearChainedLineIds: () => {
+      set(produce((state) => {
         state.tools.chainedLineIds = [];
-        state.tools.isClosingShape = false;
+      }));
+    },
+
+    setClosingShape: (isClosing: boolean) => {
+      set(produce((state) => {
+        state.tools.isClosingShape = isClosing;
+      }));
+    },
+
+    setMaskPos: (pos: { x: number; y: number } | null) => {
+      set(produce((state) => {
+        state.tools.maskPos = pos;
+      }));
+    },
+
+    setAnimationTarget: (target: { animationId: string; elementId: string } | null) => {
+      set(produce((state) => {
+        state.tools.animationTarget = target;
+      }));
+    },
+
+    toggleShowPaths: () => {
+      set(produce((state) => {
+        state.tools.showPaths = !state.tools.showPaths;
+      }));
+    },
+
+    setPendingImageData: (data: string | null) => {
+      set(produce((state) => {
+        state.tools.pendingImageData = data;
+      }));
+    },
+
+    setLineType: (lineType: 'straight' | 'curved' | 'animated') => {
+      set(produce((state) => {
+        state.tools.lineType = lineType;
+      }));
+    },
+
+    setSelectedFont: (fontFamily: string) => {
+      set(produce((state) => {
+        state.tools.selectedFont = fontFamily;
+      }));
+
+      // Persist to localStorage
+      if (typeof window !== 'undefined') {
+        try {
+          const currentState = localStorage.getItem('plotmix-ui-state') || '{}';
+          const parsed = JSON.parse(currentState);
+          parsed.selectedFont = fontFamily;
+          localStorage.setItem('plotmix-ui-state', JSON.stringify(parsed));
+        } catch (error) {
+          console.warn('Failed to persist selected font:', error);
+        }
       }
-      
-      state.tools.activeTool = tool;
-      
-      // Clear mask position when changing tools
-      state.tools.maskPos = null;
-      
-      // Clear pending image data if switching away from image tool
-      if (tool !== 'image') {
-        state.tools.pendingImageData = null;
+    },
+
+    setSelectedFontWeight: (fontWeight: string) => {
+      set(produce((state) => {
+        state.tools.selectedFontWeight = fontWeight;
+      }));
+
+      // Persist to localStorage
+      if (typeof window !== 'undefined') {
+        try {
+          const currentState = localStorage.getItem('plotmix-ui-state') || '{}';
+          const parsed = JSON.parse(currentState);
+          parsed.selectedFontWeight = fontWeight;
+          localStorage.setItem('plotmix-ui-state', JSON.stringify(parsed));
+        } catch (error) {
+          console.warn('Failed to persist selected font weight:', error);
+        }
       }
-      
-      // Note: Path mode should only be exited manually, not when switching tools
-      // Note: Selection clearing will be handled by the main component since it needs access to canvas state
-    }));
-  },
+    },
 
-  togglePathMode: () => {
-    set(produce((state) => {
-      state.tools.isPathMode = !state.tools.isPathMode;
-    }));
-  },
+    // Snapping Actions
+    updateGridConfig: (config: Partial<GridConfig>) => {
+      set(produce((state) => {
+        Object.assign(state.snapping.gridConfig, config);
+      }));
+    },
 
-  setLineChaining: (isChaining: boolean) => {
-    set(produce((state) => {
-      state.tools.isLineChaining = isChaining;
-      if (!isChaining) {
-        state.tools.lineStartPoint = null;
-        state.tools.chainedLineIds = [];
-        state.tools.isClosingShape = false;
-      }
-    }));
-  },
+    updateElementSnapConfig: (config: Partial<ElementSnappingConfig>) => {
+      set(produce((state) => {
+        Object.assign(state.snapping.elementSnapConfig, config);
+      }));
+    },
 
-  setLineStartPoint: (point: { x: number; y: number } | null) => {
-    set(produce((state) => {
-      state.tools.lineStartPoint = point;
-    }));
-  },
+    setGridSnapTemporarilyDisabled: (disabled: boolean) => {
+      set(produce((state) => {
+        state.snapping.isGridSnapTemporarilyDisabled = disabled;
+      }));
+    },
 
-  addChainedLineId: (id: string) => {
-    set(produce((state) => {
-      state.tools.chainedLineIds.push(id);
-    }));
-  },
+    setElementSnapTemporarilyDisabled: (disabled: boolean) => {
+      set(produce((state) => {
+        state.snapping.isElementSnapTemporarilyDisabled = disabled;
+      }));
+    },
 
-  clearChainedLineIds: () => {
-    set(produce((state) => {
-      state.tools.chainedLineIds = [];
-    }));
-  },
+    // Preferences Actions
+    updatePreferences: (preferences: Partial<UserPreferences>) => {
+      set(produce((state) => {
+        Object.assign(state.preferences, preferences);
+      }));
+    },
 
-  setClosingShape: (isClosing: boolean) => {
-    set(produce((state) => {
-      state.tools.isClosingShape = isClosing;
-    }));
-  },
+    addRecentFile: (filePath: string) => {
+      set(produce((state) => {
+        const recentFiles = state.preferences.recentFiles.filter((file: string) => file !== filePath);
+        recentFiles.unshift(filePath);
+        state.preferences.recentFiles = recentFiles.slice(0, 10); // Keep only 10 recent files
+      }));
+    },
 
-  setMaskPos: (pos: { x: number; y: number } | null) => {
-    set(produce((state) => {
-      state.tools.maskPos = pos;
-    }));
-  },
+    removeRecentFile: (filePath: string) => {
+      set(produce((state) => {
+        state.preferences.recentFiles = state.preferences.recentFiles.filter((file: string) => file !== filePath);
+      }));
+    },
 
-  setAnimationTarget: (target: { animationId: string; elementId: string } | null) => {
-    set(produce((state) => {
-      state.tools.animationTarget = target;
-    }));
-  },
+    updateKeyboardShortcut: (action: string, key: string) => {
+      set(produce((state) => {
+        state.preferences.keyboardShortcuts[action] = key;
+      }));
+    },
 
-  toggleShowPaths: () => {
-    set(produce((state) => {
-      state.tools.showPaths = !state.tools.showPaths;
-    }));
-  },
+    resetPreferences: () => {
+      set(produce((state) => {
+        state.preferences = { ...defaultUserPreferences };
+      }));
+    },
 
-  setPendingImageData: (data: string | null) => {
-    set(produce((state) => {
-      state.tools.pendingImageData = data;
-    }));
-  },
+    // Keyboard Shortcuts
+    registerShortcut: (shortcut: KeyboardShortcut) => {
+      set(produce((state) => {
+        const existingIndex = state.keyboardShortcuts.findIndex((s: KeyboardShortcut) => s.action === shortcut.action);
+        if (existingIndex >= 0) {
+          state.keyboardShortcuts[existingIndex] = shortcut;
+        } else {
+          state.keyboardShortcuts.push(shortcut);
+        }
+      }));
+    },
 
-  setLineType: (lineType: 'straight' | 'curved' | 'animated') => {
-    set(produce((state) => {
-      state.tools.lineType = lineType;
-    }));
-  },
+    unregisterShortcut: (action: string) => {
+      set(produce((state) => {
+        state.keyboardShortcuts = state.keyboardShortcuts.filter((s: KeyboardShortcut) => s.action !== action);
+      }));
+    },
 
-  setSelectedFont: (fontFamily: string) => {
-    set(produce((state) => {
-      state.tools.selectedFont = fontFamily;
-    }));
-    
-    // Persist to localStorage
-    if (typeof window !== 'undefined') {
-      try {
-        const currentState = localStorage.getItem('plotmix-ui-state') || '{}';
-        const parsed = JSON.parse(currentState);
-        parsed.selectedFont = fontFamily;
-        localStorage.setItem('plotmix-ui-state', JSON.stringify(parsed));
-      } catch (error) {
-        console.warn('Failed to persist selected font:', error);
-      }
-    }
-  },
+    executeShortcut: (event: KeyboardEvent): boolean => {
+      const state = get();
+      const shortcut = state.keyboardShortcuts.find((s: KeyboardShortcut) => {
+        return s.key === event.key &&
+          !!s.ctrlKey === event.ctrlKey &&
+          !!s.shiftKey === event.shiftKey &&
+          !!s.metaKey === event.metaKey;
+      });
 
-  setSelectedFontWeight: (fontWeight: string) => {
-    set(produce((state) => {
-      state.tools.selectedFontWeight = fontWeight;
-    }));
-    
-    // Persist to localStorage
-    if (typeof window !== 'undefined') {
-      try {
-        const currentState = localStorage.getItem('plotmix-ui-state') || '{}';
-        const parsed = JSON.parse(currentState);
-        parsed.selectedFontWeight = fontWeight;
-        localStorage.setItem('plotmix-ui-state', JSON.stringify(parsed));
-      } catch (error) {
-        console.warn('Failed to persist selected font weight:', error);
-      }
-    }
-  },
+      if (shortcut) {
+        // Prevent default behavior
+        event.preventDefault();
 
-  // Snapping Actions
-  updateGridConfig: (config: Partial<GridConfig>) => {
-    set(produce((state) => {
-      Object.assign(state.snapping.gridConfig, config);
-    }));
-  },
-
-  updateElementSnapConfig: (config: Partial<ElementSnappingConfig>) => {
-    set(produce((state) => {
-      Object.assign(state.snapping.elementSnapConfig, config);
-    }));
-  },
-
-  setGridSnapTemporarilyDisabled: (disabled: boolean) => {
-    set(produce((state) => {
-      state.snapping.isGridSnapTemporarilyDisabled = disabled;
-    }));
-  },
-
-  setElementSnapTemporarilyDisabled: (disabled: boolean) => {
-    set(produce((state) => {
-      state.snapping.isElementSnapTemporarilyDisabled = disabled;
-    }));
-  },
-
-  // Preferences Actions
-  updatePreferences: (preferences: Partial<UserPreferences>) => {
-    set(produce((state) => {
-      Object.assign(state.preferences, preferences);
-    }));
-  },
-
-  addRecentFile: (filePath: string) => {
-    set(produce((state) => {
-      const recentFiles = state.preferences.recentFiles.filter((file: string) => file !== filePath);
-      recentFiles.unshift(filePath);
-      state.preferences.recentFiles = recentFiles.slice(0, 10); // Keep only 10 recent files
-    }));
-  },
-
-  removeRecentFile: (filePath: string) => {
-    set(produce((state) => {
-      state.preferences.recentFiles = state.preferences.recentFiles.filter((file: string) => file !== filePath);
-    }));
-  },
-
-  updateKeyboardShortcut: (action: string, key: string) => {
-    set(produce((state) => {
-      state.preferences.keyboardShortcuts[action] = key;
-    }));
-  },
-
-  resetPreferences: () => {
-    set(produce((state) => {
-      state.preferences = { ...defaultUserPreferences };
-    }));
-  },
-
-  // Keyboard Shortcuts
-  registerShortcut: (shortcut: KeyboardShortcut) => {
-    set(produce((state) => {
-      const existingIndex = state.keyboardShortcuts.findIndex((s: KeyboardShortcut) => s.action === shortcut.action);
-      if (existingIndex >= 0) {
-        state.keyboardShortcuts[existingIndex] = shortcut;
-      } else {
-        state.keyboardShortcuts.push(shortcut);
-      }
-    }));
-  },
-
-  unregisterShortcut: (action: string) => {
-    set(produce((state) => {
-      state.keyboardShortcuts = state.keyboardShortcuts.filter((s: KeyboardShortcut) => s.action !== action);
-    }));
-  },
-
-  executeShortcut: (event: KeyboardEvent): boolean => {
-    const state = get();
-    const shortcut = state.keyboardShortcuts.find((s: KeyboardShortcut) => {
-      return s.key === event.key &&
-             !!s.ctrlKey === event.ctrlKey &&
-             !!s.shiftKey === event.shiftKey &&
-             !!s.metaKey === event.metaKey;
-    });
-
-    if (shortcut) {
-      // Prevent default behavior
-      event.preventDefault();
-      
-      // Execute the action based on the shortcut
-      switch (shortcut.action) {
-        case 'select':
-          state.setActiveTool('select');
-          break;
-        case 'rectangle':
-          state.setActiveTool('rectangle');
-          break;
-        case 'circle':
-          state.setActiveTool('circle');
-          break;
-        case 'triangle':
-          state.setActiveTool('triangle');
-          break;
-        case 'arc':
-          state.setActiveTool('arc');
-          break;
-        case 'line':
-          state.setActiveTool('line');
-          break;
-        case 'text':
-          state.setActiveTool('text');
-          break;
-        case 'escape':
-          if (state.tools.isLineChaining || state.tools.lineStartPoint) {
-            // Exit line drawing mode completely
-            state.setLineChaining(false);
-            state.setLineStartPoint(null);
-            state.clearChainedLineIds();
-            state.setClosingShape(false);
-          } else {
+        // Execute the action based on the shortcut
+        switch (shortcut.action) {
+          case 'select':
             state.setActiveTool('select');
-          }
-          if (state.tools.isPathMode) {
-            state.togglePathMode();
-          }
-          break;
-        default:
-          return false;
+            break;
+          case 'rectangle':
+            state.setActiveTool('rectangle');
+            break;
+          case 'circle':
+            state.setActiveTool('circle');
+            break;
+          case 'triangle':
+            state.setActiveTool('triangle');
+            break;
+          case 'arc':
+            state.setActiveTool('arc');
+            break;
+          case 'line':
+            state.setActiveTool('line');
+            break;
+          case 'text':
+            state.setActiveTool('text');
+            break;
+          case 'escape':
+            if (state.tools.isLineChaining || state.tools.lineStartPoint) {
+              // Exit line drawing mode completely
+              state.setLineChaining(false);
+              state.setLineStartPoint(null);
+              state.clearChainedLineIds();
+              state.setClosingShape(false);
+            } else {
+              state.setActiveTool('select');
+            }
+            if (state.tools.isPathMode) {
+              state.togglePathMode();
+            }
+            break;
+          default:
+            return false;
+        }
+        return true;
       }
-      return true;
-    }
-    return false;
-  },
+      return false;
+    },
 
-  getShortcutByAction: (action: string): KeyboardShortcut | undefined => {
-    const state = get();
-    return state.keyboardShortcuts.find((s: KeyboardShortcut) => s.action === action);
-  },
+    getShortcutByAction: (action: string): KeyboardShortcut | undefined => {
+      const state = get();
+      return state.keyboardShortcuts.find((s: KeyboardShortcut) => s.action === action);
+    },
 
-  // Navigation
-  setActiveNav: (nav: NavKey | null) => {
-    set(produce((state) => {
-      state.navigation.activeNav = nav;
-    }));
-  },
+    // Navigation
+    setActiveNav: (nav: NavKey | null) => {
+      set(produce((state) => {
+        state.navigation.activeNav = nav;
+      }));
+    },
 
-  setHoverNav: (nav: NavKey | null) => {
-    set(produce((state) => {
-      state.navigation.hoverNav = nav;
-    }));
-  },
+    setHoverNav: (nav: NavKey | null) => {
+      set(produce((state) => {
+        state.navigation.hoverNav = nav;
+      }));
+    },
 
-  setInteractedNav: (nav: NavKey | null) => {
-    set(produce((state) => {
-      state.navigation.interactedNav = nav;
-    }));
-  },
+    setInteractedNav: (nav: NavKey | null) => {
+      set(produce((state) => {
+        state.navigation.interactedNav = nav;
+      }));
+    },
 
-  // Right panel action
-  setActiveRightPanel: (panel: RightPanelKey | null) => {
-    set(produce((state) => {
-      state.activeRightPanel = panel;
-    }));
-  },
+    // Right panel action
+    setActiveRightPanel: (panel: RightPanelKey | null) => {
+      set(produce((state) => {
+        state.activeRightPanel = panel;
+      }));
+    },
 
-  setHoverRightPanel: (panel: RightPanelKey | null) => {
-    set(produce((state) => {
-      state.hoverRightPanel = panel;
-    }));
-  },
+    setHoverRightPanel: (panel: RightPanelKey | null) => {
+      set(produce((state) => {
+        state.hoverRightPanel = panel;
+      }));
+    },
 
-  setInteractedRightPanel: (panel: RightPanelKey | null) => {
-    set(produce((state) => {
-      state.rightNavigation.interactedRightPanel = panel;
-    }));
-  },
+    setInteractedRightPanel: (panel: RightPanelKey | null) => {
+      set(produce((state) => {
+        state.rightNavigation.interactedRightPanel = panel;
+      }));
+    },
 
-  // Animations tab action
-  setShowAnimationsTab: (show: boolean) => {
-    set(produce((state) => {
-      state.showAnimationsTab = show;
-    }));
-  },
+    // Animations tab action
+    setShowAnimationsTab: (show: boolean) => {
+      set(produce((state) => {
+        state.showAnimationsTab = show;
+      }));
+    },
 
-  // Canvas Actions
-  setCanvasSize: (sizeId: string) => {
-    set(produce((state) => {
-      state.canvas.currentSizeId = sizeId;
-      state.canvas.customSize = null; // Clear custom size when selecting predefined size
-    }));
-  },
+    // Canvas Actions
+    setCanvasSize: (sizeId: string) => {
+      set(produce((state) => {
+        state.canvas.currentSizeId = sizeId;
+        state.canvas.customSize = null; // Clear custom size when selecting predefined size
+      }));
+    },
 
-  setCustomCanvasSize: (width: number, height: number) => {
-    set(produce((state) => {
-      state.canvas.customSize = { width, height };
-      state.canvas.currentSizeId = 'custom';
-    }));
-  },
+    setCustomCanvasSize: (width: number, height: number) => {
+      set(produce((state) => {
+        state.canvas.customSize = { width, height };
+        state.canvas.currentSizeId = 'custom';
+      }));
+    },
 
-  addCanvasSize: (size: CanvasSize) => {
-    set(produce((state) => {
-      const existingIndex = state.canvas.availableSizes.findIndex((s: CanvasSize) => s.id === size.id);
-      if (existingIndex >= 0) {
-        state.canvas.availableSizes[existingIndex] = size;
-      } else {
-        state.canvas.availableSizes.push(size);
+    addCanvasSize: (size: CanvasSize) => {
+      set(produce((state) => {
+        const existingIndex = state.canvas.availableSizes.findIndex((s: CanvasSize) => s.id === size.id);
+        if (existingIndex >= 0) {
+          state.canvas.availableSizes[existingIndex] = size;
+        } else {
+          state.canvas.availableSizes.push(size);
+        }
+      }));
+    },
+
+    removeCanvasSize: (sizeId: string) => {
+      set(produce((state) => {
+        state.canvas.availableSizes = state.canvas.availableSizes.filter((s: CanvasSize) => s.id !== sizeId);
+        // If we're removing the current size, switch to the first available
+        if (state.canvas.currentSizeId === sizeId && state.canvas.availableSizes.length > 0) {
+          state.canvas.currentSizeId = state.canvas.availableSizes[0].id;
+        }
+      }));
+    },
+
+    // Multi-scene canvas dimensions support
+    setCanvasDimensions: (dimensions: { width: number; height: number }) => {
+      set(produce((state) => {
+        // Set as custom size to support arbitrary dimensions from multi-scene projects
+        state.canvas.customSize = dimensions;
+        state.canvas.currentSizeId = 'custom';
+      }));
+    },
+
+    getCanvasDimensions: () => {
+      const state = get();
+      if (state.canvas.customSize) {
+        return state.canvas.customSize;
       }
-    }));
-  },
+      const currentSize = state.canvas.availableSizes.find(s => s.id === state.canvas.currentSizeId);
+      return currentSize ? { width: currentSize.width, height: currentSize.height } : { width: 1920, height: 1080 };
+    },
 
-  removeCanvasSize: (sizeId: string) => {
-    set(produce((state) => {
-      state.canvas.availableSizes = state.canvas.availableSizes.filter((s: CanvasSize) => s.id !== sizeId);
-      // If we're removing the current size, switch to the first available
-      if (state.canvas.currentSizeId === sizeId && state.canvas.availableSizes.length > 0) {
-        state.canvas.currentSizeId = state.canvas.availableSizes[0].id;
-      }
-    }));
-  },
+    setCanvasZoom: (zoom: number) => {
+      set(produce((state) => {
+        // Clamp to a reasonable range
+        const clamped = Math.max(0.05, Math.min(10, zoom));
+        state.canvasZoom = clamped;
+      }));
+    },
 
-  // Multi-scene canvas dimensions support
-  setCanvasDimensions: (dimensions: { width: number; height: number }) => {
-    set(produce((state) => {
-      // Set as custom size to support arbitrary dimensions from multi-scene projects
-      state.canvas.customSize = dimensions;
-      state.canvas.currentSizeId = 'custom';
-    }));
-  },
+    setCanvasPan: (pan: { x: number; y: number }) => {
+      set(produce((state) => {
+        state.canvasPan = { x: pan.x, y: pan.y };
+      }));
+    },
 
-  getCanvasDimensions: () => {
-    const state = get();
-    if (state.canvas.customSize) {
-      return state.canvas.customSize;
-    }
-    const currentSize = state.canvas.availableSizes.find(s => s.id === state.canvas.currentSizeId);
-    return currentSize ? { width: currentSize.width, height: currentSize.height } : { width: 1920, height: 1080 };
-  },
-
-  setCanvasZoom: (zoom: number) => {
-    set(produce((state) => {
-      // Clamp to a reasonable range
-      const clamped = Math.max(0.05, Math.min(10, zoom));
-      state.canvasZoom = clamped;
-    }));
-  },
-
-  setCanvasPan: (pan: { x: number; y: number }) => {
-    set(produce((state) => {
-      state.canvasPan = { x: pan.x, y: pan.y };
-    }));
-  },
-
-  // Lock Actions
-  toggleCanvasLock: () => {
-    set(produce((state) => {
-      state.isCanvasLocked = !state.isCanvasLocked;
-    }));
-  },
-
-  setCanvasLock: (locked: boolean) => {
-    set(produce((state) => {
-      state.isCanvasLocked = locked;
-    }));
-  },
-
-  // Uploaded Files Actions
-  addUploadedFile: (file: UploadedFile) => {
-    set(produce((state) => {
-      // Check if we have enough storage space
-      const newTotalSize = state.uploadedFiles.totalSize + file.size;
-      if (newTotalSize > state.uploadedFiles.maxStorage) {
-        throw new Error('Storage limit exceeded');
-      }
-      
-      state.uploadedFiles.files.push(file);
-      state.uploadedFiles.totalSize = newTotalSize;
-    }));
-  },
-
-  removeUploadedFile: (fileId: string) => {
-    set(produce((state) => {
-      const fileIndex = state.uploadedFiles.files.findIndex((f: UploadedFile) => f.id === fileId);
-      if (fileIndex !== -1) {
-        const removedFile = state.uploadedFiles.files[fileIndex];
-        state.uploadedFiles.totalSize -= removedFile.size;
-        state.uploadedFiles.files.splice(fileIndex, 1);
-      }
-    }));
-  },
-
-  updateUploadedFile: (fileId: string, updates: Partial<UploadedFile>) => {
-    set(produce((state) => {
-      const file = state.uploadedFiles.files.find((f: UploadedFile) => f.id === fileId);
-      if (file) {
-        Object.assign(file, updates);
-      }
-    }));
-  },
-
-  clearUploadedFiles: () => {
-    set(produce((state) => {
-      state.uploadedFiles.files = [];
-      state.uploadedFiles.totalSize = 0;
-    }));
-  },
-
-  linkFileToElement: (fileId: string, elementId: string) => {
-    set(produce((state) => {
-      const file = state.uploadedFiles.files.find((f: UploadedFile) => f.id === fileId);
-      if (file) {
-        file.elementId = elementId;
-      }
-    }));
-  },
-
-  // AI Tools prompt history
-  addAIPrompt: (promptText: string) => {
-    set(produce((state) => {
-      const entry: AIPromptEntry = {
-        id: Math.random().toString(36).slice(2),
-        text: promptText,
-        timestamp: new Date().toISOString(),
+    resetCanvasViewport: () => {
+      const getScreenSizeDefaults = () => {
+        if (typeof window === 'undefined') {
+          return { zoom: 0.42, pan: { x: 2800, y: 1700 } };
+        }
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+        const screenPresets = [
+          { width: { min: 0, max: 1366 }, height: { min: 0, max: 768 }, zoom: 0.3, pan: { x: 2880, y: 1620 } },
+          { width: { min: 1367, max: 1920 }, height: { min: 769, max: 1080 }, zoom: 0.42, pan: { x: 2800, y: 1700 } },
+          { width: { min: 1921, max: 2560 }, height: { min: 1081, max: 1440 }, zoom: 0.65, pan: { x: 2850, y: 1580 } },
+          { width: { min: 2561, max: 2999 }, height: { min: 1000, max: 9999 }, zoom: 0.7, pan: { x: 2880, y: 1580 } },
+          { width: { min: 3000, max: 9999 }, height: { min: 1000, max: 9999 }, zoom: 0.85, pan: { x: 2850, y: 1550 } }
+        ];
+        const matchingPreset = screenPresets.find(preset =>
+          screenWidth >= preset.width.min && screenWidth <= preset.width.max &&
+          screenHeight >= preset.height.min && screenHeight <= preset.height.max
+        );
+        return matchingPreset || screenPresets[0];
       };
-      state.aiPromptHistory.unshift(entry);
-      // Keep only the latest 50 entries
-      if (state.aiPromptHistory.length > 50) {
-        state.aiPromptHistory = state.aiPromptHistory.slice(0, 50);
-      }
-    }));
-  },
 
-  clearAIPrompts: () => {
-    set(produce((state) => {
-      state.aiPromptHistory = [];
-    }));
-  },
+      const defaults = getScreenSizeDefaults();
+      set(produce((state) => {
+        state.canvasZoom = defaults.zoom;
+        state.canvasPan = defaults.pan;
+      }));
+    },
 
-  setAIPrompts: (items: { id: string; text: string; timestamp: string }[]) => {
-    set(produce((state) => {
-      state.aiPromptHistory = items.slice(0, 200);
-    }));
-  },
+    // Lock Actions
+    toggleCanvasLock: () => {
+      set(produce((state) => {
+        state.isCanvasLocked = !state.isCanvasLocked;
+      }));
+    },
+
+    setCanvasLock: (locked: boolean) => {
+      set(produce((state) => {
+        state.isCanvasLocked = locked;
+      }));
+    },
+
+    // Uploaded Files Actions
+    addUploadedFile: (file: UploadedFile) => {
+      set(produce((state) => {
+        // Check if we have enough storage space
+        const newTotalSize = state.uploadedFiles.totalSize + file.size;
+        if (newTotalSize > state.uploadedFiles.maxStorage) {
+          throw new Error('Storage limit exceeded');
+        }
+
+        state.uploadedFiles.files.push(file);
+        state.uploadedFiles.totalSize = newTotalSize;
+      }));
+    },
+
+    removeUploadedFile: (fileId: string) => {
+      set(produce((state) => {
+        const fileIndex = state.uploadedFiles.files.findIndex((f: UploadedFile) => f.id === fileId);
+        if (fileIndex !== -1) {
+          const removedFile = state.uploadedFiles.files[fileIndex];
+          state.uploadedFiles.totalSize -= removedFile.size;
+          state.uploadedFiles.files.splice(fileIndex, 1);
+        }
+      }));
+    },
+
+    updateUploadedFile: (fileId: string, updates: Partial<UploadedFile>) => {
+      set(produce((state) => {
+        const file = state.uploadedFiles.files.find((f: UploadedFile) => f.id === fileId);
+        if (file) {
+          Object.assign(file, updates);
+        }
+      }));
+    },
+
+    clearUploadedFiles: () => {
+      set(produce((state) => {
+        state.uploadedFiles.files = [];
+        state.uploadedFiles.totalSize = 0;
+      }));
+    },
+
+    linkFileToElement: (fileId: string, elementId: string) => {
+      set(produce((state) => {
+        const file = state.uploadedFiles.files.find((f: UploadedFile) => f.id === fileId);
+        if (file) {
+          file.elementId = elementId;
+        }
+      }));
+    },
+
+    // AI Tools prompt history
+    addAIPrompt: (promptText: string) => {
+      set(produce((state) => {
+        const entry: AIPromptEntry = {
+          id: Math.random().toString(36).slice(2),
+          text: promptText,
+          timestamp: new Date().toISOString(),
+        };
+        state.aiPromptHistory.unshift(entry);
+        // Keep only the latest 50 entries
+        if (state.aiPromptHistory.length > 50) {
+          state.aiPromptHistory = state.aiPromptHistory.slice(0, 50);
+        }
+      }));
+    },
+
+    clearAIPrompts: () => {
+      set(produce((state) => {
+        state.aiPromptHistory = [];
+      }));
+    },
+
+    setAIPrompts: (items: { id: string; text: string; timestamp: string }[]) => {
+      set(produce((state) => {
+        state.aiPromptHistory = items.slice(0, 200);
+      }));
+    },
   };
 });
 
@@ -1069,7 +1098,7 @@ export const useKeyboardShortcutsStore = () => {
   const registerShortcut = useUIStore((state) => state.registerShortcut);
   const unregisterShortcut = useUIStore((state) => state.unregisterShortcut);
   const getShortcutByAction = useUIStore((state) => state.getShortcutByAction);
-  
+
   return {
     shortcuts,
     executeShortcut,

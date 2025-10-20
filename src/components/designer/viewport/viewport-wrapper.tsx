@@ -44,8 +44,6 @@ export class ViewportWrapper extends BaseViewport {
           friction: 0.95,
           bounce: 0.8
         });
-      
-
     }
 
     // Use initial zoom from props, or default to 1
