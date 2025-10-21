@@ -558,7 +558,7 @@ function ElementPropertiesContent({ selectedElement, onInspectorChange }: {
                       onChange={e => updateLineOptions({ dotted: e.target.checked })}
                       className="rounded border-gray-300 focus:ring-2 focus:ring-orange-500"
                     />
-                    <span className="text-sm font-medium text-gray-700">Dotted line</span>
+                    <span className="text-sm font-normal text-gray-700">Dotted line</span>
                   </label>
 
                   {/* Only show animated dots for curved lines or lines that already have animated properties */}
@@ -634,7 +634,7 @@ function ElementPropertiesContent({ selectedElement, onInspectorChange }: {
                       onChange={e => updateLineOptions({ arrow: e.target.checked })}
                       className="rounded border-gray-300 focus:ring-2 focus:ring-orange-500"
                     />
-                    <span className="text-sm font-medium text-gray-700">Arrow head</span>
+                    <span className="text-sm font-normal text-gray-700">Arrow head</span>
                   </label>
                 </div>
               </div>
@@ -672,7 +672,8 @@ function ElementPropertiesContent({ selectedElement, onInspectorChange }: {
             </div>
           )}
 
-          {/* Rotation Property */}
+          {/* Rotation Property - hide for line elements */}
+          {localElement.type !== 'line' && (
           <div className="grid grid-cols-1 gap-1">
             <span className="text-xs font-semibold text-green-400">Rotation</span>
             <div className="flex">
@@ -689,9 +690,11 @@ function ElementPropertiesContent({ selectedElement, onInspectorChange }: {
               />
             </div>
           </div>
+          )}
         </div>
 
-        {/* Appearance Properties */}
+        {/* Appearance Properties - hide for line elements */}
+        {localElement.type !== 'line' && (
         <div className="space-y-4 mt-6">
           <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
             <h4 className="font-semibold text-purple-600 text-sm">Appearance</h4>
@@ -839,6 +842,7 @@ function ElementPropertiesContent({ selectedElement, onInspectorChange }: {
             )}
           </div>
         </div>
+        )}
 
         {/* Stroke Properties - hide for text elements since they use textStroke instead, and hide for animated lines since they use animated rectangle color */}
         {localElement.type !== 'text' && !(localElement.lineOptions?.dotted && localElement.lineOptions?.animatedDots) && (
@@ -957,8 +961,8 @@ function ElementPropertiesContent({ selectedElement, onInspectorChange }: {
           </div>
         )}
 
-        {/* Shadow Properties - hide for animated lines since they don't support shadows */}
-        {!(localElement.lineOptions?.dotted && localElement.lineOptions?.animatedDots) && (
+        {/* Shadow Properties - hide for animated lines since they don't support shadows, and hide for line elements */}
+        {localElement.type !== 'line' && !(localElement.lineOptions?.dotted && localElement.lineOptions?.animatedDots) && (
           <div className="space-y-4 mt-6">
             <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
               <h4 className="font-semibold text-amber-600 text-sm">Shadow</h4>
