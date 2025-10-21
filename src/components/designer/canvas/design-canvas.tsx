@@ -600,22 +600,28 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                   pivot={{ x: 0, y: 0 }}
                   alpha={el.opacity ?? 1}
                   zIndex={el.zIndex || 0}
-                  interactive={tool === 'select' || tool === 'draw'}
-                  eventMode={tool === 'select' || tool === 'draw' ? 'dynamic' : 'none'}
+                  interactive={true}
+                  eventMode="dynamic"
                   hitArea={getHitArea(el)}
                   rotation={el.rotation || 0}
-                  onPointerDown={tool === 'select' || tool === 'draw' ? (e: FederatedPointerEvent) => {
-                    // If this element is part of a selected group, don't allow individual dragging
-                    if (isGroupSelected) {
-                      e.stopPropagation();
+                  onPointerDown={(e: FederatedPointerEvent) => {
+                    if (e.button === 2) {
+                      handleElementPointerDown(el.id, el.x, el.y)(e);
                       return;
                     }
-                    if (tool === 'select') {
-                      simpleElementPointerDown(el.id)(e);
-                    } else {
-                      handleElementPointerDown(el.id, el.x, el.y)(e);
+                    
+                    if (tool === 'select' || tool === 'draw') {
+                      if (isGroupSelected) {
+                        e.stopPropagation();
+                        return;
+                      }
+                      if (tool === 'select') {
+                        simpleElementPointerDown(el.id)(e);
+                      } else {
+                        handleElementPointerDown(el.id, el.x, el.y)(e);
+                      }
                     }
-                  } : undefined}
+                  }}
                   onPointerUp={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
                   onPointerUpOutside={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
                   onPointerOver={tool === 'select' || tool === 'draw' ? handleElementMouseMove(el.id) : undefined}
@@ -624,7 +630,6 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                   ref={(node) => {
                     if (node) {
                       shapeRefs.current[el.id] = node;
-                      // Apply shadow when container is created (skip for text elements as they have their own drop shadow)
                       if (el.type !== 'text') {
                         applyShadowToContainer(node, el);
                       }
@@ -795,27 +800,36 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
               pivot={{ x: 0, y: 0 }}
               alpha={el.opacity ?? 1}
               zIndex={el.zIndex || 0}
-              interactive={tool === 'select' || tool === 'draw'}
-              eventMode={tool === 'select' || tool === 'draw' ? 'dynamic' : 'none'}
+              interactive={true}
+              eventMode="dynamic"
               hitArea={getHitArea(el)}
               rotation={el.rotation || 0}
-              onPointerDown={tool === 'select' || tool === 'draw' ? (e: FederatedPointerEvent) => {
-                // Check if this element is part of a selected group
-                const elementGroup = groups.find(g => g.id === el.groupId && !g.isDefaultGroup);
-                if (elementGroup) {
-                  const groupElements = elements.filter(groupEl => groupEl.groupId === elementGroup.id);
-                  const isGroupSelected = selectedIds.some(id => groupElements.some(groupEl => groupEl.id === id));
-                  if (isGroupSelected) {
-                    e.stopPropagation();
-                    return;
+              onPointerDown={(e: FederatedPointerEvent) => {
+                // Always handle right-click for context menu
+                if (e.button === 2) {
+                  handleElementPointerDown(el.id, el.x, el.y)(e);
+                  return;
+                }
+                
+                // For other clicks, only handle if tool is select or draw
+                if (tool === 'select' || tool === 'draw') {
+                  // Check if this element is part of a selected group
+                  const elementGroup = groups.find(g => g.id === el.groupId && !g.isDefaultGroup);
+                  if (elementGroup) {
+                    const groupElements = elements.filter(groupEl => groupEl.groupId === elementGroup.id);
+                    const isGroupSelected = selectedIds.some(id => groupElements.some(groupEl => groupEl.id === id));
+                    if (isGroupSelected) {
+                      e.stopPropagation();
+                      return;
+                    }
+                  }
+                  if (tool === 'select') {
+                    simpleElementPointerDown(el.id)(e);
+                  } else {
+                    handleElementPointerDown(el.id, el.x, el.y)(e);
                   }
                 }
-                if (tool === 'select') {
-                  simpleElementPointerDown(el.id)(e);
-                } else {
-                  handleElementPointerDown(el.id, el.x, el.y)(e);
-                }
-              } : undefined}
+              }}
               onPointerUp={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
               onPointerUpOutside={tool === 'select' || tool === 'draw' ? handlePointerUp : undefined}
               onPointerOver={tool === 'select' || tool === 'draw' ? handleElementMouseMove(el.id) : undefined}
