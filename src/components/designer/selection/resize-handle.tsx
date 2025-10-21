@@ -322,6 +322,12 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({
     
     isDraggingRef.current = false;
     
+    // Dispatch resize end event to clear snap guides
+    const resizeEndEvent = new CustomEvent('element-resize-end', {
+      detail: { id: elementId }
+    });
+    window.dispatchEvent(resizeEndEvent);
+    
     // Use EventManager to remove listeners
     if (wrappersRef.current.move && wrappersRef.current.up) {
       eventManager.removeListener('pointermove', wrappersRef.current.move, window);

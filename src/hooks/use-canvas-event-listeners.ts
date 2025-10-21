@@ -5,6 +5,7 @@ import { GSAPTimelineManagerV2 } from '@/lib/gsap-timeline-manager-v2';
 import { AnimatedCanvasObject } from '@/types/canvas';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
+import type { SnapGuide } from '@/utils/element-snapping';
 
 interface UseCanvasEventListenersProps {
   gsapManager: GSAPTimelineManagerV2;
@@ -13,6 +14,9 @@ interface UseCanvasEventListenersProps {
   togglePathMode: () => void;
   setAnimationTarget: (target: { animationId: string; elementId: string } | null) => void;
   clearElementSnapGuides: () => void;
+  onSnapElement?: (element: AnimatedCanvasObject, allElements: AnimatedCanvasObject[]) => { x: number; y: number; guides: SnapGuide[] };
+  onSetSnapGuides?: (guides: SnapGuide[]) => void;
+  onClearSnapGuides?: () => void;
 }
 
 export const useCanvasEventListeners = ({
@@ -21,7 +25,10 @@ export const useCanvasEventListeners = ({
   addPathToAnimation,
   togglePathMode,
   setAnimationTarget,
-  clearElementSnapGuides
+  clearElementSnapGuides,
+  onSnapElement,
+  onSetSnapGuides,
+  onClearSnapGuides
 }: UseCanvasEventListenersProps) => {
   const { elements: canvasObjects, updateElement } = useCanvasStore();
   const { buildGSAPTimeline: buildTimelineV2 } = useTimelineStoreV2();
@@ -97,20 +104,32 @@ export const useCanvasEventListeners = ({
               const newWidth = el.width * finalScaleX;
               const newHeight = el.height * finalScaleY;
               
-              return {
+              const scaledElement = {
                 ...el,
                 x: newX,
                 y: newY,
                 width: newWidth,
                 height: newHeight,
-                // For circles, update radius
                 ...(el.type === 'circle' && { radius: newHeight / 2 }),
-                // For triangles, maintain proportions and update radius
                 ...(el.type === 'triangle' && { 
                   radius: newHeight / 2,
                   width: (2 * newHeight) / Math.sqrt(3)
                 })
               };
+              
+              // Apply snapping to each element in the group
+              if (onSnapElement) {
+                const otherElements = currentElements.filter(elem => !elementsToResize.some(e => e.id === elem.id));
+                const snapResult = onSnapElement(scaledElement, otherElements);
+                scaledElement.x = snapResult.x;
+                scaledElement.y = snapResult.y;
+                
+                if (onSetSnapGuides && snapResult.guides.length > 0) {
+                  onSetSnapGuides(snapResult.guides);
+                }
+              }
+              
+              return scaledElement;
             }
             return el;
           });
@@ -156,13 +175,29 @@ export const useCanvasEventListeners = ({
             break;
         }
 
+        let finalX = e.detail.x !== undefined ? e.detail.x : x;
+        let finalY = e.detail.y !== undefined ? e.detail.y : y;
+        
         const updatedElement = {
           ...el,
           width,
           height,
-          x: e.detail.x !== undefined ? e.detail.x : x,
-          y: e.detail.y !== undefined ? e.detail.y : y
+          x: finalX,
+          y: finalY
         };
+
+        // Apply snapping to the resized element position
+        if (onSnapElement) {
+          const otherElements = currentElements.filter(elem => elem.id !== id);
+          const snapResult = onSnapElement(updatedElement, otherElements);
+          
+          updatedElement.x = snapResult.x;
+          updatedElement.y = snapResult.y;
+          
+          if (onSetSnapGuides && snapResult.guides.length > 0) {
+            onSetSnapGuides(snapResult.guides);
+          }
+        }
 
         // For circles, update radius to match the height (as used in drawing)
         if (el.type === 'circle') {
@@ -171,7 +206,6 @@ export const useCanvasEventListeners = ({
 
         // For triangles, maintain equilateral proportions and update radius
         if (el.type === 'triangle') {
-          // Calculate correct width for an equilateral triangle based on height
           const correctWidth = (2 * height) / Math.sqrt(3);
           updatedElement.width = correctWidth;
           updatedElement.radius = height / 2;
@@ -338,19 +372,26 @@ export const useCanvasEventListeners = ({
     window.addEventListener('exit-path-mode', handleExitPathMode as EventListener);
 
     const handleGroupDragEndEvent = () => {
-      // Clear snap guides when group dragging ends
       clearElementSnapGuides();
     };
 
+    const handleResizeEndEvent = () => {
+      if (onClearSnapGuides) {
+        onClearSnapGuides();
+      }
+    };
+
     window.addEventListener('group-drag-end', handleGroupDragEndEvent);
+    window.addEventListener('element-resize-end', handleResizeEndEvent);
 
     return () => {
       window.removeEventListener('animation-path-updated', handleAnimationPathUpdate as EventListener);
       window.removeEventListener('add-path-to-animation', handleAddPathToAnimation as EventListener);
       window.removeEventListener('exit-path-mode', handleExitPathMode as EventListener);
       window.removeEventListener('group-drag-end', handleGroupDragEndEvent);
+      window.removeEventListener('element-resize-end', handleResizeEndEvent);
     };
-  }, [updateAnimationsForPathElement, gsapManager, addPathToAnimation, togglePathMode, setAnimationTarget, clearElementSnapGuides, updateElement]);
+  }, [updateAnimationsForPathElement, gsapManager, addPathToAnimation, togglePathMode, setAnimationTarget, clearElementSnapGuides, updateElement, onSnapElement, onSetSnapGuides, onClearSnapGuides]);
 
   // Block horizontal wheel events to prevent browser navigation
   useEffect(() => {

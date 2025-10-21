@@ -581,7 +581,10 @@ export default function Designer() {
     addPathToAnimation,
     togglePathMode,
     setAnimationTarget,
-    clearElementSnapGuides: clearSnapGuides
+    clearElementSnapGuides: clearSnapGuides,
+    onSnapElement: snapElement,
+    onSetSnapGuides: setSnapGuides,
+    onClearSnapGuides: clearSnapGuides
   });
 
   const handleInspectorChange = (
