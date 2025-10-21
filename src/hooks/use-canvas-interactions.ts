@@ -6,6 +6,7 @@ import { useSelectionStore } from '@/stores/use-selection-store';
 import { useUIStore } from '@/stores/use-ui-store';
 import { convertPointerEventToDesignCanvasCoords, constrainToAxis } from '@/utils/coordinate-utils';
 import { AnimatedCanvasObject } from '@/types/canvas';
+import { applyLineEndpointSnapping } from '@/utils/line-edge-snapping';
 
 interface UseCanvasInteractionsProps {
   snapPoint: (point: { x: number; y: number }, event?: { shiftKey?: boolean }) => { x: number; y: number };
@@ -38,6 +39,7 @@ interface UseCanvasInteractionsReturn {
 
 export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps): UseCanvasInteractionsReturn => {
   const { elements: canvasObjects, addElement } = useCanvasStore();
+  const groups = useCanvasStore((state) => state.groups);
   const { select: selectElement } = useSelectionStore();
   
   // Destructure only the specific tool properties we need to avoid unnecessary re-renders
@@ -95,7 +97,21 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
     
     // Apply snapping to the click position for element creation
     const shiftKey = 'shiftKey' in e.nativeEvent ? e.nativeEvent.shiftKey : false;
-    const snappedPos = snapPoint({ x: localPos.x, y: localPos.y }, { shiftKey });
+    let snappedPos = snapPoint({ x: localPos.x, y: localPos.y }, { shiftKey });
+    
+    // For line tools, also apply edge snapping to snap to element/group edges
+    if (activeTool === 'line' || activeTool === 'simpleLine') {
+      const elementSnapConfig = useUIStore.getState().snapping.elementSnapConfig;
+      const { point: edgeSnappedPoint } = applyLineEndpointSnapping(
+        snappedPos,
+        canvasObjects,
+        groups,
+        elementSnapConfig.snapThreshold || 30,
+        [], // Don't exclude any elements for snapping
+        elementSnapConfig.enabled // Use element snap config to enable/disable
+      );
+      snappedPos = edgeSnappedPoint;
+    }
     
     if (activeTool === 'select') {
       // Clear selections when clicking on empty canvas
@@ -402,7 +418,7 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
         }
       }
     }
-  }, [isDrawing, activeTool]);
+  }, [isDrawing, activeTool, canvasObjects, groups]);
 
   const handlePointerUp = useCallback(() => {
     if (isDrawing && activeTool === 'draw') {

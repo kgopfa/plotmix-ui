@@ -4,6 +4,8 @@ import type { SnapGuide } from '@/utils/element-snapping';
 import type { ViewportWrapper } from '@/components/designer/viewport/viewport-wrapper';
 import { eventManager } from '@/lib/event-manager';
 import { useUIStore } from '@/stores/use-ui-store';
+import { useCanvasStore } from '@/stores/use-canvas-store';
+import { applyLineEndpointSnapping } from '@/utils/line-edge-snapping';
 
 interface UseElementDraggingProps {
   elements: AnimatedCanvasObject[];
@@ -30,8 +32,9 @@ export const useElementDragging = ({
   viewportRef,
   canvasPosition,
 }: UseElementDraggingProps) => {
-  // Get zoom level from UI store
+  // Get zoom level and groups from stores
   const canvasZoom = useUIStore(state => state.canvasZoom);
+  const groups = useCanvasStore((state) => state.groups);
   
   // Element dragging state
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -204,8 +207,21 @@ export const useElementDragging = ({
 
     // Handle endpoint dragging
     if (draggingEndpoint && onLineEndpointDrag) {
-      // Apply snapping to line endpoints
-      const snappedPoint = onSnapPoint ? onSnapPoint({ x: worldX, y: worldY }) : { x: worldX, y: worldY };
+      // Apply grid/element alignment snapping first
+      let snappedPoint = onSnapPoint ? onSnapPoint({ x: worldX, y: worldY }) : { x: worldX, y: worldY };
+      
+      // Then apply edge snapping to snap to element/group edges
+      const elementSnapConfig = useUIStore.getState().snapping.elementSnapConfig;
+      const { point: edgeSnappedPoint } = applyLineEndpointSnapping(
+        snappedPoint,
+        elements,
+        groups,
+        elementSnapConfig.snapThreshold || 30,
+        [draggingId], // Exclude the line being dragged from snapping
+        elementSnapConfig.enabled
+      );
+      snappedPoint = edgeSnappedPoint;
+      
       onLineEndpointDrag(draggingId, draggingEndpoint, snappedPoint.x, snappedPoint.y);
     } else if (elementDragOffset) {
       // Handle regular shape dragging with snapping
@@ -236,7 +252,7 @@ export const useElementDragging = ({
         }
       }
     }
-  }, [draggingId, isDraggingGroup, groupDragOffsets, onGroupDrag, elements, draggingEndpoint, onLineEndpointDrag, elementDragOffset, onElementDragEnd, onSnapElement, onSnapPoint, onSetSnapGuides, getOptimizedCoordinates, canvasZoom]);
+  }, [draggingId, isDraggingGroup, groupDragOffsets, onGroupDrag, elements, groups, draggingEndpoint, onLineEndpointDrag, elementDragOffset, onElementDragEnd, onSnapElement, onSnapPoint, onSetSnapGuides, getOptimizedCoordinates, canvasZoom]);
 
   // Global pointer up handler for element dragging
   const handleGlobalPointerUp = useCallback(() => {

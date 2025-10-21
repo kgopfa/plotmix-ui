@@ -1,9 +1,11 @@
 import React from 'react';
-import type { AnimatedCanvasObject } from '@/types/canvas';
+import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import type { Container } from 'pixi.js';
 import { convertGlobalToDesignCanvasCoords, constrainToAxis, detectLineAlignment } from '@/utils/coordinate-utils';
 import { LineAlignmentGuides } from './line-alignment-guides';
 import { useUIStore } from '@/stores/use-ui-store';
+import { useCanvasStore } from '@/stores/use-canvas-store';
+import { applyLineEndpointSnapping } from '@/utils/line-edge-snapping';
 
 interface LinePreviewProps {
   tool: string;
@@ -35,6 +37,7 @@ export const LinePreview: React.FC<LinePreviewProps> = ({
   // Get the current line type and snapping settings from the UI store
   const lineType = useUIStore((state) => state.tools.lineType);
   const elementSnapConfig = useUIStore((state) => state.snapping.elementSnapConfig);
+  const groups = useCanvasStore((state) => state.groups);
   
   // For polygon drawing (line tool), always use smooth lines regardless of lineType setting
   const effectiveLineType = tool === 'line' ? 'smooth' : lineType;
@@ -73,12 +76,22 @@ export const LinePreview: React.FC<LinePreviewProps> = ({
   // Apply shift constraint if shift key is held
   const constrainedMousePos = shiftKey ? constrainToAxis(lineStartPoint, localMousePos) : localMousePos;
 
-  // Detect alignment guides for the line being drawn (only when snapping is disabled)
-  const alignmentGuides = !isSnappingEnabled ? detectLineAlignment(lineStartPoint, constrainedMousePos, elements, 10) : [];
+  // Apply edge snapping for element/group edges
+  const { point: edgeSnappedPoint, snapResult: edgeSnapResult } = applyLineEndpointSnapping(
+    constrainedMousePos,
+    elements,
+    groups,
+    elementSnapConfig.snapThreshold || 30,
+    chainedLineIds.map(id => elements.find(el => el.id === id)?.id).filter(Boolean) as string[], // Exclude lines being drawn
+    elementSnapConfig.enabled && isSnappingEnabled
+  );
+
+  // Detect alignment guides for the line being drawn (only when snapping is disabled and not edge snapping)
+  const alignmentGuides = !isSnappingEnabled || edgeSnapResult ? [] : detectLineAlignment(lineStartPoint, constrainedMousePos, elements, 10);
 
   // Check if we're in chaining mode and if mouse is near a point that can close the shape
   let canCloseShape = false;
-  let snapToPoint = constrainedMousePos;
+  let snapToPoint = edgeSnappedPoint; // Use edge-snapped point by default
   let showSnapTarget = false;
   let snapDistance = Infinity;
 
@@ -284,6 +297,28 @@ export const LinePreview: React.FC<LinePreviewProps> = ({
               g.circle(textX + 15, textY, 3);
               g.fill({ color: 0xFFFFFF, alpha: 1 });
             }
+          }}
+        />
+      )}
+
+      {/* Edge snap indicator - show when snapping to element/group edge */}
+      {edgeSnapResult && elementSnapConfig.showGuides && (
+        <pixiGraphics
+          eventMode="none"
+          draw={(g) => {
+            g.clear();
+            
+            // Draw a highlight on the edge being snapped to
+            const snapColor = 0x4CAF50; // Green color for edge snap
+            
+            // Draw a small circle at the snap point
+            g.circle(edgeSnapResult.point.x, edgeSnapResult.point.y, 6);
+            g.fill({ color: snapColor, alpha: 0.3 });
+            g.stroke({ width: 2, color: snapColor, alpha: 0.8 });
+            
+            // Draw a smaller inner circle
+            g.circle(edgeSnapResult.point.x, edgeSnapResult.point.y, 3);
+            g.fill({ color: 0xFFFFFF, alpha: 0.9 });
           }}
         />
       )}
