@@ -133,12 +133,51 @@ export const useElementPointerHandlers = ({
 
 
 
+    // Convert to design canvas coordinates for proper comparison
+    const localCoords = convertToDragCoordinates(e);
+    
     // Also keep PIXI world coordinates for certain operations
     const pos = e.global;
     const element = elements.find(el => el.id === id);
     if (!element) return;
 
-    // Handle element selection first
+    // Check for line endpoint handling BEFORE selecting the element
+    // This allows immediate dragging of endpoints without a second click
+    if (element?.type === 'line' && element.lineOptions?.points) {
+      const { start, end } = element.lineOptions.points;
+      const clickX = localCoords.x;
+      const clickY = localCoords.y;
+      const ENDPOINT_CLICK_SIZE = 16; // Consistent with shape closing size
+      const halfSize = ENDPOINT_CLICK_SIZE / 2;
+      
+      // Check start endpoint
+      if (
+        clickX >= start.x - halfSize &&
+        clickX <= start.x + halfSize &&
+        clickY >= start.y - halfSize &&
+        clickY <= start.y + halfSize
+      ) {
+        e.stopPropagation();
+        selectElement(element, isMultiSelect);
+        startEndpointDragging(id, 'start');
+        return;
+      }
+      
+      // Check end endpoint
+      if (
+        clickX >= end.x - halfSize &&
+        clickX <= end.x + halfSize &&
+        clickY >= end.y - halfSize &&
+        clickY <= end.y + halfSize
+      ) {
+        e.stopPropagation();
+        selectElement(element, isMultiSelect);
+        startEndpointDragging(id, 'end');
+        return;
+      }
+    }
+
+    // Handle element selection for non-endpoint clicks
     selectElement(element, isMultiSelect);
 
     // Store drag start information for potential dragging
@@ -149,36 +188,9 @@ export const useElementPointerHandlers = ({
       isMultiSelect
     };
 
-    // Then check for line endpoint handling
-    if (element?.type === 'line' && element.lineOptions?.points) {
-      const { start, end } = element.lineOptions.points;
-      const clickX = pos.x;
-      const clickY = pos.y;
-      const ENDPOINT_CLICK_SIZE = 16; // Consistent with shape closing size
-      const halfSize = ENDPOINT_CLICK_SIZE / 2;
-      if (
-        clickX >= start.x - halfSize &&
-        clickX <= start.x + halfSize &&
-        clickY >= start.y - halfSize &&
-        clickY <= start.y + halfSize
-      ) {
-        startEndpointDragging(id, 'start');
-        return;
-      }
-      if (
-        clickX >= end.x - halfSize &&
-        clickX <= end.x + halfSize &&
-        clickY >= end.y - halfSize &&
-        clickY <= end.y + halfSize
-      ) {
-        startEndpointDragging(id, 'end');
-        return;
-      }
-    }
-
     // Don't start dragging immediately - wait for pointer move
     // The dragging will be started in the pointer move handler if the user actually moves the mouse
-  }, [tool, isLineChaining, lineStartPoint, elements, selectElement, handleCanvasClick, handleCanvasPointerDown, startEndpointDragging, onElementContextMenu]);
+  }, [tool, isLineChaining, lineStartPoint, elements, selectElement, handleCanvasClick, handleCanvasPointerDown, startEndpointDragging, onElementContextMenu, convertToDragCoordinates]);
 
   // Handle pointer move to detect when dragging should start
   const handleElementPointerMove = useCallback((e: FederatedPointerEvent) => {

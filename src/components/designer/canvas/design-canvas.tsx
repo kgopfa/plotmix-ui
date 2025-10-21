@@ -19,9 +19,11 @@ import ResizeHandles from '../selection/resize-handles';
 import ResizeHandle from '../selection/resize-handle';
 import RadiusHandles from '../selection/radius-handles';
 import CurveHandle from '../selection/curve-handle';
+import LineEndpointHandles from '../selection/line-endpoint-handles';
 import { GroupSelection } from '../selection/group-selection';
+import { applyLineEndpointSnapping } from '@/utils/line-edge-snapping';
 
-import { useCanvasState } from '@/stores/use-ui-store';
+import { useCanvasState, useUIStore } from '@/stores/use-ui-store';
 import { useCanvasOperations } from '@/stores/use-canvas-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
 import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
@@ -100,6 +102,9 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
 
   // Get selection store functions
   const { selectGroup } = useSelectionStore();
+  
+  // Get element snap configuration for line endpoint snapping
+  const elementSnapConfig = useUIStore((state) => state.snapping.elementSnapConfig);
 
   const {
     snapGuides = [],
@@ -615,7 +620,9 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                         e.stopPropagation();
                         return;
                       }
-                      if (tool === 'select') {
+                      // Use handleElementPointerDown for line elements to enable endpoint dragging
+                      // For other elements in select mode, use simpleElementPointerDown
+                      if (tool === 'select' && el.type !== 'line') {
                         simpleElementPointerDown(el.id)(e);
                       } else {
                         handleElementPointerDown(el.id, el.x, el.y)(e);
@@ -823,7 +830,9 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                       return;
                     }
                   }
-                  if (tool === 'select') {
+                  // Use handleElementPointerDown for line elements to enable endpoint dragging
+                  // For other elements in select mode, use simpleElementPointerDown
+                  if (tool === 'select' && el.type !== 'line') {
                     simpleElementPointerDown(el.id)(e);
                   } else {
                     handleElementPointerDown(el.id, el.x, el.y)(e);
@@ -971,6 +980,41 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                     }
                   });
                   window.dispatchEvent(controlPointEvent);
+                }}
+              />
+            </pixiContainer>
+
+            {/* Line Endpoint Handles - only for line elements */}
+            <pixiContainer zIndex={2003}>
+              <LineEndpointHandles 
+                element={selectedElement}
+                onEndpointDrag={(endpoint, x, y) => {
+                  // Apply grid/alignment snapping first
+                  let snappedPoint = props.onSnapPoint ? props.onSnapPoint({ x, y }) : { x, y };
+                  
+                  // Then apply edge snapping to snap to element/group edges
+                  const snapConfig = useUIStore.getState().snapping.elementSnapConfig;
+                  const { point: edgeSnappedPoint } = applyLineEndpointSnapping(
+                    snappedPoint,
+                    elements,
+                    groups,
+                    snapConfig.snapThreshold || 30,
+                    [selectedId], // Exclude the line being dragged
+                    snapConfig.enabled
+                  );
+                  snappedPoint = edgeSnappedPoint;
+                  
+                  // Update the line endpoint
+                  if (selectedElement.lineOptions?.points) {
+                    const updatedPoints = {
+                      ...selectedElement.lineOptions.points,
+                      [endpoint]: { x: snappedPoint.x, y: snappedPoint.y }
+                    };
+                    
+                    updateElement(selectedId, {
+                      lineOptions: { ...selectedElement.lineOptions, points: updatedPoints }
+                    });
+                  }
                 }}
               />
             </pixiContainer>
