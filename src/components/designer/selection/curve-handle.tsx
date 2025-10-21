@@ -37,13 +37,25 @@ const CurveHandle: React.FC<CurveHandleProps> = ({ element, onControlPointDrag }
       onControlPointDrag(newControlPoint.x, newControlPoint.y);
     };
 
-    const handlePointerUp = () => {
+    const handlePointerUp = (e?: PointerEvent) => {
+      // Prevent click events from firing after dragging control point
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      
+      // Set a temporary flag to prevent click handlers from firing
+      const preventClickEvent = new CustomEvent('prevent-next-click', {
+        detail: { elementId: element.id }
+      });
+      window.dispatchEvent(preventClickEvent);
+      
       document.removeEventListener('pointermove', handlePointerMove);
       document.removeEventListener('pointerup', handlePointerUp);
     };
 
     document.addEventListener('pointermove', handlePointerMove);
-    document.addEventListener('pointerup', handlePointerUp);
+    document.addEventListener('pointerup', handlePointerUp as EventListener);
   }, [element.lineOptions, onControlPointDrag]);
 
   // Show only for curved line elements

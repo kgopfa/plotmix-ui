@@ -47,20 +47,18 @@ const RotationHandles: React.FC<RotationHandlesProps> = ({
   const handlePointerDown = (e: PIXI.FederatedPointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    e.stopImmediatePropagation(); // CRITICAL: Prevent event from bubbling to canvas/parent
 
     // Notify that rotation started
     if (onRotationStart) {
       onRotationStart();
     }
 
-    const canvasElement = document.querySelector('canvas');
-    if (!canvasElement) return;
+    // Use PixiJS global coordinates which account for viewport transformations
+    const startMouseX = e.global.x;
+    const startMouseY = e.global.y;
 
-    const rect = canvasElement.getBoundingClientRect();
-    const startMouseX = e.client.x - rect.left;
-    const startMouseY = e.client.y - rect.top;
-
-    // Shape center in canvas coordinates
+    // Shape center in world coordinates
     const shapeCenterX = x;
     const shapeCenterY = y;
 
@@ -69,8 +67,18 @@ const RotationHandles: React.FC<RotationHandlesProps> = ({
     const initialRotation = rotation;
 
     const handleRotationMove = (moveEvent: PointerEvent) => {
-      const currentMouseX = moveEvent.clientX - rect.left;
-      const currentMouseY = moveEvent.clientY - rect.top;
+      // Get canvas and convert client coordinates to canvas space
+      const canvasElement = document.querySelector('canvas');
+      if (!canvasElement) return;
+
+      const rect = canvasElement.getBoundingClientRect();
+      const canvasX = moveEvent.clientX - rect.left;
+      const canvasY = moveEvent.clientY - rect.top;
+      
+      // For now, use canvas coordinates directly
+      // In a perfect world, we'd convert through viewport but this is simpler
+      const currentMouseX = canvasX;
+      const currentMouseY = canvasY;
 
       // Calculate current angle from shape center to mouse
       const currentAngle = Math.atan2(currentMouseY - shapeCenterY, currentMouseX - shapeCenterX);
@@ -82,7 +90,19 @@ const RotationHandles: React.FC<RotationHandlesProps> = ({
       onRotate(newRotation);
     };
 
-    const handleRotationEnd = () => {
+    const handleRotationEnd = (e?: PointerEvent) => {
+      // Prevent click events from firing after rotation
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      
+      // Set a temporary flag to prevent click handlers from firing
+      const preventClickEvent = new CustomEvent('prevent-next-click', {
+        detail: { elementId: element.id }
+      });
+      window.dispatchEvent(preventClickEvent);
+      
       if (wrappersRef.current.move && wrappersRef.current.end) {
         eventManager.removeListener('pointermove', wrappersRef.current.move);
         eventManager.removeListener('pointerup', wrappersRef.current.end);
@@ -102,8 +122,12 @@ const RotationHandles: React.FC<RotationHandlesProps> = ({
       }
     };
 
-    const rotationEndWrapper = () => {
-      handleRotationEnd();
+    const rotationEndWrapper = (event: Event | PointerEvent | MouseEvent | KeyboardEvent) => {
+      if (event instanceof PointerEvent) {
+        handleRotationEnd(event);
+      } else {
+        handleRotationEnd();
+      }
     };
 
     // Store references for cleanup
@@ -114,11 +138,20 @@ const RotationHandles: React.FC<RotationHandlesProps> = ({
     eventManager.addListener('pointerup', rotationEndWrapper);
   };
 
-  // Draw a rotation handle
+  // Draw a rotation handle - increased size for better click area
   const drawHandle = (g: PIXI.Graphics) => {
     g.clear();
-    g.rect(-HANDLE_SIZE / 2, -HANDLE_SIZE / 2, HANDLE_SIZE, HANDLE_SIZE);
-    g.fill({ color: 0x000000, alpha: 0 });
+    const VISIBLE_SIZE = 8; // Visible size
+    const CLICKABLE_SIZE = 16; // Larger clickable area
+    
+    // Draw larger invisible clickable area
+    g.rect(-CLICKABLE_SIZE / 2, -CLICKABLE_SIZE / 2, CLICKABLE_SIZE, CLICKABLE_SIZE);
+    g.fill({ color: 0x000000, alpha: 0.01 }); // Nearly transparent for hit area
+    
+    // Draw smaller visible circle
+    g.circle(0, 0, VISIBLE_SIZE / 2);
+    g.fill({ color: 0x4CAF50, alpha: 0.9 }); // Green fill
+    g.stroke({ width: 1, color: 0x2E7D32, alpha: 1 }); // Darker green border
   };
 
   // Calculate cursor based on handle position and current rotation

@@ -21,7 +21,7 @@ interface LineEndpointHandleProps {
 const LineEndpointHandle: React.FC<LineEndpointHandleProps> = ({ element, endpoint, onEndpointDrag }) => {
   const isDraggingRef = useRef(false);
   const dragOffsetRef = useRef({ x: 0, y: 0 });
-  const wrappersRef = useRef<{ move?: (event: Event | PointerEvent | MouseEvent | KeyboardEvent) => void; up?: () => void }>({});
+  const wrappersRef = useRef<{ move?: (event: Event | PointerEvent | MouseEvent | KeyboardEvent) => void; up?: (event: Event | PointerEvent | MouseEvent | KeyboardEvent) => void }>({});
 
   if (!element.lineOptions?.points) return null;
 
@@ -73,8 +73,12 @@ const LineEndpointHandle: React.FC<LineEndpointHandleProps> = ({ element, endpoi
       }
     };
     
-    const pointerUpWrapper = () => {
-      handleGlobalPointerUp();
+    const pointerUpWrapper = (event: Event | PointerEvent | MouseEvent | KeyboardEvent) => {
+      if (event instanceof PointerEvent) {
+        handleGlobalPointerUp(event);
+      } else {
+        handleGlobalPointerUp();
+      }
     };
     
     // Store references for cleanup
@@ -112,10 +116,22 @@ const LineEndpointHandle: React.FC<LineEndpointHandleProps> = ({ element, endpoi
     setPosition({ x: newX, y: newY });
   };
 
-  const handleGlobalPointerUp = () => {
+  const handleGlobalPointerUp = (e?: PointerEvent) => {
     if (!isDraggingRef.current) return;
     
     isDraggingRef.current = false;
+    
+    // Prevent click events from firing after dragging endpoint
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    // Set a temporary flag to prevent click handlers from firing
+    const preventClickEvent = new CustomEvent('prevent-next-click', {
+      detail: { elementId: element.id }
+    });
+    window.dispatchEvent(preventClickEvent);
     
     // Use EventManager to remove listeners
     if (wrappersRef.current.move && wrappersRef.current.up) {

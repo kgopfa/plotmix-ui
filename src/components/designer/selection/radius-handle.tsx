@@ -26,7 +26,7 @@ const RadiusHandle: React.FC<RadiusHandleProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const isDraggingRef = useRef(false);
   const dragStartRef = useRef({ x: 0, y: 0, startX: 0, startY: 0, initialRadius: 0 });
-  const wrappersRef = useRef<{ move?: (event: Event | PointerEvent | MouseEvent | KeyboardEvent) => void; up?: () => void }>({});
+  const wrappersRef = useRef<{ move?: (event: Event | PointerEvent | MouseEvent | KeyboardEvent) => void; up?: (event: Event | PointerEvent | MouseEvent | KeyboardEvent) => void }>({});
 
   const drawCircle = (g: PIXI.Graphics) => {
     g.clear();
@@ -63,8 +63,12 @@ const RadiusHandle: React.FC<RadiusHandleProps> = ({
       }
     };
     
-    const pointerUpWrapper = () => {
-      handlePointerUp();
+    const pointerUpWrapper = (event: Event | PointerEvent | MouseEvent | KeyboardEvent) => {
+      if (event instanceof PointerEvent) {
+        handlePointerUp(event);
+      } else {
+        handlePointerUp();
+      }
     };
     
     // Store references for cleanup
@@ -125,10 +129,22 @@ const RadiusHandle: React.FC<RadiusHandleProps> = ({
     onRadiusChange(newRadius);
   };
 
-  const handlePointerUp = () => {
+  const handlePointerUp = (e?: PointerEvent) => {
     if (isDraggingRef.current) {
       isDraggingRef.current = false;
       setIsDragging(false);
+      
+      // Prevent click events from firing after radius dragging
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      
+      // Set a temporary flag to prevent click handlers from firing
+      const preventClickEvent = new CustomEvent('prevent-next-click', {
+        detail: { }
+      });
+      window.dispatchEvent(preventClickEvent);
       
       // Remove using the stored wrapper references
       if (wrappersRef.current.move && wrappersRef.current.up) {

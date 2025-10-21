@@ -31,7 +31,7 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({
   const dragOffsetRef = useRef({ x: 0, y: 0 });
   const resizeInProgressRef = useRef(false);
   const initialElementStateRef = useRef({ x: 0, y: 0, width: 0, height: 0, rotation: 0 });
-  const wrappersRef = useRef<{ move?: (event: Event | PointerEvent | MouseEvent | KeyboardEvent) => void; up?: () => void }>({});
+  const wrappersRef = useRef<{ move?: (event: Event | PointerEvent | MouseEvent | KeyboardEvent) => void; up?: (event: Event | PointerEvent | MouseEvent | KeyboardEvent) => void }>({});
   const shiftKeyRef = useRef(false);
   const { elements: canvasObjects } = useCanvasStore();
 
@@ -240,7 +240,7 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({
   const drawHandle = (g: PIXI.Graphics) => {
     g.clear();
     
-    const HANDLE_SIZE = 7;
+    const HANDLE_SIZE = 10; // Increased from 7 to 10 for better click area
     const halfSize = HANDLE_SIZE / 2;
     
     // Draw the resize handle square
@@ -275,8 +275,12 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({
       }
     };
     
-    const pointerUpWrapper = () => {
-      handleGlobalPointerUp();
+    const pointerUpWrapper = (event: Event | PointerEvent | MouseEvent | KeyboardEvent) => {
+      if (event instanceof PointerEvent) {
+        handleGlobalPointerUp(event);
+      } else {
+        handleGlobalPointerUp();
+      }
     };
     
     // Store references for cleanup
@@ -317,10 +321,23 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({
     setPosition({ x: newX, y: newY });
   };
 
-  const handleGlobalPointerUp = () => {
+  const handleGlobalPointerUp = (e?: PointerEvent) => {
     if (!isDraggingRef.current) return;
     
     isDraggingRef.current = false;
+    
+    // Prevent click events from firing after resize
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    // Set a temporary flag to prevent click handlers from firing
+    // This will be read by the canvas onClick handler
+    const preventClickEvent = new CustomEvent('prevent-next-click', {
+      detail: { elementId }
+    });
+    window.dispatchEvent(preventClickEvent);
     
     // Dispatch resize end event to clear snap guides
     const resizeEndEvent = new CustomEvent('element-resize-end', {

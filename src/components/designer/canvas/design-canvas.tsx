@@ -141,6 +141,9 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
   // Get canvas operations and selection store
   const { moveElement, moveMultipleElements, updateElement, moveGroup } = useCanvasOperations();
   const { select: selectElement } = useSelectionStore();
+  
+  // Track when we should prevent click events (after resize/rotation operations)
+  const preventNextClickRef = useRef(false);
 
   // Get current canvas size
   const currentSize = canvasState.currentSizeId === 'custom'
@@ -303,6 +306,22 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
   useEffect(() => {
     return setupGlobalEventListeners();
   }, [setupGlobalEventListeners]);
+  
+  // Listen for prevent-next-click events from handles
+  useEffect(() => {
+    const handlePreventClick = () => {
+      preventNextClickRef.current = true;
+      // Clear the flag after a short delay
+      setTimeout(() => {
+        preventNextClickRef.current = false;
+      }, 100);
+    };
+    
+    window.addEventListener('prevent-next-click', handlePreventClick);
+    return () => {
+      window.removeEventListener('prevent-next-click', handlePreventClick);
+    };
+  }, []);
 
   return (
     <pixiContainer
@@ -424,6 +443,12 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
         props.handlePointerUp();
       }}
       onClick={(e: FederatedPointerEvent) => {
+        // Prevent click if we just finished dragging a handle
+        if (preventNextClickRef.current) {
+          preventNextClickRef.current = false;
+          return;
+        }
+        
         // Only check for hit elements when using select tool
         // For creation tools, elements are non-interactive so we can always create shapes
         if (props.tool === 'select') {
