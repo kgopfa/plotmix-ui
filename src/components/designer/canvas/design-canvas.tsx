@@ -1102,6 +1102,8 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           <pixiContainer zIndex={2003}>
             <RotationHandles
               element={selectedElement}
+              viewportRef={props.viewportRef}
+              designCanvasContainerRef={containerRef}
               onRotate={(newRotation) => {
                 const rotationEvent = new CustomEvent('element-rotation-change', {
                   detail: {

@@ -1,8 +1,9 @@
 import React, { useRef } from 'react';
 import { extend } from '@pixi/react';
-import { Graphics } from 'pixi.js';
+import { Graphics, Container } from 'pixi.js';
 import * as PIXI from 'pixi.js';
 import type { AnimatedCanvasObject } from '@/types/canvas';
+import type { ViewportWrapper } from '@/components/designer/viewport/viewport-wrapper';
 import { eventManager } from '@/lib/event-manager';
 
 extend({ Graphics });
@@ -12,6 +13,8 @@ interface RotationHandlesProps {
   onRotate: (rotation: number) => void;
   onRotationStart?: () => void;
   onRotationEnd?: () => void;
+  viewportRef?: React.RefObject<ViewportWrapper | null>;
+  designCanvasContainerRef?: React.RefObject<Container | null>;
 }
 
 const HANDLE_SIZE = 14;
@@ -20,7 +23,9 @@ const RotationHandles: React.FC<RotationHandlesProps> = ({
   element, 
   onRotate, 
   onRotationStart, 
-  onRotationEnd 
+  onRotationEnd,
+  viewportRef,
+  designCanvasContainerRef
 }) => {
   const { x, y, width, height, rotation = 0 } = element;
   const wrappersRef = useRef<{ move?: (event: Event | PointerEvent | MouseEvent | KeyboardEvent) => void; end?: () => void }>({});
@@ -54,11 +59,23 @@ const RotationHandles: React.FC<RotationHandlesProps> = ({
       onRotationStart();
     }
 
-    // Use PixiJS global coordinates which account for viewport transformations
-    const startMouseX = e.global.x;
-    const startMouseY = e.global.y;
+    // Convert initial position to design canvas local coordinates
+    let startMouseX: number;
+    let startMouseY: number;
+    
+    if (viewportRef?.current && designCanvasContainerRef?.current) {
+      // Use viewport to get world coordinates
+      const worldPos = viewportRef.current.toWorld(e.clientX, e.clientY);
+      // Subtract canvas container position to get local coordinates
+      startMouseX = worldPos.x - designCanvasContainerRef.current.x;
+      startMouseY = worldPos.y - designCanvasContainerRef.current.y;
+    } else {
+      // Fallback to e.global if no viewport
+      startMouseX = e.global.x;
+      startMouseY = e.global.y;
+    }
 
-    // Shape center in world coordinates
+    // Shape center in design canvas local coordinates
     const shapeCenterX = x;
     const shapeCenterY = y;
 
@@ -67,24 +84,37 @@ const RotationHandles: React.FC<RotationHandlesProps> = ({
     const initialRotation = rotation;
 
     const handleRotationMove = (moveEvent: PointerEvent) => {
-      // Get canvas and convert client coordinates to canvas space
-      const canvasElement = document.querySelector('canvas');
-      if (!canvasElement) return;
-
-      const rect = canvasElement.getBoundingClientRect();
-      const canvasX = moveEvent.clientX - rect.left;
-      const canvasY = moveEvent.clientY - rect.top;
+      let currentMouseX: number;
+      let currentMouseY: number;
       
-      // For now, use canvas coordinates directly
-      // In a perfect world, we'd convert through viewport but this is simpler
-      const currentMouseX = canvasX;
-      const currentMouseY = canvasY;
+      // Use the SAME viewport transformation for movement
+      if (viewportRef?.current && designCanvasContainerRef?.current) {
+        // Use viewport to get world coordinates
+        const worldPos = viewportRef.current.toWorld(moveEvent.clientX, moveEvent.clientY);
+        // Subtract canvas container position to get local coordinates
+        currentMouseX = worldPos.x - designCanvasContainerRef.current.x;
+        currentMouseY = worldPos.y - designCanvasContainerRef.current.y;
+      } else {
+        // Fallback: Get canvas element for coordinate conversion
+        const canvasElement = document.querySelector('canvas');
+        if (!canvasElement) return;
+
+        const rect = canvasElement.getBoundingClientRect();
+        currentMouseX = moveEvent.clientX - rect.left;
+        currentMouseY = moveEvent.clientY - rect.top;
+      }
 
       // Calculate current angle from shape center to mouse
       const currentAngle = Math.atan2(currentMouseY - shapeCenterY, currentMouseX - shapeCenterX);
 
-      // Calculate rotation delta
-      const deltaAngle = currentAngle - initialAngle;
+      // Calculate rotation delta and normalize to prevent angle wrapping issues
+      let deltaAngle = currentAngle - initialAngle;
+      
+      // Normalize the delta angle to stay within -π to π range
+      // This prevents sudden flips when crossing the π/-π boundary
+      while (deltaAngle > Math.PI) deltaAngle -= 2 * Math.PI;
+      while (deltaAngle < -Math.PI) deltaAngle += 2 * Math.PI;
+      
       const newRotation = initialRotation + deltaAngle;
 
       onRotate(newRotation);
