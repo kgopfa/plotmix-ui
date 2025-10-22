@@ -28,7 +28,7 @@ const RotationHandles: React.FC<RotationHandlesProps> = ({
   designCanvasContainerRef
 }) => {
   const { x, y, width, height, rotation = 0 } = element;
-  const wrappersRef = useRef<{ move?: (event: Event | PointerEvent | MouseEvent | KeyboardEvent) => void; end?: () => void }>({});
+  const wrappersRef = useRef<{ move?: (event: Event | PointerEvent | MouseEvent | KeyboardEvent) => void; end?: (event: Event | PointerEvent | MouseEvent | KeyboardEvent) => void }>({});
 
   // Get world-space corner positions
   const getCornerPosition = (offsetX: number, offsetY: number) => {
@@ -168,20 +168,14 @@ const RotationHandles: React.FC<RotationHandlesProps> = ({
     eventManager.addListener('pointerup', rotationEndWrapper);
   };
 
-  // Draw a rotation handle - increased size for better click area
+  // Draw a rotation handle - invisible like Figma, but with large click area
   const drawHandle = (g: PIXI.Graphics) => {
     g.clear();
-    const VISIBLE_SIZE = 8; // Visible size
-    const CLICKABLE_SIZE = 16; // Larger clickable area
+    const CLICKABLE_SIZE = 20; // Large clickable area for easy grabbing
     
-    // Draw larger invisible clickable area
+    // Draw invisible clickable area
     g.rect(-CLICKABLE_SIZE / 2, -CLICKABLE_SIZE / 2, CLICKABLE_SIZE, CLICKABLE_SIZE);
     g.fill({ color: 0x000000, alpha: 0.01 }); // Nearly transparent for hit area
-    
-    // Draw smaller visible circle
-    g.circle(0, 0, VISIBLE_SIZE / 2);
-    g.fill({ color: 0x4CAF50, alpha: 0.9 }); // Green fill
-    g.stroke({ width: 1, color: 0x2E7D32, alpha: 1 }); // Darker green border
   };
 
   // Calculate cursor based on handle position and current rotation
