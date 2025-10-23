@@ -67,6 +67,9 @@ export class ProjectManager {
       const firstScene = rawData.scenes[0];
       const { elements, groups, timeline } = firstScene.sceneCanvas;
       
+      // Stop any current playback and reset timeline
+      timelineStore.stop();
+      
       // Set current scene in canvas store
       canvasStore.setCurrentScene(firstScene.sceneId);
       canvasStore.loadSceneData(firstScene.sceneId, elements, groups);

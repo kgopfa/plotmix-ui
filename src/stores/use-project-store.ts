@@ -449,10 +449,13 @@ export const useProjectStore = create<ProjectStore>()(
           state.currentSceneIndex = sceneIndex;
         }));
         
+        // Stop current timeline playback and reset to beginning
+        const timelineStore = useTimelineStoreV2.getState();
+        timelineStore.stop();
+        
         // Load the scene data into canvas and timeline stores
         const scene = scenes[sceneIndex];
         const canvasStore = useCanvasStore.getState();
-        const timelineStore = useTimelineStoreV2.getState();
         
         canvasStore.loadSceneData(
           scene.sceneId,
