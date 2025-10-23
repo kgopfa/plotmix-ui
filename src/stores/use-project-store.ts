@@ -27,6 +27,7 @@ interface ProjectStoreState extends ProjectInfo {
   scenes: ProjectScene[];
   dimensions: ProjectDimensions | null;
   currentSceneIndex: number;
+  autoProgressionEnabled: boolean;
 }
 
 interface ProjectStoreActions {
@@ -55,6 +56,7 @@ interface ProjectStoreActions {
   getCurrentScene: () => ProjectScene | null;
   getSceneCount: () => number;
   getDimensions: () => ProjectDimensions | null;
+  setAutoProgressionEnabled: (enabled: boolean) => void;
 }
 
 type ProjectStore = ProjectStoreState & ProjectStoreActions;
@@ -75,6 +77,7 @@ export const useProjectStore = create<ProjectStore>()(
     scenes: [],
     dimensions: null,
     currentSceneIndex: 0,
+    autoProgressionEnabled: true,
 
     setProjectInfo: (info) => {
       set(produce((state: ProjectStore) => {
@@ -513,6 +516,12 @@ export const useProjectStore = create<ProjectStore>()(
 
     getDimensions: () => {
       return get().dimensions;
+    },
+
+    setAutoProgressionEnabled: (enabled: boolean) => {
+      set(produce((state: ProjectStore) => {
+        state.autoProgressionEnabled = enabled;
+      }));
     }
   })
 );

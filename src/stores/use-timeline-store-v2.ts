@@ -67,6 +67,7 @@ interface TimelineStoreActions {
   setCurrentScene: (sceneId: string) => void;
   loadSceneTimeline: (sceneId: string, timelineData: unknown) => void;
   saveCurrentSceneTimeline: () => unknown;
+  handleSceneCompletion: () => void;
   
   // Playback controls
   play: () => void;
@@ -202,6 +203,40 @@ export const useTimelineStoreV2 = create<TimelineStoreV2>()(
         timeline: get().timelineAnimations,
         playback: get().playback
       };
+    },
+
+    handleSceneCompletion: () => {
+      // Import project store to access scene management
+      const { useProjectStore } = require('./use-project-store');
+      const projectStore = useProjectStore.getState();
+      
+      // Check if auto-progression is enabled
+      if (!projectStore.autoProgressionEnabled) {
+        console.log('Auto-progression disabled - stopping playback');
+        get().stop();
+        return;
+      }
+      
+      const currentSceneIndex = projectStore.currentSceneIndex;
+      const totalScenes = projectStore.getSceneCount();
+      
+      // Check if there's a next scene
+      if (currentSceneIndex < totalScenes - 1) {
+        console.log(`Scene ${currentSceneIndex + 1} completed, advancing to scene ${currentSceneIndex + 2}`);
+        
+        // Switch to next scene
+        projectStore.switchToScene(currentSceneIndex + 1);
+        
+        // Auto-play the next scene after a brief delay
+        setTimeout(() => {
+          get().play();
+        }, 500); // Small delay to allow scene transition
+      } else {
+        console.log('All scenes completed - playback finished');
+        // Could emit an event here to notify that all scenes are done
+        // For now, just stop playback
+        get().stop();
+      }
     },
 
     // Playback controls
@@ -547,6 +582,9 @@ export const useTimelineStoreV2 = create<TimelineStoreV2>()(
             state.playback.isStopped = false;
             state.playback.currentTime = playback.totalDuration;
           }));
+
+          // Trigger automatic scene progression
+          get().handleSceneCompletion();
         } catch (error) {
           console.error('Error handling timeline end:', error);
         }
