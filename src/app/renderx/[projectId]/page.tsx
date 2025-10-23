@@ -180,10 +180,10 @@ export default function RenderXPage() {
           elements: elementsUnique,
           groups: groupsUnique,
           timelineAnimations: Array.isArray(timeline) ? timeline : [],
-          animationStates: timeline.animationStates || {},
-          scale: typeof timeline.scale === 'number' ? timeline.scale : 1,
-          duration: typeof timeline.duration === 'number' ? timeline.duration : 0,
-          currentTime: typeof timeline.currentTime === 'number' ? timeline.currentTime : 0,
+          animationStates: {},
+          scale: 1,
+          duration: 0,
+          currentTime: 0,
         });
 
         // Build GSAP timeline deterministically (after canvas ref is wired)

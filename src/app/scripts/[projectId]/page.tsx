@@ -114,7 +114,6 @@ export default function ScriptsPage() {
       const rawElements = Array.isArray(firstScene.sceneCanvas.elements) ? firstScene.sceneCanvas.elements : [];
       const rawGroups = Array.isArray(firstScene.sceneCanvas.groups) ? firstScene.sceneCanvas.groups : [];
       const timeline = firstScene.sceneCanvas.timeline || [];
-      const playback = firstScene.sceneCanvas.playback || {};
       
       // Set current scene in canvas store
       canvasStore.setCurrentScene(firstScene.sceneId);
@@ -148,9 +147,9 @@ export default function ScriptsPage() {
         groups,
         timelineAnimations: Array.isArray(timeline) ? timeline : [],
         animationStates: {},
-        scale: typeof (playback as any)?.scale === 'number' ? (playback as any).scale : 1,
-        duration: typeof (playback as any)?.duration === 'number' ? (playback as any).duration : 0,
-        currentTime: typeof (playback as any)?.currentTime === 'number' ? (playback as any).currentTime : 0,
+        scale: 1,
+        duration: 0,
+        currentTime: 0,
       });
 
       // Capture baseline after stores are hydrated

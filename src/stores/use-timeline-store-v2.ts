@@ -469,9 +469,14 @@ export const useTimelineStoreV2 = create<TimelineStoreV2>()(
         if (data.currentTime !== undefined) {
           state.playback.currentTime = data.currentTime;
         }
-        // Note: animationStates is not used in the new centralized timeline structure
-        // as animations are now stored in the timelineAnimations array
       }));
+      
+      get().updateTracks();
+      
+      const { gsapManager, playback } = get();
+      if (gsapManager && playback.currentTime >= 0) {
+        gsapManager.seekToTime(playback.currentTime);
+      }
     },
 
     // Real-time synchronization

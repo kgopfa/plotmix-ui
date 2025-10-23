@@ -131,16 +131,7 @@ export const useProjectStore = create<ProjectStore>()(
             sceneCanvas: {
               elements: canvas.elements,
               groups: canvas.groups,
-              timeline: timeline.timelineAnimations,
-              playback: {
-                scale: timeline.ui.scale,
-                duration: timeline.playback.totalDuration,
-                currentTime: timeline.playback.currentTime,
-                isPlaying: timeline.playback.isPlaying,
-                isPaused: timeline.playback.isPaused,
-                isStopped: timeline.playback.isStopped,
-                playbackSpeed: timeline.playback.playbackSpeed || 1
-              }
+              timeline: timeline.timelineAnimations
             }
           }]
         };
@@ -153,16 +144,7 @@ export const useProjectStore = create<ProjectStore>()(
         sceneCanvas: {
           elements: canvas.elements,
           groups: canvas.groups,
-          timeline: timeline.timelineAnimations,
-          playback: {
-            scale: timeline.ui.scale,
-            duration: timeline.playback.totalDuration,
-            currentTime: timeline.playback.currentTime,
-            isPlaying: timeline.playback.isPlaying,
-            isPaused: timeline.playback.isPaused,
-            isStopped: timeline.playback.isStopped,
-            playbackSpeed: timeline.playback.playbackSpeed || 1
-          }
+          timeline: timeline.timelineAnimations
         }
       };
 
@@ -483,9 +465,9 @@ export const useProjectStore = create<ProjectStore>()(
           groups: scene.sceneCanvas.groups,
           timelineAnimations: scene.sceneCanvas.timeline || [],
           animationStates: {},
-          scale: scene.sceneCanvas.playback?.scale || 1,
-          duration: scene.sceneCanvas.playback?.duration || 0,
-          currentTime: scene.sceneCanvas.playback?.currentTime || 0,
+          scale: 1,
+          duration: 0,
+          currentTime: 0,
         });
       }
     },

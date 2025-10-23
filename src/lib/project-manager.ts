@@ -33,7 +33,6 @@ export class ProjectManager {
     try {
       const rawData = JSON.parse(jsonData) as MultiSceneProjectData;
 
-      // BREAKING CHANGE: Only accept new multi-scene format
       if (!rawData.dimensions || !rawData.scenes || !Array.isArray(rawData.scenes)) {
         throw new Error('Invalid project format: Expected new multi-scene structure with dimensions and scenes array. Legacy single-scene format is no longer supported.');
       }
@@ -42,7 +41,6 @@ export class ProjectManager {
         throw new Error('Invalid project format: At least one scene is required');
       }
 
-      // Validate scene structure
       for (const scene of rawData.scenes) {
         if (!scene.sceneId || !scene.sceneName || !scene.sceneCanvas) {
           throw new Error(`Invalid scene structure: Missing required fields (sceneId, sceneName, sceneCanvas)`);
@@ -67,7 +65,7 @@ export class ProjectManager {
 
       // Load first scene by default
       const firstScene = rawData.scenes[0];
-      const { elements, groups, timeline, playback } = firstScene.sceneCanvas;
+      const { elements, groups, timeline } = firstScene.sceneCanvas;
       
       // Set current scene in canvas store
       canvasStore.setCurrentScene(firstScene.sceneId);
@@ -78,15 +76,14 @@ export class ProjectManager {
         elements: elements,
         groups: groups,
         timelineAnimations: timeline || [],
-        animationStates: {}, // Note: animationStates not used in new centralized timeline structure
-        scale: typeof playback?.scale === 'number' ? playback.scale : 1,
-        duration: typeof playback?.duration === 'number' ? playback.duration : 0,
-        currentTime: typeof playback?.currentTime === 'number' ? playback.currentTime : 0,
+        animationStates: {},
+        scale: 1,
+        duration: 0,
+        currentTime: 0,
       });
 
       // Load UI state if available
       if (rawData.ui) {
-        // TODO: Implement loadProjectData method in UI store
         console.warn('UI state loading not yet implemented for multi-scene projects');
       }
 
@@ -129,12 +126,6 @@ export class ProjectManager {
 
     // Save current scene data first
     const currentSceneData = canvasStore.saveCurrentSceneData();
-    const currentTimeline = {
-      scale: timelineStore.ui.scale,
-      duration: timelineStore.playback.totalDuration,
-      currentTime: timelineStore.playback.currentTime,
-      animationStates: {}, // Note: animationStates not used in new centralized timeline structure
-    };
 
     // Get dimensions from UI store
     const dimensions = uiStore.getCanvasDimensions();
@@ -148,25 +139,14 @@ export class ProjectManager {
       scenes: [
         {
           sceneId: currentSceneData.sceneId || 'scene-1',
-          sceneName: 'Scene 1', // TODO: Get from scene management
+          sceneName: 'Scene 1',
           sceneCanvas: {
             elements: currentSceneData.elements,
             groups: currentSceneData.groups,
-            timeline: timelineStore.timelineAnimations,
-            playback: {
-              scale: timelineStore.ui.scale,
-              duration: timelineStore.playback.totalDuration,
-              currentTime: timelineStore.playback.currentTime,
-              isPlaying: false,
-              isPaused: false,
-              isStopped: true,
-              playbackSpeed: 1
-            }
+            timeline: timelineStore.timelineAnimations
           }
         }
       ],
-      // TODO: Implement getProjectData method in UI store
-      // ...(includeUI && { ui: uiStore.getProjectData() })
     };
 
     return JSON.stringify(projectData, null, 2);

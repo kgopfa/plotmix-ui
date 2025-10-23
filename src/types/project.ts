@@ -32,8 +32,7 @@ export interface ProjectDimensions {
 export interface SceneCanvas {
   elements: AnimatedCanvasObject[];
   groups: CanvasGroup[];
-  timeline: TimelineAnimation[]; // Array of animations
-  playback: TimelinePlayback; // Playback state
+  timeline: TimelineAnimation[];
 }
 
 export interface ProjectScene {
@@ -92,8 +91,7 @@ export interface ProjectData {
   title?: string;
   elements: import('@/types/canvas').AnimatedCanvasObject[];
   groups: import('@/types/canvas').CanvasGroup[];
-  timeline: TimelineAnimation[]; // Array of animations
-  playback: TimelinePlayback; // Playback state
+  timeline: TimelineAnimation[];
   ui?: ProjectUI;
 }
 

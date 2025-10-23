@@ -17,7 +17,6 @@ export interface ProjectData {
       elements: any[];
       groups: any[];
       timeline: any[];
-      playback: any;
     };
   }>;
 }
