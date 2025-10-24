@@ -22,12 +22,13 @@ export function Timeline() {
   );
 
   // Get timeline state and actions
-  const { playback, ui: timelineUI, setScale, getTotalDuration } = useTimelineStoreV2(
+  const { playback, ui: timelineUI, setScale, getTotalDuration, getTotalPlayTime } = useTimelineStoreV2(
     useShallow((state: any) => ({
       playback: state.playback,
       ui: state.ui,
       setScale: state.setScale,
-      getTotalDuration: state.getTotalDuration
+      getTotalDuration: state.getTotalDuration,
+      getTotalPlayTime: state.getTotalPlayTime
     }))
   );
 
@@ -309,6 +310,7 @@ export function Timeline() {
   // Calculate total project duration for ruler
   const totalProjectDuration = getTotalDuration();
   const globalTime = playback.currentTime;
+  const totalPlayTime = getTotalPlayTime();
   
   // Memoize ruler ticks for performance - now shows total project duration
   const rulerTicks = useMemo(() => {
@@ -343,8 +345,9 @@ export function Timeline() {
           >
             <Square size={24} stroke="#dd7be0" />
           </button>
-          <div className="text-sm font-mono text-gray-700 w-32 bg-white/60 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/30">
-            {formatTime(globalTime)}
+          <div className="text-sm font-mono text-gray-700 w-40 bg-white/60 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/30">
+            <div className="text-xs text-gray-500">Total: {formatTime(totalPlayTime)}</div>
+            <div className="text-xs">Scene: {formatTime(globalTime)}</div>
           </div>
         </div>
 

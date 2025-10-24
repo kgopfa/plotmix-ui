@@ -18,6 +18,8 @@ interface PlaybackState {
   currentTime: number;
   totalDuration: number;
   playbackSpeed: number;
+  totalPlayTime: number;
+  sceneStartTime: number;
 }
 
 interface TimelineUIState {
@@ -68,6 +70,12 @@ interface TimelineStoreActions {
   loadSceneTimeline: (sceneId: string, timelineData: unknown) => void;
   saveCurrentSceneTimeline: () => unknown;
   handleSceneCompletion: () => void;
+  
+  // Total play time management
+  updateTotalPlayTime: () => void;
+  resetTotalPlayTime: () => void;
+  getTotalPlayTime: () => number;
+  resetTimelineCompletely: () => void;
   
   // Playback controls
   play: () => void;
@@ -139,6 +147,8 @@ const initialPlaybackState: PlaybackState = {
   currentTime: 0,
   totalDuration: MAX_SCENE_DURATION,
   playbackSpeed: 1,
+  totalPlayTime: 0,
+  sceneStartTime: 0,
 };
 
 const initialUIState: TimelineUIState = {
@@ -186,7 +196,16 @@ export const useTimelineStoreV2 = create<TimelineStoreV2>()(
         state.elements = timelineData.elements || [];
         state.groups = timelineData.groups || [];
         state.timelineAnimations = timelineData.timeline || [];
-        state.playback = timelineData.playback || initialPlaybackState;
+        
+        // Preserve total play time and scene start time when loading scene
+        const currentTotalPlayTime = state.playback.totalPlayTime;
+        const currentSceneStartTime = state.playback.sceneStartTime;
+        
+        state.playback = {
+          ...timelineData.playback || initialPlaybackState,
+          totalPlayTime: currentTotalPlayTime,
+          sceneStartTime: currentSceneStartTime,
+        };
       }));
       get().updateTracks();
     },
@@ -239,6 +258,48 @@ export const useTimelineStoreV2 = create<TimelineStoreV2>()(
       }
     },
 
+    // Total play time management
+    updateTotalPlayTime: () => {
+      set(produce((state) => {
+        const { playback } = state;
+        if (playback.isPlaying) {
+          // Update total play time based on current scene time
+          state.playback.totalPlayTime = playback.sceneStartTime + playback.currentTime;
+        }
+      }));
+    },
+
+    resetTotalPlayTime: () => {
+      set(produce((state) => {
+        state.playback.totalPlayTime = 0;
+        state.playback.sceneStartTime = 0;
+      }));
+    },
+
+    getTotalPlayTime: () => {
+      const { playback } = get();
+      if (playback.isPlaying) {
+        return playback.sceneStartTime + playback.currentTime;
+      }
+      return playback.totalPlayTime;
+    },
+
+    resetTimelineCompletely: () => {
+      set(produce((state) => {
+        state.timelineAnimations = [];
+        state.elements = [];
+        state.groups = [];
+        state.playback = { ...initialPlaybackState };
+        state.ui = { ...initialUIState };
+        state.error = null;
+      }));
+      
+      const { clearSelections } = useSelectionStore.getState();
+      clearSelections();
+      
+      get().buildGSAPTimeline();
+    },
+
     // Playback controls
     play: () => {
       const { timeManager, gsapManager } = get();
@@ -249,6 +310,9 @@ export const useTimelineStoreV2 = create<TimelineStoreV2>()(
         state.playback.isPlaying = true;
         state.playback.isPaused = false;
         state.playback.isStopped = false;
+        
+        // Set scene start time to current total play time
+        state.playback.sceneStartTime = state.playback.totalPlayTime;
       }));
       
       timeManager.play();
@@ -271,6 +335,9 @@ export const useTimelineStoreV2 = create<TimelineStoreV2>()(
 
     stop: () => {
       const { timeManager, gsapManager } = get();
+      
+      get().updateTotalPlayTime();
+      
       set(produce((state) => {
         state.playback.isPlaying = false;
         state.playback.isPaused = false;
@@ -569,6 +636,11 @@ export const useTimelineStoreV2 = create<TimelineStoreV2>()(
         state.playback.isPaused = !timeState.isPlaying && timeState.elapsedTime > 0;
         state.playback.isStopped = !timeState.isPlaying && timeState.elapsedTime === 0;
         state.playback.currentTime = Math.max(0, Math.min(timeState.elapsedTime, playback.totalDuration));
+        
+        // Update total play time while playing
+        if (timeState.isPlaying) {
+          state.playback.totalPlayTime = playback.sceneStartTime + state.playback.currentTime;
+        }
       }));
 
       if (timeState.elapsedTime >= playback.totalDuration) {
@@ -581,6 +653,7 @@ export const useTimelineStoreV2 = create<TimelineStoreV2>()(
             state.playback.isPaused = true;
             state.playback.isStopped = false;
             state.playback.currentTime = playback.totalDuration;
+            state.playback.totalPlayTime = playback.sceneStartTime + playback.totalDuration;
           }));
 
           // Trigger automatic scene progression
@@ -631,19 +704,7 @@ export const useTimelineStoreV2 = create<TimelineStoreV2>()(
     },
 
     resetTimeline: () => {
-      set(produce((state) => {
-        state.timelineAnimations = [];
-        state.elements = [];
-        state.groups = [];
-        state.playback = { ...initialPlaybackState };
-        state.ui = { ...initialUIState };
-        state.error = null;
-      }));
-      
-      const { clearSelections } = useSelectionStore.getState();
-      clearSelections();
-      
-      get().buildGSAPTimeline();
+      get().resetTimelineCompletely();
     },
 
     // Utility functions
