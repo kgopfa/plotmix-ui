@@ -241,29 +241,21 @@ export const useTimelineStoreV2 = create<TimelineStoreV2>()(
       
       // Check if there's a next scene
       if (currentSceneIndex < totalScenes - 1) {
-        console.log(`Scene ${currentSceneIndex + 1} completed, advancing to scene ${currentSceneIndex + 2}`);
-        
-        // Switch to next scene
         projectStore.switchToScene(currentSceneIndex + 1);
         
         // Auto-play the next scene after a brief delay
         setTimeout(() => {
           get().play();
-        }, 500); // Small delay to allow scene transition
+        }, 100); // Small delay to allow scene transition
       } else {
-        console.log('All scenes completed - playback finished');
-        // Could emit an event here to notify that all scenes are done
-        // For now, just stop playback
         get().stop();
       }
     },
 
-    // Total play time management
     updateTotalPlayTime: () => {
       set(produce((state) => {
         const { playback } = state;
         if (playback.isPlaying) {
-          // Update total play time based on current scene time
           state.playback.totalPlayTime = playback.sceneStartTime + playback.currentTime;
         }
       }));
