@@ -20,6 +20,7 @@ interface PlaybackState {
   playbackSpeed: number;
   totalPlayTime: number;
   sceneStartTime: number;
+  isTransitioning: boolean; // Flag to prevent multiple scene completions
 }
 
 interface TimelineUIState {
@@ -136,6 +137,7 @@ interface TimelineStoreActions {
   getTotalDuration: () => number;
   getTimeAtPosition: (position: number) => number;
   getPositionAtTime: (time: number) => number;
+  setTransitioning: (isTransitioning: boolean) => void;
 }
 
 type TimelineStoreV2 = TimelineStoreState & TimelineStoreActions;
@@ -149,6 +151,7 @@ const initialPlaybackState: PlaybackState = {
   playbackSpeed: 1,
   totalPlayTime: 0,
   sceneStartTime: 0,
+  isTransitioning: false,
 };
 
 const initialUIState: TimelineUIState = {
@@ -225,13 +228,19 @@ export const useTimelineStoreV2 = create<TimelineStoreV2>()(
     },
 
     handleSceneCompletion: () => {
+      const { playback } = get();
+      
+      // Prevent multiple scene completions from happening simultaneously
+      if (playback.isTransitioning) {
+        return;
+      }
+      
       // Import project store to access scene management
       const { useProjectStore } = require('./use-project-store');
       const projectStore = useProjectStore.getState();
       
       // Check if auto-progression is enabled
       if (!projectStore.autoProgressionEnabled) {
-        console.log('Auto-progression disabled - stopping playback');
         get().stop();
         return;
       }
@@ -239,15 +248,31 @@ export const useTimelineStoreV2 = create<TimelineStoreV2>()(
       const currentSceneIndex = projectStore.currentSceneIndex;
       const totalScenes = projectStore.getSceneCount();
       
+      // Set transitioning flag to prevent multiple completions
+      set(produce((state) => {
+        state.playback.isTransitioning = true;
+      }));
+      
       // Check if there's a next scene
       if (currentSceneIndex < totalScenes - 1) {
-        projectStore.switchToScene(currentSceneIndex + 1);
+        const nextSceneIndex = currentSceneIndex + 1;
+        projectStore.switchToScene(nextSceneIndex);
         
         // Auto-play the next scene after a brief delay
         setTimeout(() => {
+          // Clear transitioning flag and start playback
+          set(produce((state) => {
+            state.playback.isTransitioning = false;
+          }));
+          
           get().play();
         }, 100); // Small delay to allow scene transition
       } else {
+        // Clear transitioning flag
+        set(produce((state) => {
+          state.playback.isTransitioning = false;
+        }));
+        
         get().stop();
       }
     },
@@ -635,23 +660,26 @@ export const useTimelineStoreV2 = create<TimelineStoreV2>()(
       }));
 
       if (timeState.elapsedTime >= playback.totalDuration) {
-        try {
-          timeManager.pause();
-          gsapManager.handlePlayback(false, () => {});
-          
-          set(produce((state) => {
-            state.playback.isPlaying = false;
-            state.playback.isPaused = true;
-            state.playback.isStopped = false;
-            state.playback.currentTime = playback.totalDuration;
-            state.playback.totalPlayTime = playback.sceneStartTime + playback.totalDuration;
-          }));
+        // Only trigger scene completion if not transitioning
+        if (!playback.isTransitioning) {
+          try {
+            timeManager.pause();
+            gsapManager.handlePlayback(false, () => {});
+            
+            set(produce((state) => {
+              state.playback.isPlaying = false;
+              state.playback.isPaused = true;
+              state.playback.isStopped = false;
+              state.playback.currentTime = playback.totalDuration;
+              state.playback.totalPlayTime = playback.sceneStartTime + playback.totalDuration;
+            }));
 
-          // Trigger automatic scene progression
-          get().handleSceneCompletion();
-        } catch (error) {
-          console.error('Error handling timeline end:', error);
-        }
+            // Trigger automatic scene progression
+            get().handleSceneCompletion();
+          } catch (error) {
+            console.error('Error handling timeline end:', error);
+          }
+        } 
       }
     },
 
@@ -669,9 +697,15 @@ export const useTimelineStoreV2 = create<TimelineStoreV2>()(
       gsapManager.buildAnimationTimeline(timelineAnimations, elements, groups);
       
       const timelineDuration = gsapManager.getTimelineDuration();
+      
       if (timelineDuration > 0) {
         set(produce((state) => {
           state.playback.totalDuration = Math.max(10, timelineDuration);
+        }));
+      } else {
+        console.warn('GSAP timeline is empty - setting minimum duration');
+        set(produce((state) => {
+          state.playback.totalDuration = 10; // Set minimum duration to prevent immediate completion
         }));
       }
     },
@@ -726,6 +760,12 @@ export const useTimelineStoreV2 = create<TimelineStoreV2>()(
     getPositionAtTime: (time: number) => {
       const { ui } = get();
       return time * ui.scale;
+    },
+
+    setTransitioning: (isTransitioning: boolean) => {
+      set(produce((state) => {
+        state.playback.isTransitioning = isTransitioning;
+      }));
     }
   })
 );

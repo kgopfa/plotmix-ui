@@ -452,8 +452,11 @@ export const useProjectStore = create<ProjectStore>()(
           state.currentSceneIndex = sceneIndex;
         }));
         
-        // Stop current timeline playback and reset to beginning
+        // Set transitioning flag to prevent premature scene completion
         const timelineStore = useTimelineStoreV2.getState();
+        timelineStore.setTransitioning(true);
+        
+        // Stop current timeline playback and reset to beginning
         timelineStore.stop();
         
         // Load the scene data into canvas and timeline stores
@@ -475,6 +478,11 @@ export const useProjectStore = create<ProjectStore>()(
           duration: 0,
           currentTime: 0,
         });
+        
+        // Clear transitioning flag after scene is loaded
+        setTimeout(() => {
+          timelineStore.setTransitioning(false);
+        }, 200); // Give time for timeline to build
       }
     },
 
