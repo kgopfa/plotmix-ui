@@ -72,7 +72,7 @@ export function Timeline() {
   const handleScroll = () => {
     if (scrollContainerRef.current) {
       setScrollLeft(scrollContainerRef.current.scrollLeft);
-      
+
       // Sync vertical scroll to labels column
       if (labelScrollContainerRef.current && !isScrollingSyncRef.current) {
         isScrollingSyncRef.current = true;
@@ -120,7 +120,7 @@ export function Timeline() {
   const handleLabelResizeMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     setIsResizingLabels(true);
-    
+
     const startX = e.clientX;
     const startWidth = labelColumnWidth;
 
@@ -143,35 +143,35 @@ export function Timeline() {
   // Handle playhead dragging for seeking
   const handleRulerMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!rulerRef.current || !scrollContainerRef.current) return;
-    
+
     e.preventDefault();
     setIsDraggingPlayhead(true);
-    
+
     const seekToPosition = (clientX: number) => {
       if (!rulerRef.current || !scrollContainerRef.current) return;
-      
+
       const rect = rulerRef.current.getBoundingClientRect();
       const scrollLeft = scrollContainerRef.current.scrollLeft;
       const offsetX = clientX - rect.left + scrollLeft;
       const time = offsetX / timelineUI.scale;
       const clampedTime = Math.max(0, Math.min(time, totalProjectDuration));
-      
+
       seek(clampedTime);
     };
-    
+
     // Seek immediately on mouse down
     seekToPosition(e.clientX);
-    
+
     const handleMouseMove = (e: MouseEvent) => {
       seekToPosition(e.clientX);
     };
-    
+
     const handleMouseUp = () => {
       setIsDraggingPlayhead(false);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-    
+
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
   };
@@ -247,12 +247,12 @@ export function Timeline() {
           });
           emitted.add(groupKey);
         }
-        
+
         // Mark all elements in this group as emitted in root context to prevent them appearing as standalone
         group.elementIds.forEach(elementId => {
           emitted.add(`element:${elementId}:root`);
         });
-        
+
         // For custom groups, add element children if group is expanded (polygon groups are not expandable)
         if (group.type === 'custom' && expandedElements.has(group.id)) {
           const groupElements = elements.filter(el => group.elementIds.includes(el.id));
@@ -310,8 +310,8 @@ export function Timeline() {
   // Calculate total project duration for ruler
   const totalProjectDuration = getTotalDuration();
   const globalTime = playback.currentTime;
-  const totalPlayTime = getTotalPlayTime();
-  
+  const playTime = getTotalPlayTime();
+
   // Memoize ruler ticks for performance - now shows total project duration
   const rulerTicks = useMemo(() => {
     const duration = Math.max(totalProjectDuration, 10); // Minimum 10 seconds
@@ -345,16 +345,17 @@ export function Timeline() {
           >
             <Square size={24} stroke="#dd7be0" />
           </button>
-          <div className="text-sm font-mono text-gray-700 w-40 bg-white/60 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/30">
-            <div className="text-xs text-gray-500">Total: {formatTime(totalPlayTime)}</div>
-            <div className="text-xs">Scene: {formatTime(globalTime)}</div>
+          <div className="flex flex-row items-center gap-2">
+            <div className="text-sm font-mono text-gray-700 w-26 bg-white/60 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/30">
+              <div>{formatTime(playTime)}</div>
+            </div>
+            <div className="text-sm font-mono text-gray-700 w-44 bg-white/60 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/30">
+              <div className="text-gray-500">Scene: {formatTime(globalTime)}</div>
+            </div>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Zoom controls removed from timeline; collapse button remains */}
-
-          {/* Timeline Collapse/Expand Button */}
           <button
             onClick={toggleTimelineCollapse}
             className="h-10 w-10 flex items-center justify-center bg-white/60 backdrop-blur-sm border border-gray-200 rounded-lg cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg"
@@ -370,20 +371,19 @@ export function Timeline() {
       </div>
 
       {/* Timeline Grid - Two column layout: fixed labels + scrollable content */}
-      <div className={`flex-1 flex transition-all duration-600 ease-in-out bg-white/30 backdrop-blur-sm rounded-b-2xl ${
-        isTimelineCollapsed ? 'opacity-0 max-h-0' : 'opacity-100 max-h-full'
-      }`}>
-        
+      <div className={`flex-1 flex transition-all duration-600 ease-in-out bg-white/30 backdrop-blur-sm rounded-b-2xl ${isTimelineCollapsed ? 'opacity-0 max-h-0' : 'opacity-100 max-h-full'
+        }`}>
+
         {/* Left Column - Track Labels (Fixed, Resizable) */}
-        <div 
+        <div
           ref={labelScrollContainerRef}
-          className="flex-shrink-0 overflow-y-auto border-r border-gray-200/50 relative" 
+          className="flex-shrink-0 overflow-y-auto border-r border-gray-200/50 relative"
           style={{ width: `${labelColumnWidth}px` }}
           onScroll={handleLabelScroll}
         >
           {/* Ruler placeholder */}
           <div className="h-6 border-b border-gray-200/50 bg-white/50 backdrop-blur-sm"></div>
-          
+
           {/* Track Labels */}
           {hierarchicalTracks.map((track) => (
             <TimelineTrack
@@ -408,24 +408,23 @@ export function Timeline() {
               labelOnly={true}
             />
           ))}
-          
+
           {hierarchicalTracks.length === 0 && (
             <div className="p-4 text-center text-sm text-gray-500">
               No tracks
             </div>
           )}
-          
+
           {/* Resize Handle */}
           <div
-            className={`absolute right-0 top-0 bottom-0 w-0.5 cursor-col-resize hover:bg-blue-700/50 transition-colors ${
-              isResizingLabels ? 'bg-blue-700' : ''
-            }`}
+            className={`absolute right-0 top-0 bottom-0 w-0.5 cursor-col-resize hover:bg-blue-700/50 transition-colors ${isResizingLabels ? 'bg-blue-700' : ''
+              }`}
             onMouseDown={handleLabelResizeMouseDown}
           />
         </div>
 
         {/* Right Column - Track Content (Scrollable) */}
-        <div 
+        <div
           className="flex-1 overflow-auto"
           ref={scrollContainerRef}
           onScroll={handleScroll}
@@ -435,11 +434,10 @@ export function Timeline() {
             style={{ width: `${timelineUI.scale * Math.max(totalProjectDuration, 10)}px`, minWidth: '100%' }}
           >
             {/* Ruler */}
-            <div 
+            <div
               ref={rulerRef}
-              className={`h-6 relative border-b border-gray-200/50 bg-white/50 backdrop-blur-sm ${
-                isDraggingPlayhead ? 'cursor-grabbing' : 'cursor-pointer'
-              }`}
+              className={`h-6 relative border-b border-gray-200/50 bg-white/50 backdrop-blur-sm ${isDraggingPlayhead ? 'cursor-grabbing' : 'cursor-pointer'
+                }`}
               onMouseDown={handleRulerMouseDown}
             >
               {rulerTicks.map((tick) => (
@@ -449,17 +447,16 @@ export function Timeline() {
                   style={{ left: `${tick.left}px`, width: 0 }}
                 >
                   {tick.isMajor && (
-                    <div 
-                      className={`absolute top-0 text-[10px] text-gray-600 font-mono bg-white/80 backdrop-blur-sm px-1 rounded z-10 ${
-                        tick.index === 0 ? 'left-0' : '-translate-x-1/2'
-                      }`}
+                    <div
+                      className={`absolute top-0 text-[10px] text-gray-600 font-mono bg-white/80 backdrop-blur-sm px-1 rounded z-10 ${tick.index === 0 ? 'left-0' : '-translate-x-1/2'
+                        }`}
                     >
                       {tick.time}
                     </div>
                   )}
                 </div>
               ))}
-              
+
               {/* Global playhead indicator on ruler */}
               <div
                 className="absolute top-0 bottom-0 w-0.5 bg-gradient-to-b from-fuchsia-400 to-fuchsia-600 shadow-lg pointer-events-none z-20"
