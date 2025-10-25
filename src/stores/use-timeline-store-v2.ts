@@ -629,7 +629,6 @@ export const useTimelineStoreV2 = create<TimelineStoreV2>()(
         state.playback.isStopped = !timeState.isPlaying && timeState.elapsedTime === 0;
         state.playback.currentTime = Math.max(0, Math.min(timeState.elapsedTime, playback.totalDuration));
         
-        // Update total play time while playing
         if (timeState.isPlaying) {
           state.playback.totalPlayTime = playback.sceneStartTime + state.playback.currentTime;
         }

@@ -3,12 +3,10 @@ import { useTimelineStoreV2 } from "@/stores/use-timeline-store-v2";
 
 export default function PlaybackControls() {
   const isPlaying = useTimelineStoreV2((state) => state.playback.isPlaying);
-  const getTotalPlayTime = useTimelineStoreV2((state) => state.getTotalPlayTime);
+  const totalPlayTime = useTimelineStoreV2((state) => state.playback.totalPlayTime);
   const play = useTimelineStoreV2((state) => state.play);
   const pause = useTimelineStoreV2((state) => state.pause);
   const stop = useTimelineStoreV2((state) => state.stop);
-
-  const playTime = getTotalPlayTime();
 
   const handlePlayPause = () => {
     if (isPlaying) {
@@ -45,7 +43,7 @@ export default function PlaybackControls() {
       </div>
       <div className="w-full h-px my-4" />
       <div className="text-xs 2xl:text-sm ml-0.5 font-bold text-white text-center whitespace-nowrap tabular-nums">
-        {formatTime(playTime)}
+        {formatTime(totalPlayTime)}
       </div>
       <div className="w-full h-px my-4" />
       <div className="flex justify-center">

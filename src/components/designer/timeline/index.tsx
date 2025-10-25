@@ -22,13 +22,12 @@ export function Timeline() {
   );
 
   // Get timeline state and actions
-  const { playback, ui: timelineUI, setScale, getTotalDuration, getTotalPlayTime } = useTimelineStoreV2(
+  const { playback, ui: timelineUI, setScale, getTotalDuration } = useTimelineStoreV2(
     useShallow((state: any) => ({
       playback: state.playback,
       ui: state.ui,
       setScale: state.setScale,
-      getTotalDuration: state.getTotalDuration,
-      getTotalPlayTime: state.getTotalPlayTime
+      getTotalDuration: state.getTotalDuration
     }))
   );
 
@@ -310,7 +309,7 @@ export function Timeline() {
   // Calculate total project duration for ruler
   const totalProjectDuration = getTotalDuration();
   const globalTime = playback.currentTime;
-  const playTime = getTotalPlayTime();
+  const playTime = playback.totalPlayTime;
 
   // Memoize ruler ticks for performance - now shows total project duration
   const rulerTicks = useMemo(() => {
