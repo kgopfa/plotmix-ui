@@ -66,8 +66,9 @@ const TabContent: React.FC<{ navKey: string; onInspectorChange: any; onGroupInsp
   onInspectorChange, 
   onGroupInspectorChange 
 }) => {
-  const { selectedElements, selectedGroups, getFirstSelected } = useSelectionStore();
-  const selectedElement = getFirstSelected();
+  const { selectedElements, selectedGroups } = useSelectionStore();
+  
+  const selectedElement = selectedElements.length > 0 ? selectedElements[0] : null;
   const selectedGroup = selectedGroups[0] || null;
   const selectedElementsCount = selectedElements.length;
 
@@ -116,6 +117,12 @@ export const RightSidebar: React.FC<{ onInspectorChange: any; onGroupInspectorCh
   const setActiveRightPanel = useSetActiveRightPanel();
   const tabPanelRef = useRef<HTMLDivElement | null>(null);
   const setRightPanelWidth = useUIStore(state => state.setRightPanelWidth);
+  const { cleanupStaleSelections } = useSelectionStore();
+
+  // Clean up stale selections after render
+  useEffect(() => {
+    cleanupStaleSelections();
+  }, [cleanupStaleSelections]);
 
   // Track actual panel width
   useEffect(() => {
