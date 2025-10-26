@@ -14,10 +14,11 @@ import React from 'react';
 import { getSession } from 'next-auth/react';
 import { apiClient } from '@/lib/api-client';
 import { ConfirmModal } from '@/components/shared/confirm-modal';
+import { Pagination } from '@/components/shared/pagination';
 
 export default function ChatsPage() {
   const router = useRouter();
-  const { conversations, isLoading, error, refetch, loadNext, hasMore } = useConversations(20);
+  const { conversations, isLoading, error, refetch, currentPage, totalPages, goToPage } = useConversations(10);
   const { isAuthenticated, loading } = useAuth();
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
   const [selected, setSelected] = React.useState<Record<string, boolean>>({});
@@ -142,45 +143,43 @@ export default function ChatsPage() {
                       </Link>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 gap-3 max-h-[calc(100vh-11rem)] overflow-y-auto pr-2 mb-20">
-                      {conversations.map((c, idx) => {
-                        const title = c.project?.title || c.project?.name || 'Untitled';
-                        const messageCount = c._count?.messages;
-                        const lastMessageAt = c.messages && c.messages.length > 0 ? c.messages[0].createdAt : null;
-                        const open = () => {
-                          const projectId = c.project?.id || c.projectId;
-                          if (projectId) router.push(`/content/${projectId}`);
-                        };
-                        const projectId = c.project?.id || c.projectId || null;
-                        return (
-                          <ChatCard
-                            key={c.id}
-                            title={title}
-                            lastMessageAt={lastMessageAt}
-                            messageCount={messageCount}
-                            onClick={open}
-                            onDelete={() => {
-                              setChatToDelete({ id: c.id, projectId });
-                              setShowDeleteChatModal(true);
-                            }}
-                            isDeleting={deletingId === c.id}
-                            selectable
-                            selected={!!selected[c.id]}
-                            onToggleSelect={(checked) => setSelected((prev) => ({ ...prev, [c.id]: checked }))}
-                          />
-                        );
-                      })}
-                      {hasMore && (
-                        <div className="flex justify-center py-2">
-                          <button
-                            type="button"
-                            onClick={() => loadNext()}
-                            className="text-sm font-medium text-purple-700 hover:text-purple-800 px-3 py-1.5 border border-purple-200 rounded-lg hover:bg-purple-50"
-                            disabled={isLoading}
-                          >
-                            {isLoading ? 'Loading…' : 'View more'}
-                          </button>
-                        </div>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 gap-3">
+                        {conversations.map((c) => {
+                          const title = c.project?.title || c.project?.name || 'Untitled';
+                          const messageCount = c._count?.messages;
+                          const lastMessageAt = c.messages && c.messages.length > 0 ? c.messages[0].createdAt : null;
+                          const open = () => {
+                            const projectId = c.project?.id || c.projectId;
+                            if (projectId) router.push(`/content/${projectId}`);
+                          };
+                          const projectId = c.project?.id || c.projectId || null;
+                          return (
+                            <ChatCard
+                              key={c.id}
+                              title={title}
+                              lastMessageAt={lastMessageAt}
+                              messageCount={messageCount}
+                              onClick={open}
+                              onDelete={() => {
+                                setChatToDelete({ id: c.id, projectId });
+                                setShowDeleteChatModal(true);
+                              }}
+                              isDeleting={deletingId === c.id}
+                              selectable
+                              selected={!!selected[c.id]}
+                              onToggleSelect={(checked) => setSelected((prev) => ({ ...prev, [c.id]: checked }))}
+                            />
+                          );
+                        })}
+                      </div>
+                      {totalPages > 1 && (
+                        <Pagination
+                          currentPage={currentPage}
+                          totalPages={totalPages}
+                          onPageChange={goToPage}
+                          isLoading={isLoading}
+                        />
                       )}
                     </div>
                   )}

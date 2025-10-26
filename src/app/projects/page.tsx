@@ -13,10 +13,11 @@ import { useAuth } from '@/lib/auth-context';
 import { SearchBar } from '@/components/shared/search-bar';
 import { apiClient } from '@/lib/api-client';
 import { ConfirmModal } from '@/components/shared/confirm-modal';
+import { Pagination } from '@/components/shared/pagination';
 
 export default function ProjectsPage() {
   const router = useRouter();
-  const { projects, isLoading, error, loadNext, hasMore, refetch } = useProjects(20, 'NATIVE');
+  const { projects, isLoading, error, currentPage, totalPages, goToPage, refetch } = useProjects(10, 'NATIVE');
   const [selected, setSelected] = React.useState<Record<string, boolean>>({});
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
   const [openingId, setOpeningId] = React.useState<string | null>(null);
@@ -131,45 +132,40 @@ export default function ProjectsPage() {
                       </button>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 gap-3 max-h-[calc(100vh-11rem)] overflow-y-auto pr-2 mb-20">
-                      {projects.map((p) => (
-                        <ProjectCard
-                          key={p.id}
-                          title={p.title || p.name}
-                          lastUpdatedAt={p.updatedAt}
-                          version={p.version}
-                          onClick={() => {
-                            if (openingId) return;
-                            setOpeningId(p.id);
-                            router.push(`/designer/${p.id}`);
-                          }}
-                          showConversationWarning={!!p.conversation}
-                          onDelete={() => {
-                            setProjectToDelete(p.id);
-                            setShowDeleteProjectModal(true);
-                          }}
-                          isDeleting={deletingId === p.id}
-                          selectable
-                          selected={!!selected[p.id]}
-                          onToggleSelect={(checked) => setSelected((prev) => ({ ...prev, [p.id]: checked }))}
-                          disabled={!!openingId}
-                          isOpening={openingId === p.id}
-                        />
-                      ))}
-                      {hasMore && (
-                        <div className="flex justify-center py-2">
-                          <button
-                            type="button"
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 gap-3">
+                        {projects.map((p) => (
+                          <ProjectCard
+                            key={p.id}
+                            title={p.title || p.name}
+                            lastUpdatedAt={p.updatedAt}
+                            version={p.version}
                             onClick={() => {
                               if (openingId) return;
-                              loadNext();
+                              setOpeningId(p.id);
+                              router.push(`/designer/${p.id}`);
                             }}
-                            className={`text-sm font-medium px-3 py-1.5 border border-purple-200 rounded-lg ${openingId ? 'text-gray-400 cursor-not-allowed' : 'text-purple-700 hover:text-purple-800 hover:bg-purple-50'}`}
+                            showConversationWarning={!!p.conversation}
+                            onDelete={() => {
+                              setProjectToDelete(p.id);
+                              setShowDeleteProjectModal(true);
+                            }}
+                            isDeleting={deletingId === p.id}
+                            selectable
+                            selected={!!selected[p.id]}
+                            onToggleSelect={(checked) => setSelected((prev) => ({ ...prev, [p.id]: checked }))}
                             disabled={!!openingId}
-                          >
-                            View more
-                          </button>
-                        </div>
+                            isOpening={openingId === p.id}
+                          />
+                        ))}
+                      </div>
+                      {totalPages > 1 && (
+                        <Pagination
+                          currentPage={currentPage}
+                          totalPages={totalPages}
+                          onPageChange={goToPage}
+                          isLoading={isLoading}
+                        />
                       )}
                     </div>
                   )}

@@ -30,8 +30,8 @@ export function useConversations(limit: number = 20) {
   const [conversations, setConversations] = useState<ConversationListItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState<number>(1);
-  const [hasMore, setHasMore] = useState<boolean>(true);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
 
   const fetchPage = useCallback(async (pageToFetch: number) => {
     setIsLoading(true);
@@ -39,8 +39,16 @@ export function useConversations(limit: number = 20) {
     try {
       const res = await apiClient.get<ConversationsResponse>(`/api/conversations?page=${pageToFetch}&limit=${limit}`);
       const items = res.data || [];
-      setConversations(prev => (pageToFetch === 1 ? items : [...prev, ...items]));
-      setHasMore(items.length === limit);
+      setConversations(items);
+      
+      // Calculate total pages based on the number of items returned
+      // If we got a full page, assume there might be more
+      if (items.length === limit) {
+        // If we got a full page, there might be more pages, but we don't know the exact total
+        setTotalPages(pageToFetch + 1);
+      } else {
+        setTotalPages(pageToFetch);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to fetch conversations';
       setError(message);
@@ -50,22 +58,21 @@ export function useConversations(limit: number = 20) {
   }, [limit]);
 
   const refetch = useCallback(async () => {
-    setPage(1);
+    setCurrentPage(1);
     await fetchPage(1);
   }, [fetchPage]);
 
-  const loadNext = useCallback(async () => {
-    if (isLoading || !hasMore) return;
-    const nextPage = page + 1;
-    setPage(nextPage);
-    await fetchPage(nextPage);
-  }, [fetchPage, hasMore, isLoading, page]);
+  const goToPage = useCallback(async (page: number) => {
+    if (page < 1 || page === currentPage) return;
+    setCurrentPage(page);
+    await fetchPage(page);
+  }, [fetchPage, currentPage]);
 
   useEffect(() => {
     fetchPage(1);
   }, [fetchPage]);
 
-  return { conversations, isLoading, error, refetch, loadNext, hasMore };
+  return { conversations, isLoading, error, refetch, currentPage, totalPages, goToPage };
 }
 
 

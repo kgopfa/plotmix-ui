@@ -22,8 +22,8 @@ export function useProjects(limit: number = 20, source?: string) {
   const [projects, setProjects] = useState<ProjectListItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState<number>(1);
-  const [hasMore, setHasMore] = useState<boolean>(true);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
 
   const fetchPage = useCallback(async (pageToFetch: number) => {
     setIsLoading(true);
@@ -32,8 +32,15 @@ export function useProjects(limit: number = 20, source?: string) {
       const src = source ? `&source=${encodeURIComponent(source)}` : '';
       const res = await apiClient.get<ProjectsResponse>(`/api/projects?page=${pageToFetch}&limit=${limit}${src}`);
       const items = res.data?.projects ?? [];
-      setProjects(prev => (pageToFetch === 1 ? items : [...prev, ...items]));
-      setHasMore(items.length === limit);
+      setProjects(items);
+      
+      // Calculate total pages based on the number of items returned
+      // If we got a full page, there might be more pages
+      if (items.length === limit) {
+        setTotalPages(pageToFetch + 1);
+      } else {
+        setTotalPages(pageToFetch);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to fetch projects';
       setError(message);
@@ -43,22 +50,21 @@ export function useProjects(limit: number = 20, source?: string) {
   }, [limit, source]);
 
   const refetch = useCallback(async () => {
-    setPage(1);
+    setCurrentPage(1);
     await fetchPage(1);
   }, [fetchPage]);
 
-  const loadNext = useCallback(async () => {
-    if (isLoading || !hasMore) return;
-    const nextPage = page + 1;
-    setPage(nextPage);
-    await fetchPage(nextPage);
-  }, [fetchPage, hasMore, isLoading, page]);
+  const goToPage = useCallback(async (page: number) => {
+    if (page < 1 || page === currentPage) return;
+    setCurrentPage(page);
+    await fetchPage(page);
+  }, [fetchPage, currentPage]);
 
   useEffect(() => {
     fetchPage(1);
   }, [fetchPage]);
 
-  return { projects, isLoading, error, refetch, loadNext, hasMore };
+  return { projects, isLoading, error, refetch, currentPage, totalPages, goToPage };
 }
 
 
