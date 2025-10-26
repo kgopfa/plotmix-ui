@@ -6,6 +6,7 @@ import { Container, Graphics } from 'pixi.js';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { drawShape, applyShadowToContainer } from '@/utils/drawing-utils';
 import { RichTextRenderer } from '@/components/designer/helpers/rich-text-renderer';
+import { CodeEditorRenderer } from '@/components/designer/helpers/code-editor-renderer';
 
 extend({ Container, Graphics });
 
@@ -102,7 +103,7 @@ export const DesignCanvasView = forwardRef<DesignCanvasViewRef, Props>(({
                     ref={(node) => {
                       if (node) {
                         shapeRefs.current[el.id] = node;
-                        if (el.type !== 'text') applyShadowToContainer(node, el);
+                        if (el.type !== 'text' && el.type !== 'code-editor') applyShadowToContainer(node, el);
                       }
                     }}
                   >
@@ -111,6 +112,11 @@ export const DesignCanvasView = forwardRef<DesignCanvasViewRef, Props>(({
                     {/* Render text separately for text elements */}
                     {el.type === 'text' && (
                       <RichTextRenderer element={el} isEditing={false} />
+                    )}
+                    
+                    {/* Render code editor elements */}
+                    {el.type === 'code-editor' && (
+                      <CodeEditorRenderer element={el} isEditing={false} />
                     )}
                   </pixiContainer>
                 );
@@ -139,7 +145,7 @@ export const DesignCanvasView = forwardRef<DesignCanvasViewRef, Props>(({
             ref={(node) => {
               if (node) {
                 shapeRefs.current[el.id] = node;
-                if (el.type !== 'text') applyShadowToContainer(node, el);
+                if (el.type !== 'text' && el.type !== 'code-editor') applyShadowToContainer(node, el);
               }
             }}
           >
@@ -148,6 +154,11 @@ export const DesignCanvasView = forwardRef<DesignCanvasViewRef, Props>(({
             {/* Render text separately for text elements */}
             {el.type === 'text' && (
               <RichTextRenderer element={el} isEditing={false} />
+            )}
+            
+            {/* Render code editor elements */}
+            {el.type === 'code-editor' && (
+              <CodeEditorRenderer element={el} isEditing={false} />
             )}
           </pixiContainer>
         ))}
