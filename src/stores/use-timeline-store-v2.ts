@@ -703,7 +703,6 @@ export const useTimelineStoreV2 = create<TimelineStoreV2>()(
           state.playback.totalDuration = Math.max(10, timelineDuration);
         }));
       } else {
-        console.warn('GSAP timeline is empty - setting minimum duration');
         set(produce((state) => {
           state.playback.totalDuration = 10; // Set minimum duration to prevent immediate completion
         }));

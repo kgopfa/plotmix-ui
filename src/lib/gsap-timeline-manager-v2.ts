@@ -383,7 +383,6 @@ GSAP Timeline Manager V2 Performance Report:
   seekToTime(time: number) {
     try {
       if (this.timeline.duration() === 0) {
-        console.warn('⚠️ Timeline is empty, cannot seek to time:', time);
         return;
       }
 
