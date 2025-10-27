@@ -374,7 +374,7 @@ export const useUIStore = create<UIStore>((set, get) => {
         width: { min: 1200, max: 1600 },
         height: { min: 600, max: 900 },
         zoom: 0.42,
-        pan: { x: 2850, y: 1700 }
+        pan: { x: 2850, y: 1200 }
       },
       // Medium laptops (15-16 inch)
       {
@@ -881,8 +881,8 @@ export const useUIStore = create<UIStore>((set, get) => {
         const screenWidth = window.innerWidth;
         const screenHeight = window.innerHeight;
         const screenPresets = [
-          { width: { min: 0, max: 1366 }, height: { min: 0, max: 768 }, zoom: 0.3, pan: { x: 2880, y: 1620 } },
-          { width: { min: 1367, max: 1920 }, height: { min: 769, max: 1080 }, zoom: 0.42, pan: { x: 2800, y: 1700 } },
+          { width: { min: 0, max: 1366 }, height: { min: 0, max: 800 }, zoom: 0.3, pan: { x: 2880, y: 1620 } },
+          { width: { min: 1367, max: 1920 }, height: { min: 600, max: 1200 }, zoom: 0.42, pan: { x: 2800, y: 1700 } },
           { width: { min: 1921, max: 2560 }, height: { min: 1081, max: 1440 }, zoom: 0.65, pan: { x: 2850, y: 1580 } },
           { width: { min: 2561, max: 2999 }, height: { min: 1000, max: 9999 }, zoom: 0.7, pan: { x: 2880, y: 1580 } },
           { width: { min: 3000, max: 9999 }, height: { min: 1000, max: 9999 }, zoom: 0.85, pan: { x: 2850, y: 1550 } }
