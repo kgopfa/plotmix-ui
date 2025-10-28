@@ -231,14 +231,21 @@ export function Timeline() {
 
         const groupKey = `group:${group.id}`;
         if (!emitted.has(groupKey)) {
+          const groupAnimations = timelineAnimations
+            .filter(anim => anim.target.type === 'group' && anim.target.id === group.id)
+            .flatMap(anim => anim.tracks);
+          
+          // Deduplicate animations by id to prevent duplicate keys
+          const uniqueAnimations = Array.from(
+            new Map(groupAnimations.map(anim => [anim.id, anim])).values()
+          );
+          
           tracks.push({
             id: group.id,
             type: 'group',
             name: group.name,
             item: group,
-            animations: timelineAnimations
-              .filter(anim => anim.target.type === 'group' && anim.target.id === group.id)
-              .flatMap(anim => anim.tracks),
+            animations: uniqueAnimations,
             isSelected: groupIsSelected,
             isGroup: true,
             isExpanded: expandedElements.has(group.id),
@@ -259,14 +266,21 @@ export function Timeline() {
           groupElements.forEach(element => {
             const elementKey = `element:${element.id}:child:${group.id}`;
             if (!emitted.has(elementKey)) {
+              const childAnimations = timelineAnimations
+                .filter(anim => anim.target.type === 'element' && anim.target.id === element.id)
+                .flatMap(anim => anim.tracks);
+              
+              // Deduplicate animations by id to prevent duplicate keys
+              const uniqueChildAnimations = Array.from(
+                new Map(childAnimations.map(anim => [anim.id, anim])).values()
+              );
+              
               tracks.push({
                 id: element.id,
                 type: 'element',
                 name: element.name,
                 item: element,
-                animations: timelineAnimations
-                  .filter(anim => anim.target.type === 'element' && anim.target.id === element.id)
-                  .flatMap(anim => anim.tracks),
+                animations: uniqueChildAnimations,
                 isSelected: isSelected(element),
                 isChild: true,
                 parentGroupId: group.id,
@@ -288,14 +302,21 @@ export function Timeline() {
       .forEach(element => {
         const elementKey = `element:${element.id}:root`;
         if (!emitted.has(elementKey)) {
+          const elementAnimations = timelineAnimations
+            .filter(anim => anim.target.type === 'element' && anim.target.id === element.id)
+            .flatMap(anim => anim.tracks);
+          
+          // Deduplicate animations by id to prevent duplicate keys
+          const uniqueElementAnimations = Array.from(
+            new Map(elementAnimations.map(anim => [anim.id, anim])).values()
+          );
+          
           tracks.push({
             id: element.id,
             type: 'element',
             name: element.name,
             item: element,
-            animations: timelineAnimations
-              .filter(anim => anim.target.type === 'element' && anim.target.id === element.id)
-              .flatMap(anim => anim.tracks),
+            animations: uniqueElementAnimations,
             isSelected: isSelected(element),
             depth: 0
           });

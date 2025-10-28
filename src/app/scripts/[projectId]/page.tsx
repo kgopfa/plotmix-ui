@@ -291,7 +291,6 @@ export default function ScriptsPage() {
         
         // Validate that the script calls setResult
         if (!data.data.script.includes('setResult')) {
-          console.warn('⚠️ Generated script does not call setResult - adding it automatically');
           const enhancedScript = data.data.script + '\n\n// Ensure result is set\nsetResult(project);';
           setCode(enhancedScript);
         } else {

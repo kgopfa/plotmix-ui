@@ -5,7 +5,7 @@ import {
   SwatchBook,
   Layers,
   Film,
-  VectorSquare,
+  Rocket,
 } from 'lucide-react';
 import { useActiveRightPanel, useSetActiveRightPanel, useUIStore } from '@/stores/use-ui-store';
 import { useSelectionStore } from '@/stores/use-selection-store';
@@ -37,7 +37,7 @@ const navigation: RightNavItem[] = [
   { 
     name: 'Animations', 
     key: 'animations', 
-    icon: VectorSquare,
+    icon: Rocket,
     color: 'text-purple-600',
     hoverColor: 'hover:bg-purple-50 hover:text-purple-700',
     activeColor: 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30'

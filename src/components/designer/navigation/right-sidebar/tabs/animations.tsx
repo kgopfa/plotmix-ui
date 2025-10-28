@@ -39,16 +39,26 @@ export function AnimationsTab({
 
   // Get animations from timeline store - MUST be before any early returns
   const localAnimations = useMemo(() => {
+    let animations: ElementAnimation[] = [];
+    
     if (selectedGroup) {
-      return timelineAnimations
+      const groupAnims = timelineAnimations
         .filter(anim => anim.target.type === 'group' && anim.target.id === selectedGroup.id)
         .flatMap(anim => anim.tracks);
-    } else if (selectedElement) {
-      return timelineAnimations
+      animations = animations.concat(groupAnims);
+    }
+    
+    if (selectedElement) {
+      const elementAnims = timelineAnimations
         .filter(anim => anim.target.type === 'element' && anim.target.id === selectedElement.id)
         .flatMap(anim => anim.tracks);
+      animations = animations.concat(elementAnims);
     }
-    return [];
+    
+    // Deduplicate animations by id to prevent duplicate keys
+    return Array.from(
+      new Map(animations.map(anim => [anim.id, anim])).values()
+    );
   }, [timelineAnimations, selectedElement, selectedGroup]);
 
   // Get onEnterPathMode handler - MUST be before any early returns
@@ -68,7 +78,8 @@ export function AnimationsTab({
 
   // Sync local state when props change (initial load or element/group switch)
   useEffect(() => {
-    // Always sync with the latest data from props (which comes from the store)
+    // Only update when the selection changes, not when localAnimations changes
+    // This prevents overwriting user edits
     const currentAnimations = localAnimations || [];
     
     // Migrate existing animations to include displayName if missing
@@ -85,8 +96,14 @@ export function AnimationsTab({
     // Update display names to ensure proper sequential numbering
     const updatedAnimations = updateAnimationDisplayNames(migratedAnimations);
     
-    setAnimations(updatedAnimations);
-  }, [localAnimations, selectedGroup?.id, selectedElement?.id]); 
+    // Final deduplication to ensure unique keys
+    const uniqueAnimations = Array.from(
+      new Map(updatedAnimations.map(anim => [anim.id, anim])).values()
+    );
+    
+    setAnimations(uniqueAnimations);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedGroup?.id, selectedElement?.id]); // Removed localAnimations from dependencies to prevent overwriting user edits 
 
   // Listen for animation selections
   useEffect(() => {
