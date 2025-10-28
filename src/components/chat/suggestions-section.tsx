@@ -34,7 +34,7 @@ export const SuggestionsSection: React.FC<SuggestionsSectionProps> = ({
             <button
               key={`top-${suggestion.id}-${index}`}
               onClick={() => onSuggestionClick(suggestion)}
-              className="group relative bg-white border border-gray-200 rounded-xl p-4 text-left hover:border-indigo-300 hover:shadow-lg transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 flex-shrink-0 w-64"
+              className="group relative bg-white border border-gray-200 rounded-xl p-4 text-left hover:border-indigo-300 hover:shadow-lg transition-all duration-200 ease-out flex-shrink-0 w-64"
             >
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-gray-900 text-sm leading-tight mb-2">
@@ -57,7 +57,7 @@ export const SuggestionsSection: React.FC<SuggestionsSectionProps> = ({
             <button
               key={`bottom-${suggestion.id}-${index}`}
               onClick={() => onSuggestionClick(suggestion)}
-              className="group relative bg-white border border-gray-200 rounded-xl p-4 text-left hover:border-indigo-300 hover:shadow-lg transition-all duration-200 ease-out transform hover:scale-105 active:scale-95 flex-shrink-0 w-64"
+              className="group relative bg-white border border-gray-200 rounded-xl p-4 text-left hover:border-indigo-300 hover:shadow-lg transition-all duration-200 ease-out flex-shrink-0 w-64"
             >
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-gray-900 text-sm leading-tight mb-2">
