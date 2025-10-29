@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { NavigationSidebar } from '@/components/shared/navigation-sidebar';
@@ -14,23 +14,53 @@ import { useAuth } from '@/lib/auth-context';
 import { useProjectGeneration } from '@/hooks/use-project-generation';
 import { ChatAttachment, ChatOptions } from '@/types/project-generation';
 
+const UNAUTHENTICATED_CHAT_KEY = 'plotmix-unauthenticated-chat-project-id';
+
 export default function ChatPage() {
   const [prompt, setPrompt] = useState('');
   const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
   const [options, _] = useState<ChatOptions>({});
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const { submitChat, isLoading, error } = useProjectGeneration();
   const router = useRouter();
+  const [existingProjectId, setExistingProjectId] = useState<string | null>(null);
+
+  // Check if unauthenticated user already has a chat
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      const storedProjectId = localStorage.getItem(UNAUTHENTICATED_CHAT_KEY);
+      if (storedProjectId) {
+        setExistingProjectId(storedProjectId);
+      }
+    } else if (isAuthenticated) {
+      // Clear the stored project ID when user logs in
+      localStorage.removeItem(UNAUTHENTICATED_CHAT_KEY);
+      setExistingProjectId(null);
+    }
+  }, [isAuthenticated, authLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim() || isLoading) return;
     
+    // Prevent unauthenticated users from creating multiple chats
+    if (!isAuthenticated && existingProjectId) {
+      router.push(`/content/${existingProjectId}`);
+      return;
+    }
+    
     try {
       const response = await submitChat(prompt, attachments, options);
       if (response && response.success) {
+        const projectId = response.data.project.id;
+        
+        // Store project ID for unauthenticated users
+        if (!isAuthenticated) {
+          localStorage.setItem(UNAUTHENTICATED_CHAT_KEY, projectId);
+        }
+        
         // Navigate to the content page with the generated project
-        router.push(`/content/${response.data.project.id}`);
+        router.push(`/content/${projectId}`);
       }
     } catch (err) {
       console.error('Failed to submit chat:', err);
@@ -76,10 +106,24 @@ export default function ChatPage() {
           
           {/* Main Content */}
           <div className="flex flex-col max-w-4xl w-full px-6 py-8">
-            <SuggestionsSection 
-              suggestions={suggestions} 
-              onSuggestionClick={handleSuggestionClick} 
-            />
+            {!isAuthenticated && existingProjectId ? (
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                <p className="text-sm text-blue-800 mb-3">
+                  You've already created a chat. You can view it below or sign in to create unlimited chats.
+                </p>
+                <Link 
+                  href={`/content/${existingProjectId}`}
+                  className="inline-flex items-center gap-x-2 bg-gradient-to-r from-purple-700 to-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-200"
+                >
+                  View My Chat
+                </Link>
+              </div>
+            ) : (
+              <SuggestionsSection 
+                suggestions={suggestions} 
+                onSuggestionClick={handleSuggestionClick} 
+              />
+            )}
 
             <PromptInput
               prompt={prompt}
@@ -89,6 +133,7 @@ export default function ChatPage() {
               onSubmit={handleSubmit}
               onKeyDown={handleKeyDown}
               isLoading={isLoading}
+              disabled={!isAuthenticated && !!existingProjectId}
             />
 
             {/* Error Display */}

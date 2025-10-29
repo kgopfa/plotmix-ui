@@ -26,6 +26,7 @@ interface PromptInputProps {
   onSubmit: (e: React.FormEvent) => void;
   onKeyDown: (e: React.KeyboardEvent) => void;
   isLoading?: boolean;
+  disabled?: boolean;
 }
 
 export const PromptInput: React.FC<PromptInputProps> = ({
@@ -35,7 +36,8 @@ export const PromptInput: React.FC<PromptInputProps> = ({
   onAttachmentsChange,
   onSubmit,
   onKeyDown,
-  isLoading = false
+  isLoading = false,
+  disabled = false
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -98,7 +100,8 @@ export const PromptInput: React.FC<PromptInputProps> = ({
             onChange={(e) => onPromptChange(e.target.value)}
             onKeyDown={onKeyDown}
             placeholder="Describe what you want to visualize on the canvas..."
-            className="w-full min-h-[140px] p-4 pr-16 resize-none border-0 focus:ring-0 focus:outline-none bg-transparent text-gray-900 placeholder-gray-500 text-base leading-relaxed font-medium"
+            disabled={disabled}
+            className="w-full min-h-[140px] p-4 pr-16 resize-none border-0 focus:ring-0 focus:outline-none bg-transparent text-gray-900 placeholder-gray-500 text-base leading-relaxed font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ fontFamily: 'Inter, system-ui, -apple-system, sans-serif' }}
           />
         </div>
@@ -111,7 +114,8 @@ export const PromptInput: React.FC<PromptInputProps> = ({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center justify-center w-10 h-10 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              disabled={disabled}
+              className="inline-flex items-center justify-center w-10 h-10 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Plus className="w-4 h-4" />
             </button>
@@ -184,7 +188,7 @@ export const PromptInput: React.FC<PromptInputProps> = ({
           {/* Right side - Submit Button */}
           <button
             type="submit"
-            disabled={!prompt.trim() || isLoading}
+            disabled={disabled || !prompt.trim() || isLoading}
             className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
             title="Generate content (⌘+Enter)"
           >

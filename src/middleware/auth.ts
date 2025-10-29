@@ -15,9 +15,9 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    // Protect all routes under /designer and /content
+    // Protect all routes under /designer
+    // Note: /content is intentionally not protected to allow unauthenticated users to view their single chat
     "/designer/:path*",
-    "/content/:path*",
     // Add other protected routes as needed
     // "/api/protected/:path*",
   ],
