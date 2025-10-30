@@ -15,6 +15,7 @@ export function ProjectCanvasPreview({ projectId, fallbackSize = { width: 1920, 
   const [designSize, setDesignSize] = useState(fallbackSize);
   const [allScenes, setAllScenes] = useState<any[]>([]);
   const [currentSceneIndex, setCurrentSceneIndex] = useState(0);
+  const [isPixiReady, setIsPixiReady] = useState(false);
   const playerRef = useRef<FitFullCanvasPlayerRef>(null);
 
   useEffect(() => {
@@ -205,11 +206,10 @@ export function ProjectCanvasPreview({ projectId, fallbackSize = { width: 1920, 
       ref={playerRef}
       designWidth={designSize.width}
       designHeight={designSize.height}
-      elements={elements}
-      groups={groups}
+      elements={isPixiReady ? elements : []}
+      groups={isPixiReady ? groups : []}
       hideInlineControls
+      onAppReady={() => setIsPixiReady(true)}
     />
   );
 }
-
-

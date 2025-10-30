@@ -17,6 +17,7 @@ export default function DesignerPage() {
   const { setProjectInfo, setBaseline, captureBaseline } = useProjectStore();
   const { loadSnappingPreferences } = useSnappingPersistence();
   const [isLoading, setIsLoading] = useState(true);
+  const [pendingData, setPendingData] = useState<{ elements: any[], groups: any[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const initialize = useCallback(async () => {
@@ -144,9 +145,10 @@ export default function DesignerPage() {
         new Map(sanitizedGroups.map((g: any) => [g.id as string, g])).values()
       ) as import('@/types/canvas').CanvasGroup[];
 
-      canvasStore.setElements(elements);
-      canvasStore.setGroups(groups);
+      // Store elements/groups for later loading after PIXI is ready
+      setPendingData({ elements, groups });
 
+      // Load timeline data (doesn't trigger rendering)
       timelineStore.loadProjectData({
         elements,
         groups,
@@ -156,9 +158,6 @@ export default function DesignerPage() {
         duration: typeof (timeline as any)?.duration === 'number' ? (timeline as any).duration : 0,
         currentTime: 0,
       });
-
-      // Capture baseline after stores are hydrated
-      captureBaseline();
 
       setIsLoading(false);
     } catch (e) {
@@ -197,7 +196,18 @@ export default function DesignerPage() {
           <div className="absolute top-4 left-4 z-50 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 text-sm text-gray-600">
             Editing: {contentId}
           </div>
-          <Designer key={contentId} />
+          <Designer 
+            key={contentId} 
+            onReady={() => {
+              const canvasStore = useCanvasStore.getState();
+              if (pendingData) {
+                canvasStore.setElements(pendingData.elements);
+                canvasStore.setGroups(pendingData.groups);
+                captureBaseline();
+                setPendingData(null);
+              }
+            }}
+          />
         </>
       )}
     </div>

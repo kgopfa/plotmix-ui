@@ -24,6 +24,7 @@ interface ApplicationCanvasProps {
   snapGuides?: SnapGuide[];
   elements: AnimatedCanvasObject[];
   groups: CanvasGroup[];
+  onAppReady?: () => void;
   selectedIds: string[];
   hoveredId: string | null;
   editingTextId: string | null;
@@ -96,6 +97,7 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
     const appRef = useRef<ApplicationRef | null>(null);
     const viewportRef = useRef<ViewportWrapper | null>(null);
     const canvasContainerRef = useRef<HTMLDivElement | null>(null);
+    const isAppReadyRef = useRef(false);
 
     const [dimensions, setDimensions] = useState({
       width: typeof window !== 'undefined' ? window.innerWidth : 0,
@@ -143,12 +145,26 @@ export const ApplicationCanvas = forwardRef<ApplicationCanvasRef, ApplicationCan
       }
     }, [canvasWidth, canvasHeight]);
 
-    // Configure PIXI canvas for custom touch handling
+    // Configure PIXI canvas for custom touch handling and mark as ready
     useEffect(() => {
       // @ts-expect-error - @pixi/react doesn't expose the PIXI Application instance in types
       const pixiApp = appRef.current?.app;
       const canvas = pixiApp?.view;
       if (!canvas) return;
+
+      // Mark app as ready after we've accessed PIXI app instance
+      // This ensures PIXI has rendered at least one frame (even if empty) before we signal readiness
+      if (!isAppReadyRef.current && props.onAppReady) {
+        isAppReadyRef.current = true;
+        // Use triple requestAnimationFrame to ensure PIXI has fully initialized and rendered
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              props.onAppReady?.();
+            });
+          });
+        });
+      }
 
       // Allow PIXI viewport to handle all touch interactions
       canvas.style.touchAction = 'none';

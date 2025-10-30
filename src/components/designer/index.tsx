@@ -36,7 +36,21 @@ import { useElementDragging } from '@/hooks/use-element-dragging';
 
 const ApplicationCanvas = dynamic(() => import('./application-canvas').then(m => m.ApplicationCanvas), { ssr: false });
 
-export default function Designer() {
+interface DesignerProps {
+  onReady?: () => void;
+}
+
+export default function Designer({ onReady }: DesignerProps = {}) {
+  // Track if PIXI application is initialized and ready
+  const [isPixiReady, setIsPixiReady] = useState(false);
+  
+  // Notify parent when ready
+  useEffect(() => {
+    if (isPixiReady && onReady) {
+      onReady();
+    }
+  }, [isPixiReady, onReady]);
+
   // Use canvas store instead of local state
   const canvasObjects = useCanvasElements();
   const groups = useCanvasGroups();
@@ -1016,8 +1030,9 @@ export default function Designer() {
           ref={fullscreenCanvasRef}
           dimensions={dimensions}
           snapGuides={snapGuides}
-          elements={canvasObjects}
-          groups={groups}
+          elements={isPixiReady ? canvasObjects : []}
+          groups={isPixiReady ? groups : []}
+          onAppReady={() => setIsPixiReady(true)}
           selectedIds={selectedObjects.map(el => el.id)}
           hoveredId={hoveredId}
           editingTextId={editingTextId}

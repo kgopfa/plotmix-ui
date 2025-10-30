@@ -11,6 +11,7 @@ type Props = {
   elements: AnimatedCanvasObject[];
   groups: CanvasGroup[];
   hideInlineControls?: boolean;
+  onAppReady?: () => void;
 };
 
 export interface FitFullCanvasPlayerRef {
@@ -18,7 +19,7 @@ export interface FitFullCanvasPlayerRef {
 }
 
 export const FitFullCanvasPlayer = forwardRef<FitFullCanvasPlayerRef, Props>(
-  ({ designWidth, designHeight, elements, groups, hideInlineControls = false }, ref) => {
+  ({ designWidth, designHeight, elements, groups, hideInlineControls = false, onAppReady }, ref) => {
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const appRef = useRef<ApplicationCanvasPlayerRef>(null);
@@ -39,6 +40,7 @@ export const FitFullCanvasPlayer = forwardRef<FitFullCanvasPlayerRef, Props>(
           transparentBackground={false}
           backgroundColor="#FFFFFF"
           appBackgroundColor={0xFFFFFF}
+          onAppReady={onAppReady}
         />
       </div>
     </div>

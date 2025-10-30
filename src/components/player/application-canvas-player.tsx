@@ -1,6 +1,6 @@
 'use client';
 
-import React, { forwardRef, useRef, useImperativeHandle } from 'react';
+import React, { forwardRef, useRef, useImperativeHandle, useEffect } from 'react';
 import { Application } from '@pixi/react';
 import type { AnimatedCanvasObject, CanvasGroup } from '@/types/canvas';
 import { DesignCanvasView } from './design-canvas-view';
@@ -15,6 +15,7 @@ type Props = {
   transparentBackground?: boolean;
   appBackgroundColor?: number;
   backgroundColor: string;
+  onAppReady?: () => void;
 };
 
 export interface ApplicationCanvasPlayerRef {
@@ -33,16 +34,33 @@ export const ApplicationCanvasPlayer = forwardRef<ApplicationCanvasPlayerRef, Pr
       transparentBackground = true,
       appBackgroundColor,
       backgroundColor,
+      onAppReady,
     },
     ref
   ) => {
     const designCanvasRef = useRef<DesignCanvasViewRef>(null);
+    const appReadyRef = useRef(false);
 
     useImperativeHandle(ref, () => ({
       getShapeRefs: () => designCanvasRef.current?.getShapeRefs() || {},
       getGroupContainers: () => designCanvasRef.current?.getGroupContainers() || {},
       getMainContainer: () => designCanvasRef.current?.getMainContainer() || null
     }));
+
+    // Mark app as ready after ensuring PIXI has rendered initial frames
+    useEffect(() => {
+      if (!appReadyRef.current && onAppReady) {
+        appReadyRef.current = true;
+        // Use triple requestAnimationFrame to ensure PIXI has fully initialized and rendered
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              onAppReady();
+            });
+          });
+        });
+      }
+    }, [onAppReady]);
 
     return (
       <div className="w-full h-full flex items-center justify-center">
