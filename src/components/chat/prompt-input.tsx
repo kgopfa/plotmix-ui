@@ -68,7 +68,7 @@ export const PromptInput: React.FC<PromptInputProps> = ({
             {attachments.map(attachment => (
               <div
                 key={attachment.id}
-                className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm"
+                className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl p-2 text-sm"
               >
                 {attachment.type === 'image' ? (
                   <div className="w-4 h-4 bg-blue-500 rounded-sm" />
@@ -101,7 +101,7 @@ export const PromptInput: React.FC<PromptInputProps> = ({
             onKeyDown={onKeyDown}
             placeholder="Describe what you want to visualize on the canvas..."
             disabled={disabled}
-            className="w-full 2xl:min-h-[140px] min-h-[100px] p-4 pr-16 resize-none border-0 focus:ring-0 focus:outline-none bg-transparent text-gray-900 placeholder-gray-500 text-base leading-relaxed font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full 2xl:min-h-[140px] min-h-[100px] 2xl:p-4 p-2 pr-16 resize-none border-0 focus:ring-0 focus:outline-none bg-transparent text-gray-900 placeholder-gray-500 text-base leading-relaxed font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ fontFamily: 'Inter, system-ui, -apple-system, sans-serif' }}
           />
         </div>
