@@ -98,26 +98,9 @@ export default function ContentDetailPage() {
 
         <div className="flex justify-center xl:mt-0 2xl:mt-20 min-h-screen">
           <div className="w-full flex flex-col max-w-2xl xl:max-w-3xl 2xl:max-w-7xl mx-auto">
-            {/* Video area: show MP4 when ready; otherwise a placeholder/loading */}
             <div className="p-0.5 bg-gradient-to-r from-indigo-500 to-purple-600">
               <div className="relative w-full aspect-video bg-black overflow-hidden flex items-center justify-center">
-                {isLoading ? (
-                  <div className="text-white">Loading...</div>
-                ) : error ? (
-                  <div className="text-red-300">{error}</div>
-                ) : content?.contentVideoUrl && content?.contentVideoStatus === 'ready' ? (
-                  <video
-                    key={content.contentVideoUrl}
-                    className="w-full h-full"
-                    src={content.contentVideoUrl}
-                    controls
-                    preload="metadata"
-                    playsInline
-                  />
-                ) : (
-                  // Pending or failed fallback: show canvas preview until video is ready
-                  <ProjectCanvasPreview projectId={contentId} />
-                )}
+                <ProjectCanvasPreview projectId={contentId} />
               </div>
             </div>
           </div>
