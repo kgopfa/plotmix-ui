@@ -3,8 +3,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { NavigationSidebar } from '@/components/shared/navigation-sidebar';
 import { ContentSidebar } from '@/components/content/content-sidebar';
-import { Link2, Pencil, UserPlus } from 'lucide-react';
-import QuickActionButtons from '@/components/shared/quick-action-buttons';
+import { Link2, Pencil, UserPlus, BookOpen, CheckCircle2 } from 'lucide-react';
 import React from 'react';
 import { apiClient } from '@/lib/api-client';
 import { ProjectCanvasPreview } from '@/components/player/project-canvas-preview';
@@ -59,6 +58,25 @@ export default function ContentDetailPage() {
           </div>
 
           <div className="flex flex-row items-center gap-x-4 ml-auto">
+            <div className="flex flex-row h-10 rounded-lg border-2 border-indigo-200 bg-white">
+              <button
+                type="button"
+                onClick={() => console.log('Self Check clicked')}
+                className="inline-flex items-center gap-x-2 px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              >
+                <CheckCircle2 strokeWidth={2.5} aria-hidden="true" className="-ml-0.5 size-5" />
+                Self Assessment
+              </button>
+              <div className="w-0.5 bg-indigo-200" />
+              <button
+                type="button"
+                onClick={() => console.log('Theory & Sources clicked')}
+                className="inline-flex items-center gap-x-2 px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              >
+                <BookOpen strokeWidth={2.5} aria-hidden="true" className="-ml-0.5 size-5" />
+                Theory & Sources
+              </button>
+            </div>
             <div className="flex flex-row h-10 rounded-lg border-2 border-indigo-200 bg-white">
               <button
                 type="button"

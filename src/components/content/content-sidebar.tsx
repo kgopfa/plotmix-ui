@@ -3,12 +3,10 @@
 import { useState, useEffect } from 'react';
 import { UserMessage } from '@/components/content/user-message';
 import { LLMMessage } from '@/components/content/llm-message';
-import { TranscriptSegment } from '@/components/content/transcript-segment';
 import { CircleFadingPlus } from 'lucide-react';
 import { useProjectGeneration } from '@/hooks/use-project-generation';
 import { useConversation } from '@/hooks/use-conversation';
 import { ChatMessage } from '@/types/project-generation';
-import { betterStackMonitoringTranscript } from '@/data/chat-messages';
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ')
@@ -23,6 +21,29 @@ export function ContentSidebar({ conversationId }: { conversationId: string }) {
   const [activeTab, setActiveTab] = useState('Chat');
   const [message, setMessage] = useState('');
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+
+  // Dummy content data for the "Content" tab
+  const synopsis = 'A concise walkthrough of the concept with a short demo to reinforce application in real contexts.';
+  const metadata = {
+    estimatedTime: '12 min',
+    difficulty: 'Intermediate',
+    tags: ['Monitoring', 'Dashboards', 'Alerts']
+  };
+  const learningObjectives = [
+    'Explain the purpose of SLOs vs SLIs in monitoring.',
+    'Configure a basic alert policy with actionable thresholds.',
+    'Interpret a dashboard to identify service degradation.'
+  ];
+  const downloads = [
+    { name: 'Slide deck (PDF)', size: '2.1 MB' },
+    { name: 'Demo dataset (CSV)', size: '340 KB' },
+    { name: 'Facilitator guide (DOCX)', size: '410 KB' }
+  ];
+  const references = [
+    { title: 'Site Reliability Engineering (Google)', href: '#' },
+    { title: 'Monitoring 101: Choosing SLIs', href: '#' },
+    { title: 'Alerting Best Practices', href: '#' }
+  ];
 
   // Update chat history when conversation changes
   useEffect(() => {
@@ -190,26 +211,75 @@ export function ContentSidebar({ conversationId }: { conversationId: string }) {
             </>
           )}
           {activeTab === 'Sections' && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Transcript</div>
-                <div className="space-y-2">
-                  {betterStackMonitoringTranscript.map((segment) => (
-                    <TranscriptSegment
-                      key={segment.id}
-                      timestamp={segment.timestamp}
-                      text={segment.text}
-                      onClick={() => {
-                        // Handle transcript segment click - could seek to timestamp
-                        console.log('Clicked segment at:', segment.timestamp);
-                      }}
-                    />
-                  )) || (
-                      <div className="text-gray-500 text-sm py-4 text-center">
-                        No transcript available
+            <div className="flex-1 overflow-y-auto pr-1">
+              <div className="space-y-5 divide-y divide-gray-100">
+                {/* Overview */}
+                <section className="space-y-2 pt-0 first:pt-0">
+                  <div className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Overview</div>
+                  <div className="text-sm leading-relaxed text-gray-700">{synopsis}</div>
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10">{metadata.estimatedTime}</span>
+                    <span className="inline-flex items-center rounded-full bg-purple-50 px-2.5 py-0.5 text-[11px] font-medium text-purple-700 ring-1 ring-inset ring-purple-700/10">{metadata.difficulty}</span>
+                    {metadata.tags.map((t) => (
+                      <span key={t} className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-medium text-gray-700">{t}</span>
+                    ))}
+                  </div>
+                </section>
+
+                {/* Learning objectives */}
+                <section className="space-y-2 pt-5">
+                  <div className="flex items-center justify-between">
+                    <div className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Learning objectives</div>
+                    <button
+                      type="button"
+                      onClick={() => console.log('Copy objectives')}
+                      className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-700"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                  <ul className="list-disc list-inside space-y-1.5">
+                    {learningObjectives.map((obj, idx) => (
+                      <li key={idx} className="text-sm leading-6 text-gray-700">{obj}</li>
+                    ))}
+                  </ul>
+                </section>
+
+                {/* Downloads */}
+                <section className="space-y-2 pt-5">
+                  <div className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Downloads</div>
+                  <div className="space-y-2">
+                    {downloads.map((file) => (
+                      <div key={file.name} className="flex items-center justify-between rounded-md border border-gray-200 px-3 py-2 transition-colors hover:bg-gray-50">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-900">{file.name}</span>
+                          <span className="text-xs text-gray-500">{file.size}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => console.log('Download clicked', file.name)}
+                          className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
+                        >
+                          Download
+                        </button>
                       </div>
-                    )}
-                </div>
+                    ))}
+                  </div>
+                </section>
+
+                {/* References */}
+                <section className="space-y-2 pt-5 pb-6">
+                  <div className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">References & Sources</div>
+                  <ul className="space-y-1.5">
+                    {references.map((ref) => (
+                      <li key={ref.title} className="text-sm leading-6">
+                        <a href={ref.href} onClick={(e) => e.preventDefault()} className="text-indigo-600 hover:text-indigo-700">
+                          {ref.title}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
               </div>
             </div>
           )}
