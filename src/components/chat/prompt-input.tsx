@@ -60,7 +60,7 @@ export const PromptInput: React.FC<PromptInputProps> = ({
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm">
+    <div className="bg-white border border-gray-200 rounded-lg shadow-xs sm:-mt-10">
       <form onSubmit={onSubmit} className="p-6">
         {/* Attachments */}
         {attachments.length > 0 && (
@@ -101,7 +101,7 @@ export const PromptInput: React.FC<PromptInputProps> = ({
             onKeyDown={onKeyDown}
             placeholder="Describe what you want to visualize on the canvas..."
             disabled={disabled}
-            className="w-full min-h-[140px] p-4 pr-16 resize-none border-0 focus:ring-0 focus:outline-none bg-transparent text-gray-900 placeholder-gray-500 text-base leading-relaxed font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full 2xl:min-h-[140px] min-h-[100px] p-4 pr-16 resize-none border-0 focus:ring-0 focus:outline-none bg-transparent text-gray-900 placeholder-gray-500 text-base leading-relaxed font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ fontFamily: 'Inter, system-ui, -apple-system, sans-serif' }}
           />
         </div>
