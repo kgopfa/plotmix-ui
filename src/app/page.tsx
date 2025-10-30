@@ -10,6 +10,7 @@ import { navigation } from '@/data/shared-navigation';
 import { suggestions, type Suggestion } from '@/data/chat-suggestions';
 import { LogIn } from 'lucide-react';
 import QuickActionButtons from '@/components/shared/quick-action-buttons';
+import AppHeader from '@/components/shared/app-header';
 import { useAuth } from '@/lib/auth-context';
 import { useProjectGeneration } from '@/hooks/use-project-generation';
 import { ChatAttachment, ChatOptions } from '@/types/project-generation';
@@ -51,7 +52,7 @@ export default function HomePage() {
     <>
       <NavigationSidebar navigation={navigation} />
 
-      <main className="lg:pl-20">
+      <main className="md:pl-20">
         {/* Header with search bar */}
         <div className="sticky top-0 z-40 flex flex-row h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 sm:gap-x-6 sm:px-6 lg:px-8">
           

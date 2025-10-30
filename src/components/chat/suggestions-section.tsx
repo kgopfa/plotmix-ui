@@ -27,7 +27,8 @@ export const SuggestionsSection: React.FC<SuggestionsSectionProps> = ({
         </h2>
       </div>
       
-      <div className="relative overflow-hidden">
+      {/* Slightly wider scroller than content, not full screen */}
+      <div className="relative overflow-hidden -mx-4 sm:-mx-6 md:-mx-6 lg:-mx-8 px-4 sm:px-6 md:px-6 lg:px-8">
         {/* Top row - scrolls left */}
         <div className="flex gap-4 animate-scroll-left">
           {[...suggestions, ...suggestions].map((suggestion, index) => (

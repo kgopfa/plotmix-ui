@@ -10,6 +10,7 @@ import { navigation } from '@/data/shared-navigation';
 import { suggestions, type Suggestion } from '@/data/chat-suggestions';
 import { LogIn } from 'lucide-react';
 import QuickActionButtons from '@/components/shared/quick-action-buttons';
+import AppHeader from '@/components/shared/app-header';
 import { useAuth } from '@/lib/auth-context';
 import { useProjectGeneration } from '@/hooks/use-project-generation';
 import { ChatAttachment, ChatOptions } from '@/types/project-generation';
