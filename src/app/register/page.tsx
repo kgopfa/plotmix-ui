@@ -138,7 +138,7 @@ export default function Register() {
             <div>
               <div className="flex h-16 shrink-0 items-center">
                 <div className="h-12 w-12 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                  <span className="text-white font-bold">R</span>
+                  <span className="text-white font-bold">P</span>
                 </div>
               </div>
               <h2 className="mt-6 text-2xl/9 font-bold tracking-tight text-gray-900">Create an account</h2>

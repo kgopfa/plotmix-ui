@@ -205,7 +205,7 @@ export const MainNavBar: React.FC<MainNavBarProps> = () => {
             </div>
             <div className="flex shrink-0 items-center">
               <div className="h-8 w-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                <span className="text-white font-bold text-sm">R</span>
+                <span className="text-white font-bold text-sm">P</span>
               </div>
               <div className="flex items-center ml-8">
                 <button onClick={handleSave} className="group relative inline-flex items-center justify-center w-10 h-10 rounded-xl text-gray-500 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95">
