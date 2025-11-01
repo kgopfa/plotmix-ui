@@ -18,10 +18,10 @@ export default function Header() {
         {/* Logo */}
         <div className="flex lg:flex-1 items-center space-x-2">
           <a href="/" className="-m-1.5 p-1.5 flex items-center space-x-2">
-            <div className="h-9 w-9 bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 rounded-lg flex items-center justify-center shadow-md">
+            <div className="h-9 w-9 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 rounded-lg flex items-center justify-center shadow-md">
               <span className="text-white font-bold text-base">P</span>
             </div>
-            <span className="text-lg font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            <span className="text-lg font-bold bg-gradient-to-r from-indigo-700 to-purple-600 bg-clip-text text-transparent">
               Plotmix
             </span>
           </a>
