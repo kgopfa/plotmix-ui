@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { HeroInput } from "@/components/marketing/hero-input";
 
 export const metadata: Metadata = {
   title: "Plotmix Enterprise — Turn knowledge into lasting understanding.",
@@ -31,6 +32,10 @@ export default function OrganizationsPage() {
             Plotmix helps teams learn faster and stay aligned by turning questions into clear, shared explanations — all
             in one place.
           </p>
+
+          <div className="mt-12">
+            <HeroInput />
+          </div>
 
           <div className="mt-10 flex justify-center gap-x-6">
             <Link

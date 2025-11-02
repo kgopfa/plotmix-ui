@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { HeroInput } from "@/components/marketing/hero-input";
 
 export const metadata: Metadata = {
   title: "Plotmix — Bring learning to life, never wait for the right tutorial again.",
@@ -23,6 +24,10 @@ export default function MarketingPage() {
           <p className="mt-8 text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
             Get instant explanations that grow with your curiosity, clear and personal, always on demand.
           </p>
+
+          <div className="mt-8">
+            <HeroInput />
+          </div>
 
           <div className="mt-10 flex justify-center gap-x-4">
             <Link
