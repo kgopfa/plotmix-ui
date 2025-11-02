@@ -3,29 +3,23 @@ import Link from "next/link";
 import { HeroSection } from "@/components/marketing/hero-section";
 
 export const metadata: Metadata = {
-  title: "Plotmix Enterprise — Turn knowledge into lasting understanding.",
+  title: "Plotmix for Teams — Scale expertise, one question at a time.",
   description:
-    "Empower your team with Plotmix — create, share, and adapt on-demand explanations that scale across your organization.",
+    "Empower your organization with instant, on-demand learning. Plotmix helps teams capture, explain, and share knowledge faster — all in one place.",
 };
 
-export default function OrganizationsPage() {
+export default function EnterprisePage() {
   return (
     <>
-      <section className="relative pt-28 pb-24 px-6 bg-gradient-to-b from-indigo-50 via-white to-purple-50 overflow-hidden">
-        <div aria-hidden="true" className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80">
-          <div
-            className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[40rem] -translate-x-1/2 rotate-[30deg]
-                  bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-30
-                  sm:left-[calc(50%-30rem)] sm:w-[80rem]"
-          />
-        </div>
-
+      {/* Hero */}
+      <section className="relative pt-28 pb-24 px-6 bg-gradient-to-b from-indigo-50 via-white to-purple-50 bg-dot-pattern overflow-hidden">
         <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-2xl font-semibold text-gray-900 sm:text-7xl leading-tight">
-            Empower your team with <br className="hidden sm:block" />
+          <h1 className="text-5xl sm:text-7xl font-bold text-gray-900 leading-tight">
+            Empower your team to <br className="hidden sm:block" />
             <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              knowledge that scales
+              learn, adapt, and scale
             </span>
+            .
           </h1>
 
           <div className="mt-8">
@@ -34,111 +28,111 @@ export default function OrganizationsPage() {
 
           <img
             src="https://tailwindcss.com/plus-assets/img/component-images/project-app-screenshot.png"
-            alt="Plotmix for Teams"
+            alt="Plotmix Enterprise Platform"
             width="2432"
             height="1442"
-            className="mt-12 rounded-2xl bg-gray-50 shadow-2xl ring-1 ring-gray-900/10 w-full max-w-[1200px] h-auto"
-          />
-        </div>
-
-        <div
-          aria-hidden="true"
-          className="absolute inset-x-0 top-[calc(100%-13rem)] -z-10 transform-gpu overflow-hidden blur-3xl sm:top-[calc(100%-30rem)]"
-        >
-          <div
-            className="relative left-[calc(50%+3rem)] aspect-[1155/678] w-[40rem] -translate-x-1/2
-                  bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-30
-                  sm:left-[calc(50%+36rem)] sm:w-[80rem]"
+            className="mt-12 rounded-2xl bg-gray-50 shadow-2xl ring-1 ring-gray-900/10 w-full max-w-[1200px] h-auto mx-auto"
           />
         </div>
       </section>
 
-      {/* How it works */}
-      <section id="how-it-works" className="py-28 px-6 bg-white">
-        <div className="max-w-6xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-8">How Plotmix Helps Teams Learn</h2>
-          <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto mb-20 leading-relaxed">
-            From onboarding to continuous learning, Plotmix lets your team ask, understand, and share knowledge —
-            without meetings or manual training.
-          </p>
+      {/* Section 1 — Capture Team Knowledge */}
+      <section className="py-40 bg-indigo-50 bg-dot-pattern">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-24 px-6 lg:px-8">
+          {/* Text (1/3 width) */}
+          <div className="w-full md:w-1/3 space-y-8 md:pr-12">
+            <h2 className="text-5xl sm:text-6xl font-bold text-gray-900">
+              Capture knowledge effortlessly.
+            </h2>
+            <p className="text-xl text-gray-600 leading-relaxed">
+              When someone asks a question, Plotmix creates a clear, reusable explanation —
+              turning tribal knowledge into a searchable resource that grows with your team.
+            </p>
+            <p className="text-indigo-600 font-semibold text-lg">
+              From one answer to shared understanding.
+            </p>
+          </div>
 
-          <div className="grid md:grid-cols-3 gap-14 text-left">
-            <div className="p-10 rounded-2xl border border-gray-100 hover:shadow-md transition">
-              <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center mb-8 shadow-md">
-                <span className="text-white text-3xl">💡</span>
-              </div>
-              <h3 className="text-2xl font-bold mb-4">Capture questions easily</h3>
-              <p className="text-gray-600 leading-loose">
-                Team members can ask questions anytime. Plotmix turns them into concise explanations that can be shared
-                across teams.
-              </p>
-            </div>
-
-            <div className="p-10 rounded-2xl border border-gray-100 hover:shadow-md transition">
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center mb-8 shadow-md">
-                <span className="text-white text-3xl">📘</span>
-              </div>
-              <h3 className="text-2xl font-bold mb-4">Build shared understanding</h3>
-              <p className="text-gray-600 leading-loose">
-                Explanations stay updated as your team grows — no more stale docs or one-off training sessions.
-              </p>
-            </div>
-
-            <div className="p-10 rounded-2xl border border-gray-100 hover:shadow-md transition">
-              <div className="w-16 h-16 bg-gradient-to-br from-pink-500 to-indigo-600 rounded-xl flex items-center justify-center mb-8 shadow-md">
-                <span className="text-white text-3xl">🚀</span>
-              </div>
-              <h3 className="text-2xl font-bold mb-4">Scale knowledge effortlessly</h3>
-              <p className="text-gray-600 leading-loose">
-                Plotmix grows with your organization — helping every new hire or cross-functional team learn faster and
-                more effectively.
-              </p>
-            </div>
+          {/* Image (2/3 width) */}
+          <div className="w-full md:w-2/3 flex justify-center">
+            <img
+              src="https://tailwindcss.com/plus-assets/img/component-images/project-app-screenshot.png"
+              alt="Team collaboration example"
+              className="rounded-3xl bg-gray-50 shadow-2xl ring-1 ring-gray-900/10 object-contain w-full max-w-[1200px] h-auto"
+            />
           </div>
         </div>
       </section>
 
-      {/* Benefits */}
-      <section className="py-28 px-6 bg-gradient-to-b from-gray-50 to-white">
-        <div className="max-w-6xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-8">Why organizations choose Plotmix</h2>
-          <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto mb-20 leading-relaxed">
-            Make learning measurable, efficient, and engaging — so knowledge sticks, and productivity grows.
-          </p>
+      {/* Section 2 — Learn with context */}
+      <section className="py-40 bg-white bg-dot-pattern">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row-reverse items-center justify-between gap-24 px-6 lg:px-8">
+          {/* Text (1/3 width) */}
+          <div className="w-full md:w-1/3 space-y-8 md:pl-12">
+            <h2 className="text-5xl sm:text-6xl font-bold text-gray-900">
+              Give every learner context.
+            </h2>
+            <p className="text-xl text-gray-600 leading-relaxed">
+              Every answer comes with structured reasoning and dynamic explanations — so your
+              teams don’t just memorize, they understand. Perfect for onboarding, support, and
+              continuous skill growth.
+            </p>
+            <p className="text-indigo-600 font-semibold text-lg">
+              Scalable clarity for every role.
+            </p>
+          </div>
 
-          <div className="grid md:grid-cols-3 gap-12 text-left">
-            <div>
-              <h3 className="text-xl font-semibold mb-3 text-indigo-600">🕒 Save time and costs</h3>
-              <p className="text-gray-600 leading-loose">
-                Reduce repetitive explanations and onboarding time with self-updating knowledge content.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold mb-3 text-indigo-600">📈 Continuous improvement</h3>
-              <p className="text-gray-600 leading-loose">
-                Insights help you identify where teams struggle — so you can close learning gaps faster.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold mb-3 text-indigo-600">🤝 Consistent messaging</h3>
-              <p className="text-gray-600 leading-loose">
-                Everyone learns from the same clear, accurate sources — reducing confusion and mistakes.
-              </p>
-            </div>
+          {/* Image (2/3 width) */}
+          <div className="w-full md:w-2/3 flex justify-center">
+            <img
+              src="https://tailwindcss.com/plus-assets/img/component-images/project-app-screenshot.png"
+              alt="Interactive learning demo"
+              className="rounded-3xl bg-white shadow-2xl ring-1 ring-gray-900/10 object-contain w-full max-w-[1200px] h-auto"
+            />
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-28 px-6 text-center bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600">
+      {/* Section 3 — Train and Create */}
+      <section className="py-40 bg-indigo-50 bg-dot-pattern">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-24 px-6 lg:px-8">
+          {/* Text (1/3 width) */}
+          <div className="w-full md:w-1/3 space-y-8 md:pr-12">
+            <h2 className="text-5xl sm:text-6xl font-bold text-gray-900">
+              Train, customize, and share.
+            </h2>
+            <p className="text-xl text-gray-600 leading-relaxed">
+              Turn your internal insights into interactive, branded learning experiences.
+              Create modules, add visuals, and refine the message — all from one place.
+            </p>
+            <p className="text-indigo-600 font-semibold text-lg">
+              Empower every expert to teach effortlessly.
+            </p>
+          </div>
+
+          {/* Image (2/3 width) */}
+          <div className="w-full md:w-2/3 flex justify-center">
+            <img
+              src="https://tailwindcss.com/plus-assets/img/component-images/project-app-screenshot.png"
+              alt="Design editor demo"
+              className="rounded-3xl bg-gray-50 shadow-2xl ring-1 ring-gray-900/10 object-contain w-full max-w-[1200px] h-auto"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="py-32 px-6 text-center bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600">
         <div className="max-w-3xl mx-auto">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-8">
-            Empower your organization to learn as one.
+          <h2 className="text-5xl font-bold text-white mb-6">
+            Scale expertise. Accelerate learning.
           </h2>
-          <p className="text-lg md:text-xl text-indigo-100 mb-12 leading-relaxed">
-            From onboarding to product training, Plotmix helps your teams learn faster, stay aligned, and grow together.
+          <p className="text-lg text-indigo-100 mb-10 leading-relaxed">
+            Bring institutional knowledge to life with Plotmix. Help every team move faster,
+            learn better, and stay aligned — one question at a time.
           </p>
-          <div className="flex flex-col sm:flex-row gap-5 justify-center">
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/contact-sales"
               className="bg-white text-indigo-600 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-indigo-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
