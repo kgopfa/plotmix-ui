@@ -14,11 +14,11 @@ export default function MarketingPage() {
       {/* Hero */}
       <section className="relative pt-28 pb-24 px-6 bg-gradient-to-b from-indigo-50 via-white to-purple-50 overflow-hidden">
         <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-2xl font-semibold text-gray-900 sm:text-7xl leading-tight">
+          <h1 className="text-5xl sm:text-7xl font-bold text-gray-900 leading-tight">
             Never wait for the <br className="hidden sm:block" />
             <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
               right tutorial
-            </span>{' '}
+            </span>{" "}
             again.
           </h1>
 
@@ -28,7 +28,7 @@ export default function MarketingPage() {
 
           <img
             src="https://tailwindcss.com/plus-assets/img/component-images/project-app-screenshot.png"
-            alt="Plotmix example"
+            alt="Plotmix for Teams"
             width="2432"
             height="1442"
             className="mt-12 rounded-2xl bg-gray-50 shadow-2xl ring-1 ring-gray-900/10"
@@ -36,71 +36,98 @@ export default function MarketingPage() {
         </div>
       </section>
 
-      {/* How it works */}
-      <section id="how-it-works" className="py-24 px-6 bg-white">
-        <div className="max-w-6xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">How Plotmix Works</h2>
-          <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto mb-16">
-            Learning should be personal. Plotmix builds clear, tailored explanations from your questions — in seconds.
-          </p>
+      {/* Section 1 — Ask Anything */}
+      <section className="py-40 bg-white">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-24 px-6 lg:px-8">
+          {/* Text (1/3 width) */}
+          <div className="w-full md:w-1/3 space-y-8 md:pr-12">
+            <h2 className="text-5xl sm:text-6xl font-bold text-gray-900">
+              Ask anything.
+            </h2>
+            <p className="text-xl text-gray-600 leading-relaxed">
+              Start with a question — as specific or as broad as you like. Plotmix turns it into
+              a clear, structured explanation instantly. No more endless searches or half-answers.
+            </p>
+            <p className="text-indigo-600 font-semibold text-lg">
+              Instant understanding, one prompt away.
+            </p>
+          </div>
 
-          <div className="grid md:grid-cols-3 gap-12 text-left">
-            <div className="p-8 rounded-2xl border border-gray-100 hover:shadow-md transition">
-              <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center mb-6 shadow-md">
-                <span className="text-white text-2xl">💬</span>
-              </div>
-              <h3 className="text-2xl font-bold mb-3">1. Ask a question</h3>
-              <p className="text-gray-600 leading-relaxed">
-                Just type what you want to learn. Plotmix crafts a clear, structured answer around your question — no
-                searching or scrolling required.
-              </p>
-            </div>
-
-            <div className="p-8 rounded-2xl border border-gray-100 hover:shadow-md transition">
-              <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center mb-6 shadow-md">
-                <span className="text-white text-2xl">⚡</span>
-              </div>
-              <h3 className="text-2xl font-bold mb-3">2. Learn instantly</h3>
-              <p className="text-gray-600 leading-relaxed">
-                Your explanation is ready in moments — easy to follow, focused on what matters, and made to help it
-                stick.
-              </p>
-            </div>
-
-            <div className="p-8 rounded-2xl border border-gray-100 hover:shadow-md transition">
-              <div className="w-14 h-14 bg-gradient-to-br from-pink-500 to-indigo-600 rounded-xl flex items-center justify-center mb-6 shadow-md">
-                <span className="text-white text-2xl">🔁</span>
-              </div>
-              <h3 className="text-2xl font-bold mb-3">3. Go deeper</h3>
-              <p className="text-gray-600 leading-relaxed">
-                Ask follow-up questions to refine your understanding — Plotmix adjusts instantly so you can keep
-                learning at your own pace.
-              </p>
-            </div>
+          {/* Image (2/3 width) */}
+          <div className="w-full md:w-2/3 flex justify-center">
+            <img
+              src="https://tailwindcss.com/plus-assets/img/component-images/project-app-screenshot.png"
+              alt="Ask a question demo"
+              className="rounded-3xl bg-gray-50 shadow-2xl ring-1 ring-gray-900/10 object-contain w-full max-w-[1000px] h-auto"
+            />
           </div>
         </div>
       </section>
 
-      {/* Testimonial */}
-      <section className="relative bg-gray-900 py-24 px-6 sm:px-10 text-center">
-        <div className="max-w-4xl mx-auto">
-          <p className="text-indigo-400 font-semibold mb-6">What learners are saying</p>
-          <blockquote className="text-white text-2xl md:text-3xl font-semibold leading-relaxed">
-            "Plotmix feels like having a tutor who never runs out of patience. I finally understand topics I used to
-            skip because they looked too hard."
-          </blockquote>
-          <div className="mt-6 text-gray-400 text-lg font-medium">— Taylor, Computer Science Student</div>
+      {/* Section 2 — Learn in context */}
+      <section className="py-40 bg-indigo-50">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row-reverse items-center justify-between gap-24 px-6 lg:px-8">
+          {/* Text (1/3 width) */}
+          <div className="w-full md:w-1/3 space-y-8 md:pl-12">
+            <h2 className="text-5xl sm:text-6xl font-bold text-gray-900">
+              Learn in context.
+            </h2>
+            <p className="text-xl text-gray-600 leading-relaxed">
+              Your explanations aren’t static. Each one comes alive as a dynamic walkthrough you
+              can follow, question, and expand — as if your favorite teacher built it just for you.
+            </p>
+            <p className="text-indigo-600 font-semibold text-lg">
+              Follow up, explore deeper, and learn at your own pace.
+            </p>
+          </div>
+
+          {/* Image (2/3 width) */}
+          <div className="w-full md:w-2/3 flex justify-center">
+            <img
+              src="https://tailwindcss.com/plus-assets/img/component-images/project-app-screenshot.png"
+              alt="Interactive learning demo"
+              className="rounded-3xl bg-white shadow-2xl ring-1 ring-gray-900/10 object-contain w-full max-w-[1000px] h-auto"
+            />
+          </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-24 px-6 text-center bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600">
+      {/* Section 3 — Create and refine */}
+      <section className="py-40 bg-white">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-24 px-6 lg:px-8">
+          {/* Text (1/3 width) */}
+          <div className="w-full md:w-1/3 space-y-8 md:pr-12">
+            <h2 className="text-5xl sm:text-6xl font-bold text-gray-900">
+              Design your own.
+            </h2>
+            <p className="text-xl text-gray-600 leading-relaxed">
+              Want to go further? Open the Designer to modify, remix, or enhance the generated
+              illustration. Adjust motion, pacing, or visuals — and share it instantly.
+            </p>
+            <p className="text-indigo-600 font-semibold text-lg">Learning meets creation.</p>
+          </div>
+
+          {/* Image (2/3 width) */}
+          <div className="w-full md:w-2/3 flex justify-center">
+            <img
+              src="https://tailwindcss.com/plus-assets/img/component-images/project-app-screenshot.png"
+              alt="Design editor demo"
+              className="rounded-3xl bg-gray-50 shadow-2xl ring-1 ring-gray-900/10 object-contain w-full max-w-[1000px] h-auto"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="py-32 px-6 text-center bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600">
         <div className="max-w-3xl mx-auto">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Bring learning to life — starting today.</h2>
-          <p className="text-lg md:text-xl text-indigo-100 mb-10">
-            Stop waiting for the perfect tutorial. Ask once, understand fully, and keep growing your curiosity with
-            Plotmix.
+          <h2 className="text-5xl font-bold text-white mb-6">
+            Design bold. Launch fast.
+          </h2>
+          <p className="text-lg text-indigo-100 mb-10 leading-relaxed">
+            From question to concept — Plotmix brings every idea to life, faster than ever.
           </p>
+
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/register"
