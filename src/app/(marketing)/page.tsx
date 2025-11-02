@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { HeroInput } from "@/components/marketing/hero-input";
+import { HeroSection } from "@/components/marketing/hero-section";
 
 export const metadata: Metadata = {
   title: "Plotmix — Bring learning to life, never wait for the right tutorial again.",
@@ -14,34 +14,16 @@ export default function MarketingPage() {
       {/* Hero */}
       <section className="relative pt-28 pb-24 px-6 bg-gradient-to-b from-indigo-50 via-white to-purple-50 overflow-hidden">
         <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-5xl font-semibold text-gray-900 sm:text-7xl leading-tight">
+          <h1 className="text-2xl font-semibold text-gray-900 sm:text-7xl leading-tight">
             Never wait for the <br className="hidden sm:block" />
             <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
               right tutorial
             </span>{' '}
             again.
           </h1>
-          <p className="mt-8 text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            Get instant explanations that grow with your curiosity, clear and personal, always on demand.
-          </p>
 
           <div className="mt-8">
-            <HeroInput />
-          </div>
-
-          <div className="mt-10 flex justify-center gap-x-4">
-            <Link
-              href="/register"
-              className="bg-gradient-to-r from-indigo-600 to-pink-600 text-white px-6 py-3 rounded-xl font-semibold text-lg hover:from-indigo-500 hover:to-pink-500 shadow-lg hover:shadow-xl transition-all duration-200"
-            >
-              Start Learning Free
-            </Link>
-            <a
-              href="#how-it-works"
-              className="border border-gray-200 text-gray-900 px-6 py-3 rounded-xl font-semibold text-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200"
-            >
-              See How It Works
-            </a>
+            <HeroSection />
           </div>
 
           <img
@@ -49,7 +31,7 @@ export default function MarketingPage() {
             alt="Plotmix example"
             width="2432"
             height="1442"
-            className="mt-20 rounded-2xl bg-gray-50 shadow-2xl ring-1 ring-gray-900/10"
+            className="mt-12 rounded-2xl bg-gray-50 shadow-2xl ring-1 ring-gray-900/10"
           />
         </div>
       </section>

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { HeroInput } from "@/components/marketing/hero-input";
+import { HeroSection } from "@/components/marketing/hero-section";
 
 export const metadata: Metadata = {
   title: "Plotmix Enterprise — Turn knowledge into lasting understanding.",
@@ -21,35 +21,15 @@ export default function OrganizationsPage() {
         </div>
 
         <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-5xl font-semibold text-gray-900 sm:text-7xl leading-tight">
+          <h1 className="text-2xl font-semibold text-gray-900 sm:text-7xl leading-tight">
             Empower your team with <br className="hidden sm:block" />
             <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
               knowledge that scales
             </span>
           </h1>
 
-          <p className="mt-8 text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto leading-loose">
-            Plotmix helps teams learn faster and stay aligned by turning questions into clear, shared explanations — all
-            in one place.
-          </p>
-
           <div className="mt-8">
-            <HeroInput />
-          </div>
-
-          <div className="mt-10 flex justify-center gap-x-6">
-            <Link
-              href="/contact-sales"
-              className="bg-gradient-to-r from-indigo-600 to-pink-600 text-white px-6 py-3 rounded-xl font-semibold text-lg flex items-center justify-center hover:from-indigo-500 hover:to-pink-500 shadow-lg hover:shadow-xl transition-all duration-200"
-            >
-              Talk to Sales
-            </Link>
-            <a
-              href="#how-it-works"
-              className="border border-gray-200 text-gray-900 px-7 py-3.5 rounded-xl font-semibold text-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200"
-            >
-              See How It Works
-            </a>
+            <HeroSection />
           </div>
 
           <img
@@ -57,7 +37,7 @@ export default function OrganizationsPage() {
             alt="Plotmix for Teams"
             width="2432"
             height="1442"
-            className="mt-20 rounded-2xl bg-gray-50 shadow-2xl ring-1 ring-gray-900/10"
+            className="mt-12 rounded-2xl bg-gray-50 shadow-2xl ring-1 ring-gray-900/10"
           />
         </div>
 
