@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default function OrganizationsPage() {
   return (
     <>
-      <section className="relative pt-36 pb-32 px-6 bg-gradient-to-b from-indigo-50 via-white to-purple-50 overflow-hidden">
+      <section className="relative pt-32 pb-24 px-6 bg-gradient-to-b from-indigo-50 via-white to-purple-50 overflow-hidden">
         <div aria-hidden="true" className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80">
           <div
             className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[40rem] -translate-x-1/2 rotate-[30deg]
@@ -27,15 +27,15 @@ export default function OrganizationsPage() {
             </span>
           </h1>
 
-          <p className="mt-10 text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto leading-loose">
+          <p className="mt-8 text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto leading-loose">
             Plotmix helps teams learn faster and stay aligned by turning questions into clear, shared explanations — all
             in one place.
           </p>
 
-          <div className="mt-12 flex justify-center gap-x-6">
+          <div className="mt-10 flex justify-center gap-x-6">
             <Link
               href="/contact-sales"
-              className="bg-gradient-to-r from-indigo-500 to-pink-500 text-white px-7 py-3.5 rounded-xl font-semibold text-lg hover:from-indigo-600 hover:to-pink-600 shadow-lg hover:shadow-xl transition-all duration-200"
+              className="bg-gradient-to-r from-indigo-600 to-pink-600 text-white px-6 py-3 rounded-xl font-semibold text-lg flex items-center justify-center hover:from-indigo-500 hover:to-pink-500 shadow-lg hover:shadow-xl transition-all duration-200"
             >
               Talk to Sales
             </Link>
@@ -52,7 +52,7 @@ export default function OrganizationsPage() {
             alt="Plotmix for Teams"
             width="2432"
             height="1442"
-            className="mt-24 rounded-2xl bg-gray-50 shadow-2xl ring-1 ring-gray-900/10"
+            className="mt-20 rounded-2xl bg-gray-50 shadow-2xl ring-1 ring-gray-900/10"
           />
         </div>
 

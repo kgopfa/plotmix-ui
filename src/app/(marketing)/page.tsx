@@ -27,7 +27,7 @@ export default function MarketingPage() {
           <div className="mt-10 flex justify-center gap-x-4">
             <Link
               href="/register"
-              className="bg-gradient-to-r from-indigo-600 to-pink-600 text-white px-6 py-3 rounded-xl font-semibold text-lg hover:from-indigo-600 hover:to-pink-600 shadow-lg hover:shadow-xl transition-all duration-200"
+              className="bg-gradient-to-r from-indigo-600 to-pink-600 text-white px-6 py-3 rounded-xl font-semibold text-lg hover:from-indigo-500 hover:to-pink-500 shadow-lg hover:shadow-xl transition-all duration-200"
             >
               Start Learning Free
             </Link>
