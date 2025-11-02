@@ -12,7 +12,7 @@ export default function MarketingPage() {
   return (
     <>
       {/* Hero */}
-      <section className="relative pt-28 pb-24 px-6 bg-gradient-to-b from-indigo-50 via-white to-purple-50 overflow-hidden">
+      <section className="relative pt-28 pb-24 px-6 bg-gradient-to-b from-indigo-50 via-white to-purple-50 bg-dot-pattern overflow-hidden">
         <div className="max-w-7xl mx-auto text-center">
           <h1 className="text-5xl sm:text-7xl font-bold text-gray-900 leading-tight">
             Never wait for the <br className="hidden sm:block" />
@@ -37,7 +37,7 @@ export default function MarketingPage() {
       </section>
 
       {/* Section 1 — Ask Anything */}
-      <section className="py-40 bg-white">
+      <section className="py-40 bg-indigo-50 bg-dot-pattern">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-24 px-6 lg:px-8">
           {/* Text (1/3 width) */}
           <div className="w-full md:w-1/3 space-y-8 md:pr-12">
@@ -65,7 +65,7 @@ export default function MarketingPage() {
       </section>
 
       {/* Section 2 — Learn in context */}
-      <section className="py-40 bg-indigo-50">
+      <section className="py-40 bg-white bg-dot-pattern">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row-reverse items-center justify-between gap-24 px-6 lg:px-8">
           {/* Text (1/3 width) */}
           <div className="w-full md:w-1/3 space-y-8 md:pl-12">
@@ -93,7 +93,7 @@ export default function MarketingPage() {
       </section>
 
       {/* Section 3 — Create and refine */}
-      <section className="py-40 bg-white">
+      <section className="py-40 bg-indigo-50 bg-dot-pattern">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-24 px-6 lg:px-8">
           {/* Text (1/3 width) */}
           <div className="w-full md:w-1/3 space-y-8 md:pr-12">

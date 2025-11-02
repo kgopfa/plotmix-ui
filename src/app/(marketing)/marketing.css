@@ -5,3 +5,7 @@ body {
   height: auto !important;
 }
 
+.bg-dot-pattern {
+  background-image: radial-gradient(circle, rgba(99, 102, 241, 0.15) 1.0px, transparent 1.0px);
+  background-size: 16px 16px;
+}
