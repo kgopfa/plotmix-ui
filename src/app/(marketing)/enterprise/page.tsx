@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function OrganizationsPage() {
   return (
     <>
-      <section className="relative pt-32 pb-24 px-6 bg-gradient-to-b from-indigo-50 via-white to-purple-50 overflow-hidden">
+      <section className="relative pt-28 pb-24 px-6 bg-gradient-to-b from-indigo-50 via-white to-purple-50 overflow-hidden">
         <div aria-hidden="true" className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80">
           <div
             className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[40rem] -translate-x-1/2 rotate-[30deg]
@@ -33,7 +33,7 @@ export default function OrganizationsPage() {
             in one place.
           </p>
 
-          <div className="mt-12">
+          <div className="mt-8">
             <HeroInput />
           </div>
 

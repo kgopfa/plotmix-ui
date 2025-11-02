@@ -12,7 +12,7 @@ export default function MarketingPage() {
   return (
     <>
       {/* Hero */}
-      <section className="relative pt-32 pb-24 px-6 bg-gradient-to-b from-indigo-50 via-white to-purple-50 overflow-hidden">
+      <section className="relative pt-28 pb-24 px-6 bg-gradient-to-b from-indigo-50 via-white to-purple-50 overflow-hidden">
         <div className="max-w-7xl mx-auto text-center">
           <h1 className="text-5xl font-semibold text-gray-900 sm:text-7xl leading-tight">
             Never wait for the <br className="hidden sm:block" />
