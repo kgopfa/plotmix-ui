@@ -37,7 +37,7 @@ export default function OrganizationsPage() {
             alt="Plotmix for Teams"
             width="2432"
             height="1442"
-            className="mt-12 rounded-2xl bg-gray-50 shadow-2xl ring-1 ring-gray-900/10"
+            className="mt-12 rounded-2xl bg-gray-50 shadow-2xl ring-1 ring-gray-900/10 w-full max-w-[1200px] h-auto"
           />
         </div>
 
