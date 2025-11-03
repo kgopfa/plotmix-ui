@@ -1030,8 +1030,8 @@ export default function Designer({ onReady }: DesignerProps = {}) {
           ref={fullscreenCanvasRef}
           dimensions={dimensions}
           snapGuides={snapGuides}
-          elements={isPixiReady ? canvasObjects : []}
-          groups={isPixiReady ? groups : []}
+          elements={canvasObjects}
+          groups={groups}
           onAppReady={() => setIsPixiReady(true)}
           selectedIds={selectedObjects.map(el => el.id)}
           hoveredId={hoveredId}

@@ -668,10 +668,7 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
                     }
                   }}
                 >
-                  <pixiGraphics draw={(g) => {
-                    const container = shapeRefs.current[el.id] as Container;
-                    drawShape(g, el, container);
-                  }} />
+                  <pixiGraphics draw={(g) => drawShape(g, el)} />
 
                   {/* Render text separately for text elements (keep visible during editing, but non-interactive) */}
                   {el.type === 'text' && (
