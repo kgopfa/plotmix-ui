@@ -23,7 +23,7 @@ export const SuggestionsSection: React.FC<SuggestionsSectionProps> = ({
     <div className="mb-20">
       <div className="flex items-center gap-3 mb-6">
         <h2 className="text-xl ml-2 font-semibold text-gray-900">
-          Quick Suggestions
+          Quick <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Suggestions</span>
         </h2>
       </div>
       
