@@ -343,8 +343,8 @@ export const DesignCanvas = (props: DesignCanvasProps) => {
           return;
         }
 
-        // For creation tools (rectangle, circle, triangle, arc, text, line, simpleLine, polygon), always call canvas click handler
-        if (['rectangle', 'circle', 'triangle', 'arc', 'text', 'line', 'simpleLine', 'polygon'].includes(props.tool)) {
+        // For creation tools (rectangle, circle, triangle, arc, text, code-editor, line, simpleLine, polygon), always call canvas click handler
+        if (['rectangle', 'circle', 'triangle', 'arc', 'text', 'code-editor', 'line', 'simpleLine', 'polygon'].includes(props.tool)) {
           props.handleCanvasClick(e);
           return;
         }
