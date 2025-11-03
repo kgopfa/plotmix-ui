@@ -3,9 +3,9 @@ import Link from "next/link";
 import { HeroSection } from "@/components/marketing/hero-section";
 
 export const metadata: Metadata = {
-  title: "Plotmix for Teams — Scale expertise, one question at a time.",
+  title: "For Teams — Scale expertise, one question at a time.",
   description:
-    "Empower your organization with instant, on-demand learning. Plotmix helps teams capture, explain, and share knowledge faster — all in one place.",
+    "Empower your organization with instant, on-demand learning. Help teams capture, explain, and share knowledge faster — all in one place.",
 };
 
 export default function EnterprisePage() {
