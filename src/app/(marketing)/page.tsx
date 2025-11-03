@@ -44,12 +44,8 @@ export default function MarketingPage() {
             <h2 className="text-5xl sm:text-6xl font-bold text-gray-900">
               Ask anything.
             </h2>
-            <p className="text-xl text-gray-600 leading-relaxed">
-              Start with a question — as specific or as broad as you like. Plotmix turns it into
-              a clear, structured explanation instantly. No more endless searches or half-answers.
-            </p>
-            <p className="text-indigo-600 font-semibold text-lg">
-              Instant understanding, one prompt away.
+            <p className="text-xl text-gray-800 leading-relaxed">
+              Every question becomes a story you can watch, explore, and remember. Learn faster through content that text alone can’t deliver.
             </p>
           </div>
 
@@ -72,12 +68,8 @@ export default function MarketingPage() {
             <h2 className="text-5xl sm:text-6xl font-bold text-gray-900">
               Learn in context.
             </h2>
-            <p className="text-xl text-gray-600 leading-relaxed">
-              Your explanations aren’t static. Each one comes alive as a dynamic walkthrough you
-              can follow, question, and expand — as if your favorite teacher built it just for you.
-            </p>
-            <p className="text-indigo-600 font-semibold text-lg">
-              Follow up, explore deeper, and learn at your own pace.
+            <p className="text-xl text-gray-800 leading-relaxed">
+              Each explanation grows with you. Ask follow ups, test what you’ve learned, and share your take. Every lesson becomes a conversation that deepens your understanding.
             </p>
           </div>
 
@@ -100,11 +92,9 @@ export default function MarketingPage() {
             <h2 className="text-5xl sm:text-6xl font-bold text-gray-900">
               Design your own.
             </h2>
-            <p className="text-xl text-gray-600 leading-relaxed">
-              Want to go further? Open the Designer to modify, remix, or enhance the generated
-              illustration. Adjust motion, pacing, or visuals — and share it instantly.
+            <p className="text-xl text-gray-800 leading-relaxed">
+              Bring your ideas to life on the canvas. Create scenes, move elements, and shape your story exactly how you want it. Simple to use, made for creativity.
             </p>
-            <p className="text-indigo-600 font-semibold text-lg">Learning meets creation.</p>
           </div>
 
           {/* Image (2/3 width) */}
@@ -122,10 +112,10 @@ export default function MarketingPage() {
       <section className="py-32 px-6 text-center bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600">
         <div className="max-w-3xl mx-auto">
           <h2 className="text-5xl font-bold text-white mb-6">
-            Design bold. Launch fast.
+            Ask. Learn. Share. All in one place.
           </h2>
           <p className="text-lg text-indigo-100 mb-10 leading-relaxed">
-            From question to concept — Plotmix brings every idea to life, faster than ever.
+            Learn at your pace, on demand.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -136,10 +126,10 @@ export default function MarketingPage() {
               Start Learning Free
             </Link>
             <Link
-              href="/login"
+              href="/examples"
               className="bg-indigo-500/20 text-white px-8 py-4 rounded-xl font-semibold text-lg border-2 border-white/30 hover:bg-indigo-500/30 transition-all duration-200 backdrop-blur-sm"
             >
-              Sign In
+              View Examples
             </Link>
           </div>
         </div>
