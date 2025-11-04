@@ -17,7 +17,6 @@ export default function DesignerPage() {
   const { setProjectInfo, setBaseline, captureBaseline } = useProjectStore();
   const { loadSnappingPreferences } = useSnappingPersistence();
   const [isLoading, setIsLoading] = useState(true);
-  const [pendingData, setPendingData] = useState<{ elements: any[], groups: any[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const initialize = useCallback(async () => {
@@ -145,8 +144,9 @@ export default function DesignerPage() {
         new Map(sanitizedGroups.map((g: any) => [g.id as string, g])).values()
       ) as import('@/types/canvas').CanvasGroup[];
 
-      // Store elements/groups for later loading after PIXI is ready
-      setPendingData({ elements, groups });
+      // Load elements and groups into canvas store immediately (like player does)
+      canvasStore.setElements(elements);
+      canvasStore.setGroups(groups);
 
       // Load timeline data (doesn't trigger rendering)
       timelineStore.loadProjectData({
@@ -199,13 +199,7 @@ export default function DesignerPage() {
           <Designer 
             key={contentId} 
             onReady={() => {
-              const canvasStore = useCanvasStore.getState();
-              if (pendingData) {
-                canvasStore.setElements(pendingData.elements);
-                canvasStore.setGroups(pendingData.groups);
-                captureBaseline();
-                setPendingData(null);
-              }
+              captureBaseline();
             }}
           />
         </>
