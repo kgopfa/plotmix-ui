@@ -9,17 +9,17 @@ export interface Suggestion {
 export const suggestions: Suggestion[] = [
   {
     id: '1',
-    title: 'Design Twitter',
-    description: 'Create a system design for Twitter',
-    prompt: 'Design a system similar to Twitter. Include user authentication, tweet creation and storage, timeline generation, follow/unfollow functionality, and real-time notifications. Show the database schema, API endpoints, and system architecture.',
-    category: 'design'
+    title: 'Compliance Training',
+    description: 'Understand regulatory compliance',
+    prompt: 'Explain key compliance training requirements for employees. Cover topics like data privacy regulations, workplace safety standards, anti-discrimination policies, and industry-specific compliance frameworks. Show how to track and verify completion of mandatory training.',
+    category: 'system'
   },
   {
     id: '2',
-    title: 'Design Spotify Top K Songs',
-    description: 'Design a system to find top K songs',
-    prompt: 'Design a system to find the top K most played songs on Spotify. Consider millions of users, real-time play counts, and efficient data structures. Include the algorithm, database design, and scaling considerations.',
-    category: 'design'
+    title: 'Performance Management',
+    description: 'Learn performance review processes',
+    prompt: 'Explain the performance management cycle including goal setting, continuous feedback, mid-year reviews, and annual evaluations. Cover best practices for giving constructive feedback, setting SMART goals, and creating development plans for employee growth.',
+    category: 'system'
   },
   {
     id: '3',
@@ -30,37 +30,37 @@ export const suggestions: Suggestion[] = [
   },
   {
     id: '4',
-    title: 'Explain Depth First Search',
-    description: 'Visualize DFS algorithm step by step',
-    prompt: 'Create a visual representation of Depth First Search algorithm. Show a graph with nodes and demonstrate how DFS traverses through the graph step by step, including the stack operations and visited nodes.',
-    category: 'algorithm'
+    title: 'Change Management',
+    description: 'Navigate organizational transitions',
+    prompt: 'Explain change management frameworks and strategies. Cover the stages of change adoption, how to communicate change effectively, manage resistance, and create buy-in from stakeholders. Include practical tools like the ADKAR model and Kotter\'s 8-step process.',
+    category: 'system'
   },
   {
     id: '5',
-    title: 'Design Twitter',
-    description: 'Create a system design for Twitter',
-    prompt: 'Design a system similar to Twitter. Include user authentication, tweet creation and storage, timeline generation, follow/unfollow functionality, and real-time notifications. Show the database schema, API endpoints, and system architecture.',
-    category: 'design'
+    title: 'Leadership Development',
+    description: 'Build effective leadership skills',
+    prompt: 'Explain core leadership competencies and development pathways. Cover different leadership styles, emotional intelligence, decision-making frameworks, team building strategies, and how to develop a leadership pipeline within an organization.',
+    category: 'system'
   },
   {
     id: '6',
-    title: 'Design Netflix',
-    description: 'Design a video streaming platform',
-    prompt: 'Design a video streaming platform like Netflix. Include video storage and delivery, recommendation system, user profiles, content management, and CDN distribution for global scalability.',
-    category: 'design'
+    title: 'Project Management',
+    description: 'Master project planning and execution',
+    prompt: 'Explain project management methodologies and best practices. Cover project lifecycle phases, risk management, stakeholder communication, resource allocation, timeline planning, and how to handle scope creep and project delays.',
+    category: 'system'
   },
   {
     id: '7',
-    title: 'Design Uber',
-    description: 'Design a ride-sharing system',
-    prompt: 'Design a ride-sharing system like Uber. Include user and driver apps, real-time location tracking, ride matching algorithm, payment processing, and handling peak demand scenarios.',
-    category: 'design'
+    title: 'Employee Onboarding',
+    description: 'Create effective onboarding programs',
+    prompt: 'Explain how to design and implement effective employee onboarding programs. Cover pre-boarding preparation, first-day activities, first-week goals, 30-60-90 day plans, mentorship programs, and how to measure onboarding success and retention rates.',
+    category: 'system'
   },
   {
     id: '8',
-    title: 'Design Spotify Top K',
-    description: 'Design a system to find top K songs',
-    prompt: 'Design a system to find the top K most played songs on Spotify. Consider millions of users, real-time play counts, and efficient data structures. Include the algorithm, database design, and scaling considerations.',
-    category: 'design'
+    title: 'Learning Analytics',
+    description: 'Measure training effectiveness',
+    prompt: 'Explain how to measure and analyze learning outcomes. Cover Kirkpatrick\'s four levels of evaluation, key learning metrics, ROI calculations for training programs, how to track learner engagement, and use data to improve training effectiveness.',
+    category: 'system'
   }
 ]; 
