@@ -105,6 +105,20 @@ export default function ChatPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim() || isLoading) return;
+
+    // Check if the prompt matches Binary Search
+    const binarySearchSuggestion = suggestions.find(s => s.id === '3');
+    const isBinarySearch = binarySearchSuggestion && prompt.trim() === binarySearchSuggestion.prompt.trim();
+    
+    if (!isBinarySearch) {
+      // Show MVP notice popup instead of error
+      setShowMvpNotice(true);
+      setIsNoticeDismissed(false);
+      return;
+    }
+    
+    // Hide MVP notice if Binary Search is submitted
+    setShowMvpNotice(false);
     
     // Prevent unauthenticated users from creating multiple chats
     if (!isAuthenticated && existingProjectId) {
@@ -132,6 +146,10 @@ export default function ChatPage() {
 
   const handleSuggestionClick = (suggestion: Suggestion) => {
     setPrompt(suggestion.prompt);
+    // Hide MVP notice when selecting a suggestion
+    if (suggestion.id === '3') {
+      setShowMvpNotice(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -191,46 +209,40 @@ export default function ChatPage() {
             {/* MVP Notice Popup - Fixed position on the right */}
             {showMvpNotice && (
               <div 
-                className="fixed right-6 top-24 z-50 w-80 rounded-2xl overflow-hidden shadow-xl shadow-indigo-500/20"
+                className="fixed right-6 top-24 z-50 w-80 bg-white rounded-2xl shadow-xl border border-gray-200 p-6"
                 style={{
                   animation: 'slideInFromRight 0.3s ease-out'
                 }}
               >
-                {/* Gradient border effect */}
-                <div className="p-0.5 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
-                  <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-6">
-                    {/* Header with icon and close button */}
-                    <div className="flex items-start justify-between gap-3 mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                          <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-bold text-gray-900 leading-tight">
-                            Early Access Preview
-                          </h3>
-                          <div className="mt-0.5 h-1 w-12 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full"></div>
-                        </div>
-                      </div>
-                      <button
-                        onClick={handleDismissMvpNotice}
-                        className="flex-shrink-0 p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-all duration-200 hover:scale-110 active:scale-95"
-                        aria-label="Close"
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
+                {/* Header with icon and close button */}
+                <div className="flex items-start justify-between gap-3 mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
                     </div>
-                    
-                    {/* Content */}
-                    <p className="text-sm text-gray-700 leading-relaxed">
-                      Thank you for trying Plotmix! We're excited to share our MVP with you. For now, we're focusing on demonstrating our platform with the <strong className="font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Binary Search</strong> example. We're working hard to expand our capabilities, and we'd love to hear your feedback as we continue building.
-                    </p>
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900 leading-tight">
+                        Early Access Preview
+                      </h3>
+                    </div>
                   </div>
+                  <button
+                    onClick={handleDismissMvpNotice}
+                    className="flex-shrink-0 p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-all duration-200 hover:scale-110 active:scale-95"
+                    aria-label="Close"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
                 </div>
+                
+                {/* Content */}
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  Thank you for trying Plotmix! We're excited to share our MVP with you. For now, we're focusing on demonstrating our platform with the <strong className="font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Binary Search</strong> example. We're working hard to expand our capabilities, and we'd love to hear your feedback as we continue building.
+                </p>
               </div>
             )}
 
@@ -238,7 +250,7 @@ export default function ChatPage() {
             {!showMvpNotice && isNoticeDismissed && (
               <button
                 onClick={handleOpenMvpNotice}
-                className="fixed right-6 top-24 z-50 w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 transition-all duration-200 hover:scale-110 active:scale-95 group"
+                className="fixed right-6 top-24 z-50 w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-500 rounded-full flex items-center justify-center shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 transition-all duration-200 hover:scale-110 active:scale-95 group"
                 aria-label="Show MVP information"
                 style={{
                   animation: 'slideInFromRight 0.3s ease-out'
