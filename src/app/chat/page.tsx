@@ -29,11 +29,14 @@ export default function ChatPage() {
   const [existingProjectId, setExistingProjectId] = useState<string | null>(null);
   const promptInitialized = useRef(false);
   const [showMvpNotice, setShowMvpNotice] = useState(false);
+  const [isNoticeDismissed, setIsNoticeDismissed] = useState(false);
 
   // Check if MVP notice was previously dismissed
   useEffect(() => {
     const mvpNoticeDismissed = localStorage.getItem('plotmix-mvp-notice-dismissed');
-    if (!mvpNoticeDismissed) {
+    if (mvpNoticeDismissed) {
+      setIsNoticeDismissed(true);
+    } else {
       // Show notice after a short delay
       const timer = setTimeout(() => setShowMvpNotice(true), 500);
       return () => clearTimeout(timer);
@@ -42,7 +45,14 @@ export default function ChatPage() {
 
   const handleDismissMvpNotice = () => {
     setShowMvpNotice(false);
+    setIsNoticeDismissed(true);
     localStorage.setItem('plotmix-mvp-notice-dismissed', 'true');
+  };
+
+  const handleOpenMvpNotice = () => {
+    setShowMvpNotice(true);
+    setIsNoticeDismissed(false);
+    localStorage.removeItem('plotmix-mvp-notice-dismissed');
   };
 
   // Check if unauthenticated user already has a chat
@@ -222,6 +232,22 @@ export default function ChatPage() {
                   </div>
                 </div>
               </div>
+            )}
+
+            {/* Floating Info Button - Shows when notice is dismissed */}
+            {!showMvpNotice && isNoticeDismissed && (
+              <button
+                onClick={handleOpenMvpNotice}
+                className="fixed right-6 top-24 z-50 w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 transition-all duration-200 hover:scale-110 active:scale-95 group"
+                aria-label="Show MVP information"
+                style={{
+                  animation: 'slideInFromRight 0.3s ease-out'
+                }}
+              >
+                <svg className="w-6 h-6 text-white transition-transform duration-200 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
             )}
 
             <PromptInput
