@@ -28,6 +28,22 @@ export default function ChatPage() {
   const searchParams = useSearchParams();
   const [existingProjectId, setExistingProjectId] = useState<string | null>(null);
   const promptInitialized = useRef(false);
+  const [showMvpNotice, setShowMvpNotice] = useState(false);
+
+  // Check if MVP notice was previously dismissed
+  useEffect(() => {
+    const mvpNoticeDismissed = localStorage.getItem('plotmix-mvp-notice-dismissed');
+    if (!mvpNoticeDismissed) {
+      // Show notice after a short delay
+      const timer = setTimeout(() => setShowMvpNotice(true), 500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleDismissMvpNotice = () => {
+    setShowMvpNotice(false);
+    localStorage.setItem('plotmix-mvp-notice-dismissed', 'true');
+  };
 
   // Check if unauthenticated user already has a chat
   useEffect(() => {
@@ -160,6 +176,38 @@ export default function ChatPage() {
                 suggestions={suggestions} 
                 onSuggestionClick={handleSuggestionClick} 
               />
+            )}
+
+            {/* MVP Notice Popup - Fixed position on the right */}
+            {showMvpNotice && (
+              <div 
+                className="fixed right-6 top-24 z-50 w-80 bg-white rounded-2xl shadow-2xl border border-gray-200 p-10"
+                style={{
+                  animation: 'slideInFromRight 0.3s ease-out'
+                }}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h3 className="text-sm font-semibold text-gray-900">
+                        Early Access Preview
+                      </h3>
+                      <button
+                        onClick={handleDismissMvpNotice}
+                        className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+                        aria-label="Close"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                    <p className="text-sm mt-4 text-gray-700 leading-relaxed">
+                      Thank you for trying Plotmix! We're excited to share our MVP with you. For now, we're focusing on demonstrating our platform with the <strong className="font-semibold text-gray-900">Binary Search</strong> example. We're working hard to expand our capabilities, and we'd love to hear your feedback as we continue building.
+                    </p>
+                  </div>
+                </div>
+              </div>
             )}
 
             <PromptInput
