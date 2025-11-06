@@ -52,7 +52,7 @@ export default function MarketingPage() {
           {/* Image (2/3 width) */}
           <div className="w-full md:w-2/3 flex justify-center">
             <img
-              src="https://tailwindcss.com/plus-assets/img/component-images/project-app-screenshot.png"
+              src="/marketing/chatpage.gif"
               alt="Ask a question demo"
               className="rounded-3xl bg-gray-50 shadow-2xl ring-1 ring-gray-900/10 object-contain w-full max-w-[1200px] h-auto"
             />
@@ -76,7 +76,7 @@ export default function MarketingPage() {
           {/* Image (2/3 width) */}
           <div className="w-full md:w-2/3 flex justify-center">
             <img
-              src="https://tailwindcss.com/plus-assets/img/component-images/project-app-screenshot.png"
+              src="/marketing/contentpage.png"
               alt="Interactive learning demo"
               className="rounded-3xl bg-white shadow-2xl ring-1 ring-gray-900/10 object-contain w-full max-w-[1200px] h-auto"
             />
@@ -100,7 +100,7 @@ export default function MarketingPage() {
           {/* Image (2/3 width) */}
           <div className="w-full md:w-2/3 flex justify-center">
             <img
-              src="https://tailwindcss.com/plus-assets/img/component-images/project-app-screenshot.png"
+              src="/marketing/designerpage.png"
               alt="Design editor demo"
               className="rounded-3xl bg-gray-50 shadow-2xl ring-1 ring-gray-900/10 object-contain w-full max-w-[1200px] h-auto"
             />
