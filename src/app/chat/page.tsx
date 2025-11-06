@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { NavigationSidebar } from '@/components/shared/navigation-sidebar';
 import { SuggestionsSection } from '@/components/chat/suggestions-section';
 import { PromptInput } from '@/components/chat/prompt-input';
@@ -16,6 +16,7 @@ import { useProjectGeneration } from '@/hooks/use-project-generation';
 import { ChatAttachment, ChatOptions } from '@/types/project-generation';
 
 const UNAUTHENTICATED_CHAT_KEY = 'plotmix-unauthenticated-chat-project-id';
+const PENDING_PROMPT_KEY = 'plotmix-pending-prompt';
 
 export default function ChatPage() {
   const [prompt, setPrompt] = useState('');
@@ -24,7 +25,9 @@ export default function ChatPage() {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const { submitChat, isLoading, error } = useProjectGeneration();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [existingProjectId, setExistingProjectId] = useState<string | null>(null);
+  const promptInitialized = useRef(false);
 
   // Check if unauthenticated user already has a chat
   useEffect(() => {
@@ -39,6 +42,39 @@ export default function ChatPage() {
       setExistingProjectId(null);
     }
   }, [isAuthenticated, authLoading]);
+
+  // Load prompt from query parameter or sessionStorage (after login)
+  useEffect(() => {
+    // Only initialize once
+    if (promptInitialized.current) return;
+
+    // Wait for auth to finish loading
+    if (authLoading) return;
+
+    // First check query parameter
+    const queryParam = searchParams.get('q');
+    if (queryParam) {
+      const decodedPrompt = decodeURIComponent(queryParam);
+      setPrompt(decodedPrompt);
+      promptInitialized.current = true;
+      // Clean up the URL after a short delay
+      setTimeout(() => {
+        router.replace('/chat', { scroll: false });
+      }, 100);
+      return;
+    }
+
+    // Then check sessionStorage for pending prompt (after login)
+    // Only check if user is authenticated (they just logged in)
+    if (isAuthenticated) {
+      const pendingPrompt = sessionStorage.getItem(PENDING_PROMPT_KEY);
+      if (pendingPrompt) {
+        setPrompt(pendingPrompt);
+        sessionStorage.removeItem(PENDING_PROMPT_KEY);
+        promptInitialized.current = true;
+      }
+    }
+  }, [searchParams, router, isAuthenticated, authLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
