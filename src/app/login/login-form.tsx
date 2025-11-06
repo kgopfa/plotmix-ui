@@ -13,10 +13,10 @@ export default function LoginForm() {
   const router = useRouter();
   const { signIn, isAuthenticated, loading: authLoading } = useAuth();
 
-  // Redirect authenticated users to homepage
+  // Redirect authenticated users to chat page
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      router.push('/');
+      router.push('/chat');
     }
   }, [isAuthenticated, authLoading, router]);
 

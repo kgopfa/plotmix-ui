@@ -26,7 +26,7 @@ export default function NotFound() {
           {/* Navigation Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="/"
+              href="/chat"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105"
             >
               <Home className="h-4 w-4" />

@@ -72,7 +72,7 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({ navigation
 
             <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white px-6 pb-2 ring-1 ring-gray-200">
               <div className="flex h-16 shrink-0 items-center">
-                <Link href="/" className="h-8 w-8 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/30 hover:shadow-xl transition-shadow duration-200">
+                <Link href="/chat" className="h-8 w-8 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/30 hover:shadow-xl transition-shadow duration-200">
                   <span className="text-white font-bold text-sm">P</span>
                 </Link>
               </div>
@@ -115,7 +115,7 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({ navigation
         <div className="flex flex-col h-full overflow-x-visible w-full">
           <div className="flex h-16 shrink-0 items-center mt-6">
             <div className="w-20 flex justify-center">
-              <Link href="/" className="h-10 w-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/30 hover:shadow-xl transition-shadow duration-200">
+              <Link href="/chats" className="h-10 w-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/30 hover:shadow-xl transition-shadow duration-200">
                 <span className="text-white font-bold text-sm">P</span>
               </Link>
             </div>

@@ -22,10 +22,10 @@ export default function RegisterForm() {
   const router = useRouter();
   const { signIn, isAuthenticated, loading: authLoading } = useAuth();
 
-  // Redirect authenticated users to homepage
+  // Redirect authenticated users to chat page
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      router.push('/');
+      router.push('/chat');
     }
   }, [isAuthenticated, authLoading, router]);
 
@@ -120,8 +120,8 @@ export default function RegisterForm() {
         setError('Registration successful but automatic sign-in failed. Please sign in manually.');
         router.push('/login?message=Registration successful. Please sign in.');
       } else {
-        // Sign-in successful, redirect to home page
-        router.push('/');
+        // Sign-in successful, redirect to chats page
+        router.push('/chats');
       }
     } catch {
       setError('An error occurred. Please try again.');
