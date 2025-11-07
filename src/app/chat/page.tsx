@@ -241,7 +241,7 @@ export default function ChatPage() {
                 
                 {/* Content */}
                 <p className="text-sm text-gray-700 leading-relaxed">
-                  Thank you for trying Plotmix! We're excited to share our MVP with you. For now, we're focusing on demonstrating our platform with the <strong className="font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Binary Search</strong> example. We're working hard to expand our capabilities, and we'd love to hear your feedback as we continue building.
+                  Thank you for trying Plotmix! I'm excited to share the platform with you. For now, unfortunately only the <strong className="font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Binary Search</strong> example is available to give a glimpse of what the platform will be able to do in the future. I'm working hard to expand our capabilities, and I'd love to hear your feedback as we continue building. Cheers!
                 </p>
               </div>
             )}
