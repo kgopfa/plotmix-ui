@@ -105,15 +105,15 @@ export default function ContactPage() {
                   We'd love to hear from you! Share your feedback, request features, or just say hello. Your input helps us build something amazing.
                 </p>
 
-                <dl className="mt-10 space-y-4 text-base leading-7 text-gray-600">
+                <dl className="mt-10 space-y-4 text-base font-medium leading-7 text-gray-600">
                   <div className="flex gap-x-4">
                     <dt className="flex-none">
                       <span className="sr-only">Email</span>
-                      <EnvelopeIcon aria-hidden="true" className="h-7 w-6 text-gray-400" />
+                      <EnvelopeIcon aria-hidden="true" className="h-7 w-6 text-indigo-500" />
                     </dt>
                     <dd>
-                      <a href="mailto:hello@plotmix.ai" className="hover:text-gray-900">
-                        hello@plotmix.ai
+                      <a href="mailto:team@getplotmix.com" className="hover:text-indigo-900">
+                        team@getplotmix.com
                       </a>
                     </dd>
                   </div>
