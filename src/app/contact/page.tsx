@@ -112,8 +112,8 @@ export default function ContactPage() {
                       <EnvelopeIcon aria-hidden="true" className="h-7 w-6 text-indigo-500" />
                     </dt>
                     <dd>
-                      <a href="mailto:team@getplotmix.com" className="hover:text-indigo-900">
-                        team@getplotmix.com
+                      <a href="mailto:team.developers@getplotmix.com" className="hover:text-indigo-900">
+                        team.developers@getplotmix.com
                       </a>
                     </dd>
                   </div>

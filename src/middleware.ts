@@ -19,7 +19,7 @@ export async function middleware(request: NextRequest) {
       "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "img-src 'self' data: https:",
       "font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com",
-      "connect-src 'self' ws: wss: http://localhost:8000 https://localhost:8000",
+      "connect-src 'self' ws: wss: http://localhost:8000 https://localhost:8000 https://plotmix-svc.onrender.com",
       "frame-ancestors 'none'"
     ].join('; '),
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
