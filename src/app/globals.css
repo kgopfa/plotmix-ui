@@ -20,8 +20,8 @@
 }
 
 html, body {
-  /* Don't set touch-action here - let browser handle zoom normally */
-  overflow: hidden; /* Only prevent scrollbars since you have a fixed layout */
+  /* Allow scrolling on all pages */
+  overflow: auto;
 }
 
 body {

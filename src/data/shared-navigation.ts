@@ -1,4 +1,4 @@
-import { CirclePlus, MessagesSquare, Clapperboard, Boxes } from 'lucide-react';
+import { CirclePlus, MessagesSquare, Clapperboard, Boxes, Mail } from 'lucide-react';
 
 export interface NavigationItem {
   name: string;
@@ -37,9 +37,9 @@ export const navigation: NavigationItem[] = [
     strokeWidth: 1.75,
   },
   {
-    name: 'Content',
-    href: '/content',
-    icon: Clapperboard,
+    name: 'Contact',
+    href: '/contact',
+    icon: Mail,
     color: 'text-gray-500',
     hoverColor: 'hover:bg-gradient-to-r hover:from-fuchsia-50 hover:to-fuchsia-50 hover:text-fuchsia-700',
     activeColor: 'bg-gradient-to-r from-fuchsia-500 to-fuchsia-600 text-white shadow-lg shadow-fuchsia-500/30'
