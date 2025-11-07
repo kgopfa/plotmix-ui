@@ -28,6 +28,14 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Bring learning to life, never wait for the right tutorial again.",
   description: "Turn your questions into clear, on-demand explanations you can follow, refine, and build on instantly. Bring learning to life — one question at a time.",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon.png", type: "image/png" },
+    ],
+    shortcut: "/icon.png",
+    apple: "/icon.png",
+  },
 };
 
 export default function RootLayout({

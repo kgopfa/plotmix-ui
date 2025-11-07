@@ -1,14 +1,28 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { Dialog, DialogPanel } from '@headlessui/react'
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
+import { Loader2 } from 'lucide-react'
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [isNavigating, setIsNavigating] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
+
+  useEffect(() => {
+    router.prefetch('/login')
+  }, [router])
+
+  const handleNavigateToLogin = () => {
+    if (isNavigating) return
+    setIsNavigating(true)
+    setMobileMenuOpen(false)
+    router.push('/login')
+  }
 
   const navigation = [
     { name: 'Individuals', href: '/' },
@@ -51,9 +65,17 @@ export default function Header() {
         </div>
 
         <div className="hidden lg:flex lg:flex-1 lg:justify-end">
-          <Link href="/login" className="text-sm font-semibold text-gray-900 hover:text-indigo-600">
-            Try it now <span aria-hidden="true">&rarr;</span>
-          </Link>
+          <button
+            type="button"
+            onClick={handleNavigateToLogin}
+            disabled={isNavigating}
+            className="inline-flex items-center gap-2 text-sm font-semibold text-gray-900 hover:text-indigo-600 transition-colors disabled:opacity-70"
+            aria-busy={isNavigating}
+          >
+            {isNavigating && <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />}
+            <span>Try it now</span>
+            <span aria-hidden="true">&rarr;</span>
+          </button>
         </div>
 
         {/* Mobile button */}
@@ -102,9 +124,16 @@ export default function Header() {
                 </Link>
               );
             })}
-            <Link href="/login" className="block rounded-lg px-3 py-2 text-base font-semibold text-gray-900 hover:bg-gray-50">
-              Sign in
-            </Link>
+            <button
+              type="button"
+              onClick={handleNavigateToLogin}
+              disabled={isNavigating}
+              className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-base font-semibold text-gray-900 hover:bg-gray-50 disabled:opacity-70"
+              aria-busy={isNavigating}
+            >
+              <span>Sign in</span>
+              {isNavigating && <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />}
+            </button>
           </div>
         </DialogPanel>
       </Dialog>

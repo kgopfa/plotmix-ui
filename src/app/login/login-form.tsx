@@ -2,7 +2,8 @@
 
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { signIn as nextAuthSignIn } from 'next-auth/react';
 import { useAuth } from '@/lib/auth-context';
 
 export default function LoginForm() {
@@ -10,8 +11,10 @@ export default function LoginForm() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState(false);
   const router = useRouter();
-  const { signIn, isAuthenticated, loading: authLoading } = useAuth();
+  const searchParams = useSearchParams();
+  const { signIn: signInWithCredentials, isAuthenticated, loading: authLoading } = useAuth();
 
   // Redirect authenticated users to chat page
   useEffect(() => {
@@ -19,6 +22,22 @@ export default function LoginForm() {
       router.push('/chat');
     }
   }, [isAuthenticated, authLoading, router]);
+
+  // Surface OAuth error messages from query params
+  useEffect(() => {
+    const errorParam = searchParams.get('error');
+    if (!errorParam) {
+      return;
+    }
+
+    if (errorParam === 'oauth-account-missing') {
+      setError('We could not find an account for that provider. Create an account first to continue.');
+    } else if (errorParam === 'oauth-no-email') {
+      setError('We could not read your email from the provider. Try a different account or contact support.');
+    } else {
+      setError('We were unable to complete the provider sign-in. Please try another method.');
+    }
+  }, [searchParams]);
 
   // Show loading while checking authentication
   if (authLoading) {
@@ -44,17 +63,35 @@ export default function LoginForm() {
     setLoading(true);
 
     try {
-      const result = await signIn({ email, password });
-      
+      const result = await signInWithCredentials({ email, password });
+
       if (result?.error) {
-        setError('Invalid email or password');
-      } else {
-        setError('An unexpected error occurred. Please try again.');
+        if (result.error === 'CredentialsSignin') {
+          setError('Invalid email or password');
+        } else {
+          setError('Unable to sign in. Please try again.');
+        }
+        return;
       }
+
+      router.push('/chat');
     } catch (error) {
       setError('An error occurred. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOAuthSignIn = async () => {
+    setError('');
+    setSocialLoading(true);
+
+    try {
+      await nextAuthSignIn('google', { callbackUrl: '/chat' });
+    } catch (err) {
+      console.error('Failed to initiate Google sign-in', err);
+      setError('Unable to start Google sign-in. Please try again.');
+      setSocialLoading(false);
     }
   };
 
@@ -200,9 +237,11 @@ export default function LoginForm() {
                 </div>
 
                 <div className="mt-6 grid grid-cols-2 gap-4">
-                  <a
-                    href="#"
-                    className="flex w-full items-center justify-center gap-3 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-xs inset-ring inset-ring-gray-300 hover:bg-gray-50 focus-visible:inset-ring-transparent"
+                  <button
+                    type="button"
+                    onClick={handleOAuthSignIn}
+                    disabled={loading || socialLoading}
+                    className="flex w-full items-center justify-center gap-3 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-xs inset-ring inset-ring-gray-300 hover:bg-gray-50 focus-visible:inset-ring-transparent disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
                       <path
@@ -222,8 +261,10 @@ export default function LoginForm() {
                         fill="#34A853"
                       />
                     </svg>
-                    <span className="text-sm/6 font-semibold">Google</span>
-                  </a>
+                    <span className="text-sm/6 font-semibold">
+                      {socialLoading ? 'Signing in…' : 'Google'}
+                    </span>
+                  </button>
 
                   <div className="relative group">
                     <a

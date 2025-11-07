@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Palette, Sparkles } from 'lucide-react';
+import { Loader2, Palette, Sparkles } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth-context';
 
@@ -25,6 +25,7 @@ interface CreateProjectResponse {
 export function QuickActionButtons({ className, heightClass = 'h-9', borderColorClass = 'border-gray-300' }: QuickActionButtonsProps) {
   const router = useRouter();
   const [isCreating, setIsCreating] = React.useState(false);
+  const [isOpeningChat, setIsOpeningChat] = React.useState(false);
   const { isAuthenticated } = useAuth();
 
   const createAndOpenDesigner = async () => {
@@ -42,6 +43,12 @@ export function QuickActionButtons({ className, heightClass = 'h-9', borderColor
     }
   };
 
+  const handleOpenChat = () => {
+    if (isOpeningChat) return;
+    setIsOpeningChat(true);
+    router.push('/chat');
+  };
+
   // Show login link when not authenticated (marketing header style)
   if (!isAuthenticated) {
     return (
@@ -51,7 +58,7 @@ export function QuickActionButtons({ className, heightClass = 'h-9', borderColor
     );
   }
 
-  const baseButtonClasses = `flex flex-row items-center cursor-pointer gap-x-1 bg-transparent border text-gray-700 px-4 rounded-lg text-xs font-semibold disabled:opacity-60 ${heightClass}`;
+  const baseButtonClasses = `flex flex-row items-center justify-center gap-x-2 bg-transparent border text-gray-700 px-4 rounded-lg text-xs font-semibold disabled:opacity-60 disabled:cursor-not-allowed ${heightClass}`;
   // Ensure borderColorClass wins over any border color in className by appending last
   const buttonClasses = [baseButtonClasses, className, borderColorClass]
     .filter(Boolean)
@@ -64,15 +71,30 @@ export function QuickActionButtons({ className, heightClass = 'h-9', borderColor
         onClick={createAndOpenDesigner}
         disabled={isCreating}
         className={buttonClasses}
+        aria-busy={isCreating}
       >
-        <Palette strokeWidth={2.25} className="size-4 text-blue-500" />
-        {isCreating ? 'Creating…' : 'New Project'}
+        {isCreating ? (
+          <Loader2 className="size-4 text-blue-500 animate-spin" />
+        ) : (
+          <Palette strokeWidth={2.25} className="size-4 text-blue-500" />
+        )}
+        {isCreating ? 'Creating...' : 'New Project'}
       </button>
 
-      <Link href="/chat" className={buttonClasses}>
-        <Sparkles className="size-4 text-purple-500" />
-        New Chat
-      </Link>
+      <button
+        type="button"
+        onClick={handleOpenChat}
+        disabled={isOpeningChat}
+        className={buttonClasses}
+        aria-busy={isOpeningChat}
+      >
+        {isOpeningChat ? (
+          <Loader2 className="size-4 text-purple-500 animate-spin" />
+        ) : (
+          <Sparkles className="size-4 text-purple-500" />
+        )}
+        {isOpeningChat ? 'Opening...' : 'New Chat'}
+      </button>
     </div>
   );
 }

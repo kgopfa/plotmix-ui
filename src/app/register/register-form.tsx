@@ -2,7 +2,8 @@
 
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { signIn as nextAuthSignIn } from 'next-auth/react';
 import { useAuth } from '@/lib/auth-context';
 
 export default function RegisterForm() {
@@ -13,14 +14,17 @@ export default function RegisterForm() {
     password: '',
   });
   const [error, setError] = useState('');
+  const [infoMessage, setInfoMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState({
     score: 0,
     feedback: '',
     isValid: false,
   });
+  const [socialLoading, setSocialLoading] = useState(false);
   const router = useRouter();
-  const { signIn, isAuthenticated, loading: authLoading } = useAuth();
+  const searchParams = useSearchParams();
+  const { signIn: signInWithCredentials, isAuthenticated, loading: authLoading } = useAuth();
 
   // Redirect authenticated users to chat page
   useEffect(() => {
@@ -28,6 +32,20 @@ export default function RegisterForm() {
       router.push('/chat');
     }
   }, [isAuthenticated, authLoading, router]);
+
+  useEffect(() => {
+    const errorParam = searchParams.get('error');
+
+    if (!errorParam) {
+      return;
+    }
+
+    if (errorParam === 'oauth-account-missing') {
+      setInfoMessage('Sign in with Google succeeded, but we need a Plotmix account before you can continue. Finish creating your account below to keep going.');
+      // remove the error query param once we surface the message
+      router.replace('/register', { scroll: false });
+    }
+  }, [searchParams, router]);
 
   // Show loading while checking authentication
   if (authLoading) {
@@ -98,12 +116,16 @@ export default function RegisterForm() {
     setLoading(true);
 
     try {
+      const normalizedEmail = formData.email.toLowerCase().trim();
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          email: normalizedEmail,
+        }),
       });
 
       const data = await response.json();
@@ -114,19 +136,32 @@ export default function RegisterForm() {
       }
 
       // Registration successful, automatically sign in the user
-      const signInResult = await signIn({ email: formData.email, password: formData.password });
+      const signInResult = await signInWithCredentials({ email: normalizedEmail, password: formData.password });
       
       if (signInResult?.error) {
         setError('Registration successful but automatic sign-in failed. Please sign in manually.');
         router.push('/login?message=Registration successful. Please sign in.');
       } else {
-        // Sign-in successful, redirect to chats page
-        router.push('/chats');
+        // Sign-in successful, redirect to chat page
+        router.push('/chat');
       }
     } catch {
       setError('An error occurred. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOAuthSignIn = async () => {
+    setError('');
+    setSocialLoading(true);
+
+    try {
+      await nextAuthSignIn('google', { callbackUrl: '/chat' });
+    } catch (err) {
+      console.error('Failed to initiate Google sign-in', err);
+      setError('Unable to start Google sign-in. Please try again.');
+      setSocialLoading(false);
     }
   };
 
@@ -153,6 +188,12 @@ export default function RegisterForm() {
             <div className="mt-6">
               <div>
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  {infoMessage && (
+                    <div className="rounded-md bg-indigo-50 border border-indigo-200 p-4">
+                      <div className="text-sm text-indigo-900">{infoMessage}</div>
+                    </div>
+                  )}
+
                   {error && (
                     <div className="rounded-md bg-red-50 p-4">
                       <div className="text-sm text-red-700">{error}</div>
@@ -294,9 +335,11 @@ export default function RegisterForm() {
                 </div>
 
                 <div className="mt-6 grid grid-cols-2 gap-4">
-                  <a
-                    href="#"
-                    className="flex w-full items-center justify-center gap-3 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-xs inset-ring inset-ring-gray-300 hover:bg-gray-50 focus-visible:inset-ring-transparent"
+                  <button
+                    type="button"
+                    onClick={handleOAuthSignIn}
+                    disabled={loading || socialLoading}
+                    className="flex w-full items-center justify-center gap-3 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-xs inset-ring inset-ring-gray-300 hover:bg-gray-50 focus-visible:inset-ring-transparent disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
                       <path
@@ -316,8 +359,10 @@ export default function RegisterForm() {
                         fill="#34A853"
                       />
                     </svg>
-                    <span className="text-sm/6 font-semibold">Google</span>
-                  </a>
+                    <span className="text-sm/6 font-semibold">
+                      {socialLoading ? 'Signing in…' : 'Google'}
+                    </span>
+                  </button>
 
                   <div className="relative group">
                     <a

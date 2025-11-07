@@ -1,6 +1,6 @@
 import { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import { compare } from "bcryptjs"
+import GoogleProvider from "next-auth/providers/google"
 import { SignJWT, jwtVerify } from "jose"
 
 // Production-grade user authentication
@@ -29,10 +29,73 @@ async function authenticateUser(email: string, password: string) {
   }
 }
 
+async function fetchBackendUserByEmail(email: string) {
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+  const response = await fetch(`${backendUrl}/api/auth/users/lookup?email=${encodeURIComponent(email)}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Internal-Key': process.env.INTERNAL_API_KEY!,
+    },
+  })
+
+  if (response.status === 404) {
+    return null
+  }
+
+  if (!response.ok) {
+    throw new Error(`Failed to look up user by email. Status: ${response.status}`)
+  }
+
+  const data = await response.json()
+
+  if (!data.success) {
+    throw new Error('Backend lookup returned an unsuccessful response')
+  }
+
+  if (!data.data?.exists) {
+    return null
+  }
+
+  return data.data.user
+}
+
+async function createBackendUser(payload: { email: string; name: string; password?: string }) {
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+  const response = await fetch(`${backendUrl}/api/auth/users`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Internal-Key': process.env.INTERNAL_API_KEY!,
+    },
+    body: JSON.stringify(payload),
+  })
+
+  if (response.status === 409) {
+    // User was created in a race by another request; fetch latest copy
+    return fetchBackendUserByEmail(payload.email)
+  }
+
+  if (!response.ok) {
+    throw new Error(`Failed to create user. Status: ${response.status}`)
+  }
+
+  const data = await response.json()
+
+  if (!data.success) {
+    throw new Error('Backend user creation returned an unsuccessful response')
+  }
+
+  return data.data.user
+}
+
 // Validate environment variables
 const requiredEnvVars = {
   NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
   NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+  INTERNAL_API_KEY: process.env.INTERNAL_API_KEY,
 }
 
 // Check for missing environment variables
@@ -44,6 +107,17 @@ Object.entries(requiredEnvVars).forEach(([key, value]) => {
 
 export const authOptions: NextAuthOptions = {
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      authorization: {
+        params: {
+          prompt: 'consent',
+          access_type: 'offline',
+          response_type: 'code',
+        },
+      },
+    }),
     CredentialsProvider({
       name: "credentials",
       credentials: {
@@ -123,6 +197,35 @@ export const authOptions: NextAuthOptions = {
     },
   },
   callbacks: {
+    async signIn({ user, account }) {
+      if (account?.type === 'oauth') {
+        if (!user?.email) {
+          return '/login?error=oauth-no-email'
+        }
+
+        try {
+          const normalizedEmail = user.email.toLowerCase()
+          let backendUser = await fetchBackendUserByEmail(normalizedEmail)
+
+          if (!backendUser) {
+            const derivedName = (user.name && user.name.trim()) || user.email.split('@')[0]
+            backendUser = await createBackendUser({
+              email: normalizedEmail,
+              name: derivedName,
+            })
+          }
+
+          user.id = backendUser.id
+          user.email = backendUser.email
+          user.name = backendUser.name
+        } catch (error) {
+          console.error('OAuth account provisioning failed:', error)
+          return '/login?error=oauth-provider-error'
+        }
+      }
+
+      return true
+    },
     async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id;

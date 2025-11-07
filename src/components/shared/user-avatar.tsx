@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { User, CreditCard, LogOut } from 'lucide-react'
+import { User, CreditCard, LogOut, Loader2 } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
@@ -52,7 +52,6 @@ export function UserAvatar({ className = '', showDropdown = true }: UserAvatarPr
     if (isLoggingOut) return; // Prevent multiple logout attempts
     
     setIsLoggingOut(true);
-    setIsOpen(false);
     
     try {
       const response = await fetch('/api/auth/logout', {
@@ -73,26 +72,45 @@ export function UserAvatar({ className = '', showDropdown = true }: UserAvatarPr
       router.push('/login');
     } finally {
       setIsLoggingOut(false);
+      setIsOpen(false);
     }
   };
 
-  const menuItems = [
+  type MenuItem = {
+    key: string;
+    name: string;
+    href: string;
+    icon: typeof User;
+    onClick?: () => void | Promise<void>;
+    disabled?: boolean;
+    loading?: boolean;
+    loadingLabel?: string;
+    closeOnClick?: boolean;
+  };
+
+  const menuItems: MenuItem[] = [
     {
+      key: 'settings',
       name: 'Account Settings',
       href: '/settings',
       icon: User,
     },
     {
+      key: 'billing',
       name: 'Plan and Billing',
       href: '/billing',
       icon: CreditCard,
     },
     {
-      name: isLoggingOut ? 'Logging out...' : 'Logout',
+      key: 'logout',
+      name: 'Logout',
       href: '#',
       icon: LogOut,
       onClick: handleSecureLogout,
       disabled: isLoggingOut,
+      loading: isLoggingOut,
+      loadingLabel: 'Logging out...',
+      closeOnClick: false,
     },
   ]
 
@@ -202,23 +220,33 @@ export function UserAvatar({ className = '', showDropdown = true }: UserAvatarPr
             const Icon = item.icon
             return (
               <a
-                key={item.name}
+                key={item.key}
                 href={item.href}
-                onClick={(e) => {
+                onClick={async (e) => {
                   if (item.onClick) {
                     e.preventDefault()
-                    item.onClick()
+                    await item.onClick()
                   }
-                  setIsOpen(false)
+                  if (item.closeOnClick !== false) {
+                    setIsOpen(false)
+                  }
                 }}
                 className={`flex items-center gap-x-3 p-2 rounded-lg transition-colors duration-200 ${
                   item.disabled 
                     ? 'text-gray-400 cursor-not-allowed' 
                     : 'hover:bg-gray-50 hover:text-indigo-600'
                 }`}
+                aria-disabled={item.disabled}
+                aria-busy={item.loading}
               >
-                <Icon className={`size-4 ${item.disabled ? 'text-gray-400' : 'text-gray-500'}`} />
-                {item.name}
+                {item.loading ? (
+                  <Loader2 className="size-4 text-indigo-600 animate-spin" />
+                ) : (
+                  <Icon className={`size-4 ${item.disabled ? 'text-gray-400' : 'text-gray-500'}`} />
+                )}
+                <span>
+                  {item.loading ? item.loadingLabel ?? 'Loading...' : item.name}
+                </span>
               </a>
             )
           })}
