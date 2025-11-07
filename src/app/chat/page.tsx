@@ -223,7 +223,7 @@ export default function ChatPage() {
                       </svg>
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-gray-900 leading-tight">
+                      <h3 className="font-medium text-gray-900 leading-tight">
                         Early Access Preview
                       </h3>
                     </div>
