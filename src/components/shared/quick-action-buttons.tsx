@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Palette, Sparkles } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
+import { useAuth } from '@/lib/auth-context';
 
 type SecondaryAction = 'chat' | 'project';
 
@@ -24,6 +25,7 @@ interface CreateProjectResponse {
 export function QuickActionButtons({ className, heightClass = 'h-9', borderColorClass = 'border-gray-300' }: QuickActionButtonsProps) {
   const router = useRouter();
   const [isCreating, setIsCreating] = React.useState(false);
+  const { isAuthenticated } = useAuth();
 
   const createAndOpenDesigner = async () => {
     if (isCreating) return;
@@ -39,6 +41,15 @@ export function QuickActionButtons({ className, heightClass = 'h-9', borderColor
       setIsCreating(false);
     }
   };
+
+  // Show login link when not authenticated (marketing header style)
+  if (!isAuthenticated) {
+    return (
+      <Link href="/login" className="text-sm font-semibold text-gray-900 hover:text-indigo-600">
+        Sign in <span aria-hidden="true">&rarr;</span>
+      </Link>
+    );
+  }
 
   const baseButtonClasses = `flex flex-row items-center cursor-pointer gap-x-1 bg-transparent border text-gray-700 px-4 rounded-lg text-xs font-semibold disabled:opacity-60 ${heightClass}`;
   // Ensure borderColorClass wins over any border color in className by appending last

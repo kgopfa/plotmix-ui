@@ -6,7 +6,7 @@ import { NavigationSidebar } from '@/components/shared/navigation-sidebar';
 import { navigation } from '@/data/shared-navigation';
 import { useConversations } from '@/hooks/use-conversations';
 import { ChatCard } from '@/components/chat/chat-card';
-import { LogIn, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import QuickActionButtons from '@/components/shared/quick-action-buttons';
 import { useAuth } from '@/lib/auth-context';
 import { SearchBar } from '@/components/shared/search-bar';
@@ -86,14 +86,7 @@ export default function ChatsPage() {
                 Delete Selected
               </button>
             )}
-            {isAuthenticated ? (
-              <QuickActionButtons secondary="chat" />
-            ) : (
-              <Link href="/login" className="flex items-center justify-center gap-x-2 bg-gradient-to-r from-purple-700 to-indigo-700 text-white w-24 py-2 rounded-lg text-xs font-semibold">
-                <LogIn className="size-4 -ml-1" />
-                Login
-              </Link>
-            )}
+            <QuickActionButtons secondary="chat" />
           </div>
         </div>
 

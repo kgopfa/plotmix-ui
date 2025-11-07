@@ -8,9 +8,7 @@ import { SuggestionsSection } from '@/components/chat/suggestions-section';
 import { PromptInput } from '@/components/chat/prompt-input';
 import { navigation } from '@/data/shared-navigation';
 import { suggestions, type Suggestion } from '@/data/chat-suggestions';
-import { LogIn } from 'lucide-react';
 import QuickActionButtons from '@/components/shared/quick-action-buttons';
-import AppHeader from '@/components/shared/app-header';
 import { useAuth } from '@/lib/auth-context';
 import { useProjectGeneration } from '@/hooks/use-project-generation';
 import { ChatAttachment, ChatOptions } from '@/types/project-generation';
@@ -173,14 +171,7 @@ export default function ChatPage() {
         <div className="sticky top-0 z-40 flex flex-row h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 sm:gap-x-6 sm:px-6 lg:px-8">
         
           <div className="flex flex-row items-center gap-x-4 ml-auto">
-            {isAuthenticated ? (
-              <QuickActionButtons secondary="chat" />
-            ) : (
-              <Link href="/login" className="flex flex-row items-center justify-center gap-x-2 bg-gradient-to-r from-purple-700 to-indigo-700 text-white w-24 py-2 rounded-lg text-xs font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-lg shadow-indigo-500/25">
-                <LogIn className="size-4 -ml-1" />
-                Login
-              </Link>
-            )}
+            <QuickActionButtons secondary="chat" />
           </div>
         </div>
 

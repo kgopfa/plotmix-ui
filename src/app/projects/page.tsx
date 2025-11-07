@@ -1,13 +1,12 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import React from 'react';
 import { NavigationSidebar } from '@/components/shared/navigation-sidebar';
 import { navigation } from '@/data/shared-navigation';
 import { useProjects } from '@/hooks/use-projects';
 import { ProjectCard } from '@/components/projects/project-card';
-import { LogIn, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import QuickActionButtons from '@/components/shared/quick-action-buttons';
 import { useAuth } from '@/lib/auth-context';
 import { SearchBar } from '@/components/shared/search-bar';
@@ -75,14 +74,7 @@ export default function ProjectsPage() {
                 Delete Selected
               </button>
             )}
-            {isAuthenticated ? (
-              <QuickActionButtons secondary="project" />
-            ) : (
-              <Link href="/login" className="flex items-center justify-center gap-x-2 bg-gradient-to-r from-purple-700 to-indigo-700 text-white w-24 py-2 rounded-lg text-xs font-semibold">
-                <LogIn className="size-4 -ml-1" />
-                Login
-              </Link>
-            )}
+            <QuickActionButtons secondary="project" />
           </div>
         </div>
 
