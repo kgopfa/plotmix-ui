@@ -99,7 +99,7 @@ export default function ContactPage() {
                 </div>
 
                 <h2 className="text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl">
-                  Get in touch
+                  Get in <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">touch</span>
                 </h2>
                 <p className="mt-6 text-lg leading-8 text-gray-600">
                   We'd love to hear from you! Share your feedback, request features, or just say hello. Your input helps us build something amazing.
@@ -147,7 +147,7 @@ export default function ContactPage() {
                     onClick={() => setFeedbackType('feedback')}
                     className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                       feedbackType === 'feedback'
-                        ? 'bg-indigo-500 text-white shadow-sm'
+                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-sm'
                         : 'text-gray-600 hover:text-gray-900'
                     }`}
                   >
@@ -158,7 +158,7 @@ export default function ContactPage() {
                     onClick={() => setFeedbackType('feature')}
                     className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                       feedbackType === 'feature'
-                        ? 'bg-indigo-500 text-white shadow-sm'
+                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-sm'
                         : 'text-gray-600 hover:text-gray-900'
                     }`}
                   >
