@@ -405,7 +405,7 @@ export default function ChatPage() {
                 {/* Feedback Button */}
                 <button
                   onClick={() => setShowFeedbackForm(true)}
-                  className="w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-500 rounded-full flex items-center justify-center shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 transition-all duration-200 hover:scale-110 active:scale-95 group"
+                  className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 transition-all duration-200 hover:scale-110 active:scale-95 group"
                   aria-label="Share feedback"
                   style={{
                     animation: 'slideInFromRight 0.3s ease-out 0.1s both'
