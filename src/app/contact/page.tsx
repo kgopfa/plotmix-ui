@@ -122,7 +122,7 @@ export default function ContactPage() {
             </div>
 
             {/* Right side - Form */}
-            <form onSubmit={handleFeedbackSubmit} className="px-6 pt-20 pb-24 sm:pb-32 lg:px-8 lg:py-48">
+            <form onSubmit={handleFeedbackSubmit} className="px-6 pt-12 pb-24 sm:pb-32 lg:px-8 lg:py-24">
               <div className="mx-auto max-w-xl lg:mr-0 lg:max-w-lg">
                 {/* Success Message */}
                 {submitSuccess && (
@@ -147,7 +147,7 @@ export default function ContactPage() {
                     onClick={() => setFeedbackType('feedback')}
                     className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                       feedbackType === 'feedback'
-                        ? 'bg-white text-gray-900 shadow-sm'
+                        ? 'bg-indigo-500 text-white shadow-sm'
                         : 'text-gray-600 hover:text-gray-900'
                     }`}
                   >
@@ -158,7 +158,7 @@ export default function ContactPage() {
                     onClick={() => setFeedbackType('feature')}
                     className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                       feedbackType === 'feature'
-                        ? 'bg-white text-gray-900 shadow-sm'
+                        ? 'bg-indigo-500 text-white shadow-sm'
                         : 'text-gray-600 hover:text-gray-900'
                     }`}
                   >
