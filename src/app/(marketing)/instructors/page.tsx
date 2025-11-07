@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { HeroSection } from "@/components/marketing/hero-section";
+import { BookDemoButton } from "@/components/marketing/book-demo-button";
 
 export const metadata: Metadata = {
   title: "For Learning Designers — Create faster, teach better.",
@@ -128,12 +129,7 @@ export default function DesignersPage() {
             >
               Start Creating Free
             </Link>
-            <Link
-              href="/contact"
-              className="bg-indigo-500/20 text-white px-8 py-4 rounded-xl font-semibold text-lg border-2 border-white/30 hover:bg-indigo-500/30 transition-all duration-200 backdrop-blur-sm"
-            >
-              Book a Demo
-            </Link>
+            <BookDemoButton className="bg-indigo-500/20 text-white px-8 py-4 rounded-xl font-semibold text-lg border-2 border-white/30 hover:bg-indigo-500/30 transition-all duration-200 backdrop-blur-sm disabled:opacity-70 disabled:cursor-not-allowed" />
           </div>
         </div>
       </section>

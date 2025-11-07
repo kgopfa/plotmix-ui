@@ -55,13 +55,13 @@ export default function ContactPage() {
     <>
       <NavigationSidebar navigation={navigation} />
 
-      <main className="lg:pl-20">
-        <div className="relative isolate bg-white">
-          <div className="mx-auto grid max-w-7xl grid-cols-1 lg:grid-cols-2">
+      <main className="lg:pl-20 bg-white">
+        <div className="relative isolate min-h-screen">
+          <div className="grid w-full grid-cols-1 lg:grid-cols-[1.1fr_1fr] min-h-screen">
             {/* Left side - Contact info */}
-            <div className="relative px-6 pt-24 pb-20 sm:pt-32 lg:static lg:px-8 lg:py-48">
-              <div className="mx-auto max-w-xl lg:mx-0 lg:max-w-lg">
-                <div className="absolute inset-y-0 left-0 -z-10 w-full overflow-hidden bg-gray-100 ring-1 ring-gray-900/10 lg:w-1/2">
+            <div className="relative px-6 sm:px-10 lg:px-16 xl:px-24 pt-24 pb-20 sm:pt-32 lg:py-36 xl:flex xl:flex-col xl:justify-center xl:py-24">
+              <div className="mx-auto max-w-xl lg:mx-0 lg:max-w-2xl">
+                <div className="absolute inset-y-0 left-0 -z-10 w-full overflow-hidden bg-gray-100 ring-1 ring-gray-900/10 lg:w-full">
                   <svg
                     aria-hidden="true"
                     className="absolute inset-0 size-full mask-[radial-gradient(100%_100%_at_top_right,white,transparent)] stroke-gray-200"
@@ -122,8 +122,11 @@ export default function ContactPage() {
             </div>
 
             {/* Right side - Form */}
-            <form onSubmit={handleFeedbackSubmit} className="px-6 pt-12 pb-24 sm:pb-32 lg:px-8 lg:py-24">
-              <div className="mx-auto max-w-xl lg:mr-0 lg:max-w-lg">
+            <form
+              onSubmit={handleFeedbackSubmit}
+              className="flex flex-col justify-center px-6 sm:px-10 lg:px-16 xl:px-24 py-12 sm:py-20 lg:py-24 bg-white"
+            >
+              <div className="mx-auto w-full max-w-xl lg:mx-0">
                 {/* Success Message */}
                 {submitSuccess && (
                   <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md">
