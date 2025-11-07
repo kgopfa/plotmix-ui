@@ -23,8 +23,8 @@ export const suggestions: Suggestion[] = [
   },
   {
     id: '3',
-    title: 'Binary Search',
-    description: 'Visualize binary search algorithm',
+    title: 'Searching Lists Efficiently',
+    description: 'Visualize the binary search algorithm',
     prompt: 'Create a visual representation of binary search algorithm. Show a sorted array and demonstrate how the algorithm finds a target value by repeatedly dividing the search interval in half.',
     category: 'algorithm'
   },

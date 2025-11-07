@@ -108,33 +108,33 @@ function ChatPageContent() {
     // Check if the prompt matches Binary Search
     const binarySearchSuggestion = suggestions.find(s => s.id === '3');
     const isBinarySearch = binarySearchSuggestion && prompt.trim() === binarySearchSuggestion.prompt.trim();
-    
+
     if (!isBinarySearch) {
       // Show MVP notice popup instead of error
       setShowMvpNotice(true);
       setIsNoticeDismissed(false);
       return;
     }
-    
+
     // Hide MVP notice if Binary Search is submitted
     setShowMvpNotice(false);
-    
+
     // Prevent unauthenticated users from creating multiple chats
     if (!isAuthenticated && existingProjectId) {
       router.push(`/content/${existingProjectId}`);
       return;
     }
-    
+
     try {
       const response = await submitChat(prompt, attachments, options);
       if (response && response.success) {
         const projectId = response.data.project.id;
-        
+
         // Store project ID for unauthenticated users
         if (!isAuthenticated) {
           localStorage.setItem(UNAUTHENTICATED_CHAT_KEY, projectId);
         }
-        
+
         // Navigate to the content page with the generated project
         router.push(`/content/${projectId}`);
       }
@@ -169,14 +169,14 @@ function ChatPageContent() {
       <main className="lg:pl-20">
         {/* Header with search bar */}
         <div className="sticky top-0 z-40 flex flex-row h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 sm:gap-x-6 sm:px-6 lg:px-8">
-        
+
           <div className="flex flex-row items-center gap-x-4 ml-auto">
             <QuickActionButtons secondary="chat" />
           </div>
         </div>
 
         <div className="min-h-[calc(100vh-4rem)] bg-white flex items-center justify-center">
-          
+
           {/* Main Content */}
           <div className="flex flex-col max-w-4xl w-full px-6 py-8">
             {!isAuthenticated && existingProjectId ? (
@@ -184,7 +184,7 @@ function ChatPageContent() {
                 <p className="text-sm text-blue-800 mb-3">
                   You've already created a chat. You can view it below or sign in to create unlimited chats.
                 </p>
-                <Link 
+                <Link
                   href={`/content/${existingProjectId}`}
                   className="inline-flex items-center gap-x-2 bg-gradient-to-r from-purple-700 to-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-200"
                 >
@@ -192,59 +192,76 @@ function ChatPageContent() {
                 </Link>
               </div>
             ) : (
-              <SuggestionsSection 
-                suggestions={suggestions} 
-                onSuggestionClick={handleSuggestionClick} 
+              <SuggestionsSection
+                suggestions={suggestions}
+                onSuggestionClick={handleSuggestionClick}
               />
             )}
 
             {/* MVP Notice Popup - Fixed position on the right */}
             {showMvpNotice && (
-              <div 
-                className="fixed right-6 top-24 z-50 w-80 bg-white rounded-2xl shadow-xl border border-gray-200 p-6"
-                style={{
-                  animation: 'slideInFromRight 0.3s ease-out'
-                }}
+              <div
+                className="fixed right-6 top-24 z-50 w-80 bg-white rounded-2xl shadow-xl border border-gray-200 p-6 animate-[slideInFromRight_0.3s_ease-out]"
               >
-                {/* Header with icon and close button */}
+                {/* Header */}
                 <div className="flex items-start justify-between gap-3 mb-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <svg
+                        className="w-5 h-5 text-white"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2.5}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
                       </svg>
                     </div>
-                    <div>
-                      <h3 className="font-medium text-gray-900 leading-tight">
-                        Early Access Preview
-                      </h3>
-                    </div>
+                    <p><span className="font-medium text-gray-900">Welcome to Plotmix!</span></p>
                   </div>
+
                   <button
                     onClick={handleDismissMvpNotice}
-                    className="flex-shrink-0 p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-all duration-200 hover:scale-110 active:scale-95"
+                    className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-all duration-200 hover:scale-110 active:scale-95"
                     aria-label="Close"
                   >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2.5}
+                    >
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
                 </div>
-                
+
                 {/* Content */}
-                <p className="text-sm text-gray-700 leading-relaxed mb-4">
-                  Thank you for trying Plotmix! I'm excited to share the platform with you. For now, unfortunately only the <strong className="font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Binary Search</strong> example is available to give a glimpse of what the platform will be able to do in the future. I'm working hard to expand our capabilities, and I'd love to hear your feedback as we continue building. Cheers!
-                </p>
-                
+                <div className="text-sm text-gray-700 leading-relaxed mb-5 space-y-2">
+                  <p>
+                    This early version gives you a quick look at what’s coming — an easier, faster way to
+                    create and explore engaging learning content.
+                  </p>
+                  <p>
+                    More features are on the way, and your ideas can help shape what’s next.
+                  </p>
+                </div>
+
                 {/* Feedback Button */}
                 <button
                   onClick={() => router.push('/contact')}
-                  className="w-full mt-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-semibold rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                  className="w-full px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-semibold rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
                 >
-                  Share Your Feedback
+                  Share Feedback
                 </button>
               </div>
             )}
+
 
             {/* Floating Info Button - Shows when notice is dismissed */}
             {!showMvpNotice && isNoticeDismissed && (
