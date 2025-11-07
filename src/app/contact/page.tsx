@@ -99,7 +99,7 @@ export default function ContactPage() {
                 </div>
 
                 <h2 className="text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl">
-                  Get in <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">touch</span>
+                  Get in <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">touch</span>
                 </h2>
                 <p className="mt-6 text-lg leading-8 text-gray-600">
                   We'd love to hear from you! Share your feedback, request features, or just say hello. Your input helps us build something amazing.
