@@ -119,17 +119,17 @@ export default function MarketingPage() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/register"
+          <Link
+              href="/login"
               className="bg-white text-indigo-600 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-indigo-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
             >
-              Start Learning Free
+              Start Learning for Free
             </Link>
             <Link
-              href="/examples"
+              href="/contact"
               className="bg-indigo-500/20 text-white px-8 py-4 rounded-xl font-semibold text-lg border-2 border-white/30 hover:bg-indigo-500/30 transition-all duration-200 backdrop-blur-sm"
             >
-              View Examples
+              Book a Demo
             </Link>
           </div>
         </div>
