@@ -59,39 +59,69 @@ export default function ContentDetailPage() {
 
           <div className="flex flex-row items-center gap-x-4 ml-auto">
             <div className="flex flex-row h-10 rounded-lg border-2 border-indigo-200 bg-white">
-              <button
-                type="button"
-                onClick={() => console.log('Self Check clicked')}
-                className="inline-flex items-center gap-x-2 px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-indigo-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-              >
-                <CheckCircle2 strokeWidth={2.5} aria-hidden="true" className="-ml-0.5 size-5" />
-                Self Assessment
-              </button>
+              <div className="relative group">
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-x-2 px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-indigo-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                >
+                  <CheckCircle2 strokeWidth={2.5} aria-hidden="true" className="-ml-0.5 size-5" />
+                  Self Assessment
+                </button>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
+                  Coming Soon
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1">
+                    <div className="border-4 border-transparent border-t-gray-900"></div>
+                  </div>
+                </div>
+              </div>
               <div className="w-0.5 bg-indigo-200" />
-              <button
-                type="button"
-                onClick={() => console.log('Theory & Sources clicked')}
-                className="inline-flex items-center gap-x-2 px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-indigo-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-              >
-                <BookOpen strokeWidth={2.5} aria-hidden="true" className="-ml-0.5 size-5" />
-                Theory & Sources
-              </button>
+              <div className="relative group">
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-x-2 px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-indigo-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                >
+                  <BookOpen strokeWidth={2.5} aria-hidden="true" className="-ml-0.5 size-5" />
+                  Theory & Sources
+                </button>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
+                  Coming Soon
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1">
+                    <div className="border-4 border-transparent border-t-gray-900"></div>
+                  </div>
+                </div>
+              </div>
             </div>
             <div className="flex flex-row h-10 rounded-lg border-2 border-indigo-200 bg-white">
-              <button
-                type="button"
-                className="inline-flex items-center gap-x-2 px-5 py-2.5 text-sm font-semibold text-gray-700  hover:bg-indigo-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-              >
-                <UserPlus strokeWidth={2.5} aria-hidden="true" className="-ml-0.5 size-5" />
-                Share
-              </button>
+              <div className="relative group">
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-x-2 px-5 py-2.5 text-sm font-semibold text-gray-700  hover:bg-indigo-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                >
+                  <UserPlus strokeWidth={2.5} aria-hidden="true" className="-ml-0.5 size-5" />
+                  Share
+                </button>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
+                  Coming Soon
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1">
+                    <div className="border-4 border-transparent border-t-gray-900"></div>
+                  </div>
+                </div>
+              </div>
               <div className="w-0.5 bg-indigo-200" />
-              <button
-                type="button"
-                className="inline-flex items-center gap-x-2 px-5 py-2.5 text-sm font-semibold text-gray-700  hover:bg-indigo-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-              >
-                <Link2 strokeWidth={2.5} aria-hidden="true" className="-ml-0.5 size-5" />
-              </button>
+              <div className="relative group">
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-x-2 px-5 py-2.5 text-sm font-semibold text-gray-700  hover:bg-indigo-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                >
+                  <Link2 strokeWidth={2.5} aria-hidden="true" className="-ml-0.5 size-5" />
+                </button>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
+                  Coming Soon
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1">
+                    <div className="border-4 border-transparent border-t-gray-900"></div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
