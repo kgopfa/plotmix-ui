@@ -30,10 +30,6 @@ export default function ChatPage() {
   const promptInitialized = useRef(false);
   const [showMvpNotice, setShowMvpNotice] = useState(false);
   const [isNoticeDismissed, setIsNoticeDismissed] = useState(false);
-  const [showFeedbackForm, setShowFeedbackForm] = useState(false);
-  const [feedback, setFeedback] = useState('');
-  const [feedbackType, setFeedbackType] = useState<'feedback' | 'feature'>('feedback');
-  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
 
   // Check if MVP notice was previously dismissed
   useEffect(() => {
@@ -59,35 +55,6 @@ export default function ChatPage() {
     localStorage.removeItem('plotmix-mvp-notice-dismissed');
   };
 
-  const handleFeedbackSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!feedback.trim()) return;
-
-    setFeedbackSubmitting(true);
-    try {
-      // TODO: Replace with actual API endpoint
-      const response = await fetch('/api/feedback', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: feedbackType,
-          message: feedback.trim(),
-        }),
-      });
-
-      if (response.ok) {
-        setFeedback('');
-        setShowFeedbackForm(false);
-        // You could show a success message here
-      }
-    } catch (error) {
-      console.error('Failed to submit feedback:', error);
-    } finally {
-      setFeedbackSubmitting(false);
-    }
-  };
 
   // Check if unauthenticated user already has a chat
   useEffect(() => {
@@ -280,7 +247,7 @@ export default function ChatPage() {
                 
                 {/* Feedback Button */}
                 <button
-                  onClick={() => setShowFeedbackForm(true)}
+                  onClick={() => router.push('/contact')}
                   className="w-full mt-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-semibold rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
                 >
                   Share Your Feedback
@@ -288,134 +255,20 @@ export default function ChatPage() {
               </div>
             )}
 
-            {/* Feedback Form Modal */}
-            {showFeedbackForm && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-                <div className="relative w-full max-w-md mx-4 bg-white rounded-2xl shadow-2xl border border-gray-200">
-                  <div className="p-6">
-                    {/* Header */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h3 className="text-lg font-bold text-gray-900">
-                          Share Your Feedback
-                        </h3>
-                        <p className="text-sm text-gray-600 mt-1">
-                          Help us improve Plotmix
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => {
-                          setShowFeedbackForm(false);
-                          setFeedback('');
-                        }}
-                        className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
-                        aria-label="Close"
-                      >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-
-                    {/* Form */}
-                    <form onSubmit={handleFeedbackSubmit} className="space-y-4">
-                      {/* Feedback Type Toggle */}
-                      <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
-                        <button
-                          type="button"
-                          onClick={() => setFeedbackType('feedback')}
-                          className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                            feedbackType === 'feedback'
-                              ? 'bg-white text-gray-900 shadow-sm'
-                              : 'text-gray-600 hover:text-gray-900'
-                          }`}
-                        >
-                          Feedback
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setFeedbackType('feature')}
-                          className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                            feedbackType === 'feature'
-                              ? 'bg-white text-gray-900 shadow-sm'
-                              : 'text-gray-600 hover:text-gray-900'
-                          }`}
-                        >
-                          Feature Request
-                        </button>
-                      </div>
-
-                      {/* Textarea */}
-                      <div>
-                        <textarea
-                          value={feedback}
-                          onChange={(e) => setFeedback(e.target.value)}
-                          placeholder={feedbackType === 'feature' 
-                            ? "What feature would you like to see?" 
-                            : "What are your thoughts? Share your feedback..."}
-                          rows={6}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm text-gray-900 placeholder-gray-500 resize-none"
-                          required
-                        />
-                      </div>
-
-                      {/* Submit Button */}
-                      <div className="flex gap-3">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowFeedbackForm(false);
-                            setFeedback('');
-                          }}
-                          className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-50 transition-colors"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="submit"
-                          disabled={!feedback.trim() || feedbackSubmitting}
-                          className="flex-1 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-semibold rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {feedbackSubmitting ? 'Submitting...' : 'Submit'}
-                        </button>
-                      </div>
-                    </form>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Floating Buttons - Shows when notice is dismissed */}
+            {/* Floating Info Button - Shows when notice is dismissed */}
             {!showMvpNotice && isNoticeDismissed && (
-              <div className="fixed right-6 top-24 z-50 flex flex-col gap-3">
-                {/* Info Button */}
-                <button
-                  onClick={handleOpenMvpNotice}
-                  className="w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-500 rounded-full flex items-center justify-center shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 transition-all duration-200 hover:scale-110 active:scale-95 group"
-                  aria-label="Show MVP information"
-                  style={{
-                    animation: 'slideInFromRight 0.3s ease-out'
-                  }}
-                >
-                  <svg className="w-6 h-6 text-white transition-transform duration-200 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </button>
-                
-                {/* Feedback Button */}
-                <button
-                  onClick={() => setShowFeedbackForm(true)}
-                  className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 transition-all duration-200 hover:scale-110 active:scale-95 group"
-                  aria-label="Share feedback"
-                  style={{
-                    animation: 'slideInFromRight 0.3s ease-out 0.1s both'
-                  }}
-                >
-                  <svg className="w-5 h-5 text-white transition-transform duration-200 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
-                  </svg>
-                </button>
-              </div>
+              <button
+                onClick={handleOpenMvpNotice}
+                className="fixed right-6 top-24 z-50 w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-500 rounded-full flex items-center justify-center shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 transition-all duration-200 hover:scale-110 active:scale-95 group"
+                aria-label="Show MVP information"
+                style={{
+                  animation: 'slideInFromRight 0.3s ease-out'
+                }}
+              >
+                <svg className="w-6 h-6 text-white transition-transform duration-200 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
             )}
 
             <PromptInput
