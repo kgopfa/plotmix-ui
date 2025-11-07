@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { NavigationSidebar } from '@/components/shared/navigation-sidebar';
@@ -16,7 +16,7 @@ import { ChatAttachment, ChatOptions } from '@/types/project-generation';
 const UNAUTHENTICATED_CHAT_KEY = 'plotmix-unauthenticated-chat-project-id';
 const PENDING_PROMPT_KEY = 'plotmix-pending-prompt';
 
-export default function ChatPage() {
+function ChatPageContent() {
   const [prompt, setPrompt] = useState('');
   const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
   const [options, _] = useState<ChatOptions>({});
@@ -292,5 +292,21 @@ export default function ChatPage() {
         </div>
       </main>
     </>
+  );
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="flex space-x-1">
+          <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+          <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+          <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+        </div>
+      </div>
+    }>
+      <ChatPageContent />
+    </Suspense>
   );
 }
