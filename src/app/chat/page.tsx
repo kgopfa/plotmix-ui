@@ -148,7 +148,17 @@ function ChatPageContent() {
     // Hide MVP notice when selecting a suggestion
     if (suggestion.id === '3') {
       setShowMvpNotice(false);
+      setIsNoticeDismissed(true);
     }
+  };
+
+  const handleUseExample = () => {
+    const binarySearchSuggestion = suggestions.find((s) => s.id === '3');
+    if (!binarySearchSuggestion) return;
+
+    handleSuggestionClick(binarySearchSuggestion);
+    setShowMvpNotice(false);
+    setIsNoticeDismissed(true);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -249,15 +259,14 @@ function ChatPageContent() {
                   <p>
                     I’m working hard to expand what Plotmix can do, and I’d love to hear your feedback as we continue building.
                   </p>
-
                 </div>
 
-                {/* Feedback Button */}
+                {/* Use Example Button */}
                 <button
-                  onClick={() => router.push('/contact')}
+                  onClick={handleUseExample}
                   className="w-full px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-semibold rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
                 >
-                  Share Feedback
+                  Use Example
                 </button>
               </div>
             )}
