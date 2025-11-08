@@ -244,11 +244,12 @@ function ChatPageContent() {
                 {/* Content */}
                 <div className="text-sm text-gray-700 leading-relaxed mb-5 space-y-2">
                   <p>
-                    This early preview shows just one example — <b>How fast-searching works</b> — to give you a glimpse of what’s coming.
+                    This early preview shows just one example: <b>How fast-searching works</b>. It’s a small glimpse of what’s coming next.
                   </p>
                   <p>
                     I’m working hard to expand what Plotmix can do, and I’d love to hear your feedback as we continue building.
                   </p>
+
                 </div>
 
                 {/* Feedback Button */}
