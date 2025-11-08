@@ -1,3 +1,4 @@
+import type { RefObject } from 'react';
 import { create } from 'zustand';
 import { produce } from 'immer';
 import { useShallow } from 'zustand/react/shallow';
@@ -14,9 +15,6 @@ interface CanvasState {
   // Loading and optimistic update state
   isLoading: boolean;
   pendingOperations: Set<string>;
-  
-  // Canvas reference for operations
-  canvasRef: React.RefObject<{ sortChildren: () => void } | null> | null;
   
   // History for undo/redo (future enhancement)
   history: {
@@ -117,10 +115,14 @@ interface CanvasActions {
   subscribe: (callback: (state: { elements: AnimatedCanvasObject[]; groups: CanvasGroup[] }) => void) => () => void;
   
   // Canvas reference management
-  setCanvasRef: (ref: React.RefObject<{ sortChildren: () => void } | null>) => void;
+  setCanvasRef: (ref: RefObject<{ sortChildren: () => void } | null>) => void;
 }
 
 type CanvasStore = CanvasState & CanvasActions;
+
+let canvasRefHolder: RefObject<{ sortChildren: () => void } | null> | null = null;
+
+const getCanvasRef = (): RefObject<{ sortChildren: () => void } | null> | null => canvasRefHolder;
 
 // Subscription management
 const subscribers = new Set<(state: { elements: AnimatedCanvasObject[]; groups: CanvasGroup[] }) => void>();
@@ -147,7 +149,6 @@ export const useCanvasStore = create<CanvasStore>()(
     currentSceneId: null,
     isLoading: false,
     pendingOperations: new Set(),
-    canvasRef: null,
     history: {
       past: [],
       future: []
@@ -412,7 +413,7 @@ export const useCanvasStore = create<CanvasStore>()(
       
       // Call sortChildren after z-index update
       setTimeout(() => {
-        const canvasRef = get().canvasRef;
+        const canvasRef = getCanvasRef();
         if (canvasRef?.current?.sortChildren) {
           canvasRef.current.sortChildren();
         }
@@ -439,7 +440,7 @@ export const useCanvasStore = create<CanvasStore>()(
       
       // Call sortChildren after z-index update
       setTimeout(() => {
-        const canvasRef = get().canvasRef;
+        const canvasRef = getCanvasRef();
         if (canvasRef?.current?.sortChildren) {
           canvasRef.current.sortChildren();
         }
@@ -472,7 +473,7 @@ export const useCanvasStore = create<CanvasStore>()(
       
       // Call sortChildren after z-index update
       setTimeout(() => {
-        const canvasRef = get().canvasRef;
+        const canvasRef = getCanvasRef();
         if (canvasRef?.current?.sortChildren) {
           canvasRef.current.sortChildren();
         }
@@ -507,7 +508,7 @@ export const useCanvasStore = create<CanvasStore>()(
       
       // Call sortChildren after z-index update
       setTimeout(() => {
-        const canvasRef = get().canvasRef;
+        const canvasRef = getCanvasRef();
         if (canvasRef?.current?.sortChildren) {
           canvasRef.current.sortChildren();
         }
@@ -546,7 +547,7 @@ export const useCanvasStore = create<CanvasStore>()(
 
       // Call sortChildren after z-index update
       setTimeout(() => {
-        const canvasRef = get().canvasRef;
+        const canvasRef = getCanvasRef();
         if (canvasRef?.current?.sortChildren) {
           canvasRef.current.sortChildren();
         }
@@ -588,7 +589,7 @@ export const useCanvasStore = create<CanvasStore>()(
 
       // Call sortChildren after z-index update
       setTimeout(() => {
-        const canvasRef = get().canvasRef;
+        const canvasRef = getCanvasRef();
         if (canvasRef?.current?.sortChildren) {
           canvasRef.current.sortChildren();
         }
@@ -645,7 +646,7 @@ export const useCanvasStore = create<CanvasStore>()(
 
       // Call sortChildren after z-index update
       setTimeout(() => {
-        const canvasRef = get().canvasRef;
+        const canvasRef = getCanvasRef();
         if (canvasRef?.current?.sortChildren) {
           canvasRef.current.sortChildren();
         }
@@ -1266,7 +1267,7 @@ export const useCanvasStore = create<CanvasStore>()(
 
     // Canvas reference management
     setCanvasRef: (ref) => {
-      set({ canvasRef: ref });
+      canvasRefHolder = ref;
     },
   })
 );
