@@ -2,6 +2,32 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
 
+function buildConnectSrcDirective() {
+  const sources = new Set([
+    "'self'",
+    'ws:',
+    'wss:',
+    'http://localhost:8000',
+    'https://localhost:8000',
+    'https://plotmix-svc.onrender.com',
+    'https://api.getplotmix.com',
+  ])
+
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL
+  if (apiUrl) {
+    try {
+      const { protocol, host } = new URL(apiUrl)
+      if (protocol && host) {
+        sources.add(`${protocol}//${host}`)
+      }
+    } catch {
+      // Invalid NEXT_PUBLIC_API_URL — ignore and proceed with defaults
+    }
+  }
+
+  return `connect-src ${Array.from(sources).join(' ')}`
+}
+
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next()
 
@@ -19,7 +45,7 @@ export async function middleware(request: NextRequest) {
       "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "img-src 'self' data: https:",
       "font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com",
-      "connect-src 'self' ws: wss: http://localhost:8000 https://localhost:8000 https://plotmix-svc.onrender.com",
+      buildConnectSrcDirective(),
       "frame-ancestors 'none'"
     ].join('; '),
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
