@@ -381,7 +381,7 @@ export const useUIStore = create<UIStore>((set, get) => {
         name: 'Medium Laptop (15-16")',
         width: { min: 1600, max: 2000 },
         height: { min: 900, max: 1200 },
-        zoom: 0.55,
+        zoom: 0.60,
         pan: { x: 2850, y: 1700 }
       },
       // Large laptops/desktops (17+ inch)
@@ -409,10 +409,20 @@ export const useUIStore = create<UIStore>((set, get) => {
 
     const selectedPreset = matchingPreset || screenPresets[0];
 
-    return {
+    const result = {
       zoom: selectedPreset.zoom,
       pan: selectedPreset.pan
     };
+
+    // eslint-disable-next-line no-console
+    console.log('[UI Store] Initial canvas zoom computed:', {
+      screenWidth,
+      screenHeight,
+      preset: selectedPreset.name,
+      zoom: result.zoom,
+    });
+
+    return result;
   };
 
   const screenValues = getScreenSizeValues();
@@ -874,27 +884,7 @@ export const useUIStore = create<UIStore>((set, get) => {
     },
 
     resetCanvasViewport: () => {
-      const getScreenSizeDefaults = () => {
-        if (typeof window === 'undefined') {
-          return { zoom: 0.42, pan: { x: 2800, y: 1700 } };
-        }
-        const screenWidth = window.innerWidth;
-        const screenHeight = window.innerHeight;
-        const screenPresets = [
-          { width: { min: 0, max: 1366 }, height: { min: 0, max: 800 }, zoom: 0.3, pan: { x: 2880, y: 1620 } },
-          { width: { min: 1367, max: 1920 }, height: { min: 600, max: 1200 }, zoom: 0.42, pan: { x: 2800, y: 1700 } },
-          { width: { min: 1921, max: 2560 }, height: { min: 1081, max: 1440 }, zoom: 0.65, pan: { x: 2850, y: 1580 } },
-          { width: { min: 2561, max: 2999 }, height: { min: 1000, max: 9999 }, zoom: 0.7, pan: { x: 2880, y: 1580 } },
-          { width: { min: 3000, max: 9999 }, height: { min: 1000, max: 9999 }, zoom: 0.85, pan: { x: 2850, y: 1550 } }
-        ];
-        const matchingPreset = screenPresets.find(preset =>
-          screenWidth >= preset.width.min && screenWidth <= preset.width.max &&
-          screenHeight >= preset.height.min && screenHeight <= preset.height.max
-        );
-        return matchingPreset || screenPresets[0];
-      };
-
-      const defaults = getScreenSizeDefaults();
+      const defaults = getScreenSizeValues();
       set(produce((state) => {
         state.canvasZoom = defaults.zoom;
         state.canvasPan = defaults.pan;
