@@ -19,7 +19,7 @@ export interface FitFullCanvasPlayerRef {
 }
 
 export const FitFullCanvasPlayer = forwardRef<FitFullCanvasPlayerRef, Props>(
-  ({ designWidth, designHeight, elements, groups, hideInlineControls = false, onAppReady }, ref) => {
+  ({ designWidth, designHeight, elements, groups, onAppReady }, ref) => {
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const appRef = useRef<ApplicationCanvasPlayerRef>(null);
@@ -30,7 +30,7 @@ export const FitFullCanvasPlayer = forwardRef<FitFullCanvasPlayerRef, Props>(
 
   return (
     <div ref={wrapperRef} className="relative w-full h-full">
-      <div ref={containerRef} className="relative w-full h-full flex items-center justify-center">
+      <div ref={containerRef} className="absolute inset-0 flex items-center justify-center">
         <ApplicationCanvasPlayer
           ref={appRef}
           designWidth={designWidth}
