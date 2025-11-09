@@ -27,8 +27,8 @@ export default function ContentDetailPage() {
 
       {/* Main content area - responsive layout */}
       <main className="relative min-h-screen bg-zinc-100 2xl:pt-10 xl:pt-0 xl:pl-20 xl:pr-[23vw] 2xl:pr-[20vw]">
-        <div className="flex flex-col xl:flex-row xl:items-center px-4 sm:px-8 lg:px-10 xl:h-30 2xl:h-36 gap-y-6 xl:gap-y-0 xl:gap-x-6">
-          <div className="flex flex-col gap-y-3 pt-2">
+        <div className="flex flex-col xl:flex-row xl:items-center px-4 sm:px-8 lg:px-10 xl:h-30 2xl:h-36 gap-y-6 xl:gap-y-0 xl:gap-x-6 pt-4 sm:pt-6 xl:pt-0">
+          <div className="flex flex-col gap-y-3 pt-2 sm:pt-3">
             {isLoading ? (
               <div className="animate-pulse">
                 <div className="h-8 bg-gray-200 rounded w-96 mb-2"></div>

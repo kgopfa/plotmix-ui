@@ -164,12 +164,21 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({ navigation
         </div>
       </div>
 
-      <div className="sticky top-0 z-40 flex items-center gap-x-6 bg-white px-4 py-4 shadow-xs sm:px-6 lg:hidden border-b border-gray-200">
-        <button type="button" onClick={() => setSidebarOpen(true)} className="-m-2.5 p-2.5 text-gray-600 lg:hidden">
+      <div className="sticky top-0 z-40 grid grid-cols-[auto_1fr_auto] items-center gap-x-3 bg-white px-4 py-4 shadow-xs sm:px-6 lg:hidden border-b border-gray-200">
+        <button type="button" onClick={() => setSidebarOpen(true)} className="-m-2.5 p-2.5 text-gray-600 justify-self-start">
           <span className="sr-only">Open sidebar</span>
           <Menu aria-hidden="true" className="size-6" />
         </button>
-        <div className="flex-1 text-sm/6 font-semibold text-gray-900">PlotMix AI</div>
+        <div className="flex justify-center">
+          <Link href="/chat" className="flex items-center gap-2">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 font-bold text-sm text-white shadow-lg shadow-indigo-500/30">
+              P
+            </span>
+            <span className="text-base font-bold bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+              PlotMix
+            </span>
+          </Link>
+        </div>
         {/* User avatar in mobile header - only show if authenticated */}
         {isAuthenticated && userInitials && (
           <UserAvatar showDropdown={true} />
