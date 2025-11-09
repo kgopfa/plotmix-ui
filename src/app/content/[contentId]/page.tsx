@@ -26,7 +26,7 @@ export default function ContentDetailPage() {
       <NavigationSidebar navigation={navigation} />
 
       {/* Main content area - responsive layout */}
-      <main className="relative min-h-screen bg-zinc-100 2xl:pt-10 xl:pt-0 xl:pl-20 xl:pr-[calc(100vw/4)] 2xl:pr-[calc(100vw/7)]">
+      <main className="relative min-h-screen bg-zinc-100 2xl:pt-10 xl:pt-0 xl:pl-20 xl:pr-[23vw] 2xl:pr-[20vw]">
         <div className="flex flex-row items-center px-10 xl:h-30 2xl:h-36">
           <div className="flex flex-col gap-y-2">
             {isLoading ? (
@@ -126,8 +126,10 @@ export default function ContentDetailPage() {
           </div>
         </div>
 
-        <div className="flex justify-center xl:mt-0 2xl:mt-20 min-h-screen">
-          <div className="w-full flex flex-col max-w-2xl xl:max-w-3xl 2xl:max-w-7xl mx-auto">
+        <div className="flex justify-center px-4 sm:px-8 xl:px-12 xl:mt-0 2xl:mt-20 min-h-screen">
+          <div
+            className="w-full flex flex-col mx-auto max-w-[24rem] sm:max-w-[30rem] md:max-w-[36rem] lg:max-w-[44rem] xl:max-w-[52rem] 2xl:max-w-[64rem]"
+          >
             <div className="p-0.5 bg-gradient-to-r from-indigo-500 to-purple-600">
               <div className="relative w-full aspect-video bg-black overflow-hidden flex items-center justify-center">
                 <ProjectCanvasPreview projectId={contentId} />
@@ -144,7 +146,7 @@ export default function ContentDetailPage() {
         {/* Open in Designer button - fixed on the right, to the left of the sidebar */}
         {/* Only show for authenticated users */}
         {isAuthenticated && (
-          <div className="fixed top-1/2 -translate-y-1/2 right-4 xl:right-[calc(100vw/4+0.75rem)] 2xl:right-[calc(100vw/7+0.75rem)] z-40">
+          <div className="fixed top-1/2 -translate-y-1/2 right-4 xl:right-[calc(23vw+0.75rem)] 2xl:right-[calc(20vw+0.75rem)] z-40">
             <button
               onClick={() => setShowConfirm(true)}
               className="inline-flex items-center gap-x-2 p-5 xl:rounded-xl 2xl:rounded-2xl text-white bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all duration-200 transform hover:scale-105"
