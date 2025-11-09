@@ -1,5 +1,5 @@
-import { Play, Pause, Square } from "lucide-react";
-import { useTimelineStoreV2 } from "@/stores/use-timeline-store-v2";
+import { Play, Pause, Square } from 'lucide-react';
+import { useTimelineStoreV2 } from '@/stores/use-timeline-store-v2';
 
 export default function PlaybackControls() {
   const isPlaying = useTimelineStoreV2((state) => state.playback.isPlaying);
@@ -27,34 +27,26 @@ export default function PlaybackControls() {
   };
 
   return (
-    <div className="inline-flex flex-col px-4 py-5 2xl:px-5 2xl:py-6 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 shadow-xl">
-      <div className="flex justify-center">
-        <button
-          onClick={handlePlayPause}
-          className="text-white transition-all duration-200 mr-0.5 transform hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-          aria-label={isPlaying ? "Pause" : "Play"}
-        >
-          {isPlaying ? (
-            <Pause fill="white" className="xl:size-4 2xl:size-5" color="white" />
-          ) : (
-            <Play fill="white" className="xl:size-4 2xl:size-5" color="white" />
-          )}
-        </button>
-      </div>
-      <div className="w-full h-px my-4" />
-      <div className="text-xs 2xl:text-sm ml-0.5 font-bold text-white text-center whitespace-nowrap tabular-nums">
-        {formatTime(totalPlayTime)}
-      </div>
-      <div className="w-full h-px my-4" />
-      <div className="flex justify-center">
-        <button
-          onClick={handleStop}
-          className="text-white transition-all duration-200 mr-0.5 transform hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-          aria-label="Stop"
-        >
-          <Square className="xl:size-4 2xl:size-5" />
-        </button>
-      </div>
+    <div className="inline-flex items-center gap-6 px-5 py-3 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 shadow-xl text-white *:shrink-0">
+      <button
+        onClick={handlePlayPause}
+        className="transition-all duration-200 transform hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        aria-label={isPlaying ? 'Pause' : 'Play'}
+      >
+        {isPlaying ? (
+          <Pause fill="white" className="size-5 sm:size-4" color="white" />
+        ) : (
+          <Play fill="white" className="size-5 sm:size-4" color="white" />
+        )}
+      </button>
+      <span className="text-sm sm:text-xs font-semibold tabular-nums">{formatTime(totalPlayTime)}</span>
+      <button
+        onClick={handleStop}
+        className="transition-all duration-200 transform hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        aria-label="Stop"
+      >
+        <Square className="size-5 sm:size-4" color="white" />
+      </button>
     </div>
   )
 }

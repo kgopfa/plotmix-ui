@@ -161,6 +161,9 @@ export default function ContentDetailPage() {
                 <ProjectCanvasPreview projectId={contentId} />
               </div>
             </div>
+            <div className="xl:hidden flex justify-center mt-6">
+              <PlaybackControls />
+            </div>
           </div>
         </div>
 
@@ -183,9 +186,6 @@ export default function ContentDetailPage() {
           </div>
         )}
 
-        <div className="block xl:hidden px-4 sm:px-8 mt-10">
-          <PlaybackControls />
-        </div>
 
         <ConfirmModal
           open={showConfirm}
