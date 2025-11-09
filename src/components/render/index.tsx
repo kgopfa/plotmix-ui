@@ -125,7 +125,6 @@ export default function ScreenCapture({ autoplayOnReady = false, recordDurationS
     let stopTimer: number | null = null;
     let retryTimer: number | null = null;
     let recordRetryCount = 0;
-    console.log('[capture] autoplay effect enabled', { recordDurationSec });
 
     const areTargetsReady = () => {
       const refs = shapeRefs.current as Record<string, Container>;
@@ -252,17 +251,14 @@ export default function ScreenCapture({ autoplayOnReady = false, recordDurationS
           try {
             const type = mediaRecorder?.mimeType || 'video/webm';
             const blob = new Blob(chunks, { type });
-            console.log('[capture] recording stopped, size bytes:', blob.size);
             // Upload to server to persist and get a URL
             const form = new FormData();
             const filename = `recording-${Date.now()}.webm`;
             form.append('file', blob, filename);
             form.append('filename', filename);
-            console.log('[capture] uploading recording...');
             const res = await fetch('/api/recordings', { method: 'POST', body: form });
             if (res.ok) {
               const data = await res.json();
-              console.log('[capture] saved at URL:', data.url);
             } else {
               console.warn('[capture] upload failed with status', res.status);
             }
@@ -271,7 +267,6 @@ export default function ScreenCapture({ autoplayOnReady = false, recordDurationS
           }
         };
         mediaRecorder.start();
-        console.log('[capture] started MediaRecorder', { mimeType: mediaRecorder.mimeType, recordDurationSec, cropToDesign: recordingCanvas !== canvas });
         stopTimer = window.setTimeout(() => {
           try { mediaRecorder?.stop(); } catch {}
         }, Math.floor(recordDurationSec * 1000));

@@ -501,7 +501,6 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
   // Only run this for non-path mode polygons (path mode uses the old group system)
   useEffect(() => {
     if (isClosingShape && chainedLineIds.length >= 3 && !isPathMode) {
-      console.log('Creating polygon from', chainedLineIds.length, 'chained lines:', chainedLineIds);
       // Get all the chained line elements
       const lineElements = chainedLineIds.map(id => 
         canvasObjects.find(el => el.id === id)
@@ -577,7 +576,6 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
 
         // Add the polygon element to the canvas
         addElement(polygonElement);
-        console.log('Created polygon with', uniquePoints.length, 'points:', uniquePoints);
 
         // Remove the individual line elements and clean up groups
         const canvasStore = useCanvasStore.getState();
@@ -605,7 +603,6 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
         groupsToRemove.forEach(groupId => {
           try {
             removeGroup(groupId);
-            console.log(`Removed group: ${groupId}`);
           } catch (error) {
             console.warn(`Failed to remove group ${groupId}:`, error);
           }
@@ -615,7 +612,6 @@ export const useCanvasInteractions = ({ snapPoint }: UseCanvasInteractionsProps)
         lineElements.forEach(line => {
           try {
             removeElement(line.id);
-            console.log(`Removed line element: ${line.id}`);
           } catch (error) {
             console.warn(`Failed to remove line element ${line.id}:`, error);
           }

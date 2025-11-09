@@ -90,9 +90,6 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Log successful registration (in production, use proper logging service)
-      console.log(`New user registered: ${email} at ${new Date().toISOString()}`)
-
       return NextResponse.json(
         { 
           message: "Account created successfully",

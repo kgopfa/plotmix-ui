@@ -232,7 +232,6 @@ export function ContentSidebar({ conversationId }: { conversationId: string }) {
                     <div className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Learning objectives</div>
                     <button
                       type="button"
-                      onClick={() => console.log('Copy objectives')}
                       className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-700"
                     >
                       Copy
@@ -257,7 +256,6 @@ export function ContentSidebar({ conversationId }: { conversationId: string }) {
                         </div>
                         <button
                           type="button"
-                          onClick={() => console.log('Download clicked', file.name)}
                           className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
                         >
                           Download

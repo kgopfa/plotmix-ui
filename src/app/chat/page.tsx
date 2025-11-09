@@ -167,11 +167,6 @@ function ChatPageContent() {
     }
   };
 
-  const handleSearch = (query: string) => {
-    // Handle search functionality
-    console.log('Search query:', query);
-  };
-
   return (
     <>
       <NavigationSidebar navigation={navigation} />

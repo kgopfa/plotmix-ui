@@ -29,7 +29,6 @@ export const ProjectControls = () => {
     if (file) {
       try {
         await loadFromFile(file);
-        console.log('Project loaded successfully');
       } catch (error) {
         console.error('Load failed:', error);
       }

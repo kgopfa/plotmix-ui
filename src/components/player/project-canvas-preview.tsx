@@ -122,19 +122,10 @@ export function ProjectCanvasPreview({ projectId, fallbackSize = { width: 1920, 
     if (playerRef.current && elements.length > 0) {
       const canvasRef = playerRef.current.getCanvasRef();
       if (canvasRef) {
-        console.log('ProjectCanvasPreview: Setting canvas ref for animations', {
-          shapeRefs: Object.keys(canvasRef.getShapeRefs()).length,
-          groupRefs: Object.keys(canvasRef.getGroupContainers()).length,
-          hasMainContainer: !!canvasRef.getMainContainer()
-        });
-        
         const timelineStore = useTimelineStoreV2.getState();
         timelineStore.gsapManager.setCanvasRef({ current: canvasRef });
         
-        // Build the GSAP timeline after setting canvas ref
-        console.log('ProjectCanvasPreview: Building GSAP timeline...');
         timelineStore.buildGSAPTimeline();
-        console.log('ProjectCanvasPreview: Timeline built with duration:', timelineStore.playback.totalDuration);
       }
     }
   }, [elements, groups]);
@@ -144,7 +135,6 @@ export function ProjectCanvasPreview({ projectId, fallbackSize = { width: 1920, 
     const { useProjectStore } = require('@/stores/use-project-store');
     const unsubscribe = useProjectStore.subscribe((state: any) => {
       if (state.currentSceneIndex !== currentSceneIndex && allScenes.length > 0) {
-        console.log(`ProjectCanvasPreview: Scene changed from ${currentSceneIndex} to ${state.currentSceneIndex}`);
         setCurrentSceneIndex(state.currentSceneIndex);
         
         // Load the new scene data

@@ -414,14 +414,6 @@ export const useUIStore = create<UIStore>((set, get) => {
       pan: selectedPreset.pan
     };
 
-    // eslint-disable-next-line no-console
-    console.log('[UI Store] Initial canvas zoom computed:', {
-      screenWidth,
-      screenHeight,
-      preset: selectedPreset.name,
-      zoom: result.zoom,
-    });
-
     return result;
   };
 
