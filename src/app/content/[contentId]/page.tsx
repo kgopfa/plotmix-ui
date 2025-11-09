@@ -27,8 +27,8 @@ export default function ContentDetailPage() {
 
       {/* Main content area - responsive layout */}
       <main className="relative min-h-screen bg-zinc-100 2xl:pt-10 xl:pt-0 xl:pl-20 xl:pr-[23vw] 2xl:pr-[20vw]">
-        <div className="flex flex-row items-center px-10 xl:h-30 2xl:h-36">
-          <div className="flex flex-col gap-y-2">
+        <div className="flex flex-col xl:flex-row xl:items-center px-4 sm:px-8 lg:px-10 xl:h-30 2xl:h-36 gap-y-6 xl:gap-y-0 xl:gap-x-6">
+          <div className="flex flex-col gap-y-3 pt-2">
             {isLoading ? (
               <div className="animate-pulse">
                 <div className="h-8 bg-gray-200 rounded w-96 mb-2"></div>
@@ -42,7 +42,7 @@ export default function ContentDetailPage() {
             ) : content ? (
               <>
                 <h2 className="text-3xl font-bold text-gray-900 xl:text-2xl 2xl:text-3xl">{content.title}</h2>
-                <div className="flex flex-row items-center gap-x-2 2xl:mt-2">
+                <div className="flex flex-row items-center gap-x-2 pt-1 2xl:mt-2">
                   <p className="text-gray-500 text-sm font-medium">{content.author}</p>
                   <div className="w-1 h-1 bg-gray-400 rounded-full" />
                   <p className="text-gray-500 text-sm font-medium">
@@ -57,7 +57,7 @@ export default function ContentDetailPage() {
             )}
           </div>
 
-          <div className="flex flex-row items-center gap-x-4 ml-auto">
+          <div className="hidden sm:flex flex-row items-center gap-x-4 xl:ml-auto">
             <div className="flex flex-row h-10 rounded-lg border-2 border-indigo-200 bg-white">
               <div className="relative group">
                 <button
@@ -124,11 +124,37 @@ export default function ContentDetailPage() {
               </div>
             </div>
           </div>
+
+          <div className="w-full sm:hidden">
+            <div className="grid grid-cols-3 gap-4">
+              <button
+                type="button"
+                className="inline-flex items-center justify-center gap-x-1.5 rounded-lg border border-indigo-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-indigo-50"
+              >
+                <CheckCircle2 strokeWidth={2.5} aria-hidden="true" className="size-4" />
+                Exercises
+              </button>
+              <button
+                type="button"
+                className="inline-flex items-center justify-center gap-x-1.5 rounded-lg border border-indigo-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-indigo-50"
+              >
+                <BookOpen strokeWidth={2.5} aria-hidden="true" className="size-4" />
+                Theory
+              </button>
+              <button
+                type="button"
+                className="inline-flex items-center justify-center gap-x-1.5 rounded-lg border border-indigo-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-indigo-50"
+              >
+                <UserPlus strokeWidth={2.5} aria-hidden="true" className="size-4" />
+                Share
+              </button>
+            </div>
+          </div>
         </div>
 
-        <div className="flex justify-center px-4 sm:px-8 xl:px-12 xl:mt-0 2xl:mt-20 min-h-screen">
+        <div className="flex justify-center px-4 sm:px-8 xl:px-12 mt-8 xl:mt-0 2xl:mt-20 min-h-screen">
           <div
-            className="w-full flex flex-col mx-auto max-w-[24rem] sm:max-w-[30rem] md:max-w-[36rem] lg:max-w-[44rem] xl:max-w-[52rem] 2xl:max-w-[64rem]"
+            className="w-full flex flex-col mx-auto max-w-full sm:max-w-[30rem] md:max-w-[36rem] lg:max-w-[44rem] xl:max-w-[52rem] 2xl:max-w-[64rem]"
           >
             <div className="p-0.5 bg-gradient-to-r from-indigo-500 to-purple-600">
               <div className="relative w-full aspect-video bg-black overflow-hidden flex items-center justify-center">
@@ -139,14 +165,14 @@ export default function ContentDetailPage() {
         </div>
 
         {/* Playback controls - fixed on the left, to the right of the navigation panel */}
-        <div className="fixed top-1/2 -translate-y-1/2 left-4 xl:left-[calc(5rem+0.75rem)] z-40">
+        <div className="hidden xl:block fixed top-1/2 -translate-y-1/2 left-4 xl:left-[calc(5rem+0.75rem)] z-40">
           <PlaybackControls />
         </div>
 
         {/* Open in Designer button - fixed on the right, to the left of the sidebar */}
         {/* Only show for authenticated users */}
         {isAuthenticated && (
-          <div className="fixed top-1/2 -translate-y-1/2 right-4 xl:right-[calc(23vw+0.75rem)] 2xl:right-[calc(20vw+0.75rem)] z-40">
+          <div className="hidden xl:block fixed top-1/2 -translate-y-1/2 right-4 xl:right-[calc(23vw+0.75rem)] 2xl:right-[calc(20vw+0.75rem)] z-40">
             <button
               onClick={() => setShowConfirm(true)}
               className="inline-flex items-center gap-x-2 p-5 xl:rounded-xl 2xl:rounded-2xl text-white bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all duration-200 transform hover:scale-105"
@@ -156,6 +182,10 @@ export default function ContentDetailPage() {
             </button>
           </div>
         )}
+
+        <div className="block xl:hidden px-4 sm:px-8 mt-10">
+          <PlaybackControls />
+        </div>
 
         <ConfirmModal
           open={showConfirm}
