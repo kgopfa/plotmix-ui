@@ -296,21 +296,11 @@ export const AIToolsTab: React.FC = () => {
           <div className="flex items-center justify-end -mt-2 mb-4">
             <button
               type="button"
-              onClick={handleSubmit}
-              disabled={!message.trim() || isSubmitting}
-              className="inline-flex items-center justify-center px-3 h-8 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30 text-white hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Apply (⌘+Enter)"
+              disabled
+              className="inline-flex items-center justify-center px-3 h-8 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30 text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Coming soon"
             >
-              {isSubmitting ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <div className="flex items-center gap-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.0" stroke="currentColor" className="w-4 h-4 text-white">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
-                  </svg>
-                  <span className="text-[12px] font-medium">Submit</span>
-                </div>
-              )}
+              <span className="text-[12px] font-medium">Coming soon</span>
             </button>
           </div>
         </div>
