@@ -21,7 +21,6 @@ export default function ContactPage() {
 
     setFeedbackSubmitting(true);
     try {
-      // TODO: Replace with actual API endpoint
       const response = await fetch('/api/feedback', {
         method: 'POST',
         headers: {
@@ -36,14 +35,22 @@ export default function ContactPage() {
         }),
       });
 
-      if (response.ok) {
-        setFirstName('');
-        setLastName('');
-        setEmail('');
-        setMessage('');
-        setSubmitSuccess(true);
-        setTimeout(() => setSubmitSuccess(false), 5000);
+      const result = await response.json().catch(() => null);
+
+      if (!response.ok || !result?.success) {
+        console.error('Feedback submission failed', {
+          status: response.status,
+          body: result,
+        });
+        return;
       }
+
+      setFirstName('');
+      setLastName('');
+      setEmail('');
+      setMessage('');
+      setSubmitSuccess(true);
+      setTimeout(() => setSubmitSuccess(false), 5000);
     } catch (error) {
       console.error('Failed to submit feedback:', error);
     } finally {
