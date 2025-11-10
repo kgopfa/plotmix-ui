@@ -27,11 +27,12 @@ export default function DesignersPage() {
             <HeroSection />
           </div>
 
-          <img
-            src="https://tailwindcss.com/plus-assets/img/component-images/project-app-screenshot.png"
-            alt="Plotmix for Teams"
-            width="2432"
-            height="1442"
+          <video
+            src={"/marketing/demo.mov"}
+            autoPlay
+            loop
+            muted
+            playsInline
             className="mt-12 rounded-2xl bg-gray-50 shadow-2xl ring-1 ring-gray-900/10 w-full max-w-[1200px] h-auto mx-auto"
           />
         </div>
