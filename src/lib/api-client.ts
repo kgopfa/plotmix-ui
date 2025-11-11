@@ -15,74 +15,31 @@ class ApiClient {
 
   /**
    * Validate session against backend
+   * MVP: Auth disabled - always return true
    */
   private async validateSession(): Promise<boolean> {
-    try {
-      const session = await getSession();
-      if (!session?.accessToken) {
-        return false;
-      }
-
-      // Make a lightweight request to validate the session
-      const response = await fetch(`${this.baseUrl}/api/auth/validate-session`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${session.accessToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.status === 401 || response.status === 403) {
-        // Session is invalid, logout the user and redirect to login
-        if (!this.isLoggingOut) {
-          this.isLoggingOut = true;
-          await signOut({ redirect: true, callbackUrl: '/login' });
-          console.warn('Session invalidated by backend, redirecting to login');
-        }
-        return false;
-      }
-
-      return response.ok;
-    } catch (error) {
-      console.error('Session validation error:', error);
-      // On network errors, we'll still try the request but log the issue
-      return true;
-    }
+    return true;
   }
 
   /**
    * Get authentication headers with NextAuth token
+   * MVP: Auth disabled - return headers without token (backend will use dummy user)
    */
   private async getAuthHeaders(): Promise<HeadersInit> {
-    const session = await getSession();
-    
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     };
 
-    const at = session?.accessToken as unknown;
-    let token: string | null = null;
-    if (typeof at === 'string') token = at;
-    else if (at && typeof (at as { token?: string }).token === 'string') token = (at as { token?: string }).token as string;
-    else if (at && typeof (at as { jwt?: string }).jwt === 'string') token = (at as { jwt?: string }).jwt as string;
-
-    if (token) headers.Authorization = `Bearer ${token}`;
-
+    // MVP: Don't send auth token - backend will use dummy user
     return headers;
   }
 
   /**
    * Handle API response and check for authentication errors
+   * MVP: Auth disabled - don't redirect on auth errors
    */
   private async handleResponse(response: Response): Promise<Response> {
-    if (response.status === 401 || response.status === 403) {
-      // Session is invalid, logout the user and redirect to login
-      if (!this.isLoggingOut) {
-        this.isLoggingOut = true;
-        await signOut({ redirect: true, callbackUrl: '/login' });
-        console.warn('Session invalidated by backend, redirecting to login');
-      }
-    }
+    // MVP: Auth disabled - allow requests to proceed
     return response;
   }
 

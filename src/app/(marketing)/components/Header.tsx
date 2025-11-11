@@ -14,14 +14,14 @@ export default function Header() {
   const router = useRouter()
 
   useEffect(() => {
-    router.prefetch('/login')
+    router.prefetch('/chat')
   }, [router])
 
-  const handleNavigateToLogin = () => {
+  const handleNavigateToChat = () => {
     if (isNavigating) return
     setIsNavigating(true)
     setMobileMenuOpen(false)
-    router.push('/login')
+    router.push('/chat')
   }
 
   const navigation = [
@@ -67,7 +67,7 @@ export default function Header() {
         <div className="hidden lg:flex lg:flex-1 lg:justify-end">
           <button
             type="button"
-            onClick={handleNavigateToLogin}
+            onClick={handleNavigateToChat}
             disabled={isNavigating}
             className="inline-flex items-center gap-2 text-sm font-semibold text-gray-900 hover:text-indigo-600 transition-colors disabled:opacity-70"
             aria-busy={isNavigating}
@@ -126,12 +126,12 @@ export default function Header() {
             })}
             <button
               type="button"
-              onClick={handleNavigateToLogin}
+              onClick={handleNavigateToChat}
               disabled={isNavigating}
               className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-base font-semibold text-gray-900 hover:bg-gray-50 disabled:opacity-70"
               aria-busy={isNavigating}
             >
-              <span>Sign in</span>
+              <span>Try it now</span>
               {isNavigating && <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />}
             </button>
           </div>

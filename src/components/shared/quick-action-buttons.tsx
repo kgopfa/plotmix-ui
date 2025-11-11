@@ -49,14 +49,8 @@ export function QuickActionButtons({ className, heightClass = 'h-9', borderColor
     router.push('/chat');
   };
 
-  // Show login link when not authenticated (marketing header style)
-  if (!isAuthenticated) {
-    return (
-      <Link href="/login" className="text-sm font-semibold text-gray-900 hover:text-indigo-600">
-        Sign in <span aria-hidden="true">&rarr;</span>
-      </Link>
-    );
-  }
+  // MVP: Auth disabled - always show action buttons
+  // (removed auth check since we're always authenticated in MVP)
 
   const baseButtonClasses = `flex flex-row items-center justify-center gap-x-2 bg-transparent border text-gray-700 px-4 rounded-lg text-xs font-semibold disabled:opacity-60 disabled:cursor-not-allowed ${heightClass}`;
   // Ensure borderColorClass wins over any border color in className by appending last

@@ -16,82 +16,46 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// Dummy user data for MVP (auth disabled)
+const DUMMY_USER = {
+  id: "mvp-dummy-user",
+  email: "demo@plotmix.com",
+  name: "Demo User",
+}
+
+// Dummy session for MVP (auth disabled)
+const DUMMY_SESSION: Session = {
+  user: DUMMY_USER,
+  expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
+  accessToken: "dummy-token",
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { data: session, status } = useSession()
-  const [loading, setLoading] = useState(true)
+  // MVP: Always return authenticated with dummy user
+  const [loading, setLoading] = useState(false)
   const [isValidating, setIsValidating] = useState(false)
 
-  // Validate session against backend
+  // Validate session against backend - always return true for MVP
   const validateSession = async (): Promise<boolean> => {
-    if (!session?.accessToken) {
-      return false
-    }
-
-    if (isValidating) {
-      return true // Prevent multiple simultaneous validations
-    }
-
-    setIsValidating(true)
-    try {
-      // Call the backend's validate-session endpoint
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/validate-session`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${session.accessToken}`,
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (!response.ok) {
-        // Session is invalid, logout the user and redirect to login
-        await signOut({ redirect: true, callbackUrl: '/login' })
-        return false
-      }
-
-      return true
-    } catch (error) {
-      console.error('Session validation error:', error)
-      // On network errors, we'll assume the session is valid for now
-      return true
-    } finally {
-      setIsValidating(false)
-    }
+    return true
   }
 
-  useEffect(() => {
-    setLoading(status === "loading")
-  }, [status, session])
-
-  // Validate session when it changes
-  useEffect(() => {
-    if (session && status === "authenticated") {
-      // Validate session after a short delay to avoid excessive calls
-      const timeoutId = setTimeout(() => {
-        validateSession()
-      }, 1000)
-
-      return () => clearTimeout(timeoutId)
-    }
-  }, [session, status])
-
   const handleSignIn = async (credentials: { email: string; password: string }) => {
-    return signIn("credentials", {
-      email: credentials.email,
-      password: credentials.password,
-      redirect: false,
-    })
+    // No-op for MVP
+    return { ok: true }
   }
 
   const handleSignOut = async () => {
-    return signOut({ redirect: false })
+    // No-op for MVP
+    return { ok: true }
   }
 
   const value: AuthContextType = {
-    session,
-    loading,
+    session: DUMMY_SESSION,
+    loading: false,
     signIn: handleSignIn,
     signOut: handleSignOut,
-    isAuthenticated: !!session,
+    isAuthenticated: true,
     validateSession,
   }
 

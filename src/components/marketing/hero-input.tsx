@@ -1,29 +1,17 @@
 'use client';
 
 import { ArrowUp } from 'lucide-react';
-import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
 
 export function HeroInput({ query, setQuery }: { query: string; setQuery: (query: string) => void }) {
-  const { isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
 
-    // Wait for auth to load
-    if (authLoading) return;
-
-    if (!isAuthenticated) {
-      // Store the prompt in sessionStorage for retrieval after login
-      sessionStorage.setItem('plotmix-pending-prompt', query.trim());
-      // Redirect to login page
-      router.push('/login');
-    } else {
-      // User is authenticated, go directly to chat with the prompt
-      router.push(`/chat?q=${encodeURIComponent(query.trim())}`);
-    }
+    // MVP: Auth disabled - always go directly to chat with the prompt
+    router.push(`/chat?q=${encodeURIComponent(query.trim())}`);
   };
 
   return (
