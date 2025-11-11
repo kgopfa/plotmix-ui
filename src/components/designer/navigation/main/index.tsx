@@ -176,8 +176,8 @@ export const MainNavBar: React.FC<MainNavBarProps> = () => {
                 <MenuIcon aria-hidden="true" className="block size-5 group-data-open:hidden transition-all duration-200 group-hover:scale-110" />
                 <X aria-hidden="true" className="hidden size-5 group-data-open:block transition-all duration-200 group-hover:scale-110" />
               </DisclosureButton>
-              {/* Desktop options menu */}
-              <DisclosurePanel className="absolute left-0 top-12 z-50 hidden lg:block">
+              {/* Options menu - visible on all screen sizes */}
+              <DisclosurePanel className="absolute left-0 top-12 z-50">
                 <div className="w-44 rounded-xl bg-white/95 backdrop-blur-sm px-4 py-6 text-sm font-semibold text-gray-700 shadow-xl shadow-gray-200/50 ring-1 ring-gray-200/50">
                   <Link
                     href="/chat"
@@ -241,16 +241,16 @@ export const MainNavBar: React.FC<MainNavBarProps> = () => {
 
           {/* Project Name and Profile Section */}
           <div className="flex items-center gap-4">
-            {/* Desktop user menu */}
-            <div className="hidden lg:flex lg:items-center gap-x-5 mr-5">
+            {/* User menu - visible on all screen sizes */}
+            <div className="flex items-center gap-x-3 sm:gap-x-5 mr-2 sm:mr-5">
 
               {/* Share */}
               <button
                 type="button"
-                className="group relative inline-flex w-28 h-9 items-center gap-x-2.5 rounded-lg bg-purple-600 opacity-90 px-3 py-2 text-sm font-semibold text-white hover:from-indigo-600 hover:to-purple-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95"
+                className="group relative inline-flex w-20 sm:w-28 h-9 items-center gap-x-2.5 rounded-lg bg-purple-600 opacity-90 px-2 sm:px-3 py-2 text-sm font-semibold text-white hover:from-indigo-600 hover:to-purple-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all duration-200 ease-out transform hover:scale-105 active:scale-95"
               >
-                <Upload className="size-4 ml-1.5 transition-all duration-200 group-hover:scale-110 drop-shadow-sm" />
-                <span className="text-sm">Share</span>
+                <Upload className="size-4 sm:ml-1.5 transition-all duration-200 group-hover:scale-110 drop-shadow-sm" />
+                <span className="text-xs sm:text-sm">Share</span>
               </button>
 
               {/* Profile dropdown */}

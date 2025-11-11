@@ -161,8 +161,17 @@ export default function ContentDetailPage() {
                 <ProjectCanvasPreview projectId={contentId} />
               </div>
             </div>
-            <div className="xl:hidden flex justify-center mt-6">
+            <div className="xl:hidden flex justify-between items-center mt-6">
               <PlaybackControls />
+              {isAuthenticated && (
+                <button
+                  onClick={() => setShowConfirm(true)}
+                  className="inline-flex items-center justify-center p-4 rounded-xl text-white bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all duration-200 transform hover:scale-105"
+                  aria-label="Open in Designer"
+                >
+                  <Pencil strokeWidth={2.5} aria-hidden="true" className="size-5" />
+                </button>
+              )}
             </div>
           </div>
         </div>
