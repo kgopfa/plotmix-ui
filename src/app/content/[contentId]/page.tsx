@@ -164,13 +164,18 @@ export default function ContentDetailPage() {
             <div className="xl:hidden flex justify-between items-center mt-6">
               <PlaybackControls />
               {isAuthenticated && (
-                <button
-                  onClick={() => setShowConfirm(true)}
-                  className="inline-flex items-center justify-center p-4 rounded-xl text-white bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all duration-200 transform hover:scale-105"
-                  aria-label="Open in Designer"
-                >
-                  <Pencil strokeWidth={2.5} aria-hidden="true" className="size-5" />
-                </button>
+                <div className="relative flex flex-col items-center gap-2">
+                  <button
+                    onClick={() => setShowConfirm(true)}
+                    className="inline-flex items-center justify-center p-4 rounded-xl text-white bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all duration-200 animate-pulse-scale"
+                    aria-label="Open in Designer"
+                  >
+                    <Pencil strokeWidth={2.5} aria-hidden="true" className="size-5" />
+                  </button>
+                  <div className="px-3 py-1.5 bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-full whitespace-nowrap">
+                    Press for Designer
+                  </div>
+                </div>
               )}
             </div>
           </div>
@@ -184,14 +189,19 @@ export default function ContentDetailPage() {
         {/* Open in Designer button - fixed on the right, to the left of the sidebar */}
         {/* Only show for authenticated users */}
         {isAuthenticated && (
-          <div className="hidden xl:block fixed top-1/2 -translate-y-1/2 right-4 xl:right-[calc(23vw+0.75rem)] 2xl:right-[calc(20vw+0.75rem)] z-40">
-            <button
-              onClick={() => setShowConfirm(true)}
-              className="inline-flex items-center gap-x-2 p-5 xl:rounded-xl 2xl:rounded-2xl text-white bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all duration-200 transform hover:scale-105"
-            >
-              <Pencil strokeWidth={2.5} aria-hidden="true" className="-ml-0.5 xl:size-4 2xl:size-5" />
-              {/* <span className="hidden sm:block font-bold xl:text-sm 2xl:text-base">Open in Designer</span> */}
-            </button>
+          <div className="hidden xl:block fixed top-1/2 -translate-y-1/2 right-4 xl:right-[calc(23vw+0.75rem)] 2xl:right-[calc(20vw+0.75rem)] z-[60]">
+            <div className="relative">
+              <button
+                onClick={() => setShowConfirm(true)}
+                className="inline-flex items-center gap-x-2 p-5 xl:rounded-xl 2xl:rounded-2xl text-white bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all duration-200 animate-pulse-scale"
+              >
+                <Pencil strokeWidth={2.5} aria-hidden="true" className="-ml-0.5 xl:size-4 2xl:size-5" />
+                {/* <span className="hidden sm:block font-bold xl:text-sm 2xl:text-base">Open in Designer</span> */}
+              </button>
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 px-3 py-1.5 bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-full whitespace-nowrap shadow-sm">
+                Press for Designer
+              </div>
+            </div>
           </div>
         )}
 

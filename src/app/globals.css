@@ -144,3 +144,23 @@ a,
   background-size: 200% 200%;
   animation: gradient-shift 3s ease infinite;
 }
+
+/* Designer button pulse animation */
+@keyframes pulse-scale {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+.animate-pulse-scale {
+  animation: pulse-scale 2s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.animate-pulse-scale:hover {
+  animation-play-state: paused;
+  transform: scale(1.05);
+}
