@@ -92,7 +92,7 @@ export default function ProjectsPage() {
           {!loading && !isLoading && (
             <div className="py-10">
               <div className="flex justify-center">
-                <div className="w-full max-w-7xl mx-auto">
+                <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                   <div className="mb-6 flex items-center justify-between">
                     <div>
                       <h1 className="text-xl font-semibold text-gray-900">Your projects</h1>
