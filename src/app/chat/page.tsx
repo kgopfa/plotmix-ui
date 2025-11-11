@@ -333,7 +333,7 @@ function ChatPageContent() {
                   backgroundImage: 'linear-gradient(-45deg, #6366f1, #8b5cf6, #a855f7, #6366f1)',
                 }}
               >
-                {isLoading ? 'Generating...' : 'Run Example'}
+                {isLoading ? 'Generating...' : 'Press to see Example'}
               </button>
             </div>
 
