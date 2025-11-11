@@ -283,7 +283,7 @@ function ChatPageContent() {
               </button>
             )}
 
-            <PromptInput
+            {/* <PromptInput
               prompt={prompt}
               attachments={attachments}
               onPromptChange={setPrompt}
@@ -292,7 +292,50 @@ function ChatPageContent() {
               onKeyDown={handleKeyDown}
               isLoading={isLoading}
               disabled={!isAuthenticated && !!existingProjectId}
-            />
+            /> */}
+
+            {/* Binary Search Example Button */}
+            <div className="mt-6 flex justify-center">
+              <button
+                onClick={async () => {
+                  const binarySearchSuggestion = suggestions.find(s => s.id === '3');
+                  if (!binarySearchSuggestion) return;
+                  
+                  // Hide MVP notice if Binary Search is submitted
+                  setShowMvpNotice(false);
+
+                  // Prevent unauthenticated users from creating multiple chats
+                  if (!isAuthenticated && existingProjectId) {
+                    router.push(`/content/${existingProjectId}`);
+                    return;
+                  }
+
+                  try {
+                    const response = await submitChat(binarySearchSuggestion.prompt, [], options);
+                    if (response && response.success) {
+                      const projectId = response.data.project.id;
+
+                      // Store project ID for unauthenticated users
+                      if (!isAuthenticated) {
+                        localStorage.setItem(UNAUTHENTICATED_CHAT_KEY, projectId);
+                      }
+
+                      // Navigate to the content page with the generated project
+                      router.push(`/content/${projectId}`);
+                    }
+                  } catch (err) {
+                    console.error('Failed to submit chat:', err);
+                  }
+                }}
+                disabled={isLoading || (!isAuthenticated && !!existingProjectId)}
+                className="px-6 py-3 text-white text-sm font-semibold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed animate-gradient"
+                style={{
+                  backgroundImage: 'linear-gradient(-45deg, #6366f1, #8b5cf6, #a855f7, #6366f1)',
+                }}
+              >
+                {isLoading ? 'Generating...' : 'Run Example'}
+              </button>
+            </div>
 
             {/* Error Display */}
             {error && (
