@@ -31,7 +31,7 @@ export class ViewportWrapper extends BaseViewport {
     if (!readonly) {
       this
         .drag({
-          pressDrag: false,
+          pressDrag: true,
           wheel: false,
         })
         .pinch()
