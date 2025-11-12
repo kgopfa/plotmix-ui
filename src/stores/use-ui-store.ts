@@ -358,15 +358,23 @@ export const useUIStore = create<UIStore>((set, get) => {
 
   // Detect screen size and get appropriate initial values
   const getScreenSizeValues = () => {
+    // Calculate world center for proper canvas centering
+    // World is 3x canvas size, so center is at (worldWidth/2, worldHeight/2)
+    const defaultCanvasWidth = 1920;
+    const defaultCanvasHeight = 1080;
+    const worldCenterX = (defaultCanvasWidth * 3) / 2; // 2880
+    const worldCenterY = (defaultCanvasHeight * 3) / 2; // 1620
+
     if (typeof window === 'undefined') {
-      // Default values for SSR
-      return { zoom: 0.42, pan: { x: 2800, y: 1700 } };
+      // Default values for SSR - use world center
+      return { zoom: 0.42, pan: { x: worldCenterX, y: worldCenterY } };
     }
 
     const screenWidth = window.innerWidth;
     const screenHeight = window.innerHeight;
 
-    // Define screen size presets with their optimal zoom and pan values
+    // Define screen size presets with their optimal zoom values
+    // All presets use the world center for proper canvas centering
     const screenPresets = [
       // Small laptops (13-14 inch)
       {
@@ -374,7 +382,7 @@ export const useUIStore = create<UIStore>((set, get) => {
         width: { min: 1200, max: 1600 },
         height: { min: 600, max: 900 },
         zoom: 0.42,
-        pan: { x: 2850, y: 1200 }
+        pan: { x: worldCenterX, y: worldCenterY }
       },
       // Medium laptops (15-16 inch)
       {
@@ -382,7 +390,7 @@ export const useUIStore = create<UIStore>((set, get) => {
         width: { min: 1600, max: 2000 },
         height: { min: 900, max: 1300 },
         zoom: 0.60,
-        pan: { x: 2850, y: 1560 }
+        pan: { x: worldCenterX, y: worldCenterY }
       },
       // Large laptops/desktops (17+ inch)
       {
@@ -390,7 +398,7 @@ export const useUIStore = create<UIStore>((set, get) => {
         width: { min: 1900, max: 3000 },
         height: { min: 1200, max: 1800 },
         zoom: 0.70,
-        pan: { x: 2850, y: 1700 }
+        pan: { x: worldCenterX, y: worldCenterY }
       },
       // Ultra-wide/4K monitors
       {
@@ -398,7 +406,7 @@ export const useUIStore = create<UIStore>((set, get) => {
         width: { min: 3000, max: 9999 },
         height: { min: 1000, max: 9999 },
         zoom: 0.85,
-        pan: { x: 2850, y: 1550 }
+        pan: { x: worldCenterX, y: worldCenterY }
       }
     ];
 
